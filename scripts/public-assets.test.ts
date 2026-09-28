@@ -32,9 +32,9 @@ function pngChunks(png: Buffer) {
 }
 
 describe('public/', () => {
-  it('contains exactly the seven logo and icon files and _headers', () => {
+  it('contains exactly the seven logo and icon files, _headers and the crawler files', () => {
     expect([...publicFiles].sort()).toEqual(
-      [...SVGS, 'apple-touch-icon.png', '_headers'].sort(),
+      [...SVGS, 'apple-touch-icon.png', '_headers', 'robots.txt', 'sitemap.xml'].sort(),
     )
   })
 
