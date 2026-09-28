@@ -1,0 +1,52 @@
+/*
+ * Contact: heading, supporting copy and the two email links on a graphite
+ * 100 background (.surface-alt, which also makes --color-link teal 800
+ * there), so it reads as separate from About on paper above it. Below
+ * 768px the button sits above the address; from 768px they share a row,
+ * wrapping as .hero__actions does (literal breakpoint; see the note in
+ * tokens.css). No reordering, so the visual order matches the DOM order.
+ */
+
+.contact {
+  padding-block: var(--space-16);
+}
+
+.contact__text {
+  max-width: var(--measure);
+  margin-block: 0 var(--space-8);
+  color: var(--color-text);
+  /* Break a word only if it cannot fit on a line of its own, rather than
+     anywhere as .container allows. */
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+.contact__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+/* The global link colours and underline apply. The box is at least 48px
+   tall, like the button beside it, and the address never breaks. */
+.contact__email {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--space-12);
+  white-space: nowrap;
+  text-underline-offset: var(--space-1);
+}
+
+@media (min-width: 768px) {
+  .contact {
+    padding-block: var(--space-20);
+  }
+
+  .contact__actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--space-6);
+  }
+}
