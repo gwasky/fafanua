@@ -12,6 +12,11 @@ dist
 dist-ssr
 coverage
 
+# Playwright output
+playwright-report/
+test-results/
+blob-report/
+
 # Local environment files
 *.local
 .env

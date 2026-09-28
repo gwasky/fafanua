@@ -27,6 +27,7 @@ Once the project is scaffolded (issue #1 and #2), these scripts are available:
 |---|---|
 | `npm run dev` | Local development server |
 | `npm test` | Unit and accessibility tests |
+| `npm run test:e2e` | Playwright end-to-end and accessibility tests against the production preview |
 | `npm run typecheck` | TypeScript checks |
 | `npm run lint` | ESLint, including the hex-colour check |
 | `npm run build` | Production build |

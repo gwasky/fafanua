@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Plugin } from 'vite'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 import { email } from './src/data/contact.ts'
 
 // The Inter woff2 imported by src/styles/fonts.css. Its built name is
@@ -281,5 +281,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // e2e/ holds the Playwright specs, run by npm run test:e2e.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 })
