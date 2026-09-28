@@ -1,0 +1,42 @@
+/*
+ * Hero: heading, supporting line, calls to action and positioning
+ * statement, on the page background. Button styles are the shared
+ * .button classes in components.css.
+ */
+
+.hero {
+  padding-block: var(--space-12) var(--space-16);
+  background-color: var(--color-bg);
+}
+
+.hero__heading {
+  max-width: var(--measure-heading);
+  margin-block-end: var(--space-6);
+}
+
+.hero__lead {
+  max-width: var(--measure);
+  margin-block: 0 var(--space-8);
+  color: var(--color-text);
+  font-size: var(--text-lg);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.hero__statement {
+  max-width: var(--measure);
+  margin-block: var(--space-12) 0;
+  padding-block-start: var(--space-8);
+  border-block-start: var(--border-width) solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+@media (min-width: 768px) {
+  .hero {
+    padding-block: var(--space-20) var(--space-24);
+  }
+}

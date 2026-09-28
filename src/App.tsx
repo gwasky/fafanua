@@ -1,11 +1,12 @@
 import Header from './components/Header.tsx'
+import Hero from './components/Hero.tsx'
 
 function App() {
   return (
     <>
       <Header />
       <main id="main" tabIndex={-1}>
-        <h1>Fafanua Technologies</h1>
+        <Hero />
       </main>
     </>
   )
