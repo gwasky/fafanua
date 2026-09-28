@@ -140,6 +140,19 @@ a:hover {
   }
 }
 
+/*
+ * Graphite 100 surfaces (for example alternate section backgrounds). Use
+ * this class rather than setting background-color to --color-surface-alt
+ * directly: it also switches links inside it to a colour that passes AA
+ * on graphite 100.
+ */
+.surface-alt {
+  --color-link: var(--color-link-on-surface-alt);
+  --color-link-hover: var(--color-link-hover-on-surface-alt);
+
+  background-color: var(--color-surface-alt);
+}
+
 .container {
   width: 100%;
   max-width: var(--container-max);
