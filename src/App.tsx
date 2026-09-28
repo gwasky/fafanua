@@ -1,3 +1,4 @@
+import FutureReady from './components/FutureReady.tsx'
 import Header from './components/Header.tsx'
 import Hero from './components/Hero.tsx'
 import Process from './components/Process.tsx'
@@ -11,6 +12,7 @@ function App() {
         <Hero />
         <Services />
         <Process />
+        <FutureReady />
       </main>
     </>
   )

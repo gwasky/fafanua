@@ -4,6 +4,9 @@ import App from './App.tsx'
 import { navigation } from './data/navigation.ts'
 import { processStages } from './data/process.ts'
 
+const FUTURE_READY =
+  'The strongest analytics and AI systems begin with trusted data.'
+
 // jsdom has no matchMedia, which the header uses for its breakpoint.
 beforeEach(() => {
   vi.stubGlobal('matchMedia', (media: string) => ({
@@ -78,14 +81,13 @@ describe('App', () => {
     }
   })
 
-  it('renders the How We Work section directly after services, last in main', () => {
+  it('renders the How We Work section directly after services', () => {
     render(<App />)
     const services = screen.getByRole('region', { name: 'Services' })
     const process = screen.getByRole('region', { name: 'How We Work' })
     const nav = navigation.find((item) => item.label === 'How We Work')
 
     expect(services.nextElementSibling).toBe(process)
-    expect(screen.getByRole('main').lastElementChild).toBe(process)
     expect(process.id).toBe(nav?.id)
     expect(
       within(screen.getByRole('banner')).getByRole('link', {
@@ -105,13 +107,42 @@ describe('App', () => {
     ).toEqual(processStages.map((stage) => stage.name))
   })
 
-  it('orders headings h1, h2 Services, six h3s, h2 How We Work, four h3s', () => {
+  it('renders the future-ready section directly after How We Work, last in main', () => {
+    render(<App />)
+    const main = screen.getByRole('main')
+    const process = screen.getByRole('region', { name: 'How We Work' })
+    const futureReady = screen.getByRole('region', { name: FUTURE_READY })
+
+    expect(futureReady.id).toBe('future-ready')
+    expect(futureReady.parentElement).toBe(main)
+    expect(process.nextElementSibling).toBe(futureReady)
+    expect(main.lastElementChild).toBe(futureReady)
+  })
+
+  it('keeps the future-ready section out of the navigation and unlinked', () => {
+    render(<App />)
+
+    expect(navigation.map((item) => item.id)).not.toContain('future-ready')
+    expect(document.querySelector('a[href*="future-ready"]')).toBeNull()
+  })
+
+  it('uses .surface-dark only on the future-ready section', () => {
+    render(<App />)
+    const dark = document.querySelectorAll('.surface-dark')
+
+    expect(dark).toHaveLength(1)
+    expect(dark[0]).toBe(screen.getByRole('region', { name: FUTURE_READY }))
+    expect(dark[0].querySelector('.surface-alt')).toBeNull()
+  })
+
+  it('orders headings h1, h2 Services, six h3s, h2 How We Work, four h3s, h2 future-ready', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
 
-    expect(levels).toEqual([1, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3])
+    expect(levels).toEqual([1, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2])
     expect(headings[1].textContent).toBe('Services')
     expect(headings[8].textContent).toBe('How We Work')
+    expect(headings[13].textContent).toBe(FUTURE_READY)
   })
 })
