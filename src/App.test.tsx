@@ -107,7 +107,7 @@ describe('App', () => {
     ).toEqual(processStages.map((stage) => stage.name))
   })
 
-  it('renders the future-ready section directly after How We Work, last in main', () => {
+  it('renders the future-ready section directly after How We Work', () => {
     render(<App />)
     const main = screen.getByRole('main')
     const process = screen.getByRole('region', { name: 'How We Work' })
@@ -116,7 +116,33 @@ describe('App', () => {
     expect(futureReady.id).toBe('future-ready')
     expect(futureReady.parentElement).toBe(main)
     expect(process.nextElementSibling).toBe(futureReady)
-    expect(main.lastElementChild).toBe(futureReady)
+    expect(main.lastElementChild).not.toBe(futureReady)
+  })
+
+  it('renders the About section directly after future-ready, last in main', () => {
+    render(<App />)
+    const main = screen.getByRole('main')
+    const futureReady = screen.getByRole('region', { name: FUTURE_READY })
+    const about = screen.getByRole('region', { name: 'About Fafanua' })
+
+    expect(about.parentElement).toBe(main)
+    expect(futureReady.nextElementSibling).toBe(about)
+    expect(main.lastElementChild).toBe(about)
+  })
+
+  it('lands the header About link, desktop and mobile, on the About section', () => {
+    render(<App />)
+    const about = screen.getByRole('region', { name: 'About Fafanua' })
+    const nav = navigation.find((item) => item.label === 'About')
+    // The desktop row and the mobile menu are the same list, so there is
+    // one About link for both.
+    const links = within(screen.getByRole('banner')).getAllByRole('link', {
+      name: 'About',
+    })
+
+    expect(about.id).toBe(nav?.id)
+    expect(links).toHaveLength(1)
+    expect(links[0]).toHaveAttribute('href', '#about')
   })
 
   it('keeps the future-ready section out of the navigation and unlinked', () => {
@@ -135,14 +161,16 @@ describe('App', () => {
     expect(dark[0].querySelector('.surface-alt')).toBeNull()
   })
 
-  it('orders headings h1, h2 Services, six h3s, h2 How We Work, four h3s, h2 future-ready', () => {
+  it('orders headings h1, h2 Services, six h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
 
-    expect(levels).toEqual([1, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2])
+    expect(levels).toEqual([1, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2])
+    expect(levels.filter((level) => level === 1)).toHaveLength(1)
     expect(headings[1].textContent).toBe('Services')
     expect(headings[8].textContent).toBe('How We Work')
     expect(headings[13].textContent).toBe(FUTURE_READY)
+    expect(headings[14].textContent).toBe('About Fafanua')
   })
 })
