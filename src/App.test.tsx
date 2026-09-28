@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
 
@@ -48,5 +48,40 @@ describe('App', () => {
     })
 
     expect(screen.getByRole('main').firstElementChild).toBe(hero)
+  })
+
+  it('renders the services section directly after the hero, inside main', () => {
+    render(<App />)
+    const hero = screen.getByRole('region', {
+      name: 'Build a data foundation you can trust.',
+    })
+    const services = screen.getByRole('region', { name: 'Services' })
+
+    expect(screen.getByRole('main')).toContainElement(services)
+    expect(hero.nextElementSibling).toBe(services)
+  })
+
+  it('lands the header and hero Services links on the services section', () => {
+    render(<App />)
+    const services = screen.getByRole('region', { name: 'Services' })
+    const targets = [
+      within(screen.getByRole('banner')).getByRole('link', {
+        name: 'Services',
+      }),
+      screen.getByRole('link', { name: 'See our services' }),
+    ]
+
+    for (const link of targets) {
+      expect(link).toHaveAttribute('href', `#${services.id}`)
+    }
+  })
+
+  it('orders headings h1, h2 Services, then six h3s', () => {
+    render(<App />)
+    const levels = screen
+      .getAllByRole('heading')
+      .map((heading) => Number(heading.tagName.slice(1)))
+
+    expect(levels).toEqual([1, 2, 3, 3, 3, 3, 3, 3])
   })
 })
