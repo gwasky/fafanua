@@ -73,18 +73,15 @@ main:focus {
   height: auto;
 }
 
-/* Secondary button. */
-.menu-toggle {
-  min-width: var(--space-12);
-  min-height: var(--space-12);
-  padding: var(--space-2) var(--space-4);
-  border: var(--border-width) solid var(--color-button-secondary-border);
-  border-radius: var(--radius-sm);
-  background-color: transparent;
-  color: var(--color-button-secondary-text);
-  font-weight: var(--weight-medium);
+/* The look comes from .button .button--secondary (components.css); this
+   rule holds only the header's differences. Header.css is loaded before
+   components.css, so a plain .menu-toggle would lose to .button at equal
+   specificity: .site-header raises it to win without !important. */
+.site-header .menu-toggle {
+  /* Not .button's --space-6: keeps the width, and room for the logo. */
+  padding-inline: var(--space-4);
+  /* Not .button's --leading-snug: the toggle has always used tight. */
   line-height: var(--leading-tight);
-  cursor: pointer;
 }
 
 .site-nav {
@@ -129,7 +126,9 @@ main:focus {
 }
 
 @media (min-width: 768px) {
-  .menu-toggle {
+  /* .site-header lets this beat .button's later display: inline-flex. */
+  .site-header .menu-toggle {
+    /* The inline nav replaces the toggle from 768px. */
     display: none;
   }
 

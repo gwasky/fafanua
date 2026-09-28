@@ -52,7 +52,7 @@ function Header() {
         <button
           ref={toggleRef}
           type="button"
-          className="menu-toggle"
+          className="button button--secondary menu-toggle"
           aria-expanded={menuOpen}
           aria-controls={LIST_ID}
           onClick={() => setMenuOpen((open) => !open)}
