@@ -1,0 +1,155 @@
+/*
+ * Design tokens. Every colour, type, spacing, radius, width, shadow and
+ * motion value used on the site is defined here once. Values come from
+ * _docs/design-system.md.
+ *
+ * Two layers:
+ * - Primitives hold raw values (graphite and teal ramps, service-line and
+ *   state colours).
+ * - Semantic tokens point at primitives with var(). global.css and
+ *   components use only semantic and non-colour tokens, so a dark section
+ *   or a later dark theme only has to reassign the semantic layer.
+ *
+ * This is the only file in src/ allowed to contain literal colours
+ * (enforced by scripts/check-hex.mjs).
+ */
+
+:root {
+  /* Graphite (neutrals) */
+  --graphite-950: #111417;
+  --graphite-900: #1C2024;
+  --graphite-800: #2A3036;
+  --graphite-700: #3B434B;
+  --graphite-600: #545E68;
+  --graphite-500: #707B86; /* icons and non-text UI on light only */
+  --graphite-400: #939DA7;
+  --graphite-300: #B8C0C7;
+  --graphite-200: #D8DDE1;
+  --graphite-100: #EBEEEF;
+  --graphite-50: #F4F4F1;
+  --paper: var(--graphite-50);
+
+  /* White is not in the ramps; used for cards, raised surfaces and
+     primary-button text. */
+  --white: #FFFFFF;
+
+  /* Signal teal (accent) */
+  --teal-900: #0B3D38;
+  --teal-800: #0F5A52;
+  --teal-700: #137A6F;
+  --teal-600: #16978A; /* graphics only, never text */
+  --teal-500: #25AE9F;
+  --teal-400: #3CC2B4;
+  --teal-300: #74D6CB;
+  --teal-200: #A9E6DF;
+  --teal-100: #D6F4F0;
+  --teal-50: #EDFAF8;
+
+  /* Service lines: graphics value, then text-safe value */
+  --service-build: #3E7CB1;
+  --service-build-text: #2E6C9E;
+  --service-govern: #7667C9;
+  --service-govern-text: #5F52B0;
+  --service-trust: #4C9A5E;
+  --service-trust-text: #356F42;
+  --service-insights: #D99A2B;
+  --service-insights-text: #8A6212;
+  --service-intelligence: #D0607A;
+  --service-intelligence-text: #A04259;
+
+  /* States (form validation and status messages only) */
+  --state-success: #2F9E6E;
+  --state-success-text: #1F7E57;
+  --state-warning: #D99A2B;
+  --state-warning-text: #8A6212;
+  --state-error: #D64545;
+  --state-error-text: #B83A3A;
+  --state-info: #3E7CB1;
+  --state-info-text: #2E6C9E;
+
+  /* Semantic colours (light). Text pairings are verified in the design
+     system: graphite 900 and 600 on paper, teal 700 and 800 on paper,
+     white on teal 700. */
+  --color-bg: var(--paper);
+  --color-surface: var(--white);
+  --color-surface-alt: var(--graphite-100);
+  --color-text: var(--graphite-900);
+  --color-heading: var(--graphite-900);
+  --color-text-muted: var(--graphite-600);
+  --color-border: var(--graphite-200);
+  --color-link: var(--teal-700);
+  --color-link-hover: var(--teal-800);
+  --color-accent: var(--teal-600); /* graphics only */
+  --color-focus: var(--teal-600);
+  --color-button-bg: var(--teal-700);
+  --color-button-bg-hover: var(--teal-800);
+  --color-button-text: var(--white);
+  --color-button-secondary-text: var(--graphite-900);
+  --color-button-secondary-border: var(--graphite-200);
+
+  /* Typography. The Inter font and its metric-matched fallback are
+     loaded in #4. */
+  --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --weight-light: 300; /* large headings */
+  --weight-regular: 400; /* body text */
+  --weight-medium: 500; /* small labels and buttons; the heaviest weight */
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: clamp(1.375rem, 1.25rem + 0.5vw, 1.625rem);
+  --text-3xl: clamp(1.75rem, 1.5rem + 1.1vw, 2.25rem);
+  --text-4xl: clamp(2.125rem, 1.6rem + 2.4vw, 3.5rem);
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.6;
+
+  --measure: 65ch;
+
+  /* Spacing (4px steps) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Borders */
+  --border-width: 1px;
+
+  /* Layout */
+  --container-max: 72rem;
+  --container-narrow: 45rem;
+  --container-padding: clamp(var(--space-4), 5vw, var(--space-8));
+
+  /* Shadows, built from graphite 900 */
+  --shadow-sm: 0 1px 2px rgb(28 32 36 / 0.06);
+  --shadow-md: 0 2px 8px rgb(28 32 36 / 0.08), 0 1px 2px rgb(28 32 36 / 0.04);
+  --shadow-lg: 0 8px 24px rgb(28 32 36 / 0.1), 0 2px 6px rgb(28 32 36 / 0.05);
+
+  /* Focus ring */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
