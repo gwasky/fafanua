@@ -83,3 +83,9 @@ Before considering a change done, run `lint`, `typecheck`, `test` and `build`, a
 
 - Commit only when asked. Keep each commit focused on one issue.
 - Reference the issue number in commit messages and pull requests (for example, `Closes #7`).
+
+Documents
+
+- `_docs/process.md` - how work is organized
+- Before writing tests, read `_docs/testing-guidelines.md`
+- For anything touching the UI, read `_docs/design-system.md`
