@@ -148,6 +148,11 @@
   --container-narrow: 45rem;
   --container-padding: clamp(var(--space-4), 5vw, var(--space-8));
 
+  /* Breakpoint: 768px. At 768px and wider the header shows its links
+     inline; below it they sit behind the Menu toggle. CSS variables
+     cannot be used in media queries, so write it as the literal
+     (min-width: 768px) everywhere (Header.css, Header.tsx). */
+
   /* Shadows, built from graphite 900 */
   --shadow-sm: 0 1px 2px rgb(28 32 36 / 0.06);
   --shadow-md: 0 2px 8px rgb(28 32 36 / 0.08), 0 1px 2px rgb(28 32 36 / 0.04);

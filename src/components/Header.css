@@ -1,0 +1,141 @@
+/*
+ * Header, skip link and main navigation. Below 768px the links sit behind
+ * the Menu toggle; from 768px they show inline. The 768px breakpoint is a
+ * literal because CSS variables cannot be used in media queries; keep it
+ * the same as INLINE_NAV_QUERY in Header.tsx (see tokens.css).
+ */
+
+.site-header {
+  position: relative;
+  border-block-end: var(--border-width) solid var(--color-border);
+  background-color: var(--color-bg);
+}
+
+.site-header__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: var(--space-4);
+  padding-block: var(--space-4);
+}
+
+/* Shown over the header's top-left corner on focus, without moving
+   anything. .visually-hidden-focusable hides it again on blur. */
+.skip-link {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-start: var(--space-2);
+  z-index: 1;
+  padding: var(--space-2) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+
+.skip-link:link,
+.skip-link:visited,
+.skip-link:hover {
+  color: var(--color-text);
+}
+
+/* The skip link focuses main, which only needs to receive focus, not
+   show it. */
+main:focus {
+  outline: none;
+}
+
+/* The link box is at least 48px tall, so it is a comfortable touch
+   target even though the logo itself is shorter. */
+.site-header__logo {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  min-height: var(--space-12);
+}
+
+/* 160px wide at every width: above the 120px minimum and small enough not
+   to dominate. The height follows from the width and height attributes,
+   so the space is reserved before the SVG loads. */
+.site-header__logo img {
+  width: calc(var(--space-20) * 2);
+  height: auto;
+}
+
+/* Secondary button. */
+.menu-toggle {
+  min-width: var(--space-12);
+  min-height: var(--space-12);
+  padding: var(--space-2) var(--space-4);
+  border: var(--border-width) solid var(--color-button-secondary-border);
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-button-secondary-text);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  cursor: pointer;
+}
+
+.site-nav {
+  flex-basis: 100%;
+}
+
+.site-nav__list {
+  display: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-nav__list[data-open] {
+  display: block;
+  margin-block-start: var(--space-4);
+}
+
+.site-nav__list[data-open] li + li {
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.site-nav__link {
+  display: flex;
+  align-items: center;
+  min-height: var(--space-12);
+  padding-inline: var(--space-3);
+  font-weight: var(--weight-regular);
+  white-space: nowrap;
+  text-decoration-line: none;
+  text-underline-offset: var(--space-1);
+}
+
+.site-nav__link:link,
+.site-nav__link:visited,
+.site-nav__link:hover {
+  color: var(--color-text);
+}
+
+.site-nav__link:hover {
+  text-decoration-line: underline;
+}
+
+@media (min-width: 768px) {
+  .menu-toggle {
+    display: none;
+  }
+
+  .site-nav {
+    flex-basis: auto;
+  }
+
+  .site-nav__list,
+  .site-nav__list[data-open] {
+    display: flex;
+    gap: var(--space-2);
+    margin-block-start: 0;
+  }
+
+  .site-nav__list[data-open] li + li {
+    border-block-start: 0;
+  }
+}
