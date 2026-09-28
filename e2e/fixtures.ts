@@ -1,8 +1,45 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, type Page, type TestInfo } from '@playwright/test'
+import {
+  test as base,
+  expect,
+  type Page,
+  type TestInfo,
+} from '@playwright/test'
 import { AXE_TAGS, formatViolations } from '../src/test/axe.ts'
 
 export const HEIGHT = 800
+
+/** The widths the responsive projects in playwright.config.ts run at. */
+export const WIDTHS = [320, 360, 768, 1024, 1440] as const
+
+/**
+ * The Playwright test, with an automatic fixture that fails the test,
+ * after it has run, if the page logged a console error or threw an
+ * uncaught exception. There is no allowlist: an entry would need a code
+ * comment and the issue that tracks it.
+ */
+export const test = base.extend<{ consoleErrors: void }>({
+  consoleErrors: [
+    async ({ page }, run) => {
+      const errors: string[] = []
+      page.on('console', (message) => {
+        if (message.type() !== 'error') return
+        const { url, lineNumber, columnNumber } = message.location()
+        errors.push(
+          `console.error: ${message.text()}\n  at ${url}:${lineNumber}:${columnNumber}`,
+        )
+      })
+      page.on('pageerror', (error) => {
+        errors.push(`pageerror: ${error.message}\n  at ${error.stack ?? page.url()}`)
+      })
+
+      await run()
+
+      expect(errors, `console errors on the page:\n${errors.join('\n')}`).toEqual([])
+    },
+    { auto: true },
+  ],
+})
 
 /** Opens the page at a width and waits until the web font has loaded. */
 export async function openPage(page: Page, width: number, height = HEIGHT) {
@@ -74,4 +111,58 @@ export async function focusStyle(page: Page) {
       offset: style.outlineOffset,
     }
   })
+}
+
+/**
+ * Waits until scrolling has settled: window.scrollY stays the same across
+ * three consecutive animation frames. It also returns when nothing
+ * scrolls, which the scrollend event would not report.
+ */
+export async function waitForScrollSettle(page: Page) {
+  await page.evaluate(() => {
+    delete (window as { __settle?: unknown }).__settle
+  })
+  await page.waitForFunction(
+    () => {
+      const w = window as { __settle?: { y: number; frames: number } }
+      const state = w.__settle
+      if (!state || state.y !== window.scrollY) {
+        w.__settle = { y: window.scrollY, frames: 0 }
+        return false
+      }
+      state.frames += 1
+      return state.frames >= 3
+    },
+    undefined,
+    { polling: 'raf' },
+  )
+}
+
+/**
+ * Asserts that an in-page link has landed, once scrolling has settled.
+ * For #top the page is at the very top. For a section, its top edge is
+ * within 1px of the viewport top or, when the page cannot scroll that far,
+ * the page is at its bottom limit and the section is in the viewport.
+ */
+export async function expectLanded(page: Page, hash: string) {
+  await waitForScrollSettle(page)
+  const metrics = await page.evaluate((id) => {
+    const element = document.getElementById(id)
+    if (!element) throw new Error(`No element with id "${id}"`)
+    return {
+      top: element.getBoundingClientRect().top,
+      scrollY: window.scrollY,
+      maxScroll: document.documentElement.scrollHeight - window.innerHeight,
+    }
+  }, hash.slice(1))
+  const detail = `${hash}: ${JSON.stringify(metrics)}`
+
+  if (hash === '#top') {
+    expect(metrics.scrollY, detail).toBe(0)
+  } else if (Math.abs(metrics.top) <= 1) {
+    expect(Math.abs(metrics.top), detail).toBeLessThanOrEqual(1)
+  } else {
+    expect(Math.abs(metrics.scrollY - metrics.maxScroll), detail).toBeLessThanOrEqual(1)
+    await expect(page.locator(`[id="${hash.slice(1)}"]`)).toBeInViewport()
+  }
 }

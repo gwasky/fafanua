@@ -1,13 +1,18 @@
 import { defineConfig, devices } from '@playwright/test'
+import { HEIGHT, WIDTHS } from './e2e/fixtures.ts'
 
 // The port vite preview serves on. npm run preview builds the site and
 // runs it on the Workers runtime, so the specs test the production build.
 const PORT = 4173
 const BASE_URL = `http://localhost:${PORT}`
 
-// One Chromium project. The specs in e2e/ set their own viewport widths,
-// so there are no per-width projects here (issue #16 adds those, limited
-// to its own specs).
+// The chromium project runs the specs that set their own viewport, or
+// need no particular one, once each. The width projects run only
+// responsive.spec.ts, each at its own width with reduced motion, so
+// in-page links jump instantly. Playwright loads a spec once for every
+// project, so responsive.spec.ts declares its tests for every width, with
+// the width at the end of the title, and each project picks its own with
+// grep.
 export default defineConfig({
   testDir: 'e2e',
   fullyParallel: true,
@@ -22,7 +27,18 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: 'responsive.spec.ts',
     },
+    ...WIDTHS.map((width) => ({
+      name: `width-${width}`,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width, height: HEIGHT },
+        reducedMotion: 'reduce' as const,
+      },
+      testMatch: 'responsive.spec.ts',
+      grep: new RegExp(` at ${width}px$`),
+    })),
   ],
   webServer: {
     command: 'npm run preview',
