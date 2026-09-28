@@ -66,6 +66,8 @@
 
 .service-card__summary {
   margin-block: 0 var(--space-6);
+  /* Avoids a lone word on the last line where the browser supports it. */
+  text-wrap: pretty;
 }
 
 .service-card__chevron {
