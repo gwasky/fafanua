@@ -1,0 +1,82 @@
+/*
+ * How We Work: the section heading and the four numbered stages on a
+ * graphite 100 background (.surface-alt, which also makes --color-link
+ * teal 800 there). One column by default and four in one row from 1024px
+ * (literal breakpoint; see the note in tokens.css). No reordering, so the
+ * visual order always matches the DOM order.
+ */
+
+.process {
+  padding-block: var(--space-16);
+}
+
+.process__heading {
+  margin-block-end: var(--space-8);
+}
+
+.process__list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A graphite 200 rule above each stage, with a short teal accent at its
+   start. The accent is decorative; the number and order carry the
+   sequence. */
+.process__stage {
+  position: relative;
+  padding-block-start: var(--space-4);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.process__stage::before {
+  content: '';
+  position: absolute;
+  inset-block-start: calc(var(--border-width) * -1);
+  inset-inline-start: 0;
+  width: var(--space-8);
+  height: calc(var(--border-width) * 2);
+  background-color: var(--color-accent);
+}
+
+/* Teal text via --color-link: teal 800 on graphite 100 (6.9:1). */
+.process__number {
+  display: block;
+  margin-block-end: var(--space-2);
+  color: var(--color-link);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-snug);
+}
+
+.process__name {
+  margin-block-end: var(--space-2);
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+}
+
+.process__description {
+  max-width: var(--measure);
+  margin-block: 0;
+  color: var(--color-text);
+  /* Break a word only if it cannot fit on a line of its own, rather than
+     anywhere as .container allows. */
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+@media (min-width: 768px) {
+  .process {
+    padding-block: var(--space-20);
+  }
+}
+
+@media (min-width: 1024px) {
+  .process__list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
