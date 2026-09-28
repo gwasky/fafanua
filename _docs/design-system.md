@@ -23,7 +23,7 @@ The palette is graphite-led, with signal teal as the single attention colour. As
 
 | Token | Hex | Use |
 |---|---|---|
-| `--graphite-950` | `#111417` | Deepest backgrounds, footer |
+| `--graphite-950` | `#111417` | Deepest backgrounds; not currently used |
 | `--graphite-900` | `#1C2024` | Primary brand colour, headings and body text on light, dark sections |
 | `--graphite-800` | `#2A3036` | Raised surfaces on dark |
 | `--graphite-700` | `#3B434B` | Borders and dividers on dark |
@@ -153,6 +153,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 - Page background is paper; cards and raised surfaces are white with subtle graphite 200 borders.
 - The hero is light. The future-ready section is the page's only dark section (graphite 900), and the plan allows at most two.
+- The footer is light: the paper background with a graphite 200 top border, so the future-ready section remains the only dark section.
 - In the future-ready section, the Intelligence colour may appear only as a restrained accent alongside teal.
 - Content must work at 360px, 768px, 1024px and 1440px with no horizontal scrolling. Cards reflow from one column on mobile to several on wider screens without compressing text.
 
