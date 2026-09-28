@@ -20,20 +20,24 @@
   padding-block: var(--space-4);
 }
 
-/* Shown on focus as a block above the logo row, pushing the header down
-   rather than covering the logo link: drawn over it, it left the logo too
-   small a target (WCAG 2.5.8, found by axe in #15).
+/* Shown over the header's top-left corner on focus, without moving
+   anything (#7). It is kept short (about 28px at the default text size)
+   so it covers only the top of the 48px logo link: the logo link keeps an
+   uncovered area of at least 24 x 24px, which WCAG 2.5.8 (target size)
+   requires of a partly covered target (#15). e2e/a11y.spec.ts checks both.
    .visually-hidden-focusable hides it again on blur. */
 .skip-link {
-  display: block;
-  width: fit-content;
-  max-width: calc(100% - 2 * var(--space-2));
-  margin: var(--space-2) var(--space-2) 0;
-  padding: var(--space-2) var(--space-4);
+  position: absolute;
+  inset-block-start: var(--space-1);
+  inset-inline-start: var(--space-2);
+  z-index: 1;
+  padding: var(--space-1) var(--space-3);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-sm);
   background-color: var(--color-surface);
   font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  white-space: nowrap;
 }
 
 .skip-link:link,

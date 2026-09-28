@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
 import { expectNoAxeViolations, openPage } from './fixtures.ts'
+import { formatViolations } from '../src/test/axe.ts'
 
 // Axe on the production preview in a real browser, where contrast,
 // target size and reflow can be measured. Each state is its own test, so
@@ -163,4 +165,74 @@ test.describe('320px at 200% text size', () => {
 
     await noHorizontalScroll(page)
   })
+})
+
+test.describe('skip link overlays the header without moving it (#7)', () => {
+  const layout = (page: Page) =>
+    page.evaluate(() => {
+      const box = (selector: string) => {
+        const element = document.querySelector(selector)
+        if (!element) throw new Error(`No ${selector}`)
+        const { x, y, width, height } = element.getBoundingClientRect()
+        return { x, y, width, height }
+      }
+      return {
+        header: box('header'),
+        logo: box('.site-header__logo'),
+        main: box('main'),
+        scrollY: window.scrollY,
+      }
+    })
+
+  const cases = [
+    { width: 320, text: '100%' },
+    { width: 360, text: '100%' },
+    { width: 768, text: '100%' },
+    { width: 1440, text: '100%' },
+    { width: 320, text: '200%' },
+  ]
+
+  for (const { width, text } of cases) {
+    test(`logo link and main stay put, and the logo keeps a 24px target, at ${width}px with ${text} text`, async ({ page }) => {
+      await openPage(page, width)
+      if (text !== '100%') {
+        await page.addStyleTag({ content: `html { font-size: ${text}; }` })
+        await expect
+          .poll(() =>
+            page.evaluate(() => getComputedStyle(document.documentElement).fontSize),
+          )
+          .toBe('32px')
+      }
+      const before = await layout(page)
+
+      await page.keyboard.press('Tab')
+      const skip = page.getByRole('link', { name: 'Skip to content' })
+      await expect(skip).toBeFocused()
+      await expect(skip).toBeInViewport({ ratio: 1 })
+
+      expect(await layout(page)).toEqual(before)
+
+      // WCAG 2.5.8: the part of the logo link the skip link leaves
+      // uncovered must still hold a 24 x 24px target. The skip link sits
+      // over the logo's top-left corner, so the largest free rectangle is
+      // the band below it or the strip to its right.
+      const skipBox = await skip.boundingBox()
+      const logo = before.logo
+      if (!skipBox) throw new Error('Skip link has no box')
+      const below = logo.y + logo.height - Math.max(logo.y, skipBox.y + skipBox.height)
+      const right = logo.x + logo.width - Math.max(logo.x, skipBox.x + skipBox.width)
+      const free = Math.max(
+        Math.min(logo.width, below),
+        Math.min(logo.height, right),
+      )
+      expect(free, `largest uncovered side of the logo link`).toBeGreaterThanOrEqual(24)
+
+      // And axe's own measure, at every width here, not only the two in
+      // the full scans above.
+      const { violations } = await new AxeBuilder({ page })
+        .withRules(['target-size'])
+        .analyze()
+      expect(violations, formatViolations(violations)).toEqual([])
+    })
+  }
 })
