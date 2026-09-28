@@ -1,0 +1,70 @@
+/*
+ * Shared component classes used by more than one section. Uses only
+ * semantic colour tokens and non-colour tokens, so a dark section can
+ * restyle them by reassigning the semantic layer.
+ */
+
+/*
+ * Buttons: links (or buttons) styled as calls to action. .button is the
+ * primary style; add .button--secondary for the secondary one.
+ *
+ * The :link, :visited and :hover rules override the global link colours
+ * and underline, which would otherwise put teal text on the teal fill.
+ * Size comes from min-height and padding, not a fixed height, so a long
+ * or zoomed label wraps inside the button instead of being clipped.
+ */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  min-width: var(--space-12);
+  min-height: var(--space-12);
+  padding: var(--space-2) var(--space-6);
+  /* Transparent here, but drawn in forced-colours mode so the button
+     stays outlined. */
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-button-bg);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  text-align: center;
+  text-decoration-line: none;
+  cursor: pointer;
+}
+
+.button:link,
+.button:visited,
+.button:hover {
+  color: var(--color-button-text);
+  text-decoration-line: none;
+}
+
+.button:hover {
+  background-color: var(--color-button-bg-hover);
+}
+
+.button--secondary {
+  border-color: var(--color-button-secondary-border);
+  background-color: transparent;
+}
+
+.button--secondary:link,
+.button--secondary:visited,
+.button--secondary:hover {
+  color: var(--color-button-secondary-text);
+}
+
+.button--secondary:hover {
+  border-color: var(--color-button-secondary-border-hover);
+  background-color: var(--color-button-secondary-bg-hover);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .button {
+    transition-property: background-color, border-color, color;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-standard);
+  }
+}

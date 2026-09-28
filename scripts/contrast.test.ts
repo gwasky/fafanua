@@ -78,6 +78,7 @@ const pairs: [string, string, Declarations][] = [
   ['--color-button-text', '--color-button-bg-hover', root],
   ['--color-button-secondary-text', '--color-bg', root],
   ['--color-button-secondary-text', '--color-surface', root],
+  ['--color-button-secondary-text', '--color-button-secondary-bg-hover', root],
 ]
 
 describe('semantic colour tokens', () => {

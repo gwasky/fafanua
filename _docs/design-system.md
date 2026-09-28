@@ -153,10 +153,12 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 **Buttons**
 
-- Primary on light: teal 700 fill, white text; hover teal 800.
+- Shared classes in `src/styles/components.css`: `.button` (primary) and `.button--secondary` (add it alongside `.button`). Use them on `<a>` for in-page calls to action and on `<button>` for actions; they are not tied to any section.
+- Primary on light: teal 700 fill, white text; hover teal 800. It has a transparent border so it stays outlined in forced-colours mode.
 - Primary on dark: teal 400 fill, graphite 900 text; hover teal 300.
-- Secondary: transparent fill, graphite 900 text, graphite 200 border (on dark: paper text, graphite 700 border).
-- Minimum touch target of 44 × 44px.
+- Secondary: transparent fill, graphite 900 text, graphite 200 border (on dark: paper text, graphite 700 border). On hover it takes a white fill and a graphite 600 border (`--color-button-secondary-bg-hover`, `--color-button-secondary-border-hover`); the text stays graphite 900 (16.4:1 on white).
+- Weight 500. Minimum touch target of 44 × 44px, from `min-height` and padding rather than a fixed height, so labels wrap instead of being clipped.
+- Neither button is underlined in any state, and visited buttons keep their button colours.
 
 **Links**
 

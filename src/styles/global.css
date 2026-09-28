@@ -5,6 +5,7 @@
 
 @import './tokens.css';
 @import './fonts.css';
+@import './components.css';
 
 :root {
   /* Light only in this release; the page ignores the OS dark setting. */

@@ -86,6 +86,10 @@
   --color-button-text: var(--white);
   --color-button-secondary-text: var(--graphite-900);
   --color-button-secondary-border: var(--graphite-200);
+  /* Secondary hover: a white fill and a darker border, so the change does
+     not rely on the text colour (graphite 900 on white is 16.4:1). */
+  --color-button-secondary-bg-hover: var(--white);
+  --color-button-secondary-border-hover: var(--graphite-600);
 
   /* Links on --color-surface-alt. Teal 700 on graphite 100 is 4.46:1 and
      fails AA, so links there use teal 800 (6.9:1), hovering to teal 900
@@ -119,6 +123,9 @@
   --leading-normal: 1.6;
 
   --measure: 65ch;
+  /* Large headings (the hero h1): two or three balanced lines at the
+     top of the type scale rather than one long line. */
+  --measure-heading: 20ch;
 
   /* Spacing (4px steps) */
   --space-1: 0.25rem;
