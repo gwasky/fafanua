@@ -30,12 +30,23 @@ describe('App', () => {
     ).toBeTruthy()
   })
 
-  it('has exactly one h1, the page heading, inside main', () => {
+  it('has exactly one h1, the hero heading, inside main', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading', { level: 1 })
 
     expect(headings).toHaveLength(1)
-    expect(headings[0]).toHaveAccessibleName('Fafanua Technologies')
+    expect(headings[0]).toHaveAccessibleName(
+      'Build a data foundation you can trust.',
+    )
     expect(screen.getByRole('main')).toContainElement(headings[0])
+  })
+
+  it('renders the hero as the first child of main', () => {
+    render(<App />)
+    const hero = screen.getByRole('region', {
+      name: 'Build a data foundation you can trust.',
+    })
+
+    expect(screen.getByRole('main').firstElementChild).toBe(hero)
   })
 })
