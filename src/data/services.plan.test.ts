@@ -1,7 +1,7 @@
 // Checks services.ts against _docs/plan.md Section 7, so the wording on
-// the site cannot drift from the plan. This is the only place allowed to
-// read the plan; the ?raw import resolves relative to this file and is
-// never part of the production bundle.
+// the site cannot drift from the plan. This and process.plan.test.ts are
+// the only files allowed to read the plan; the ?raw import resolves
+// relative to this file and is never part of the production bundle.
 import { describe, expect, it } from 'vitest'
 import plan from '../../_docs/plan.md?raw'
 import servicesSource from './services.ts?raw'
