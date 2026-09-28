@@ -1,0 +1,28 @@
+/*
+ * About: one heading and one paragraph on the page background, set
+ * explicitly as Hero and Services do. The change from the dark section
+ * above to paper is the only separator, so there is no border or shadow.
+ * One column at every width, with the same vertical rhythm as How We Work
+ * and future-ready.
+ */
+
+.about {
+  padding-block: var(--space-16);
+  background-color: var(--color-bg);
+}
+
+.about__text {
+  max-width: var(--measure);
+  margin-block: 0;
+  color: var(--color-text);
+  /* Break a word only if it cannot fit on a line of its own, rather than
+     anywhere as .container allows. */
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+@media (min-width: 768px) {
+  .about {
+    padding-block: var(--space-20);
+  }
+}
