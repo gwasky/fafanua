@@ -100,6 +100,34 @@
   --color-link-on-surface-alt: var(--teal-800);
   --color-link-hover-on-surface-alt: var(--teal-900);
 
+  /* Semantic colours on a graphite 900 surface (the future-ready section).
+     Do not use these directly: put the .surface-dark class (global.css)
+     on the section, and it reassigns every --color-* token above to its
+     value here, so everything inside it (text, headings, links, focus
+     ring, buttons) recolours without dark-specific component CSS. Every
+     text pairing is in the verified list and checked by
+     scripts/contrast.test.ts. */
+  --color-bg-on-dark: var(--graphite-900);
+  --color-surface-on-dark: var(--graphite-800);
+  /* Do not use .surface-alt inside .surface-dark. */
+  --color-surface-alt-on-dark: var(--graphite-800);
+  --color-text-on-dark: var(--graphite-300);
+  --color-heading-on-dark: var(--paper);
+  --color-text-muted-on-dark: var(--graphite-400);
+  --color-border-on-dark: var(--graphite-700);
+  --color-link-on-dark: var(--teal-400);
+  --color-link-hover-on-dark: var(--teal-300);
+  --color-accent-on-dark: var(--teal-400); /* graphics only */
+  --color-focus-on-dark: var(--teal-400);
+  --color-button-bg-on-dark: var(--teal-400);
+  --color-button-bg-hover-on-dark: var(--teal-300);
+  --color-button-text-on-dark: var(--graphite-900);
+  --color-button-secondary-text-on-dark: var(--paper);
+  --color-button-secondary-border-on-dark: var(--graphite-700);
+  /* The light value is white, and paper text on white would fail. */
+  --color-button-secondary-bg-hover-on-dark: var(--graphite-800);
+  --color-button-secondary-border-hover-on-dark: var(--graphite-400);
+
   /* Typography. "Inter Variable" and "Inter Fallback" (Arial with
      metric overrides, so the swap does not move the layout) are defined
      in fonts.css. */

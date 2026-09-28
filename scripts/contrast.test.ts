@@ -52,6 +52,8 @@ function contrast(a: string, b: string): number {
 
 const root = customProperties(tokensCss, ':root')
 const surfaceAlt = { ...root, ...customProperties(globalCss, '.surface-alt') }
+const surfaceDarkBlock = customProperties(globalCss, '.surface-dark')
+const surfaceDark = { ...root, ...surfaceDarkBlock }
 
 const textTokens = [
   '--color-text',
@@ -79,13 +81,41 @@ const pairs: [string, string, Declarations][] = [
   ['--color-button-secondary-text', '--color-bg', root],
   ['--color-button-secondary-text', '--color-surface', root],
   ['--color-button-secondary-text', '--color-button-secondary-bg-hover', root],
+  // Inside .surface-dark (graphite 900, with graphite 800 raised surfaces).
+  ...textTokens.map((text): [string, string, Declarations] => [
+    text,
+    '--color-bg',
+    surfaceDark,
+  ]),
+  ...textTokens.map((text): [string, string, Declarations] => [
+    text,
+    '--color-surface',
+    surfaceDark,
+  ]),
+  ['--color-button-text', '--color-button-bg', surfaceDark],
+  ['--color-button-text', '--color-button-bg-hover', surfaceDark],
+  ['--color-button-secondary-text', '--color-bg', surfaceDark],
+  ['--color-button-secondary-text', '--color-button-secondary-bg-hover', surfaceDark],
 ]
 
+// Resolved hex for each pair, so a failure names the colours and the
+// dark pairs are labelled apart from the light ones in the test output.
+const surfaceName = (tokens: Declarations) =>
+  tokens === surfaceDark ? 'dark' : tokens === surfaceAlt ? 'surface-alt' : 'light'
+
 describe('semantic colour tokens', () => {
-  it.each(pairs)('%s on %s meets WCAG AA (4.5:1)', (text, background, tokens) => {
-    const ratio = contrast(resolve(text, tokens), resolve(background, tokens))
-    expect(ratio).toBeGreaterThanOrEqual(4.5)
-  })
+  it.each(pairs.map(([text, background, tokens]) => [
+    text,
+    background,
+    surfaceName(tokens),
+    tokens,
+  ] as const))(
+    '%s on %s (%s) meets WCAG AA (4.5:1)',
+    (text, background, _surface, tokens) => {
+      const ratio = contrast(resolve(text, tokens), resolve(background, tokens))
+      expect(ratio).toBeGreaterThanOrEqual(4.5)
+    },
+  )
 
   it('reassigns links inside .surface-alt, because the default link colour fails there', () => {
     const defaultLink = contrast(
@@ -95,5 +125,40 @@ describe('semantic colour tokens', () => {
     expect(defaultLink).toBeLessThan(4.5)
     expect(surfaceAlt['--color-link']).not.toBe(root['--color-link'])
     expect(surfaceAlt['--color-link-hover']).not.toBe(root['--color-link-hover'])
+  })
+
+  it('reassigns every semantic colour token inside .surface-dark', () => {
+    const semantic = Object.keys(root).filter(
+      (name) =>
+        name.startsWith('--color-') &&
+        !name.endsWith('-on-surface-alt') &&
+        !name.endsWith('-on-dark'),
+    )
+
+    expect(semantic.length).toBeGreaterThan(0)
+    expect(
+      semantic.filter((name) => !(name in surfaceDarkBlock)),
+    ).toEqual([])
+  })
+
+  it('points .surface-dark only at the matching -on-dark tokens', () => {
+    for (const [name, value] of Object.entries(surfaceDarkBlock)) {
+      expect(value).toBe(`var(${name}-on-dark)`)
+      expect(root).toHaveProperty(`${name}-on-dark`)
+    }
+  })
+
+  it('uses a graphite 900 background and changes the secondary hover fill inside .surface-dark', () => {
+    expect(resolve('--color-bg', surfaceDark)).toBe(resolve('--graphite-900', root))
+    // The light hover fill is white, and paper text on white fails.
+    expect(
+      contrast(
+        resolve('--color-button-secondary-text', surfaceDark),
+        resolve('--color-button-secondary-bg-hover', root),
+      ),
+    ).toBeLessThan(4.5)
+    expect(surfaceDark['--color-button-secondary-bg-hover']).not.toBe(
+      root['--color-button-secondary-bg-hover'],
+    )
   })
 })

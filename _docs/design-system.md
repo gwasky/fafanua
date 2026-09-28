@@ -107,6 +107,13 @@ Use only these text and background combinations (WCAG 2.x ratios).
 | Teal 800 on white | 8.1:1 | AAA (link hover on cards and raised surfaces) |
 | Teal 800 on graphite 100 | 6.9:1 | AA (links on alternate section backgrounds) |
 | Teal 900 on graphite 100 | 10.4:1 | AAA (link hover on alternate section backgrounds) |
+| Graphite 300 on graphite 800 | 7.2:1 | AAA (body text on raised surfaces on dark) |
+| Paper on graphite 800 | 12.1:1 | AAA (headings on raised surfaces on dark; secondary button hover on dark) |
+| Graphite 400 on graphite 800 | 4.8:1 | AA (secondary text on raised surfaces on dark) |
+| Teal 400 on graphite 800 | 6.1:1 | AA (links on raised surfaces on dark) |
+| Teal 300 on graphite 900 | 9.5:1 | AAA (link hover on dark) |
+| Teal 300 on graphite 800 | 7.8:1 | AAA (link hover on raised surfaces on dark) |
+| Graphite 900 on teal 300 | 9.5:1 | AAA (primary button hover on dark) |
 
 Ratios are computed from the token hex values; `scripts/contrast.test.ts` checks every text and background pairing implied by the semantic tokens.
 
