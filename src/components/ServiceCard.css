@@ -1,0 +1,98 @@
+/*
+ * Service card: a white card with a service-line marker beside its text
+ * label, and a "Typical work" disclosure. The service-line colour is used
+ * only for the small marker, never for text or the card's fills.
+ */
+
+.service-card {
+  /* Set per service line by the modifier classes below. */
+  --marker: var(--color-border);
+
+  padding: var(--space-6);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text);
+}
+
+.service-card--build {
+  --marker: var(--service-build);
+}
+
+.service-card--govern {
+  --marker: var(--service-govern);
+}
+
+.service-card--trust {
+  --marker: var(--service-trust);
+}
+
+.service-card--insights {
+  --marker: var(--service-insights);
+}
+
+.service-card__title {
+  margin-block-end: var(--space-3);
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+}
+
+.service-card__line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block: 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+}
+
+/* A dot drawn with a border rather than a fill, so it stays visible in
+   forced-colours mode. */
+.service-card__marker {
+  flex: none;
+  width: var(--space-3);
+  height: var(--space-3);
+  border: calc(var(--space-3) / 2) solid var(--marker);
+  border-radius: var(--radius-full);
+}
+
+/* Amber is 2.2:1 on light surfaces, so it gets a graphite 200 outline. */
+.service-card--insights .service-card__marker {
+  outline: var(--border-width) solid var(--color-border);
+}
+
+.service-card__summary {
+  margin-block: 0 var(--space-6);
+}
+
+.service-card__chevron {
+  flex: none;
+  width: var(--space-4);
+  height: var(--space-4);
+}
+
+.service-card__toggle[aria-expanded='true'] .service-card__chevron {
+  transform: rotate(180deg);
+}
+
+/* No display rule here, so [hidden] always hides the list. */
+.service-card__work {
+  margin-block: var(--space-4) 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.service-card__work li {
+  padding-block: var(--space-2);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .service-card__chevron {
+    transition: transform var(--duration-fast) var(--ease-standard);
+  }
+}
