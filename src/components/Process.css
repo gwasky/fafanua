@@ -25,7 +25,8 @@
 
 /* A graphite 200 rule above each stage, with a short teal accent at its
    start. The accent is decorative; the number and order carry the
-   sequence. */
+   sequence. It is a border rather than a fill, so in forced-colours mode
+   it stays drawn over the rule instead of leaving a gap in it. */
 .process__stage {
   position: relative;
   padding-block-start: var(--space-4);
@@ -38,8 +39,7 @@
   inset-block-start: calc(var(--border-width) * -1);
   inset-inline-start: 0;
   width: var(--space-8);
-  height: calc(var(--border-width) * 2);
-  background-color: var(--color-accent);
+  border-block-start: calc(var(--border-width) * 2) solid var(--color-accent);
 }
 
 /* Teal text via --color-link: teal 800 on graphite 100 (6.9:1). */
