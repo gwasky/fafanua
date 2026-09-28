@@ -1,0 +1,41 @@
+/*
+ * Services: the section heading and a grid of service cards on the page
+ * background. One column by default, two from 768px and three from
+ * 1024px (literal breakpoints; see the note in tokens.css).
+ */
+
+.services {
+  padding-block: var(--space-16);
+  background-color: var(--color-bg);
+}
+
+.services__heading {
+  margin-block-end: var(--space-8);
+}
+
+.services__list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  /* An open card grows on its own without stretching its neighbours. */
+  align-items: start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .services {
+    padding-block: var(--space-20);
+  }
+
+  .services__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .services__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
