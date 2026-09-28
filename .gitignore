@@ -3,3 +3,24 @@ _docs/logos.zip
 
 # IDE settings
 .idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Dependencies and build output
+node_modules
+dist
+dist-ssr
+coverage
+
+# Local environment files
+*.local
+.env
+.env.*
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store

@@ -11,6 +11,7 @@ A single-page marketing website for **Fafanua Technologies Limited**, presenting
 
 ## Stack
 
+- Node 22 or later (see `.nvmrc`).
 - React, Vite and TypeScript, at the repository root.
 - Plain CSS with design tokens (`src/styles/tokens.css`), global styles and component styles. No CSS framework or component library.
 - Vitest and React Testing Library for unit tests; Playwright for end-to-end tests; axe for accessibility checks. See `_docs/testing-guidelines.md`.
