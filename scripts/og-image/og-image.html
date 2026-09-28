@@ -1,0 +1,91 @@
+<!doctype html>
+<!--
+  Source of public/og-image.png, the 1200 × 630 social preview image
+  (issue #14). It uses the positive logo from public/ unchanged and the
+  self-hosted Inter from node_modules, so run npm install first. Every
+  colour is a value from src/styles/tokens.css (scripts/og-image.test.ts
+  checks this): paper for the background, graphite 900 for the text.
+
+  The logo and text stay inside the centred 630 × 630 square, at least
+  60px from its edges, so square crops (WhatsApp, LinkedIn) keep them.
+
+  To regenerate the PNG, from the repository root, with Chrome or
+  Chromium in headless mode (the sRGB profile keeps the token colours
+  exact), then strip any C2PA chunk and run the image tests:
+
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+      --headless --hide-scrollbars --force-device-scale-factor=1 \
+      --force-color-profile=srgb --window-size=1200,630 \
+      --screenshot=public/og-image.png scripts/og-image/og-image.html
+    node --input-type=module -e "import { readFileSync, writeFileSync } from 'node:fs'; import { stripPng } from './scripts/strip-c2pa.mjs'; writeFileSync('public/og-image.png', stripPng(readFileSync('public/og-image.png')))"
+    npx vitest run scripts/og-image.test.ts scripts/public-assets.test.ts
+
+  Social platforms cache the image by URL, so if it changes after launch,
+  give it a new file name and update og:image and twitter:image in
+  index.html and vite.config.ts.
+-->
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8">
+    <title>Fafanua Technologies social preview</title>
+    <style>
+      @font-face {
+        font-family: "Inter Export";
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: block;
+        src: url("../../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2");
+      }
+
+      html,
+      body {
+        margin: 0;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #F4F4F1; /* paper (graphite 50) */
+      }
+
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* The 510 × 510 safe area: the centred 630 × 630 square less 60px
+         on every side. */
+      .safe {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 56px;
+        width: 510px;
+        height: 510px;
+      }
+
+      .logo {
+        display: block;
+        width: 320px;
+        height: auto;
+      }
+
+      p {
+        margin: 0;
+        font-family: "Inter Export";
+        font-size: 60px;
+        font-weight: 300;
+        line-height: 1.15;
+        text-align: center;
+        text-wrap: balance;
+        color: #1C2024; /* graphite 900 */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="safe">
+      <img class="logo" src="../../public/fafanua-logo.svg" alt="Fafanua">
+      <p>Build a data foundation you can trust.</p>
+    </div>
+  </body>
+</html>
