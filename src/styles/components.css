@@ -10,6 +10,7 @@
  *
  * The :link, :visited and :hover rules override the global link colours
  * and underline, which would otherwise put teal text on the teal fill.
+ * The bare class sets the colour for <button>, which does not inherit it.
  * Size comes from min-height and padding, not a fixed height, so a long
  * or zoomed label wraps inside the button instead of being clipped.
  */
@@ -34,6 +35,7 @@
   cursor: pointer;
 }
 
+.button,
 .button:link,
 .button:visited,
 .button:hover {
@@ -50,6 +52,7 @@
   background-color: transparent;
 }
 
+.button--secondary,
 .button--secondary:link,
 .button--secondary:visited,
 .button--secondary:hover {
