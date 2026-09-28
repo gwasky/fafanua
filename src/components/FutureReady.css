@@ -1,0 +1,96 @@
+/*
+ * Future-ready: the page's only dark section. .surface-dark (global.css)
+ * supplies the graphite 900 background and the dark text, heading, link
+ * and accent colours, so nothing here is dark-specific. One column by
+ * default; from 1024px (literal breakpoint; see the note in tokens.css)
+ * the text and graphic sit side by side, in DOM order.
+ */
+
+.future-ready {
+  padding-block: var(--space-16);
+}
+
+.future-ready__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-10);
+}
+
+.future-ready__statement {
+  max-width: var(--measure);
+  margin-block: 0;
+  color: var(--color-text);
+  /* Break a word only if it cannot fit on a line of its own, rather than
+     anywhere as .container allows. */
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+/*
+ * The graphic: four labels, each with a small teal marker, on a thin rail
+ * that runs down to one end mark in the Intelligence colour. Markers, rail
+ * and end mark are all borders, so forced-colours mode keeps drawing them
+ * (it removes background colours). Every centre sits on the same vertical
+ * line, half the end mark's width from the start edge.
+ */
+.future-ready__graphic {
+  position: relative;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+.future-ready__graphic::before {
+  content: '';
+  position: absolute;
+  inset-block: calc(var(--leading-snug) * 1em / 2) var(--space-3);
+  inset-inline-start: calc(var(--space-3) / 2 - var(--border-width) / 2);
+  border-inline-start: var(--border-width) solid var(--color-border);
+}
+
+.future-ready__list {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.future-ready__item {
+  position: relative;
+  padding-inline-start: var(--space-8);
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
+}
+
+.future-ready__item::before {
+  content: '';
+  position: absolute;
+  inset-block-start: calc((var(--leading-snug) * 1em - var(--space-2)) / 2);
+  inset-inline-start: calc((var(--space-3) - var(--space-2)) / 2);
+  border: calc(var(--space-2) / 2) solid var(--color-accent);
+  border-radius: var(--radius-full);
+}
+
+/* A 12px ring, the only use of the Intelligence colour on the page. */
+.future-ready__end {
+  display: block;
+  width: var(--space-3);
+  height: var(--space-3);
+  margin-block-start: var(--space-6);
+  border: calc(var(--border-width) * 2) solid var(--service-intelligence);
+  border-radius: var(--radius-full);
+}
+
+@media (min-width: 768px) {
+  .future-ready {
+    padding-block: var(--space-20);
+  }
+}
+
+@media (min-width: 1024px) {
+  .future-ready__layout {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-16);
+    align-items: center;
+  }
+}
