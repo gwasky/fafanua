@@ -24,3 +24,7 @@ npm-debug.log*
 
 # OS files
 .DS_Store
+
+# Cloudflare
+.wrangler/
+.dev.vars*

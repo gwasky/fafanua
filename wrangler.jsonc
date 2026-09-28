@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "fafanua-website",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-26",
+  // Preview URLs on *.workers.dev only. Do not add routes, a custom domain
+  // or an account_id without the owner's approval.
+  "workers_dev": true,
+  "preview_urls": true,
+  "assets": {
+    // Unknown paths reach the Worker and return 404; there is no SPA fallback.
+    "not_found_handling": "none"
+  }
+}

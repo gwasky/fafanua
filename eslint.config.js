@@ -6,7 +6,7 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default defineConfig([
-  globalIgnores(['dist', '_docs']),
+  globalIgnores(['dist', '_docs', '.wrangler', 'worker-configuration.d.ts']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -18,6 +18,12 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2023,
       globals: globals.browser,
+    },
+  },
+  {
+    files: ['worker/**/*.ts'],
+    languageOptions: {
+      globals: globals.serviceworker,
     },
   },
 ])
