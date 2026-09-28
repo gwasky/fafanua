@@ -20,19 +20,20 @@
   padding-block: var(--space-4);
 }
 
-/* Shown over the header's top-left corner on focus, without moving
-   anything. .visually-hidden-focusable hides it again on blur. */
+/* Shown on focus as a block above the logo row, pushing the header down
+   rather than covering the logo link: drawn over it, it left the logo too
+   small a target (WCAG 2.5.8, found by axe in #15).
+   .visually-hidden-focusable hides it again on blur. */
 .skip-link {
-  position: absolute;
-  inset-block-start: var(--space-2);
-  inset-inline-start: var(--space-2);
-  z-index: 1;
+  display: block;
+  width: fit-content;
+  max-width: calc(100% - 2 * var(--space-2));
+  margin: var(--space-2) var(--space-2) 0;
   padding: var(--space-2) var(--space-4);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-sm);
   background-color: var(--color-surface);
   font-weight: var(--weight-medium);
-  white-space: nowrap;
 }
 
 .skip-link:link,
@@ -48,17 +49,21 @@ main:focus {
 }
 
 /* The link box is at least 48px tall, so it is a comfortable touch
-   target even though the logo itself is shorter. */
+   target even though the logo itself is shorter. It may shrink below its
+   width only when the line is narrower than the logo: at 320px with 200%
+   text the 10rem logo would otherwise overflow the page (#15). */
 .site-header__logo {
   display: flex;
-  flex-shrink: 0;
+  min-width: 0;
   align-items: center;
   min-height: var(--space-12);
 }
 
-/* 160px wide at every width: above the 120px minimum and small enough not
-   to dominate. The height follows from the width and height attributes,
-   so the space is reserved before the SVG loads. */
+/* 160px wide at every width at the default text size: above the 120px
+   minimum and small enough not to dominate. The global max-width: 100%
+   lets it shrink with its link; the narrowest case, 320px at 200% text,
+   still leaves it 256px wide. The height follows from the width and
+   height attributes, so the space is reserved before the SVG loads. */
 .site-header__logo img {
   width: calc(var(--space-20) * 2);
   height: auto;
