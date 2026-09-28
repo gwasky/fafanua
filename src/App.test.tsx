@@ -1,6 +1,8 @@
 import { render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
+import { navigation } from './data/navigation.ts'
+import { processStages } from './data/process.ts'
 
 // jsdom has no matchMedia, which the header uses for its breakpoint.
 beforeEach(() => {
@@ -76,12 +78,40 @@ describe('App', () => {
     }
   })
 
-  it('orders headings h1, h2 Services, then six h3s', () => {
+  it('renders the How We Work section directly after services, last in main', () => {
     render(<App />)
-    const levels = screen
-      .getAllByRole('heading')
-      .map((heading) => Number(heading.tagName.slice(1)))
+    const services = screen.getByRole('region', { name: 'Services' })
+    const process = screen.getByRole('region', { name: 'How We Work' })
+    const nav = navigation.find((item) => item.label === 'How We Work')
 
-    expect(levels).toEqual([1, 2, 3, 3, 3, 3, 3, 3])
+    expect(services.nextElementSibling).toBe(process)
+    expect(screen.getByRole('main').lastElementChild).toBe(process)
+    expect(process.id).toBe(nav?.id)
+    expect(
+      within(screen.getByRole('banner')).getByRole('link', {
+        name: 'How We Work',
+      }),
+    ).toHaveAttribute('href', `#${process.id}`)
+  })
+
+  it('shows the four stages inside the How We Work section', () => {
+    render(<App />)
+    const process = screen.getByRole('region', { name: 'How We Work' })
+
+    expect(
+      within(process)
+        .getAllByRole('heading', { level: 3 })
+        .map((heading) => heading.textContent),
+    ).toEqual(processStages.map((stage) => stage.name))
+  })
+
+  it('orders headings h1, h2 Services, six h3s, h2 How We Work, four h3s', () => {
+    render(<App />)
+    const headings = screen.getAllByRole('heading')
+    const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
+
+    expect(levels).toEqual([1, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3])
+    expect(headings[1].textContent).toBe('Services')
+    expect(headings[8].textContent).toBe('How We Work')
   })
 })
