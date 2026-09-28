@@ -36,23 +36,49 @@ export function findColours(text) {
   return results.sort((a, b) => a.line - b.line || a.column - b.column)
 }
 
+/**
+ * Whether the colour check scans a file, given its path relative to the
+ * repository root with forward slashes.
+ * @param {string} relativePath
+ */
+export function shouldScan(relativePath) {
+  return (
+    relativePath.startsWith('src/') &&
+    EXTENSIONS.has(path.posix.extname(relativePath)) &&
+    !ALLOWED.has(relativePath)
+  )
+}
+
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name)
     if (entry.isDirectory()) yield* walk(full)
-    else if (EXTENSIONS.has(path.extname(entry.name))) yield full
+    else yield full
   }
+}
+
+/**
+ * Lists the files under root/src that the colour check scans, as sorted
+ * paths relative to root.
+ * @param {string} root
+ * @returns {Promise<string[]>}
+ */
+export async function collectFiles(root) {
+  const files = []
+  for await (const file of walk(path.join(root, 'src'))) {
+    const relative = path.relative(root, file).split(path.sep).join('/')
+    if (shouldScan(relative)) files.push(relative)
+  }
+  return files.sort()
 }
 
 async function main() {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
   let failures = 0
 
-  for await (const file of walk(path.join(root, 'src'))) {
-    const relative = path.relative(root, file).split(path.sep).join('/')
-    if (ALLOWED.has(relative)) continue
-
-    for (const { line, column, match } of findColours(await readFile(file, 'utf8'))) {
+  for (const relative of await collectFiles(root)) {
+    const text = await readFile(path.join(root, relative), 'utf8')
+    for (const { line, column, match } of findColours(text)) {
       console.error(`${relative}:${line}:${column}  ${match}`)
       failures++
     }

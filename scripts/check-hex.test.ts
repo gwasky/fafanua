@@ -1,6 +1,9 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest'
-import { findColours } from './check-hex.mjs'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { collectFiles, findColours, shouldScan } from './check-hex.mjs'
 
 const matches = (text: string) =>
   findColours(text).map((result: { match: string }) => result.match)
@@ -73,6 +76,69 @@ describe('findColours', () => {
     expect(matches('border: 1px solid #ccc; color: hsl(0 0% 0%);')).toEqual([
       '#ccc',
       'hsl(',
+    ])
+  })
+})
+
+describe('shouldScan', () => {
+  it.each([
+    'src/App.tsx',
+    'src/main.tsx',
+    'src/App.test.tsx',
+    'src/test/setup.ts',
+    'src/styles/global.css',
+    'src/components/deep/Nested.module.css',
+  ])('scans %s', (file) => {
+    expect(shouldScan(file)).toBe(true)
+  })
+
+  it.each([
+    'src/styles/tokens.css',
+    'src/data/logo.svg',
+    'src/notes.md',
+    'src/legacy.js',
+    'index.html',
+    'public/favicon.svg',
+    'worker/index.ts',
+    'scripts/check-hex.mjs',
+  ])('skips %s', (file) => {
+    expect(shouldScan(file)).toBe(false)
+  })
+})
+
+describe('collectFiles', () => {
+  let root: string
+
+  beforeEach(async () => {
+    root = await mkdtemp(path.join(tmpdir(), 'check-hex-'))
+    const files = [
+      'src/App.tsx',
+      'src/App.test.tsx',
+      'src/styles/global.css',
+      'src/styles/tokens.css',
+      'src/components/Card/Card.tsx',
+      'src/assets/logo.svg',
+      'src/README.md',
+      'public/favicon.svg',
+      'worker/index.ts',
+      'index.html',
+    ]
+    for (const file of files) {
+      await mkdir(path.dirname(path.join(root, file)), { recursive: true })
+      await writeFile(path.join(root, file), '')
+    }
+  })
+
+  afterEach(async () => {
+    await rm(root, { recursive: true, force: true })
+  })
+
+  it('walks every .css, .ts and .tsx file under src/, including nested and test files, except tokens.css', async () => {
+    expect(await collectFiles(root)).toEqual([
+      'src/App.test.tsx',
+      'src/App.tsx',
+      'src/components/Card/Card.tsx',
+      'src/styles/global.css',
     ])
   })
 })
