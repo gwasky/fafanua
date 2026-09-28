@@ -1,2 +1,5 @@
 # Brand source files are kept private
 _docs/logos.zip
+
+# IDE settings
+.idea/

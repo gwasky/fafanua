@@ -7,13 +7,13 @@ Guidance for AI coding agents and contributors working in this repository.
 A single-page marketing website for **Fafanua Technologies Limited**, presenting its Phase 1 data-foundation services to East African businesses, government institutions and development organisations.
 
 - **Plan:** `_docs/plan.md` is the source of truth for content, brand, colours, accessibility and acceptance criteria. Read the relevant section before starting a task.
-- **Backlog:** work is tracked as GitHub issues at https://github.com/gwasky/fafanua/issues. Each issue is self-contained; work on one issue at a time and reference it in commits and pull requests.
+- **Backlog:** work is tracked as GitHub issues at https://github.com/gwasky/fafanua/issues. Follow `_docs/process.md` for how to pick up, work on and close an issue.
 
 ## Stack
 
 - React, Vite and TypeScript, at the repository root.
 - Plain CSS with design tokens (`src/styles/tokens.css`), global styles and component styles. No CSS framework or component library.
-- Vitest and React Testing Library for unit tests; Playwright for end-to-end tests; axe for accessibility checks.
+- Vitest and React Testing Library for unit tests; Playwright for end-to-end tests; axe for accessibility checks. See `_docs/testing-guidelines.md`.
 - Cloudflare Workers with Static Assets, via the Cloudflare Vite plugin. The Worker lives in `worker/index.ts`.
 
 Do not add Next.js, React Router, a CMS, a database, authentication, server rendering or heavy runtime dependencies.
@@ -49,14 +49,9 @@ Before considering a change done, run `lint`, `typecheck`, `test` and `build`, a
 - Never attach `fafanua.tech` or any custom domain, and never deploy to production, without explicit approval from the owner. Preview deployments on `*.workers.dev` are fine.
 - Never commit secrets. Use `wrangler secret` for any future credentials and document variable names in the README only.
 
-### Brand and colour
+### Brand, UI and accessibility
 
-- Every colour must come from a token in `src/styles/tokens.css`. No hex values anywhere else.
-- Use only the verified contrast pairings in Section 4.2 of the plan. Never put white text on teal 600, and never use graphite 500 or teal 600 for body text on light backgrounds.
-- Teal is an accent (about 5% of the page): links, primary buttons, focus rings, the F symbol and small highlights. Never use it for large backgrounds or body text.
-- Service-line colours are small markers only and always sit next to a text label.
-- Do not redraw or re-typeset the logo, and do not display the full logo narrower than 120px.
-- The logo source archive (`_docs/logos.zip`) is kept out of git. Do not commit it.
+Follow `_docs/design-system.md` for colours, typography, logo use, layout, components and accessibility. In short: every colour comes from a token, only verified contrast pairings are allowed, and the logo source archive (`_docs/logos.zip`) must never be committed.
 
 ### Content
 
@@ -64,13 +59,6 @@ Before considering a change done, run `lint`, `typecheck`, `test` and `build`, a
 - Copy the wording for services, process stages and statements from the plan rather than rewriting it.
 - Do not present Fafanua Intelligence as an existing product, and do not claim SaaS or AI features.
 - No stock photos, generic AI imagery, heavy gradients, glassmorphism or excessive animation.
-
-### Accessibility
-
-- Semantic landmarks, logical heading order, visible focus states and full keyboard support.
-- Touch targets of at least 44px, and no meaning conveyed by colour alone.
-- Respect `prefers-reduced-motion`.
-- The layout must work at 360px, 768px, 1024px and 1440px widths with no horizontal scrolling.
 
 ## Code style
 
@@ -81,10 +69,10 @@ Before considering a change done, run `lint`, `typecheck`, `test` and `build`, a
 
 ## Commits and pull requests
 
-- Commit only when asked. Keep each commit focused on one issue.
+- Commit regularly while working on an issue, keeping each commit focused on that issue.
 - Reference the issue number in commit messages and pull requests (for example, `Closes #7`).
 
-Documents
+## Documents
 
 - `_docs/process.md` - how work is organized
 - Before writing tests, read `_docs/testing-guidelines.md`
