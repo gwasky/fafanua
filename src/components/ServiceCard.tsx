@@ -32,8 +32,8 @@ function ServiceCard({ service }: ServiceCardProps) {
         aria-controls={panelId}
         onClick={() => setOpen((isOpen) => !isOpen)}
       >
-        Typical work
-        <span className="visually-hidden"> for {service.title}</span>
+        Typical work{' '}
+        <span className="visually-hidden">for {service.title}</span>
         <svg
           className="service-card__chevron"
           viewBox="0 0 16 16"
