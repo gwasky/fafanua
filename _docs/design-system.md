@@ -99,12 +99,23 @@ Use only these text and background combinations (WCAG 2.x ratios).
 | Graphite 900 on teal 400 | 7.5:1 | AAA (primary button on dark) |
 | Teal 400 on graphite 900 | 7.5:1 | AAA |
 | Service-line text-safe variants on paper | 5.0:1 to 5.7:1 | AA (Insights is 4.97:1) |
+| White on teal 800 | 8.1:1 | AAA (primary button hover on light) |
+| Graphite 900 on white | 16.4:1 | AAA (headings and body text on cards and raised surfaces) |
+| Graphite 600 on white | 6.6:1 | AA (secondary text on cards and raised surfaces) |
+| Graphite 900 on graphite 100 | 14.1:1 | AAA (headings and body text on alternate section backgrounds) |
+| Graphite 600 on graphite 100 | 5.7:1 | AA (secondary text on alternate section backgrounds) |
+| Teal 800 on white | 8.1:1 | AAA (link hover on cards and raised surfaces) |
+| Teal 800 on graphite 100 | 6.9:1 | AA (links on alternate section backgrounds) |
+| Teal 900 on graphite 100 | 10.4:1 | AAA (link hover on alternate section backgrounds) |
+
+Ratios are computed from the token hex values; `scripts/contrast.test.ts` checks every text and background pairing implied by the semantic tokens.
 
 Never use:
 
 - White text on teal 600 (3.6:1).
 - Teal 600 for text on paper (3.3:1), except large text.
 - Graphite 500 for text on light backgrounds (3.9:1).
+- Teal 700 for text or links on graphite 100 (4.46:1, fails AA for normal text).
 
 ## Typography
 
@@ -150,6 +161,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 **Links**
 
 - On light: teal 700, underlined in body text. On dark: teal 400.
+- On graphite 100 (alternate section backgrounds): teal 800, hover teal 900, because teal 700 fails AA there. Put the `.surface-alt` class on the element with the graphite 100 background instead of setting `--color-surface-alt` as a background directly; it sets the background and reassigns `--color-link` and `--color-link-hover` for everything inside it.
 
 **Focus**
 
