@@ -53,7 +53,9 @@ describe('Header', () => {
   it('has one Main navigation landmark and adds no heading', () => {
     const { banner } = renderPage()
 
-    expect(screen.getAllByRole('navigation')).toHaveLength(1)
+    // The footer's nav is the page's other one, named "Footer".
+    expect(screen.getAllByRole('navigation', { name: 'Main' })).toHaveLength(1)
+    expect(within(banner).getAllByRole('navigation')).toHaveLength(1)
     expect(within(banner).queryAllByRole('heading')).toHaveLength(0)
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
   })

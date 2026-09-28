@@ -6,6 +6,7 @@ import { processStages } from './data/process.ts'
 
 const FUTURE_READY =
   'The strongest analytics and AI systems begin with trusted data.'
+const CONTACT = 'Discuss your data foundation.'
 
 // jsdom has no matchMedia, which the header uses for its breakpoint.
 beforeEach(() => {
@@ -119,7 +120,7 @@ describe('App', () => {
     expect(main.lastElementChild).not.toBe(futureReady)
   })
 
-  it('renders the About section directly after future-ready, last in main', () => {
+  it('renders the About section directly after future-ready', () => {
     render(<App />)
     const main = screen.getByRole('main')
     const futureReady = screen.getByRole('region', { name: FUTURE_READY })
@@ -127,7 +128,93 @@ describe('App', () => {
 
     expect(about.parentElement).toBe(main)
     expect(futureReady.nextElementSibling).toBe(about)
-    expect(main.lastElementChild).toBe(about)
+    expect(main.lastElementChild).not.toBe(about)
+  })
+
+  it('renders the Contact section directly after About, last in main', () => {
+    render(<App />)
+    const main = screen.getByRole('main')
+    const about = screen.getByRole('region', { name: 'About Fafanua' })
+    const contact = screen.getByRole('region', { name: CONTACT })
+
+    expect(contact.parentElement).toBe(main)
+    expect(about.nextElementSibling).toBe(contact)
+    expect(main.lastElementChild).toBe(contact)
+  })
+
+  it('lands the header Contact link and the hero button on section#contact', () => {
+    render(<App />)
+    const contact = screen.getByRole('region', { name: CONTACT })
+    const nav = navigation.find((item) => item.label === 'Contact')
+    const targets = [
+      within(screen.getByRole('banner')).getByRole('link', { name: 'Contact' }),
+      screen.getByRole('link', { name: 'Contact our team' }),
+    ]
+
+    expect(contact.tagName).toBe('SECTION')
+    expect(contact.id).toBe('contact')
+    expect(contact.id).toBe(nav?.id)
+    for (const link of targets) {
+      expect(link).toHaveAttribute('href', '#contact')
+    }
+    expect(document.querySelectorAll('#contact')).toHaveLength(1)
+  })
+
+  it('renders the footer after main, outside it, as the only contentinfo', () => {
+    render(<App />)
+    const main = screen.getByRole('main')
+    const footers = screen.getAllByRole('contentinfo')
+
+    expect(footers).toHaveLength(1)
+    expect(main).not.toContainElement(footers[0])
+    expect(footers[0].closest('main, section, article')).toBeNull()
+    expect(footers[0].parentElement).toBe(main.parentElement)
+    expect(main.nextElementSibling).toBe(footers[0])
+  })
+
+  it('orders the landmarks banner, main, contentinfo', () => {
+    render(<App />)
+    const landmarks = [
+      screen.getByRole('banner'),
+      screen.getByRole('main'),
+      screen.getByRole('contentinfo'),
+    ]
+
+    for (let i = 1; i < landmarks.length; i++) {
+      expect(
+        landmarks[i - 1].compareDocumentPosition(landmarks[i]) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    }
+  })
+
+  it('gives every mailto link on the page the exact address, three in all', () => {
+    render(<App />)
+    const links = document.querySelectorAll('a[href^="mailto:"]')
+
+    expect(links).toHaveLength(3)
+    for (const link of links) {
+      expect(link.getAttribute('href')).toBe('mailto:info@fafanua.tech')
+      expect(link).not.toHaveAttribute('target')
+    }
+    expect(document.querySelectorAll('a[href*="mailto" i]')).toHaveLength(3)
+  })
+
+  it('has no form, iframe or Turnstile script', () => {
+    render(<App />)
+
+    expect(document.querySelectorAll('form, iframe, textarea')).toHaveLength(0)
+    expect(
+      document.querySelector('script[src*="challenges.cloudflare.com"]'),
+    ).toBeNull()
+    expect(document.body.innerHTML).not.toContain('challenges.cloudflare.com')
+  })
+
+  it('has no duplicate ids', () => {
+    render(<App />)
+    const ids = [...document.querySelectorAll('[id]')].map((el) => el.id)
+
+    expect(new Set(ids).size).toBe(ids.length)
   })
 
   it('lands the header About link, desktop and mobile, on the About section', () => {
@@ -161,16 +248,20 @@ describe('App', () => {
     expect(dark[0].querySelector('.surface-alt')).toBeNull()
   })
 
-  it('orders headings h1, h2 Services, six h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua', () => {
+  it('orders headings h1, h2 Services, six h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
 
-    expect(levels).toEqual([1, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2])
+    expect(levels).toEqual([1, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2])
     expect(levels.filter((level) => level === 1)).toHaveLength(1)
     expect(headings[1].textContent).toBe('Services')
     expect(headings[8].textContent).toBe('How We Work')
     expect(headings[13].textContent).toBe(FUTURE_READY)
     expect(headings[14].textContent).toBe('About Fafanua')
+    expect(headings[15].textContent).toBe(CONTACT)
+    expect(
+      within(screen.getByRole('contentinfo')).queryAllByRole('heading'),
+    ).toHaveLength(0)
   })
 })
