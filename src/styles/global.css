@@ -1,0 +1,165 @@
+/*
+ * Site-wide base styles. Uses only semantic colour tokens and non-colour
+ * tokens from tokens.css; never primitives or literal values.
+ */
+
+@import './tokens.css';
+
+:root {
+  /* Light only in this release; the page ignores the OS dark setting. */
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
+  overflow-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-size-adjust: 100%;
+}
+
+/* Headings: light and regular weights only, never bold. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-block: 0 var(--space-4);
+  color: var(--color-heading);
+  line-height: var(--leading-tight);
+  text-wrap: balance;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: var(--weight-light);
+}
+
+h4,
+h5,
+h6 {
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-snug);
+}
+
+h1 {
+  font-size: var(--text-4xl);
+}
+
+h2 {
+  font-size: var(--text-3xl);
+}
+
+h3 {
+  font-size: var(--text-2xl);
+}
+
+h4 {
+  font-size: var(--text-xl);
+}
+
+h5 {
+  font-size: var(--text-lg);
+}
+
+h6 {
+  font-size: var(--text-base);
+}
+
+strong,
+b {
+  font-weight: var(--weight-medium);
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+img,
+video {
+  height: auto;
+}
+
+a {
+  color: var(--color-link);
+  text-decoration-line: underline;
+}
+
+a:visited {
+  color: var(--color-link);
+}
+
+a:hover {
+  color: var(--color-link-hover);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a {
+    transition: color var(--duration-fast) var(--ease-standard);
+  }
+}
+
+/* Keyboard focus only; mouse clicks do not show the ring. */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-padding);
+  overflow-wrap: anywhere;
+}
+
+/*
+ * Hidden visually but still announced by screen readers. The 1px box is
+ * the standard technique, not a spacing value.
+ */
+.visually-hidden,
+.visually-hidden-focusable:not(:focus, :focus-within) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
