@@ -96,9 +96,10 @@
   --color-link-on-surface-alt: var(--teal-800);
   --color-link-hover-on-surface-alt: var(--teal-900);
 
-  /* Typography. The Inter font and its metric-matched fallback are
-     loaded in #4. */
-  --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Typography. "Inter Variable" and "Inter Fallback" (Arial with
+     metric overrides, so the swap does not move the layout) are defined
+     in fonts.css. */
+  --font-sans: "Inter Variable", "Inter Fallback", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   --weight-light: 300; /* large headings */
   --weight-regular: 400; /* body text */

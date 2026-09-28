@@ -4,6 +4,7 @@
  */
 
 @import './tokens.css';
+@import './fonts.css';
 
 :root {
   /* Light only in this release; the page ignores the OS dark setting. */
@@ -84,6 +85,14 @@ h5 {
 
 h6 {
   font-size: var(--text-base);
+}
+
+/* Browsers do not inherit font settings into form controls. */
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 strong,
