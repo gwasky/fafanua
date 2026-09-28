@@ -1,0 +1,92 @@
+/*
+ * Footer: light, on the page background (set explicitly) with a graphite
+ * 200 top border, so it reads as separate from the graphite 100 Contact
+ * section above it; future-ready stays the only dark section. Logo, nav,
+ * email and copyright stack in DOM order; from 1024px the logo and nav
+ * share the first row and the email and copyright the second (literal
+ * breakpoints; see the note in tokens.css). No reordering, so the visual
+ * order always matches the DOM order.
+ */
+
+.site-footer {
+  padding-block: var(--space-10);
+  border-block-start: var(--border-width) solid var(--color-border);
+  background-color: var(--color-bg);
+}
+
+.site-footer__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+/* 160px wide, as in the header: above the 120px minimum. The height
+   follows from the width and height attributes. */
+.site-footer__logo {
+  width: calc(var(--space-20) * 2);
+  height: auto;
+}
+
+.site-footer__list {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* As the header nav: graphite 900, underlined on hover only. Each link
+   box is at least 48px tall. */
+.site-footer__link {
+  display: flex;
+  align-items: center;
+  min-height: var(--space-12);
+  font-weight: var(--weight-regular);
+  white-space: nowrap;
+  text-decoration-line: none;
+  text-underline-offset: var(--space-1);
+}
+
+.site-footer__link:link,
+.site-footer__link:visited,
+.site-footer__link:hover {
+  color: var(--color-text);
+}
+
+.site-footer__link:hover {
+  text-decoration-line: underline;
+}
+
+/* The global link colours and underline apply: teal 700 on paper, hover
+   teal 800. The address never breaks. */
+.site-footer__email {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--space-12);
+  white-space: nowrap;
+  text-underline-offset: var(--space-1);
+}
+
+.site-footer__copyright {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+}
+
+@media (min-width: 1024px) {
+  .site-footer__inner {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: var(--space-8);
+    row-gap: var(--space-2);
+  }
+
+  .site-footer__nav,
+  .site-footer__copyright {
+    justify-self: end;
+  }
+}
