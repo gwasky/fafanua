@@ -17,9 +17,12 @@ const BASE_URL = `http://localhost:${PORT}`
 // The webkit-width projects run responsive.spec.ts the same way in
 // Playwright's WebKit, Safari's engine, and the webkit project runs
 // links.spec.ts, so layout, navigation and anchor problems that only
-// show up in Safari are caught too. They use the Desktop Safari preset
-// with its deviceScaleFactor of 2: assertions are in CSS pixels, so only
-// the screenshot size changes. The other specs run in chromium only.
+// show up in Safari are caught too. The webkit project now runs the
+// keyboard and Menu toggle specs as well (#46), so Tab order, focus rings
+// and the Menu toggle are checked in Safari's engine. They use the Desktop
+// Safari preset with its deviceScaleFactor of 2: assertions are in CSS
+// pixels, so only the screenshot size changes. The a11y, italics, fonts
+// and hash specs run in chromium only.
 // WebKit is installed with npx playwright install webkit.
 export default defineConfig({
   testDir: 'e2e',
@@ -50,7 +53,7 @@ export default defineConfig({
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
-      testMatch: 'links.spec.ts',
+      testMatch: ['links.spec.ts', 'keyboard.spec.ts', 'menu-toggle.spec.ts'],
     },
     ...WIDTHS.map((width) => ({
       name: `webkit-width-${width}`,
