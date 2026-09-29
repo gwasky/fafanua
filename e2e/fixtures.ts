@@ -133,10 +133,19 @@ export async function focusedName(page: Page) {
  * even when the next stop is a button, while Alt+Tab reaches the same stop
  * as Chromium's Tab. In macOS Safari with default settings, Option+Tab is
  * the key that reaches every link.
+ *
+ * With `{ shift: true }` it moves to the previous stop instead:
+ * Alt+Shift+Tab in WebKit and Shift+Tab elsewhere. Measured in the same
+ * WebKit for #46, at 1440 and 360 with reduced motion: plain Tab from the
+ * focused logo link goes to body, at 1440 (next stop: the Services link)
+ * and at 360, where the next stop is the Menu button. Shift+Tab from the
+ * focused Menu button also goes to body. Alt+Shift+Tab reaches the same
+ * stops as Chromium's Shift+Tab, in the same order.
  */
-export async function pressTab(page: Page) {
+export async function pressTab(page: Page, { shift = false }: { shift?: boolean } = {}) {
   const engine = page.context().browser()?.browserType().name()
-  await page.keyboard.press(engine === 'webkit' ? 'Alt+Tab' : 'Tab')
+  const key = shift ? 'Shift+Tab' : 'Tab'
+  await page.keyboard.press(engine === 'webkit' ? `Alt+${key}` : key)
 }
 
 /** The focused element's :focus-visible state and computed outline. */
