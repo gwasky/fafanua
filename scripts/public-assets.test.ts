@@ -1,5 +1,5 @@
-// Checks the committed logo and icon files and the icon tags in
-// index.html. Runs in jsdom for DOMParser.
+// Checks the committed logo and icon files, the _headers rules and the
+// icon tags in index.html. Runs in jsdom for DOMParser.
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -155,5 +155,37 @@ describe('index.html', () => {
     for (const link of doc.head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]')) {
       expect(publicFiles).toContain(link.getAttribute('href')!.slice(1))
     }
+  })
+})
+
+describe('_headers', () => {
+  // Maps each path pattern to its headers, one "Name: value" per line.
+  const rules = new Map<string, string[]>()
+  let current: string[] = []
+  for (const line of read('_headers').toString('utf8').split('\n')) {
+    if (line.startsWith('#') || line.trim() === '') continue
+    if (line.startsWith(' ')) current.push(line.trim())
+    else rules.set(line.trim(), (current = []))
+  }
+
+  it('caches the hashed assets for a year', () => {
+    expect(rules.get('/assets/*')).toEqual(['Cache-Control: public, max-age=31536000, immutable'])
+  })
+
+  // The edge sends text/html with no charset unless it is set here (#19).
+  it('revalidates / and serves it as UTF-8 HTML', () => {
+    expect(rules.get('/')).toEqual([
+      'Cache-Control: public, max-age=0, must-revalidate',
+      'Content-Type: text/html; charset=utf-8',
+    ])
+  })
+
+  // /index.html only ever redirects to /.
+  it('revalidates /index.html', () => {
+    expect(rules.get('/index.html')).toEqual(['Cache-Control: public, max-age=0, must-revalidate'])
+  })
+
+  it('has no other rules', () => {
+    expect([...rules.keys()]).toEqual(['/assets/*', '/', '/index.html'])
   })
 })

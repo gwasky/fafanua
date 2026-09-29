@@ -2,9 +2,12 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
-# HTML must always be revalidated so new deployments are picked up.
+# HTML must always be revalidated so new deployments are picked up. The
+# edge sends text/html with no charset, so it is set on / (#19).
+# /index.html only ever redirects to /, so it needs no Content-Type.
 /
   Cache-Control: public, max-age=0, must-revalidate
+  Content-Type: text/html; charset=utf-8
 
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
