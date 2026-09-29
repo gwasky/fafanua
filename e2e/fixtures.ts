@@ -43,8 +43,16 @@ export const test = base.extend<{ consoleErrors: void }>({
 
 /** Opens the page at a width and waits until the web font has loaded. */
 export async function openPage(page: Page, width: number, height = HEIGHT) {
+  await openPath(page, '/', width, height)
+}
+
+/**
+ * Opens a path, which may carry a query and a hash, at a width and waits
+ * until the web font has loaded.
+ */
+export async function openPath(page: Page, path: string, width: number, height = HEIGHT) {
   await page.setViewportSize({ width, height })
-  await page.goto('/')
+  await page.goto(path)
   await waitForFonts(page)
 }
 
