@@ -4,7 +4,11 @@ import { HEIGHT, WIDTHS } from './e2e/fixtures.ts'
 // The port vite preview serves on. npm run preview builds the site and
 // runs it on the Workers runtime, so the specs test the production build.
 const PORT = 4173
-const BASE_URL = `http://localhost:${PORT}`
+const LOCAL_URL = `http://localhost:${PORT}`
+
+// Set BASE_URL to run the specs against a site that is already running,
+// such as a Cloudflare preview URL (#19). Playwright then starts no server.
+const BASE_URL = process.env.BASE_URL || LOCAL_URL
 
 // The chromium project runs the specs that set their own viewport, or
 // need no particular one, once each. The width projects run only
@@ -66,11 +70,13 @@ export default defineConfig({
       grep: new RegExp(` at ${width}px$`),
     })),
   ],
-  webServer: {
-    command: 'npm run preview',
-    url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
-    // The first run builds the site before the preview starts.
-    timeout: 180_000,
-  },
+  webServer: process.env.BASE_URL
+    ? undefined
+    : {
+        command: 'npm run preview',
+        url: LOCAL_URL,
+        reuseExistingServer: !process.env.CI,
+        // The first run builds the site before the preview starts.
+        timeout: 180_000,
+      },
 })

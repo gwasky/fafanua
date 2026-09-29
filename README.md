@@ -54,7 +54,7 @@ The site is built with React, Vite and TypeScript and runs on Cloudflare Workers
 | `npm run preview` | Builds the site first, then serves the production build on the Workers runtime at `http://localhost:4173`. |
 | `npm test` | Runs the Vitest unit and accessibility tests in `src/` and `scripts/` once. |
 | `npm run test:watch` | Runs the same Vitest tests in watch mode, re-running them when files change. Press `q` to quit. |
-| `npm run test:e2e` | Runs the Playwright end-to-end tests in `e2e/`, in Chromium and WebKit. It starts `npm run preview` itself, so the first run builds the site; if a preview is already running on port 4173 it reuses it. The HTML report goes to `playwright-report/`; open it with `npx playwright show-report`. |
+| `npm run test:e2e` | Runs the Playwright end-to-end tests in `e2e/`, in Chromium and WebKit. It starts `npm run preview` itself, so the first run builds the site; if a preview is already running on port 4173 it reuses it. The HTML report goes to `playwright-report/`; open it with `npx playwright show-report`. To test a site that is already running instead, such as a preview URL, run `BASE_URL=<preview-url> npm run test:e2e`; no server is started then. |
 | `npm run typecheck` | Runs `tsc -b` to check the types in `src/`, `worker/`, `e2e/`, `vite.config.ts` and `playwright.config.ts`. |
 | `npm run lint` | Runs ESLint, then `scripts/check-hex.mjs`, which fails on any hex colour (or `rgb()` or `hsl()` colour) in `src/` outside `src/styles/tokens.css`. |
 | `npm run deploy` | Builds the site and runs `wrangler versions upload`. See [Deploying](#deploying). |
