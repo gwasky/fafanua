@@ -126,6 +126,19 @@ export async function focusedName(page: Page) {
   return match ? match[1] : snapshot
 }
 
+/**
+ * Presses the key that moves focus to the next stop: Alt+Tab (Option+Tab)
+ * in WebKit and Tab in every other engine. Measured in Playwright's WebKit
+ * 2359 (#45): plain Tab leaves focus on body from every starting point,
+ * even when the next stop is a button, while Alt+Tab reaches the same stop
+ * as Chromium's Tab. In macOS Safari with default settings, Option+Tab is
+ * the key that reaches every link.
+ */
+export async function pressTab(page: Page) {
+  const engine = page.context().browser()?.browserType().name()
+  await page.keyboard.press(engine === 'webkit' ? 'Alt+Tab' : 'Tab')
+}
+
 /** The focused element's :focus-visible state and computed outline. */
 export async function focusStyle(page: Page) {
   return page.evaluate(() => {

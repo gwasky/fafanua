@@ -5,6 +5,7 @@ import {
   focusedName,
   openPage,
   openPath,
+  pressTab,
   test,
   waitForFonts,
   waitForScrollSettle,
@@ -13,6 +14,9 @@ import {
 // Opening the page with a hash in the URL lands on the element the hash
 // names, the way the matching in-page link does (#38). Runs once, in the
 // chromium project; each test sets its own viewport and motion setting.
+// The branches on browserName are for the webkit project (#45), which
+// doesn't run this spec yet; each says why WebKit is expected to behave
+// differently, with measured values.
 
 const WIDTHS = [360, 1440] as const
 const MOTIONS = ['reduce', 'no-preference'] as const
@@ -44,13 +48,26 @@ async function showNav(page: Page, name: string) {
   await waitForScrollSettle(page)
 }
 
-/** Clicks a header nav link, through the Menu below 768px. */
+/**
+ * Clicks a header nav link, through the Menu below 768px. Returns
+ * window.scrollY just before the click: the position the current history
+ * entry is left at, which WebKit restores when going back to it.
+ */
 async function clickNav(page: Page, name: string) {
   await showNav(page, name)
+  const leftAt = await page.evaluate(() => window.scrollY)
   await navLink(page, name).click()
+  return leftAt
 }
 
 const scrollY = (page: Page) => page.evaluate(() => window.scrollY)
+
+/** Expects scrollY within 1px of a position recorded earlier, once settled. */
+async function expectRestored(page: Page, position: number) {
+  await waitForScrollSettle(page)
+  const y = await scrollY(page)
+  expect(Math.abs(y - position), `scrollY ${y}, restored ${position}`).toBeLessThanOrEqual(1)
+}
 
 /** Waits for the font and for scrolling to settle, then expects the top. */
 async function expectTop(page: Page) {
@@ -352,7 +369,23 @@ test.describe('font loading', () => {
       expect(Math.abs(after.y - expected), detail).toBeLessThanOrEqual(1)
     })
 
-    test(`/#contact shifts the layout no more than / at ${width}px`, async ({ browser }) => {
+    test(`/#contact shifts the layout no more than / at ${width}px`, async ({
+      browser,
+      browserName,
+    }) => {
+      if (browserName === 'webkit') {
+        // WebKit has no layout-shift entries, so the comparison below
+        // would sum nothing and pass without measuring. Assert that
+        // instead: this fails once WebKit supports them, and the real
+        // comparison can then run. Chromium lists 'layout-shift'. In
+        // WebKit, the samples in the motion tests cover movement instead.
+        const page = await browser.newPage()
+        const types = await page.evaluate(() => PerformanceObserver.supportedEntryTypes)
+        await page.close()
+        expect(types).not.toContain('layout-shift')
+        return
+      }
+
       async function layoutShift(path: string) {
         const page = await browser.newPage({ viewport: { width, height: 800 }, reducedMotion: 'reduce' })
         await page.goto(path)
@@ -424,7 +457,7 @@ test.describe('keyboard focus', () => {
           ).toBe(0)
         }
 
-        await page.keyboard.press('Tab')
+        await pressTab(page)
         expect(await focusedName(page)).toBe(next)
       })
     }
@@ -436,16 +469,31 @@ test.describe('history', () => {
     test.describe(`with ${motion} motion`, () => {
       test.use({ reducedMotion: motion })
 
-      test(`back and forward through two in-page links at 1440px, ${motion}`, async ({ page }) => {
+      test(`back and forward through two in-page links at 1440px, ${motion}`, async ({
+        page,
+        browserName,
+      }) => {
         await openPage(page, 1440)
         await clickNav(page, 'Services')
         await expectLanded(page, '#services')
-        await clickNav(page, 'Contact')
+        const servicesLeftAt = await clickNav(page, 'Contact')
         await expectLanded(page, '#contact')
 
         await page.goBack()
         await expect(page).toHaveURL(/\/#services$/)
-        await expectLanded(page, '#services')
+        if (browserName === 'webkit') {
+          // WebKit restores the position the #services entry was left at,
+          // which is the top: showNav scrolled up to the non-sticky header
+          // before the click. Measured at 1440 × 800, both motion
+          // settings: WebKit 0, Chromium 705 (it scrolls to the fragment).
+          // A plain static page with the same ids and links does the same
+          // in each engine. A Safari visitor goes back to where they were
+          // when they chose the link, as on any other page.
+          await expectRestored(page, servicesLeftAt)
+        } else {
+          await expectLanded(page, '#services')
+        }
+        const servicesRestoredAt = await scrollY(page)
 
         await page.goBack()
         await expect(page).toHaveURL(/\/$/)
@@ -454,7 +502,16 @@ test.describe('history', () => {
 
         await page.goForward()
         await expect(page).toHaveURL(/\/#services$/)
-        await expectLanded(page, '#services')
+        if (browserName === 'webkit' && motion === 'reduce') {
+          // Under reduce, WebKit again restores the position the entry was
+          // left at by the back above (0). Under no-preference it lands on
+          // #services (705), as Chromium does under both. Measured at
+          // 1440 × 800; the static page behaves the same. The visitor sees
+          // the page as they last left it.
+          await expectRestored(page, servicesRestoredAt)
+        } else {
+          await expectLanded(page, '#services')
+        }
 
         await page.goForward()
         await expect(page).toHaveURL(/\/#contact$/)
@@ -463,15 +520,24 @@ test.describe('history', () => {
 
       test(`back from an in-page link to a hash the page opened with at 1440px, ${motion}`, async ({
         page,
+        browserName,
       }) => {
         await openPath(page, '/#services', 1440)
         await expectLanded(page, '#services')
-        await clickNav(page, 'Contact')
+        const servicesLeftAt = await clickNav(page, 'Contact')
         await expectLanded(page, '#contact')
 
         await page.goBack()
         await expect(page).toHaveURL(/\/#services$/)
-        await expectLanded(page, '#services')
+        if (browserName === 'webkit') {
+          // As in the test above: WebKit restores the position the entry
+          // was left at (0, after showNav), Chromium lands on #services
+          // (705). Measured at 1440 × 800, both motion settings, and the
+          // same on the static page.
+          await expectRestored(page, servicesLeftAt)
+        } else {
+          await expectLanded(page, '#services')
+        }
       })
 
       test(`back from another page to /#contact at 1440px, ${motion}`, async ({ page }) => {
