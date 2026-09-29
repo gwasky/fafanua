@@ -56,10 +56,29 @@ export async function openPath(page: Page, path: string, width: number, height =
   await waitForFonts(page)
 }
 
+/**
+ * Waits until the "Inter Variable" face (style normal) has status
+ * "loaded", so layout is measured in the web font. document.fonts.ready
+ * alone is not enough: it can resolve before the font starts loading,
+ * and the layout would then be measured in the fallback font.
+ */
 export async function waitForFonts(page: Page) {
-  await page.evaluate(async () => {
-    await document.fonts.ready
-  })
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async () => {
+          await document.fonts.ready
+          return [...document.fonts]
+            .filter(
+              (face) =>
+                face.family.replace(/^["']|["']$/g, '') === 'Inter Variable' &&
+                face.style === 'normal',
+            )
+            .map((face) => face.status)
+        }),
+      { message: '"Inter Variable" normal FontFace statuses' },
+    )
+    .toContain('loaded')
 }
 
 /**
