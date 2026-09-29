@@ -1,11 +1,13 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 import { services } from '../src/data/services.ts'
-import { focusedName, focusStyle, openPage } from './fixtures.ts'
+import { focusedName, focusStyle, openPage, pressTab, test } from './fixtures.ts'
 
 // The automated part of the keyboard review: Tab order, focus rings,
 // the skip link, focus after in-page links, the Menu toggle, the
 // disclosures and focus from the mouse. Reduced motion keeps scrolling
-// instant, so no test waits on an animation.
+// instant, so no test waits on an animation. Tab and Shift+Tab go
+// through pressTab, which presses the key with Alt in WebKit, so the
+// same stops are checked in both engines.
 test.use({ reducedMotion: 'reduce' })
 
 const disclosures = services.map((service) => `Typical work for ${service.title}`)
@@ -34,9 +36,12 @@ async function expectRing(page: Page, name: string) {
     .toEqual({ focusVisible: true, outline: '2px solid', offset: '2px' })
 }
 
-/** Presses a key and expects the named element to take focus. */
-async function pressTo(page: Page, key: string, name: string) {
-  await page.keyboard.press(key)
+/**
+ * Presses Tab, or Shift+Tab when `shift` is set, and expects the named
+ * element to take focus.
+ */
+async function tabTo(page: Page, name: string, { shift = false } = {}) {
+  await pressTab(page, { shift })
   expect(await focusedName(page)).toBe(name)
 }
 
@@ -53,21 +58,21 @@ test.describe('Tab order', () => {
     test(`Tab walks every stop with a visible ring, then leaves the page, at ${width}px`, async ({ page }) => {
       await openPage(page, width)
       for (const name of SEQUENCE[width]) {
-        await pressTo(page, 'Tab', name)
+        await tabTo(page, name)
         await expectRing(page, name)
       }
 
-      await page.keyboard.press('Tab')
+      await pressTab(page)
       expect(['body', 'Skip to content']).toContain(await focusedName(page))
     })
 
     test(`Shift+Tab walks the same stops in reverse at ${width}px`, async ({ page }) => {
       await openPage(page, width)
       const sequence = SEQUENCE[width]
-      for (const name of sequence) await pressTo(page, 'Tab', name)
+      for (const name of sequence) await tabTo(page, name)
 
       for (const name of [...sequence].reverse().slice(1)) {
-        await pressTo(page, 'Shift+Tab', name)
+        await tabTo(page, name, { shift: true })
         await expectRing(page, name)
       }
     })
@@ -76,7 +81,7 @@ test.describe('Tab order', () => {
   test('every stop is at least partly in the viewport at 360px', async ({ page }) => {
     await openPage(page, 360)
     for (const name of SEQUENCE[360]) {
-      await pressTo(page, 'Tab', name)
+      await tabTo(page, name)
       await expect(page.locator(':focus')).toBeInViewport()
     }
   })
@@ -86,7 +91,7 @@ test.describe('skip link', () => {
   for (const width of [360, 1440]) {
     test(`Enter moves focus to main, then Tab to Contact our team, at ${width}px`, async ({ page }) => {
       await openPage(page, width)
-      await pressTo(page, 'Tab', 'Skip to content')
+      await tabTo(page, 'Skip to content')
       await page.keyboard.press('Enter')
 
       const main = await page.evaluate(() => {
@@ -98,7 +103,7 @@ test.describe('skip link', () => {
         }
       })
       expect(main).toEqual({ id: 'main', tag: 'MAIN', outline: 'none' })
-      await pressTo(page, 'Tab', 'Contact our team')
+      await tabTo(page, 'Contact our team')
     })
   }
 })
@@ -127,7 +132,7 @@ test.describe('focus after in-page links', () => {
       await page.keyboard.press('Enter')
       await expect(page).toHaveURL(new RegExp(`${hash}$`))
 
-      await pressTo(page, 'Tab', next)
+      await tabTo(page, next)
     })
   }
 
@@ -137,12 +142,12 @@ test.describe('focus after in-page links', () => {
     await toggle.focus()
     await page.keyboard.press('Enter')
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
-    await pressTo(page, 'Tab', 'Services')
+    await tabTo(page, 'Services')
     await page.keyboard.press('Enter')
     await expect(page).toHaveURL(/#services$/)
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
 
-    await pressTo(page, 'Tab', firstDisclosure)
+    await tabTo(page, firstDisclosure)
   })
 })
 
@@ -165,8 +170,8 @@ test.describe('Menu toggle at 360px', () => {
     const toggle = page.getByRole('button', { name: 'Menu' })
     await toggle.focus()
     await page.keyboard.press('Enter')
-    await pressTo(page, 'Tab', 'Services')
-    await pressTo(page, 'Tab', 'How We Work')
+    await tabTo(page, 'Services')
+    await tabTo(page, 'How We Work')
 
     await page.keyboard.press('Escape')
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
@@ -181,7 +186,7 @@ test.describe('Menu toggle at 360px', () => {
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
 
     for (const name of [...nav, 'Contact our team']) {
-      await pressTo(page, 'Tab', name)
+      await tabTo(page, name)
       await expectRing(page, name)
     }
   })
@@ -212,7 +217,7 @@ test.describe('disclosures', () => {
 })
 
 test.describe('mouse focus', () => {
-  test('a click on Contact our team or a disclosure shows no focus ring', async ({ page }) => {
+  test('a click on Contact our team or a disclosure shows no focus ring', async ({ page, browserName }) => {
     await openPage(page, 1440)
     const cta = page.getByRole('link', { name: 'Contact our team' })
     await cta.click()
@@ -221,9 +226,22 @@ test.describe('mouse focus', () => {
 
     const disclosure = page.getByRole('button', { name: disclosures[0] })
     await disclosure.click()
-    await expect(disclosure).toBeFocused()
-    expect(
-      await disclosure.evaluate((element) => element.matches(':focus-visible')),
-    ).toBe(false)
+    await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
+
+    // Measured for #46 at 1440: in Chromium the clicked disclosure takes
+    // focus, without :focus-visible. In WebKit, as in Safari, a click does
+    // not focus a button: focus goes to <main> (tabIndex -1), which does
+    // not match :focus-visible and has outline-style none. A visitor sees
+    // no difference, as no ring shows in either engine, and Option+Tab
+    // straight after the click goes to "Typical work for Data Integration
+    // and Engineering", the same stop as Chromium's Tab, so the keyboard
+    // continues from the clicked card.
+    let focused = disclosure
+    if (browserName === 'webkit') {
+      focused = page.getByRole('main')
+      await expect(disclosure).not.toBeFocused()
+    }
+    await expect(focused).toBeFocused()
+    expect(await focused.evaluate((element) => element.matches(':focus-visible'))).toBe(false)
   })
 })

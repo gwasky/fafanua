@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test'
-import { openPage, test } from './fixtures.ts'
+import { openPage, pressTab, test } from './fixtures.ts'
 
 // The Menu toggle takes the shared secondary button look (#26): its size,
 // its default and hover colours, and the breakpoint at which the inline
@@ -84,7 +84,7 @@ for (const width of [360, 767]) {
         '--color-button-secondary-bg-hover',
       )
       await page.getByRole('link', { name: 'Fafanua Technologies' }).focus()
-      await page.keyboard.press('Tab')
+      await pressTab(page)
       await page.keyboard.press('Enter')
       await expect(menuButton(page)).toHaveAttribute('aria-expanded', 'true')
       await menuButton(page).hover()
