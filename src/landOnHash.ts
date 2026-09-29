@@ -34,19 +34,13 @@ export function hashTarget(doc: Document, hash: string): Element | null {
 let done = false
 
 /**
- * Lands on the element the URL's hash names, once, after the first
- * render. The page is rendered in the browser, so the target doesn't
- * exist yet when the browser looks for it on load.
- *
- * It scrolls the target into view instantly, whatever the CSS scroll
- * behaviour, then repeats the fragment navigation in place so that Tab
- * starts from the target, as it does after an in-page link. With the same
- * hash, location.replace adds no history entry, fires no hashchange and,
- * as the target is already in place, doesn't scroll again. It also
- * focuses a target that can take focus (#main), so that focus is taken
- * off it again: opening the page doesn't move focus.
- * A reload or a history traversal is left to the browser, which restores
- * the visitor's scroll position.
+ * Scrolls instantly to the element the URL's hash names, once, after the
+ * first render of a fresh load. main.tsx renders before DOMContentLoaded,
+ * so the browser then runs its own fragment navigation, which sets the
+ * point Tab starts from; on its own it would scroll there smoothly under
+ * the CSS scroll-behavior, and with the target already in place it
+ * doesn't move. A reload or a history traversal is left to the browser,
+ * which restores the visitor's scroll position.
  */
 export function landOnHash() {
   if (done) return
@@ -54,13 +48,5 @@ export function landOnHash() {
 
   const [entry] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
   if (entry && entry.type !== 'navigate') return
-  const target = hashTarget(document, location.hash)
-  if (!target) return
-
-  target.scrollIntoView({ behavior: 'instant' })
-  const focused = document.activeElement
-  location.replace(location.hash)
-  if (document.activeElement !== focused && document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur()
-  }
+  hashTarget(document, location.hash)?.scrollIntoView({ behavior: 'instant' })
 }

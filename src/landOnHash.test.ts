@@ -25,7 +25,7 @@ describe('hashIds', () => {
 
   it('names only the raw fragment when the percent-encoding is malformed', () => {
     expect(hashIds('#%E0%A4%A')).toEqual(['%E0%A4%A'])
-    expect(hashIds('#100%')).toEqual(['100%'])
+    expect(hashIds('#half%')).toEqual(['half%'])
   })
 })
 
