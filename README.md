@@ -6,7 +6,7 @@ The site is built with React, Vite and TypeScript and runs on Cloudflare Workers
 
 ## Prerequisites
 
-- **Node 22.12 or later**, as set by `engines` in `package.json`. `.nvmrc` names Node 22, so run `nvm use` in the repository to pick it up. If `nvm use` selects a 22.x release older than 22.12, run `nvm install 22` first to get the latest one.
+- **Node 22.12 or later**, as set by `engines` in `package.json`. `.nvmrc` names Node 22, so run `nvm use` in the repository to pick it up. If `nvm use` selects a 22.x release older than 22.12, run `nvm install 22` first to get the latest one. Without nvm, install Node 22.12 or later another way and check it with `node -v`.
 - **Playwright browsers**, for the end-to-end tests only:
 
   ```sh
@@ -25,7 +25,7 @@ The site is built with React, Vite and TypeScript and runs on Cloudflare Workers
    cd fafanua
    ```
 
-2. Select the Node version:
+2. Select the Node version (see [Prerequisites](#prerequisites) if you do not use nvm):
 
    ```sh
    nvm use
