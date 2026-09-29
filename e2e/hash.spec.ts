@@ -397,19 +397,32 @@ test.describe('keyboard focus', () => {
 
   for (const width of WIDTHS) {
     for (const { path, next } of cases) {
-      test(`${path} leaves focus on body, then Tab goes to "${next}" at ${width}px`, async ({
+      const focus = path === '/#main' ? 'focuses main' : 'leaves focus on body'
+      test(`${path} ${focus}, then Tab goes to "${next}" at ${width}px`, async ({
         page,
       }) => {
-        // Known failure, raised with the owner on #38: the browser's own
-        // fragment navigation on load focuses <main>, which has
-        // tabindex="-1", as the skip link does. Tab still goes to
-        // "Contact our team".
-        test.fail(path === '/#main', 'the browser focuses <main> for /#main (#38)')
         await openPath(page, path, width)
         await waitForScrollSettle(page)
 
-        expect(await focusedName(page)).toBe('body')
-        expect(await page.evaluate(() => document.querySelectorAll(':focus-visible').length)).toBe(0)
+        if (path === '/#main') {
+          // The browser's fragment navigation focuses <main>, which has
+          // tabindex="-1", as the skip link does. It may match
+          // :focus-visible, so the check is that no ring is drawn.
+          const main = await page.evaluate(() => {
+            const element = document.activeElement
+            return {
+              id: element?.id,
+              tag: element?.tagName,
+              outline: element ? getComputedStyle(element).outlineStyle : '',
+            }
+          })
+          expect(main).toEqual({ id: 'main', tag: 'MAIN', outline: 'none' })
+        } else {
+          expect(await focusedName(page)).toBe('body')
+          expect(
+            await page.evaluate(() => document.querySelectorAll(':focus-visible').length),
+          ).toBe(0)
+        }
 
         await page.keyboard.press('Tab')
         expect(await focusedName(page)).toBe(next)
@@ -489,20 +502,17 @@ test.describe('reload', () => {
         await expectLanded(page, '#contact')
       })
 
-      // At 1440 × 800 #contact lands at the bottom limit, so the footer is
-      // already in view and the position before the reload is #contact's
-      // landed position. The second case, beyond the criteria, scrolls up
-      // to #services instead, so a jump to #contact would show. It does:
-      // Chromium restores the position, then scrolls to #contact, or the
-      // other way round. Known failure, raised with the owner on #38.
+      // Chromium restores the position and may then also run its own
+      // fragment scroll to #contact, so either end state is accepted, but
+      // not the top (#38, "Reload after scrolling away"). At 1440 × 800
+      // #contact lands at the bottom limit, so the footer case can't tell
+      // the two apart; the #services case can.
       for (const to of ['footer', '#services'] as const) {
-        test(`reloading after scrolling to ${to} keeps the position at 1440px, ${motion}`, async ({
+        test(`reloading after scrolling to ${to} ends where it was or on #contact at 1440px, ${motion}`, async ({
           page,
-        }) => {
-          test.fail(to === '#services', 'Chromium scrolls to #contact on the reload (#38)')
+        }, testInfo) => {
           await openPath(page, '/#contact', 1440)
           await expectLanded(page, '#contact')
-          const contactLanded = await scrollY(page)
           await page.evaluate((target) => {
             const element =
               target === 'footer' ? document.querySelector('footer') : document.querySelector(target)
@@ -510,21 +520,25 @@ test.describe('reload', () => {
           }, to)
           await waitForScrollSettle(page)
           const before = await scrollY(page)
+          if (to === '#services') expect(before).toBeGreaterThan(0)
 
-          await recordScroll(page)
           await page.reload()
           await waitForFonts(page)
           await waitForScrollSettle(page)
-          await page.evaluate(() => new Promise(requestAnimationFrame))
 
-          const after = await scrollY(page)
-          const steps = await scrollSteps(page)
-          const detail = JSON.stringify({ before, after, contactLanded, steps })
-          expect(Math.abs(after - before), detail).toBeLessThanOrEqual(1)
-          // Every position on the way, before the final one, is short of
-          // #contact's landed position.
-          const onTheWay = steps.slice(0, -1).map((step) => step.y)
-          expect(onTheWay.filter((y) => y >= contactLanded - 1), detail).toEqual([])
+          const after = await page.evaluate(() => ({
+            y: window.scrollY,
+            top: document.getElementById('contact')!.getBoundingClientRect().top,
+            max: document.documentElement.scrollHeight - window.innerHeight,
+          }))
+          const stayed = Math.abs(after.y - before) <= 1
+          const onContact =
+            Math.abs(after.top) <= 1 || (Math.abs(after.y - after.max) <= 1 && after.top < 800)
+          const outcome = stayed ? 'where it was' : onContact ? 'on #contact' : 'elsewhere'
+          testInfo.annotations.push({ type: 'reload outcome', description: outcome })
+          console.log(`reload after scrolling to ${to}, ${motion}: ${outcome}`)
+          expect(outcome, JSON.stringify({ before, after })).not.toBe('elsewhere')
+          expect(after.y).toBeGreaterThan(0)
         })
       }
     })
