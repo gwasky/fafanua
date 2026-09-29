@@ -74,43 +74,68 @@ test.describe('axe, 200% browser zoom', () => {
 })
 
 test.describe('reduced motion', () => {
+  // The longest duration in milliseconds, rounded so that 1e-05s reads as
+  // exactly 0.01.
+  const ms = (value: string) =>
+    Math.max(
+      ...value.split(',').map((part) => {
+        const n = parseFloat(part)
+        const value = part.trim().endsWith('ms') ? n : n * 1000
+        return Math.round(value * 1e6) / 1e6
+      }),
+    )
+
   const durations = (page: Page) =>
     page.evaluate(() => {
-      // The longest duration in milliseconds, rounded so that 1e-05s
-      // reads as exactly 0.01.
-      const ms = (value: string) =>
-        Math.max(
-          ...value.split(',').map((part) => {
-            const n = parseFloat(part)
-            const value = part.trim().endsWith('ms') ? n : n * 1000
-            return Math.round(value * 1e6) / 1e6
-          }),
-        )
-      const button = document.querySelector('.button')
       const chevron = document.querySelector('.service-card__chevron')
-      if (!button || !chevron) throw new Error('No .button or chevron found')
+      if (!chevron) throw new Error('No chevron found')
       return {
         scroll: getComputedStyle(document.documentElement).scrollBehavior,
-        button: ms(getComputedStyle(button).transitionDuration),
-        chevron: ms(getComputedStyle(chevron).transitionDuration),
+        chevron: getComputedStyle(chevron).transitionDuration,
       }
     })
+
+  // The hero's two calls to action, one of each button style, both
+  // visible at 1440px.
+  const buttonDurations = async (page: Page) => {
+    const links = {
+      'Contact our team': page.getByRole('link', { name: 'Contact our team' }),
+      'See our services': page.getByRole('link', { name: 'See our services' }),
+    }
+    const results: { name: string; duration: number }[] = []
+    for (const [name, link] of Object.entries(links)) {
+      await expect(link).toBeVisible()
+      const duration = await link.evaluate(
+        (element) => getComputedStyle(element).transitionDuration,
+      )
+      results.push({ name, duration: ms(duration) })
+    }
+    return results
+  }
 
   test('reduce: no smooth scrolling and near-zero transitions', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await openPage(page, 1440)
+    const buttons = await buttonDurations(page)
     const result = await durations(page)
 
     expect(result.scroll).toBe('auto')
-    expect(result.button).toBeLessThanOrEqual(0.01)
-    expect(result.chevron).toBeLessThanOrEqual(0.01)
+    for (const { name, duration } of buttons) {
+      expect.soft(duration, `longest transition-duration of "${name}"`)
+        .toBeLessThanOrEqual(0.01)
+    }
+    expect(ms(result.chevron)).toBeLessThanOrEqual(0.01)
   })
 
-  test('no-preference: smooth scrolling', async ({ page }) => {
+  test('no-preference: smooth scrolling and 150ms button transitions', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' })
     await openPage(page, 1440)
+    const buttons = await buttonDurations(page)
 
     expect((await durations(page)).scroll).toBe('smooth')
+    for (const { name, duration } of buttons) {
+      expect.soft(duration, `longest transition-duration of "${name}"`).toBe(150)
+    }
   })
 })
 
