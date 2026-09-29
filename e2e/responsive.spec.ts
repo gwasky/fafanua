@@ -8,7 +8,8 @@ import {
   waitForScrollSettle,
 } from './fixtures.ts'
 
-// The page at each width project in playwright.config.ts: no horizontal
+// The page at each width project in playwright.config.ts, in Chromium
+// (width-*) and WebKit (webkit-width-*): no horizontal
 // scrolling, the right navigation, the service grid, the logo size, and
 // every in-page link landing on its section. Playwright loads this file
 // once for all projects, so every test is declared for each width, with
@@ -269,11 +270,13 @@ for (const width of WIDTHS) {
   })
 
   test.describe('screenshot', () => {
-    test(`full page saved for review at ${width}px`, async ({ page }, testInfo) => {
+    test(`full page saved for review at ${width}px`, async ({ page, browserName }, testInfo) => {
       await open(page, testInfo, width)
 
+      // Every project shares the output folder, so the file name carries
+      // the engine as well as the width.
       await page.screenshot({
-        path: `${testInfo.project.outputDir}/screenshots/${width}.png`,
+        path: `${testInfo.project.outputDir}/screenshots/${browserName}-${width}.png`,
         fullPage: true,
       })
     })

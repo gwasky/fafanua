@@ -13,6 +13,14 @@ const BASE_URL = `http://localhost:${PORT}`
 // project, so responsive.spec.ts declares its tests for every width, with
 // the width at the end of the title, and each project picks its own with
 // grep.
+//
+// The webkit-width projects run responsive.spec.ts the same way in
+// Playwright's WebKit, Safari's engine, and the webkit project runs
+// links.spec.ts, so layout, navigation and anchor problems that only
+// show up in Safari are caught too. They use the Desktop Safari preset
+// with its deviceScaleFactor of 2: assertions are in CSS pixels, so only
+// the screenshot size changes. The other specs run in chromium only.
+// WebKit is installed with npx playwright install webkit.
 export default defineConfig({
   testDir: 'e2e',
   fullyParallel: true,
@@ -33,6 +41,21 @@ export default defineConfig({
       name: `width-${width}`,
       use: {
         ...devices['Desktop Chrome'],
+        viewport: { width, height: HEIGHT },
+        reducedMotion: 'reduce' as const,
+      },
+      testMatch: 'responsive.spec.ts',
+      grep: new RegExp(` at ${width}px$`),
+    })),
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+      testMatch: 'links.spec.ts',
+    },
+    ...WIDTHS.map((width) => ({
+      name: `webkit-width-${width}`,
+      use: {
+        ...devices['Desktop Safari'],
         viewport: { width, height: HEIGHT },
         reducedMotion: 'reduce' as const,
       },

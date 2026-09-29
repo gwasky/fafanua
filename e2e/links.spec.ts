@@ -2,9 +2,9 @@ import { expect, type Page } from '@playwright/test'
 import { expectLanded, openPage, test, waitForScrollSettle } from './fixtures.ts'
 
 // Checks that don't change with the width, or that set their own
-// viewport, so they run once in the chromium project: the breakpoint
-// boundary, the smooth-scrolling path, the email links, and every
-// internal link and asset.
+// viewport, so they run once per engine, in the chromium and webkit
+// projects: the breakpoint boundary, the smooth-scrolling path, the email
+// links, and every internal link and asset.
 
 const NAV = ['Services', 'How We Work', 'About', 'Contact'] as const
 
