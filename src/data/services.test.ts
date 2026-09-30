@@ -1,11 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { services, servicesIntro, stages, type Stage } from './services.ts'
+import {
+  managedServices,
+  services,
+  servicesIntro,
+  stages,
+  type Stage,
+} from './services.ts'
 
 const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
 const NAV_ANCHORS = ['services', 'how-we-work', 'future-ready', 'about', 'contact']
 
-// Every string in the module: ids, names, descriptions, engagements and
-// the intro.
+// Every string in the module: ids, names, descriptions, engagements, the
+// intro and the managed-services block.
+const managedStrings = [
+  managedServices.eyebrow,
+  managedServices.heading,
+  managedServices.description,
+  ...managedServices.capabilities,
+  ...managedServices.journey,
+]
+
 const allStrings = [
   ...services.flatMap((service) => [
     service.id,
@@ -15,6 +29,7 @@ const allStrings = [
   ]),
   servicesIntro.heading,
   ...servicesIntro.paragraphs,
+  ...managedStrings,
 ]
 
 describe('services', () => {
@@ -79,6 +94,34 @@ describe('services', () => {
   })
 })
 
+describe('managedServices', () => {
+  it('has an eyebrow, heading, description, 13 capabilities and 3 journey steps', () => {
+    expect(managedServices.eyebrow).not.toBe('')
+    expect(managedServices.heading).not.toBe('')
+    expect(managedServices.description).not.toBe('')
+    expect(managedServices.capabilities).toHaveLength(13)
+    expect(managedServices.journey).toHaveLength(3)
+  })
+
+  it('has no empty or duplicate strings', () => {
+    for (const text of managedStrings) expect(text).not.toBe('')
+    expect(new Set(managedStrings).size).toBe(managedStrings.length)
+  })
+
+  it('is not a seventh service and has no stage', () => {
+    expect(services.map((service) => service.name)).not.toContain(
+      managedServices.heading,
+    )
+    expect(Object.keys(managedServices)).toEqual([
+      'eyebrow',
+      'heading',
+      'description',
+      'capabilities',
+      'journey',
+    ])
+  })
+})
+
 describe('stages', () => {
   it('labels the six lifecycle stages', () => {
     expect(stages).toEqual({
@@ -125,6 +168,12 @@ describe('services types', () => {
     services[0].engagements.push('Changed')
     // @ts-expect-error the intro is read-only
     servicesIntro.heading = 'Changed'
+    // @ts-expect-error the managed-services block is read-only
+    managedServices.heading = 'Changed'
+    // @ts-expect-error the capability list is read-only
+    managedServices.capabilities.push('Changed')
+    // @ts-expect-error the journey is read-only
+    managedServices.journey.push('Changed')
     // @ts-expect-error 'operate' is not a stage
     const operate: Stage = 'operate'
     // @ts-expect-error 'intelligence' is not a stage

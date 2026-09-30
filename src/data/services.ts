@@ -1,6 +1,7 @@
-// The Services section: its intro and the six service cards. The wording
-// is copied verbatim from _docs/plan-fafanua-services-positioning.md
-// (Sections 3 and 5-11), which is authoritative for service copy, and
+// The Services section: its intro, the six service cards and the Managed
+// Data & Analytics Services block. The wording is copied verbatim from
+// _docs/plan-fafanua-services-positioning.md (Sections 3, 5-12 and 13),
+// which is authoritative for service copy, and
 // services.plan.test.ts checks it against that document. Components read
 // service copy from here and nowhere else.
 
@@ -141,3 +142,30 @@ export const services = [
     stage: 'decide',
   },
 ] as const satisfies readonly Service[]
+
+// Shown after the six cards as an ongoing engagement model, not a seventh
+// lifecycle card (Section 12). The journey is the Section 12 "Commercial
+// intent" line, one step per item. Reverse ETL appears both here and under
+// Data Engineering & Integration, as Section 13 requires.
+export const managedServices = {
+  eyebrow: 'Need ongoing data capability?',
+  heading: 'Managed Data & Analytics Services',
+  description:
+    'Extend your team with ongoing data engineering, analytics, reporting, and platform expertise without having to build an entire internal data function.',
+  capabilities: [
+    'Managed data pipelines',
+    'Data-platform monitoring',
+    'Data-quality monitoring',
+    'Dashboard and reporting support',
+    'Analytics development',
+    'Reverse ETL and operational data activation',
+    'Platform optimisation',
+    'Cost and performance optimisation',
+    'Incident support',
+    'Data-model enhancements',
+    'Fractional data engineering',
+    'Fractional analytics support',
+    'Documentation and knowledge transfer',
+  ],
+  journey: ['Assessment', 'Implementation', 'Managed Service'],
+} as const
