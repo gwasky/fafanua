@@ -6,8 +6,7 @@ import { processStages } from './data/process.ts'
 import { managedServices, servicesIntro } from './data/services.ts'
 import { solutions } from './data/solutions.ts'
 
-const FUTURE_READY =
-  'The strongest analytics and AI systems begin with trusted data.'
+const FUTURE_READY = 'Built for what comes next'
 const CONTACT = 'Discuss your data foundation.'
 
 // jsdom has no matchMedia, which the header uses for its breakpoint.

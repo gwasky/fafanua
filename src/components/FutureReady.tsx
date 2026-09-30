@@ -1,11 +1,11 @@
 import './FutureReady.css'
 
-// Plan Section 9, verbatim, split into a heading and a paragraph. Not
-// service copy, so it lives here rather than in src/data/services.ts.
-const futureReadyHeading =
-  'The strongest analytics and AI systems begin with trusted data.'
+// The heading is the owner's wording from decision 5 on #52. The paragraph
+// is _docs/plan.md Section 9, verbatim. Not service copy, so it lives here
+// rather than in src/data/services.ts.
+const futureReadyHeading = 'Built for what comes next'
 const futureReadyStatement =
-  'Fafanua designs data foundations that preserve business definitions, access controls, quality signals, and provenance as organisations introduce more advanced analytics and AI capabilities.'
+  'The strongest analytics and AI systems begin with trusted data. Fafanua designs data foundations that preserve business definitions, access controls, quality signals, and provenance as organisations introduce more advanced analytics and AI capabilities.'
 
 // The graphic's labels, taken word for word from the statement, in order.
 const futureReadyLabels = [

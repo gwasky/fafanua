@@ -2,10 +2,11 @@ import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import FutureReady from './FutureReady.tsx'
 
-// Plan Section 9, character for character.
-const HEADING = 'The strongest analytics and AI systems begin with trusted data.'
+// The heading is the owner's wording from decision 5 on #52. The paragraph
+// is _docs/plan.md Section 9, verbatim, character for character.
+const HEADING = 'Built for what comes next'
 const STATEMENT =
-  'Fafanua designs data foundations that preserve business definitions, access controls, quality signals, and provenance as organisations introduce more advanced analytics and AI capabilities.'
+  'The strongest analytics and AI systems begin with trusted data. Fafanua designs data foundations that preserve business definitions, access controls, quality signals, and provenance as organisations introduce more advanced analytics and AI capabilities.'
 const LABELS = [
   'business definitions',
   'access controls',
@@ -81,7 +82,7 @@ describe('FutureReady', () => {
     expect(section.innerHTML).not.toContain('&nbsp;')
   })
 
-  it('contains only the two sentences and the four labels, nothing else', () => {
+  it('contains only the heading, the paragraph and the four labels, nothing else', () => {
     const { section } = renderFutureReady()
 
     expect(section.textContent).toBe(HEADING + STATEMENT + LABELS.join(''))
