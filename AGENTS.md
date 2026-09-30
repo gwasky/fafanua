@@ -6,7 +6,8 @@ Guidance for AI coding agents and contributors working in this repository.
 
 A single-page marketing website for **Fafanua Technologies Limited**, presenting its Phase 1 data-foundation services to East African businesses, government institutions and development organisations.
 
-- **Plan:** `_docs/plan.md` is the source of truth for content, brand, colours, accessibility and acceptance criteria. Read the relevant section before starting a task.
+- **Primary Plan:** `_docs/plan.md` is the source of truth for content, brand, colours, accessibility and acceptance criteria. Read the relevant section before starting a task.
+- **Service Positioning:** `_docs/plan-fafanua-services-positioning.md` is the source of truth for Services, service copy, lifecycle labels, Managed Data & Analytics Services, Reverse ETL, Solutions and related commercial positioning, and wins where it conflicts with `_docs/plan.md`. `_docs/plan.md` stays authoritative for brand, design system, accessibility, architecture, deployment, How We Work and general site rules.
 - **Backlog:** work is tracked as GitHub issues at https://github.com/gwasky/fafanua/issues. Follow `_docs/process.md` for how to pick up, work on and close an issue.
 
 ## Stack
@@ -58,8 +59,8 @@ Follow `_docs/design-system.md` for colours, typography, logo use, layout, compo
 ### Content
 
 - Service text lives only in `src/data/services.ts`. Components read from it; never repeat service copy inside components.
-- Copy the wording for services, process stages and statements from the plan rather than rewriting it.
-- Do not present Fafanua Intelligence as an existing product, and do not claim SaaS or AI features.
+- Copy the wording rather than rewriting it: service copy from `_docs/plan-fafanua-services-positioning.md`, and process stages and statements from `_docs/plan.md`.
+- Do not present Fafanua Intelligence as an existing product or claim unsupported SaaS or AI products/features. References to integrating third-party SaaS systems are permitted. Future analytics and AI positioning must be framed as readiness enabled by trusted data foundations, not as currently available product functionality unless explicitly approved.
 - No stock photos, generic AI imagery, heavy gradients, glassmorphism or excessive animation.
 
 ## Code style
