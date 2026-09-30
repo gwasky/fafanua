@@ -179,7 +179,11 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 **Service cards**
 
-- Title, summary, service-line marker with its text label, and an accessible disclosure (`<button aria-expanded>` or `<details>`) revealing the typical-work list.
+- Title, summary, service-line marker with its text label, and an accessible disclosure (`<button aria-expanded>` or `<details>`) revealing the Typical engagements list.
+
+**Managed Data & Analytics Services block**
+
+- Sits after the six cards on `.surface-alt` (graphite 100), spans the full container width, and is not a card: no stage label, colour marker or disclosure.
 
 ## Motion
 

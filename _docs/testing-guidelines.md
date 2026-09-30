@@ -24,7 +24,7 @@ Avoid adding other test frameworks without discussing it first.
 
 **Data**
 
-- `src/data/services.ts`: exactly six services, unique ids, non-empty titles, summaries and typical-work lists, and valid service-line keys. Service wording must match `_docs/plan.md` Section 7.
+- `src/data/services.ts`: exactly six services, unique ids, and a non-empty `name`, `description` and `engagements` list and a valid `stage` for each. It also exports `managedServices` (the Managed Data & Analytics Services block: `eyebrow`, `heading`, `description`, `capabilities` and `journey`). Service wording, including the intro and the managed-services block, must match `_docs/plan-fafanua-services-positioning.md`, not `_docs/plan.md` Section 7.
 
 **Components**
 
