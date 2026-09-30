@@ -1,10 +1,13 @@
 import { services, servicesIntro } from '../data/services.ts'
+import ManagedServices from './ManagedServices.tsx'
 import ServiceCard from './ServiceCard.tsx'
 import './Services.css'
 
 // The Services section: a short intro, then the six services as cards, in
-// data order. The id and h2 match the "Services" entry in
-// src/data/navigation.ts; the intro heading is an h3, like the card titles.
+// data order, then the managed-services block (ManagedServices.tsx) outside
+// the card list. The id and h2 match the "Services" entry in
+// src/data/navigation.ts; the intro and block headings are h3s, like the
+// card titles.
 function Services() {
   return (
     <section
@@ -31,6 +34,7 @@ function Services() {
             </li>
           ))}
         </ul>
+        <ManagedServices />
       </div>
     </section>
   )
