@@ -63,6 +63,7 @@ describe('Footer', () => {
     )
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
       '#services',
+      '#solutions',
       '#how-we-work',
       '#about',
       '#contact',
@@ -116,11 +117,11 @@ describe('Footer', () => {
     }
   })
 
-  it('contains nothing else: five links, no headings, ids or forms', () => {
+  it('contains nothing else: six links, no headings, ids or forms', () => {
     const footer = renderFooter()
     const year = new Date().getFullYear()
 
-    expect(within(footer).getAllByRole('link')).toHaveLength(5)
+    expect(within(footer).getAllByRole('link')).toHaveLength(6)
     expect(footer.textContent).toBe(
       navigation.map((item) => item.label).join('') +
         EMAIL +

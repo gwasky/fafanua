@@ -60,12 +60,13 @@ describe('Header', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
   })
 
-  it('links to the four sections in the order of navigation.ts', () => {
+  it('links to the five sections in the order of navigation.ts', () => {
     const { nav } = renderPage()
     const links = within(nav).getAllByRole('link')
 
     expect(navigation.map((item) => [item.label, item.id])).toEqual([
       ['Services', 'services'],
+      ['Solutions', 'solutions'],
       ['How We Work', 'how-we-work'],
       ['About', 'about'],
       ['Contact', 'contact'],
