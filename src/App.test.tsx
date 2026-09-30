@@ -278,6 +278,19 @@ describe('App', () => {
     expect(dark[0].querySelector('.surface-alt')).toBeNull()
   })
 
+  // "Intelligence" is allowed only where the services-positioning doc uses
+  // it for a service or solution, never as a Fafanua product name.
+  it('never names Fafanua Intelligence or shows a "Ready for AI?" callout', () => {
+    render(<App />)
+    const text = document.body.textContent!
+
+    expect(text).not.toMatch(/Fafanua Intelligence/i)
+    expect(text).not.toMatch(/Ready for AI/i)
+    expect(
+      text.replace(/(business|payment) intelligence/gi, ''),
+    ).not.toMatch(/intelligence/i)
+  })
+
   it('orders headings h1, h2 Services, intro h3, six h3s, managed-services h3, h2 Solutions, five h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')

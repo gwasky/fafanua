@@ -35,6 +35,30 @@ const FORBIDDEN = [
   'powered',
   'AI-driven',
   'AI-powered',
+  // AI capabilities from positioning Section 20 and owner decision 1.
+  'Ready for AI',
+  'machine learning',
+  'predictive',
+  'automation',
+  'forecasting',
+  'anomaly detection',
+  'segmentation',
+  'risk modelling',
+  'churn',
+  'document intelligence',
+  'retrieval-augmented',
+  'RAG',
+  'generative',
+  'AI-enabled',
+  'AI applications',
+  'chatbot',
+  'LLM',
+]
+
+// The only places "AI" may appear: the readiness framing from plan Section 9.
+const ALLOWED_AI_PHRASES = [
+  'analytics and AI systems',
+  'analytics and AI capabilities',
 ]
 
 function renderFutureReady() {
@@ -131,6 +155,23 @@ describe('FutureReady', () => {
     const escaped = phrase.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')
 
     expect(section.textContent).not.toMatch(new RegExp(`\\b${escaped}\\b`, 'i'))
+  })
+
+  it('says "AI" only inside the two readiness phrases from the plan', () => {
+    const { section } = renderFutureReady()
+    const text = section.textContent!
+    const matches = [...text.matchAll(/\bAI\b/g)]
+
+    expect(matches).toHaveLength(ALLOWED_AI_PHRASES.length)
+    for (const match of matches) {
+      const inAllowedPhrase = ALLOWED_AI_PHRASES.some((phrase) => {
+        const start = text.indexOf(phrase)
+        const offset = phrase.indexOf('AI')
+        return start !== -1 && match.index === start + offset
+      })
+      expect(inAllowedPhrase).toBe(true)
+    }
+    for (const phrase of ALLOWED_AI_PHRASES) expect(text).toContain(phrase)
   })
 
   it('uses .surface-dark and nests no .surface-alt inside it', () => {
