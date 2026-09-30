@@ -22,7 +22,7 @@ const WIDTHS = [360, 1440] as const
 const MOTIONS = ['reduce', 'no-preference'] as const
 
 const SECTIONS = ['#services', '#how-we-work', '#future-ready', '#about', '#contact'] as const
-const INSIDE = ['#about-heading', '#data-quality-and-reliability-heading'] as const
+const INSIDE = ['#about-heading', '#data-quality-and-reliability-heading', '#managed-services'] as const
 
 const disclosures = services.map((service) => `Typical engagements for ${service.name}`)
 

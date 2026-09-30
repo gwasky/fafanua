@@ -9,12 +9,13 @@ import {
 } from './fixtures.ts'
 
 // The page at each width project in playwright.config.ts, in Chromium
-// (width-*) and WebKit (webkit-width-*): no horizontal
-// scrolling, the right navigation, the service grid, the logo size, and
-// every in-page link landing on its section. Playwright loads this file
-// once for all projects, so every test is declared for each width, with
-// the width at the end of its title, and each project runs only its own
-// (grep in the config). The width comes from the project's viewport.
+// (width-*) and WebKit (webkit-width-*): no horizontal scrolling, the
+// right navigation, the service grid and managed-services block, the logo
+// size, and every in-page link landing on its section. Playwright loads
+// this file once for all projects, so every test is declared for each
+// width, with the width at the end of its title, and each project runs
+// only its own (grep in the config). The width comes from the project's
+// viewport.
 
 const NAV = ['Services', 'How We Work', 'About', 'Contact'] as const
 const HASH: Record<(typeof NAV)[number], string> = {
@@ -202,6 +203,81 @@ for (const width of WIDTHS) {
             .map((element) => element.textContent?.slice(0, 40)),
         )
       expect(overflowing).toEqual([])
+    })
+
+    test(`managed-services block spans the grid, keeps its order and fits its text at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      const section = page.getByRole('region', { name: 'Services' })
+      const grid = section.getByRole('list').first()
+      const block = page.locator('#managed-services')
+      const capabilities = block.getByRole('list').first()
+      const steps = block.getByRole('list').last().getByRole('listitem')
+      await expect(capabilities.getByRole('listitem')).toHaveCount(13)
+      await expect(steps).toHaveCount(3)
+
+      // Full container width, like the card grid, and not one of its items.
+      const gridBox = await grid.boundingBox()
+      const blockBox = await block.boundingBox()
+      if (!gridBox || !blockBox) throw new Error('The grid or block has no box')
+      expect(Math.abs(blockBox.x - gridBox.x), 'left edge').toBeLessThanOrEqual(1)
+      expect(Math.abs(blockBox.width - gridBox.width), 'width').toBeLessThanOrEqual(1)
+      expect(blockBox.y, 'below the grid').toBeGreaterThan(gridBox.y + gridBox.height)
+
+      // Every capability is visible, one column below 768px, two from
+      // 768px and three from 1024px, flowing down each column in data
+      // order.
+      const boxes = await capabilities
+        .getByRole('listitem')
+        .evaluateAll((items) =>
+          items.map((item) => {
+            const box = item.getBoundingClientRect()
+            return { left: Math.round(box.left), top: Math.round(box.top) }
+          }),
+        )
+      for (const item of await capabilities.getByRole('listitem').all()) {
+        await expect(item).toBeVisible()
+      }
+      expect(new Set(boxes.map((box) => box.left)).size, 'capability columns')
+        .toBe(columns(width))
+      for (let i = 1; i < boxes.length; i++) {
+        const [before, after] = [boxes[i - 1], boxes[i]]
+        expect(
+          after.left > before.left || (after.left === before.left && after.top > before.top),
+          `capability ${i + 1} follows capability ${i}`,
+        ).toBe(true)
+      }
+
+      // The journey stacks below 768px and sits on one row from 768px.
+      const stepBoxes = await steps.evaluateAll((items) =>
+        items.map((item) => {
+          const box = item.getBoundingClientRect()
+          return { left: box.left, top: box.top, bottom: box.bottom }
+        }),
+      )
+      for (let i = 1; i < stepBoxes.length; i++) {
+        if (width < 768) {
+          expect(stepBoxes[i].top, `step ${i + 1} below step ${i}`)
+            .toBeGreaterThanOrEqual(stepBoxes[i - 1].bottom)
+        } else {
+          expect(Math.abs(stepBoxes[i].top - stepBoxes[0].top), `step ${i + 1} on the row`)
+            .toBeLessThanOrEqual(1)
+          expect(stepBoxes[i].left, `step ${i + 1} right of step ${i}`)
+            .toBeGreaterThan(stepBoxes[i - 1].left)
+        }
+      }
+
+      // Nothing in the block is wider than its own box or the block.
+      const overflowing = await block.evaluate((root) =>
+        [root, ...root.querySelectorAll('*')]
+          .filter(
+            (element) =>
+              element.scrollWidth > element.clientWidth + 1 ||
+              element.getBoundingClientRect().right > root.getBoundingClientRect().right + 1,
+          )
+          .map((element) => element.textContent?.slice(0, 40)),
+      )
+      expect(overflowing).toEqual([])
+      await expectNoHorizontalScroll(page)
     })
 
     test(`header logo at least 120px wide at ${width}px`, async ({ page }, testInfo) => {
