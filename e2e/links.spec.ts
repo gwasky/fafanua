@@ -6,7 +6,7 @@ import { expectLanded, openPage, test, waitForScrollSettle } from './fixtures.ts
 // projects: the breakpoint boundary, the smooth-scrolling path, the email
 // links, and every internal link and asset.
 
-const NAV = ['Services', 'How We Work', 'About', 'Contact'] as const
+const NAV = ['Services', 'Solutions', 'How We Work', 'About', 'Contact'] as const
 
 /** The Menu button, found whether or not it is currently shown. */
 const menuButton = (page: Page) =>

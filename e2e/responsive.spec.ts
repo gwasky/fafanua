@@ -10,16 +10,17 @@ import {
 
 // The page at each width project in playwright.config.ts, in Chromium
 // (width-*) and WebKit (webkit-width-*): no horizontal scrolling, the
-// right navigation, the service grid and managed-services block, the logo
-// size, and every in-page link landing on its section. Playwright loads
-// this file once for all projects, so every test is declared for each
-// width, with the width at the end of its title, and each project runs
-// only its own (grep in the config). The width comes from the project's
-// viewport.
+// right navigation, the service grid and managed-services block, the
+// solutions grid, the logo size, and every in-page link landing on its
+// section. Playwright loads this file once for all projects, so every test
+// is declared for each width, with the width at the end of its title, and
+// each project runs only its own (grep in the config). The width comes
+// from the project's viewport.
 
-const NAV = ['Services', 'How We Work', 'About', 'Contact'] as const
+const NAV = ['Services', 'Solutions', 'How We Work', 'About', 'Contact'] as const
 const HASH: Record<(typeof NAV)[number], string> = {
   Services: '#services',
+  Solutions: '#solutions',
   'How We Work': '#how-we-work',
   About: '#about',
   Contact: '#contact',
@@ -31,12 +32,14 @@ const ANCHORS = [
   '#main', // skip link
   '#top', // logo
   '#services', // header nav
+  '#solutions',
   '#how-we-work',
   '#about',
   '#contact',
   '#contact', // hero "Contact our team"
   '#services', // hero "See our services"
   '#services', // footer nav
+  '#solutions',
   '#how-we-work',
   '#about',
   '#contact',
@@ -44,7 +47,8 @@ const ANCHORS = [
 
 const hasMenu = (width: number) => width < 768
 
-// The service grid: one column, two from 768px and three from 1024px.
+// The service and solutions grids: one column, two from 768px and three
+// from 1024px.
 const columns = (width: number) => (width < 768 ? 1 : width < 1024 ? 2 : 3)
 
 /**
@@ -125,7 +129,7 @@ for (const width of WIDTHS) {
 
   test.describe('layout', () => {
     if (hasMenu(width)) {
-      test(`Menu shows the four nav links at ${width}px`, async ({ page }, testInfo) => {
+      test(`Menu shows the five nav links at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
         const toggle = menuButton(page)
         await expect(toggle).toBeVisible()
@@ -138,7 +142,7 @@ for (const width of WIDTHS) {
         for (const name of NAV) await expect(mainNavLink(page, name)).toBeVisible()
       })
     } else {
-      test(`four nav links inline on one row, no Menu, at ${width}px`, async ({ page }, testInfo) => {
+      test(`five nav links inline on one row, no Menu, at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
         await expect(menuButton(page)).toBeHidden()
 
@@ -280,6 +284,54 @@ for (const width of WIDTHS) {
       await expectNoHorizontalScroll(page)
     })
 
+    test(`solution cards in ${columns(width)} ${columns(width) === 1 ? 'column' : 'columns'}, even rows, fitting their text, at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      const section = page.getByRole('region', { name: 'Solutions' })
+      const cards = section.getByRole('list').first().locator(':scope > li')
+      await expect(cards).toHaveCount(5)
+
+      const boxes = await cards.evaluateAll((items) =>
+        items.map((item) => {
+          const box = item.getBoundingClientRect()
+          return { left: Math.round(box.left), top: Math.round(box.top), height: box.height }
+        }),
+      )
+      const lefts = [...new Set(boxes.map((box) => box.left))]
+      expect(lefts.length, `left edges ${lefts.join(', ')}`).toBe(columns(width))
+
+      // Filled row by row, in data order, with a short last row starting
+      // at the first column; cards in a row are the same height.
+      const rows = new Map<number, typeof boxes>()
+      for (const box of boxes) rows.set(box.top, [...(rows.get(box.top) ?? []), box])
+      expect([...rows.values()].map((row) => row.length)).toEqual(
+        columns(width) === 1 ? [1, 1, 1, 1, 1] : columns(width) === 2 ? [2, 2, 1] : [3, 2],
+      )
+      for (const row of rows.values()) {
+        expect(row[0].left, 'row starts at the first column').toBe(Math.min(...lefts))
+        for (const box of row) {
+          expect(Math.abs(box.height - row[0].height), 'same height as its row').toBeLessThanOrEqual(1)
+        }
+      }
+
+      // No text element in the section is wider than its own box, and no
+      // card goes past the section.
+      const overflowing = await section.evaluate((root) =>
+        [...root.querySelectorAll('h2, h3, li')]
+          .filter(
+            (element) =>
+              element.scrollWidth > element.clientWidth + 1 ||
+              element.getBoundingClientRect().right > root.getBoundingClientRect().right + 1 ||
+              [...element.children].some(
+                (child) =>
+                  child.getBoundingClientRect().right > element.getBoundingClientRect().right + 1,
+              ),
+          )
+          .map((element) => element.textContent?.slice(0, 40)),
+      )
+      expect(overflowing).toEqual([])
+      await expectNoHorizontalScroll(page)
+    })
+
     test(`header logo at least 120px wide at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       const logo = page
@@ -293,7 +345,7 @@ for (const width of WIDTHS) {
   })
 
   test.describe('in-page links', () => {
-    test(`exactly 12 in-page links, each naming one element, at ${width}px`, async ({ page }, testInfo) => {
+    test(`exactly 14 in-page links, each naming one element, at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       const anchors = await page.evaluate(() =>
         [...document.querySelectorAll('a[href^="#"]')].map((link) => {

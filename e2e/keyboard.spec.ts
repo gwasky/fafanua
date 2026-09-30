@@ -11,7 +11,7 @@ import { focusedName, focusStyle, openPage, pressTab, test } from './fixtures.ts
 test.use({ reducedMotion: 'reduce' })
 
 const disclosures = services.map((service) => `Typical engagements for ${service.name}`)
-const nav = ['Services', 'How We Work', 'About', 'Contact']
+const nav = ['Services', 'Solutions', 'How We Work', 'About', 'Contact']
 const fromHero = [
   'Contact our team',
   'See our services',
@@ -46,12 +46,12 @@ async function tabTo(page: Page, name: string, { shift = false } = {}) {
 }
 
 test.describe('Tab order', () => {
-  test('1440 has 21 stops', () => {
-    expect(SEQUENCE[1440]).toHaveLength(21)
+  test('1440 has 23 stops', () => {
+    expect(SEQUENCE[1440]).toHaveLength(23)
   })
 
-  test('360 with the menu closed has 18 stops', () => {
-    expect(SEQUENCE[360]).toHaveLength(18)
+  test('360 with the menu closed has 19 stops', () => {
+    expect(SEQUENCE[360]).toHaveLength(19)
   })
 
   for (const width of [1440, 360]) {
@@ -113,12 +113,14 @@ test.describe('focus after in-page links', () => {
 
   const cases = [
     { from: 'header', link: 'Services', hash: '#services', next: firstDisclosure },
+    { from: 'header', link: 'Solutions', hash: '#solutions', next: 'Email us' },
     { from: 'header', link: 'How We Work', hash: '#how-we-work', next: 'Email us' },
     { from: 'header', link: 'About', hash: '#about', next: 'Email us' },
     { from: 'header', link: 'Contact', hash: '#contact', next: 'Email us' },
     { from: 'main', link: 'See our services', hash: '#services', next: firstDisclosure },
     { from: 'main', link: 'Contact our team', hash: '#contact', next: 'Email us' },
     { from: 'footer', link: 'Services', hash: '#services', next: firstDisclosure },
+    { from: 'footer', link: 'Solutions', hash: '#solutions', next: 'Email us' },
   ] as const
 
   for (const { from, link, hash, next } of cases) {
@@ -149,6 +151,21 @@ test.describe('focus after in-page links', () => {
 
     await tabTo(page, firstDisclosure)
   })
+
+  test('menu "Solutions" closes the menu, then Tab goes to "Email us" at 360px', async ({ page }) => {
+    await openPage(page, 360)
+    const toggle = page.getByRole('button', { name: 'Menu' })
+    await toggle.focus()
+    await page.keyboard.press('Enter')
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    await tabTo(page, 'Services')
+    await tabTo(page, 'Solutions')
+    await page.keyboard.press('Enter')
+    await expect(page).toHaveURL(/#solutions$/)
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+    await tabTo(page, 'Email us')
+  })
 })
 
 test.describe('Menu toggle at 360px', () => {
@@ -171,14 +188,14 @@ test.describe('Menu toggle at 360px', () => {
     await toggle.focus()
     await page.keyboard.press('Enter')
     await tabTo(page, 'Services')
-    await tabTo(page, 'How We Work')
+    await tabTo(page, 'Solutions')
 
     await page.keyboard.press('Escape')
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
     await expect(toggle).toBeFocused()
   })
 
-  test('Tab goes through the four open menu links to Contact our team', async ({ page }) => {
+  test('Tab goes through the five open menu links to Contact our team', async ({ page }) => {
     await openPage(page, 360)
     const toggle = page.getByRole('button', { name: 'Menu' })
     await toggle.focus()
