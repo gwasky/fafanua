@@ -7,6 +7,7 @@ import Header from './components/Header.tsx'
 import Hero from './components/Hero.tsx'
 import Process from './components/Process.tsx'
 import Services from './components/Services.tsx'
+import Solutions from './components/Solutions.tsx'
 import { landOnHash } from './landOnHash.ts'
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
       <main id="main" tabIndex={-1}>
         <Hero />
         <Services />
+        <Solutions />
         <Process />
         <FutureReady />
         <About />

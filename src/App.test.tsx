@@ -4,6 +4,7 @@ import App from './App.tsx'
 import { navigation } from './data/navigation.ts'
 import { processStages } from './data/process.ts'
 import { managedServices, servicesIntro } from './data/services.ts'
+import { solutions } from './data/solutions.ts'
 
 const FUTURE_READY =
   'The strongest analytics and AI systems begin with trusted data.'
@@ -83,19 +84,48 @@ describe('App', () => {
     }
   })
 
-  it('renders the How We Work section directly after services', () => {
+  it('renders the Solutions section directly after Services', () => {
     render(<App />)
     const services = screen.getByRole('region', { name: 'Services' })
+    const solutions = screen.getByRole('region', { name: 'Solutions' })
+    const nav = navigation.find((item) => item.label === 'Solutions')
+
+    expect(services.nextElementSibling).toBe(solutions)
+    expect(solutions.id).toBe(nav?.id)
+    expect(solutions).not.toHaveClass('surface-alt')
+    expect(solutions).not.toHaveClass('surface-dark')
+    for (const landmark of [screen.getByRole('banner'), screen.getByRole('contentinfo')]) {
+      expect(
+        within(landmark).getByRole('link', { name: 'Solutions' }),
+      ).toHaveAttribute('href', `#${solutions.id}`)
+    }
+  })
+
+  it('renders the How We Work section directly after Solutions', () => {
+    render(<App />)
+    const solutions = screen.getByRole('region', { name: 'Solutions' })
     const process = screen.getByRole('region', { name: 'How We Work' })
     const nav = navigation.find((item) => item.label === 'How We Work')
 
-    expect(services.nextElementSibling).toBe(process)
+    expect(solutions.nextElementSibling).toBe(process)
     expect(process.id).toBe(nav?.id)
     expect(
       within(screen.getByRole('banner')).getByRole('link', {
         name: 'How We Work',
       }),
     ).toHaveAttribute('href', `#${process.id}`)
+  })
+
+  it('never puts two .surface-alt sections next to each other', () => {
+    render(<App />)
+    const sections = [...screen.getByRole('main').children]
+
+    for (let i = 1; i < sections.length; i++) {
+      expect(
+        sections[i - 1].classList.contains('surface-alt') &&
+          sections[i].classList.contains('surface-alt'),
+      ).toBe(false)
+    }
   })
 
   it('shows the four stages inside the How We Work section', () => {
@@ -249,20 +279,26 @@ describe('App', () => {
     expect(dark[0].querySelector('.surface-alt')).toBeNull()
   })
 
-  it('orders headings h1, h2 Services, intro h3, six h3s, managed-services h3, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
+  it('orders headings h1, h2 Services, intro h3, six h3s, managed-services h3, h2 Solutions, five h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
 
-    expect(levels).toEqual([1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2])
+    expect(levels).toEqual([
+      1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2,
+    ])
     expect(levels.filter((level) => level === 1)).toHaveLength(1)
     expect(headings[1].textContent).toBe('Services')
     expect(headings[2].textContent).toBe(servicesIntro.heading)
     expect(headings[9].textContent).toBe(managedServices.heading)
-    expect(headings[10].textContent).toBe('How We Work')
-    expect(headings[15].textContent).toBe(FUTURE_READY)
-    expect(headings[16].textContent).toBe('About Fafanua')
-    expect(headings[17].textContent).toBe(CONTACT)
+    expect(headings[10].textContent).toBe('Solutions')
+    expect(headings.slice(11, 16).map((heading) => heading.textContent)).toEqual(
+      solutions.map((solution) => solution.title),
+    )
+    expect(headings[16].textContent).toBe('How We Work')
+    expect(headings[21].textContent).toBe(FUTURE_READY)
+    expect(headings[22].textContent).toBe('About Fafanua')
+    expect(headings[23].textContent).toBe(CONTACT)
     expect(
       within(screen.getByRole('contentinfo')).queryAllByRole('heading'),
     ).toHaveLength(0)

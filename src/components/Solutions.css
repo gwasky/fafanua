@@ -1,0 +1,73 @@
+/*
+ * Solutions: the section heading and a grid of sector cards on the page
+ * background, like Services above it. A graphite 200 rule across the full
+ * width separates the two paper sections. The grid follows the service
+ * grid: one column by default, two from 768px and three from 1024px
+ * (literal breakpoints; see the note in tokens.css). Cards in a row share
+ * its height, and a short last row stays left-aligned.
+ */
+
+.solutions {
+  padding-block: var(--space-16);
+  border-block-start: var(--border-width) solid var(--color-border);
+  background-color: var(--color-bg);
+}
+
+.solutions__heading {
+  margin-block-end: var(--space-8);
+}
+
+.solutions__list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The service card's border, radius, padding and shadow, without its
+   colour marker. Graphite 900 on white (16.4:1). */
+.solution-card {
+  padding: var(--space-6);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text);
+}
+
+/* Weight 300 from the global heading styles. */
+.solution-card__title {
+  margin-block-end: var(--space-4);
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+}
+
+.solution-card__themes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.solution-card__themes li {
+  padding-block: var(--space-2);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+@media (min-width: 768px) {
+  .solutions {
+    padding-block: var(--space-20);
+  }
+
+  .solutions__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .solutions__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
