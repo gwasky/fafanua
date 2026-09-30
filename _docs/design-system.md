@@ -58,10 +58,10 @@ Each service line has a colour, which also forms the categorical palette for any
 
 | Service line | Graphics | Text-safe | Services |
 |---|---|---|---|
-| Build | `#3E7CB1` | `#2E6C9E` | Data Platform Architecture; Data Integration and Engineering; Data Warehouse and Analytics Modelling |
-| Govern | `#7667C9` | `#5F52B0` | Data Governance and Metadata |
-| Trust | `#4C9A5E` | `#356F42` | Data Quality and Reliability |
-| Insights | `#D99A2B` | `#8A6212` | Analytics and Reporting Products |
+| Build | `#3E7CB1` | `#2E6C9E` | Data Strategy & Platform Architecture (Design); Data Engineering & Integration (Connect); Data Warehousing & Analytics Modelling (Model) |
+| Govern | `#7667C9` | `#5F52B0` | Data Governance & Metadata (Govern) |
+| Trust | `#4C9A5E` | `#356F42` | Data Quality & Reliability (Trust) |
+| Insights | `#D99A2B` | `#8A6212` | Business Intelligence & Analytics (Decide) |
 | Intelligence | `#D0607A` | `#A04259` | Future-ready section only |
 
 - Use them only as small markers (a card's top rule, an icon, a label dot), never as fills or backgrounds.
