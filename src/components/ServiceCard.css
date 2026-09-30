@@ -1,11 +1,13 @@
 /*
- * Service card: a white card with a service-line marker beside its text
- * label, and a "Typical work" disclosure. The service-line colour is used
- * only for the small marker, never for text or the card's fills.
+ * Service card: a white card with a colour marker beside its lifecycle
+ * label, and a "Typical engagements" disclosure. Each stage maps to one of
+ * the four service-line colours, used only for the small marker, never for
+ * text or the card's fills. Design, Connect and Model share Build blue; the
+ * visible label tells them apart.
  */
 
 .service-card {
-  /* Set per service line by the modifier classes below. */
+  /* Set per stage by the modifier classes below. */
   --marker: var(--color-border);
 
   padding: var(--space-6);
@@ -16,19 +18,21 @@
   color: var(--color-text);
 }
 
-.service-card--build {
+.service-card--design,
+.service-card--connect,
+.service-card--model {
   --marker: var(--service-build);
-}
-
-.service-card--govern {
-  --marker: var(--service-govern);
 }
 
 .service-card--trust {
   --marker: var(--service-trust);
 }
 
-.service-card--insights {
+.service-card--govern {
+  --marker: var(--service-govern);
+}
+
+.service-card--decide {
   --marker: var(--service-insights);
 }
 
@@ -60,7 +64,7 @@
 }
 
 /* Amber is 2.2:1 on light surfaces, so it gets a graphite 200 outline. */
-.service-card--insights .service-card__marker {
+.service-card--decide .service-card__marker {
   outline: var(--border-width) solid var(--color-border);
 }
 

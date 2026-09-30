@@ -1,7 +1,9 @@
 /*
- * Services: the section heading and a grid of service cards on the page
- * background. One column by default, two from 768px and three from
- * 1024px (literal breakpoints; see the note in tokens.css).
+ * Services: the section heading, a short intro and a grid of service cards
+ * on the page background. The intro is plain text, lighter than the grid:
+ * no card, border or fill, and no wider than the reading measure. The
+ * grid is one column by default, two from 768px and three from 1024px
+ * (literal breakpoints; see the note in tokens.css).
  */
 
 .services {
@@ -11,6 +13,27 @@
 
 .services__heading {
   margin-block-end: var(--space-8);
+}
+
+.services__intro {
+  max-inline-size: var(--measure);
+  margin-block-end: var(--space-10);
+}
+
+/* Weight 300 and graphite 900 from the global heading styles. */
+.services__intro-heading {
+  margin-block-end: var(--space-4);
+}
+
+/* Graphite 600 on paper (6.0:1). */
+.services__intro-text {
+  margin-block: 0 var(--space-4);
+  color: var(--color-text-muted);
+  text-wrap: pretty;
+}
+
+.services__intro-text:last-child {
+  margin-block-end: 0;
 }
 
 .services__list {
@@ -29,13 +52,55 @@
     padding-block: var(--space-20);
   }
 
-  .services__list {
+  .services__intro {
+  max-inline-size: var(--measure);
+  margin-block-end: var(--space-10);
+}
+
+/* Weight 300 and graphite 900 from the global heading styles. */
+.services__intro-heading {
+  margin-block-end: var(--space-4);
+}
+
+/* Graphite 600 on paper (6.0:1). */
+.services__intro-text {
+  margin-block: 0 var(--space-4);
+  color: var(--color-text-muted);
+  text-wrap: pretty;
+}
+
+.services__intro-text:last-child {
+  margin-block-end: 0;
+}
+
+.services__list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1024px) {
-  .services__list {
+  .services__intro {
+  max-inline-size: var(--measure);
+  margin-block-end: var(--space-10);
+}
+
+/* Weight 300 and graphite 900 from the global heading styles. */
+.services__intro-heading {
+  margin-block-end: var(--space-4);
+}
+
+/* Graphite 600 on paper (6.0:1). */
+.services__intro-text {
+  margin-block: 0 var(--space-4);
+  color: var(--color-text-muted);
+  text-wrap: pretty;
+}
+
+.services__intro-text:last-child {
+  margin-block-end: 0;
+}
+
+.services__list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

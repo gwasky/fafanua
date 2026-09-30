@@ -21,7 +21,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-const disclosureName = (title: string) => `Typical work for ${title}`
+const disclosureName = (name: string) => `Typical engagements for ${name}`
 
 describe('App accessibility (axe)', () => {
   it('has no axe violations as rendered', async () => {
@@ -39,9 +39,9 @@ describe('App accessibility (axe)', () => {
     await expectNoAxeViolations(container)
   })
 
-  it('has no axe violations with all six Typical work disclosures open', async () => {
+  it('has no axe violations with all six Typical engagements disclosures open', async () => {
     const { container } = render(<App />)
-    const buttons = screen.getAllByRole('button', { name: /^Typical work/ })
+    const buttons = screen.getAllByRole('button', { name: /^Typical engagements for / })
     for (const button of buttons) fireEvent.click(button)
 
     expect(buttons).toHaveLength(6)
@@ -139,7 +139,7 @@ describe('App links and buttons', () => {
     for (const { href } of links) expect(href).toBe(`mailto:${email}`)
   })
 
-  it('names the six disclosures Typical work for each service, starting with the visible label', () => {
+  it('names the six disclosures Typical engagements for each service, starting with the visible label', () => {
     render(<App />)
     // Every disclosure button: the Menu toggle is the only other button.
     const disclosures = controls().filter(
@@ -149,7 +149,7 @@ describe('App links and buttons', () => {
     const names = disclosures.map(({ name }) => name)
 
     expect(names).toEqual(
-      services.map((service) => disclosureName(service.title)),
+      services.map((service) => disclosureName(service.name)),
     )
     expect(new Set(names).size).toBe(6)
     for (const { element, name } of disclosures) {
@@ -162,7 +162,7 @@ describe('App links and buttons', () => {
         .map((node) => node.textContent)
         .join('')
         .trim()
-      expect(visible).toBe('Typical work')
+      expect(visible).toBe('Typical engagements')
       expect(name.startsWith(visible)).toBe(true)
     }
   })

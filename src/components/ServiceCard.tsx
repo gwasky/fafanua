@@ -1,30 +1,30 @@
 import { useState } from 'react'
-import { serviceLines, type Service } from '../data/services.ts'
+import { stages, type Service } from '../data/services.ts'
 import './ServiceCard.css'
 
 type ServiceCardProps = {
   service: Service
 }
 
-// One service: title, service-line label with its colour marker, summary
-// and a disclosure for the typical-work list. All copy comes from the
-// service passed in; the marker colour is chosen in ServiceCard.css from
-// the service-line modifier class.
+// One service: name, lifecycle label with its colour marker, description
+// and a disclosure for the typical-engagements list. All copy comes from
+// the service passed in; the marker colour is chosen in ServiceCard.css
+// from the stage modifier class.
 function ServiceCard({ service }: ServiceCardProps) {
   const [open, setOpen] = useState(false)
   const headingId = `${service.id}-heading`
-  const panelId = `${service.id}-typical-work`
+  const panelId = `${service.id}-typical-engagements`
 
   return (
-    <div className={`service-card service-card--${service.serviceLine}`}>
+    <div className={`service-card service-card--${service.stage}`}>
       <h3 id={headingId} className="service-card__title">
-        {service.title}
+        {service.name}
       </h3>
       <p className="service-card__line">
         <span className="service-card__marker" aria-hidden="true" />
-        {serviceLines[service.serviceLine]}
+        {stages[service.stage]}
       </p>
-      <p className="service-card__summary">{service.summary}</p>
+      <p className="service-card__summary">{service.description}</p>
       <button
         type="button"
         className="button button--secondary service-card__toggle"
@@ -32,8 +32,8 @@ function ServiceCard({ service }: ServiceCardProps) {
         aria-controls={panelId}
         onClick={() => setOpen((isOpen) => !isOpen)}
       >
-        Typical work{' '}
-        <span className="visually-hidden">for {service.title}</span>
+        Typical engagements{' '}
+        <span className="visually-hidden">for {service.name}</span>
         <svg
           className="service-card__chevron"
           viewBox="0 0 16 16"
@@ -56,7 +56,7 @@ function ServiceCard({ service }: ServiceCardProps) {
         role="list"
         hidden={!open}
       >
-        {service.typicalWork.map((item) => (
+        {service.engagements.map((item) => (
           <li key={item}>{item}</li>
         ))}
       </ul>

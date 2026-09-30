@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { navigation } from '../data/navigation.ts'
-import { serviceLines, services } from '../data/services.ts'
+import { services, servicesIntro, stages } from '../data/services.ts'
 import Services from './Services.tsx'
 
 function renderServices() {
@@ -26,17 +26,49 @@ describe('Services', () => {
     expect(nav?.label).toBe(heading.textContent)
   })
 
-  it('has one h2 and then six h3s, and no other headings', () => {
+  it('has the h2, the intro h3 and then six card h3s, and no other headings', () => {
     const { section } = renderServices()
     const headings = within(section).getAllByRole('heading')
 
     expect(headings.map((heading) => heading.tagName)).toEqual([
       'H2',
+      'H3',
       ...services.map(() => 'H3'),
     ])
+    expect(headings[1]).toHaveTextContent(servicesIntro.heading)
+    expect(headings.slice(2).map((heading) => heading.textContent)).toEqual(
+      services.map((service) => service.name),
+    )
   })
 
-  it('lists six cards with title, label and summary in data order', () => {
+  it('shows the intro heading and both paragraphs between the h2 and the grid', () => {
+    const { section } = renderServices()
+    const h2 = within(section).getByRole('heading', { level: 2 })
+    const introHeading = within(section).getByRole('heading', {
+      name: servicesIntro.heading,
+    })
+    const paragraphs = servicesIntro.paragraphs.map((text) =>
+      within(section).getByText(text),
+    )
+    const grid = within(section).getByRole('list')
+
+    expect(introHeading.tagName).toBe('H3')
+    const order = [h2, introHeading, ...paragraphs, grid]
+    for (let i = 1; i < order.length; i++) {
+      expect(
+        order[i - 1].compareDocumentPosition(order[i]) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    }
+    for (const [index, paragraph] of paragraphs.entries()) {
+      expect(paragraph.tagName).toBe('P')
+      expect(paragraph.textContent).toBe(servicesIntro.paragraphs[index])
+      expect(grid).not.toContainElement(paragraph)
+    }
+    expect(paragraphs[1].textContent).toContain('\u2014')
+  })
+
+  it('lists six cards with name, label and description in data order', () => {
     const { section, cards } = renderServices()
     const list = within(section).getByRole('list')
 
@@ -46,37 +78,35 @@ describe('Services', () => {
       const service = services[index]
       expect(
         within(card).getByRole('heading', { level: 3 }),
-      ).toHaveTextContent(service.title)
-      expect(
-        within(card).getByText(serviceLines[service.serviceLine]),
-      ).toBeInTheDocument()
-      expect(within(card).getByText(service.summary).textContent).toBe(
-        service.summary,
+      ).toHaveTextContent(service.name)
+      expect(within(card).getByText(stages[service.stage])).toBeInTheDocument()
+      expect(within(card).getByText(service.description).textContent).toBe(
+        service.description,
       )
     })
-    // Platform architecture first, analytics products last (checked by id,
-    // as service wording may only live in services.ts).
+    // Strategy and architecture first, business intelligence last (checked
+    // by id, as service wording may only live in services.ts).
     expect(within(cards[0]).getByRole('heading')).toHaveAttribute(
       'id',
-      'data-platform-architecture-heading',
+      'data-strategy-and-platform-architecture-heading',
     )
     expect(within(cards[5]).getByRole('heading')).toHaveAttribute(
       'id',
-      'analytics-and-reporting-products-heading',
+      'business-intelligence-and-analytics-heading',
     )
   })
 
-  it('labels the cards Build, Build, Build, Trust, Govern, Insights', () => {
+  it('labels the cards Design, Connect, Model, Trust, Govern, Decide', () => {
     const { cards } = renderServices()
     const labels = cards.map((card) =>
       within(card).getByText(
         (_, element) =>
           element?.tagName === 'P' &&
-          Object.values(serviceLines).includes(element.textContent ?? ''),
+          Object.values(stages).includes(element.textContent ?? ''),
       ).textContent,
     )
 
-    expect(labels).toEqual(['Build', 'Build', 'Build', 'Trust', 'Govern', 'Insights'])
+    expect(labels).toEqual(['Design', 'Connect', 'Model', 'Trust', 'Govern', 'Decide'])
   })
 
   it('starts with every card collapsed', () => {
@@ -92,7 +122,7 @@ describe('Services', () => {
     }
   })
 
-  it('gives the six buttons different names starting with "Typical work"', () => {
+  it('gives the six buttons different names starting with "Typical engagements"', () => {
     renderServices()
     const names = screen
       .getAllByRole('button')
@@ -102,7 +132,7 @@ describe('Services', () => {
     services.forEach((service) => {
       expect(
         screen.getByRole('button', {
-          name: `Typical work for ${service.title}`,
+          name: `Typical engagements for ${service.name}`,
         }),
       ).toBeInTheDocument()
     })
@@ -129,12 +159,14 @@ describe('Services', () => {
       expect(button).toHaveAttribute('aria-expanded', 'true')
     }
     services.forEach((service) => {
-      const panel = document.getElementById(`${service.id}-typical-work`)!
+      const panel = document.getElementById(
+        `${service.id}-typical-engagements`,
+      )!
       expect(
         within(panel)
           .getAllByRole('listitem')
           .map((item) => item.textContent),
-      ).toEqual(service.typicalWork)
+      ).toEqual(service.engagements)
     })
   })
 
@@ -142,6 +174,6 @@ describe('Services', () => {
     const { section } = renderServices()
     for (const button of screen.getAllByRole('button')) fireEvent.click(button)
 
-    expect(section.textContent).not.toMatch(/intelligence/i)
+    expect(section.textContent).not.toMatch(/fafanua intelligence/i)
   })
 })

@@ -1,30 +1,38 @@
 import { describe, expect, it } from 'vitest'
-import { serviceLines, services, type ServiceLine } from './services.ts'
+import { services, servicesIntro, stages, type Stage } from './services.ts'
 
 const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
-const NAV_ANCHORS = ['services', 'how-we-work', 'about', 'contact']
+const NAV_ANCHORS = ['services', 'how-we-work', 'future-ready', 'about', 'contact']
 
-// Every string in the module: titles, summaries and typical-work items.
-const allStrings = services.flatMap((service) => [
-  service.id,
-  service.title,
-  service.summary,
-  ...service.typicalWork,
-])
+// Every string in the module: ids, names, descriptions, engagements and
+// the intro.
+const allStrings = [
+  ...services.flatMap((service) => [
+    service.id,
+    service.name,
+    service.description,
+    ...service.engagements,
+  ]),
+  servicesIntro.heading,
+  ...servicesIntro.paragraphs,
+]
 
 describe('services', () => {
   it('has exactly six services', () => {
     expect(services).toHaveLength(6)
   })
 
-  it('has unique ids that are the kebab-case title', () => {
+  it('has unique ids that are the kebab-case name, with & written as and', () => {
     const ids = services.map((service) => service.id)
 
     expect(new Set(ids).size).toBe(ids.length)
     for (const service of services) {
       expect(service.id).toMatch(ID_PATTERN)
-      expect(service.id).toBe(service.title.toLowerCase().replace(/ /g, '-'))
+      expect(service.id).toBe(
+        service.name.toLowerCase().replace(/&/g, 'and').replace(/ /g, '-'),
+      )
     }
+    expect(ids[0]).toBe('data-strategy-and-platform-architecture')
   })
 
   it('has no id that clashes with a navigation anchor', () => {
@@ -33,26 +41,32 @@ describe('services', () => {
     }
   })
 
-  it('has a non-empty title, summary and typical-work list', () => {
+  it('has a non-empty name, description and engagements list', () => {
     for (const service of services) {
-      expect(service.title).not.toBe('')
-      expect(service.summary).not.toBe('')
-      expect(service.typicalWork.length).toBeGreaterThan(0)
+      expect(service.name).not.toBe('')
+      expect(service.description).not.toBe('')
+      expect(service.engagements.length).toBeGreaterThan(0)
     }
   })
 
-  it('has no empty or duplicate typical-work items', () => {
+  it('has no empty or duplicate engagements', () => {
     for (const service of services) {
-      for (const item of service.typicalWork) {
+      for (const item of service.engagements) {
         expect(item).not.toBe('')
       }
-      expect(new Set(service.typicalWork).size).toBe(service.typicalWork.length)
+      expect(new Set(service.engagements).size).toBe(service.engagements.length)
     }
   })
 
-  it('uses plain single-line ASCII strings without stray whitespace', () => {
+  it('has an intro heading and two paragraphs', () => {
+    expect(servicesIntro.heading).not.toBe('')
+    expect(servicesIntro.paragraphs).toHaveLength(2)
+  })
+
+  // The em dash in the intro is the one exception to plain ASCII.
+  it('uses plain single-line ASCII strings, plus the em dash, without stray whitespace', () => {
     for (const text of allStrings) {
-      expect(text).toMatch(/^[\x20-\x7E]+$/)
+      expect(text).toMatch(/^[\x20-\x7E\u2014]+$/)
       expect(text).toBe(text.trim())
       expect(text).not.toContain('  ')
     }
@@ -65,47 +79,37 @@ describe('services', () => {
   })
 })
 
-describe('service lines', () => {
-  it('labels each service line as in the plan', () => {
-    expect(serviceLines).toEqual({
-      build: 'Build',
-      govern: 'Govern',
+describe('stages', () => {
+  it('labels the six lifecycle stages', () => {
+    expect(stages).toEqual({
+      design: 'Design',
+      connect: 'Connect',
+      model: 'Model',
       trust: 'Trust',
-      insights: 'Insights',
+      govern: 'Govern',
+      decide: 'Decide',
     })
   })
 
-  it('gives every service a known service line', () => {
-    for (const service of services) {
-      expect(Object.keys(serviceLines)).toContain(service.serviceLine)
-    }
-  })
-
-  it('uses every service line at least once', () => {
-    const used = new Set(services.map((service) => service.serviceLine))
-    for (const line of Object.keys(serviceLines)) {
-      expect(used).toContain(line)
-    }
-  })
-
-  it('maps each service to its service line from the plan', () => {
-    const mapping: [string, ServiceLine][] = services.map((service) => [
+  it('gives each service its own stage, in lifecycle order', () => {
+    const mapping: [string, Stage][] = services.map((service) => [
       service.id,
-      service.serviceLine,
+      service.stage,
     ])
 
     expect(mapping).toEqual([
-      ['data-platform-architecture', 'build'],
-      ['data-integration-and-engineering', 'build'],
-      ['data-warehouse-and-analytics-modelling', 'build'],
+      ['data-strategy-and-platform-architecture', 'design'],
+      ['data-engineering-and-integration', 'connect'],
+      ['data-warehousing-and-analytics-modelling', 'model'],
       ['data-quality-and-reliability', 'trust'],
       ['data-governance-and-metadata', 'govern'],
-      ['analytics-and-reporting-products', 'insights'],
+      ['business-intelligence-and-analytics', 'decide'],
     ])
   })
 
-  it('leaves out the intelligence service line', () => {
-    expect(Object.keys(serviceLines)).not.toContain('intelligence')
+  it('leaves out the operate and intelligence stages', () => {
+    expect(Object.keys(stages)).not.toContain('operate')
+    expect(Object.keys(stages)).not.toContain('intelligence')
   })
 })
 
@@ -114,14 +118,18 @@ describe('services types', () => {
   // the data stops being read-only.
   function mutate() {
     // @ts-expect-error services are read-only
-    services[0].title = 'Changed'
+    services[0].name = 'Changed'
     // @ts-expect-error the list of services is read-only
     services.push(services[0])
-    // @ts-expect-error typical-work lists are read-only
-    services[0].typicalWork.push('Changed')
-    // @ts-expect-error 'intelligence' is not a service line
-    const line: ServiceLine = 'intelligence'
-    return line
+    // @ts-expect-error engagement lists are read-only
+    services[0].engagements.push('Changed')
+    // @ts-expect-error the intro is read-only
+    servicesIntro.heading = 'Changed'
+    // @ts-expect-error 'operate' is not a stage
+    const operate: Stage = 'operate'
+    // @ts-expect-error 'intelligence' is not a stage
+    const intelligence: Stage = 'intelligence'
+    return [operate, intelligence]
   }
 
   it('keeps the data read-only at compile time', () => {

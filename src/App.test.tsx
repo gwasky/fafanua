@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
 import { navigation } from './data/navigation.ts'
 import { processStages } from './data/process.ts'
+import { servicesIntro } from './data/services.ts'
 
 const FUTURE_READY =
   'The strongest analytics and AI systems begin with trusted data.'
@@ -248,18 +249,19 @@ describe('App', () => {
     expect(dark[0].querySelector('.surface-alt')).toBeNull()
   })
 
-  it('orders headings h1, h2 Services, six h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
+  it('orders headings h1, h2 Services, intro h3, six h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
 
-    expect(levels).toEqual([1, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2])
+    expect(levels).toEqual([1, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2])
     expect(levels.filter((level) => level === 1)).toHaveLength(1)
     expect(headings[1].textContent).toBe('Services')
-    expect(headings[8].textContent).toBe('How We Work')
-    expect(headings[13].textContent).toBe(FUTURE_READY)
-    expect(headings[14].textContent).toBe('About Fafanua')
-    expect(headings[15].textContent).toBe(CONTACT)
+    expect(headings[2].textContent).toBe(servicesIntro.heading)
+    expect(headings[9].textContent).toBe('How We Work')
+    expect(headings[14].textContent).toBe(FUTURE_READY)
+    expect(headings[15].textContent).toBe('About Fafanua')
+    expect(headings[16].textContent).toBe(CONTACT)
     expect(
       within(screen.getByRole('contentinfo')).queryAllByRole('heading'),
     ).toHaveLength(0)
