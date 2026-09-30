@@ -31,11 +31,11 @@ test.describe('axe, mobile menu open', () => {
   }
 })
 
-test.describe('axe, all Typical work disclosures open', () => {
+test.describe('axe, all Typical engagements disclosures open', () => {
   for (const width of [320, 1440]) {
     test(`six disclosures open at ${width}px`, async ({ page }, testInfo) => {
       await openPage(page, width)
-      const buttons = page.getByRole('button', { name: /^Typical work for / })
+      const buttons = page.getByRole('button', { name: /^Typical engagements for / })
       await expect(buttons).toHaveCount(6)
       for (const button of await buttons.all()) {
         await button.click()
@@ -175,7 +175,7 @@ test.describe('320px at 200% text size', () => {
 
   test('no horizontal scroll with all disclosures open', async ({ page }) => {
     for (const button of await page
-      .getByRole('button', { name: /^Typical work for / })
+      .getByRole('button', { name: /^Typical engagements for / })
       .all()) {
       await button.click()
       await expect(button).toHaveAttribute('aria-expanded', 'true')

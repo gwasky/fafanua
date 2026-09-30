@@ -10,7 +10,7 @@ import { focusedName, focusStyle, openPage, pressTab, test } from './fixtures.ts
 // same stops are checked in both engines.
 test.use({ reducedMotion: 'reduce' })
 
-const disclosures = services.map((service) => `Typical work for ${service.title}`)
+const disclosures = services.map((service) => `Typical engagements for ${service.name}`)
 const nav = ['Services', 'How We Work', 'About', 'Contact']
 const fromHero = [
   'Contact our team',
@@ -233,8 +233,8 @@ test.describe('mouse focus', () => {
     // not focus a button: focus goes to <main> (tabIndex -1), which does
     // not match :focus-visible and has outline-style none. A visitor sees
     // no difference, as no ring shows in either engine, and Option+Tab
-    // straight after the click goes to "Typical work for Data Integration
-    // and Engineering", the same stop as Chromium's Tab, so the keyboard
+    // straight after the click goes to the second card's "Typical
+    // engagements" button, the same stop as Chromium's Tab, so the keyboard
     // continues from the clicked card.
     let focused = disclosure
     if (browserName === 'webkit') {

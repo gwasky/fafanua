@@ -24,7 +24,7 @@ const MOTIONS = ['reduce', 'no-preference'] as const
 const SECTIONS = ['#services', '#how-we-work', '#future-ready', '#about', '#contact'] as const
 const INSIDE = ['#about-heading', '#data-quality-and-reliability-heading'] as const
 
-const disclosures = services.map((service) => `Typical work for ${service.title}`)
+const disclosures = services.map((service) => `Typical engagements for ${service.name}`)
 
 /** A header nav link, found whether or not it is currently shown. */
 const navLink = (page: Page, name: string) =>
@@ -189,7 +189,7 @@ test.describe('hashes that name nothing visible', () => {
     test(`a hidden disclosure panel stays at the top, with every disclosure closed, at ${width}px`, async ({
       page,
     }) => {
-      const hash = '#data-platform-architecture-typical-work'
+      const hash = `#${services[0].id}-typical-engagements`
       await openPath(page, `/${hash}`, width)
 
       await expectTop(page)

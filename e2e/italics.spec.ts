@@ -61,9 +61,9 @@ test.describe('no italic or oblique text', () => {
     await expectNoSlantedText(page)
   })
 
-  test('all six Typical work disclosures open at 1440px', async ({ page }) => {
+  test('all six Typical engagements disclosures open at 1440px', async ({ page }) => {
     await openPage(page, 1440)
-    const buttons = page.getByRole('button', { name: /^Typical work for / })
+    const buttons = page.getByRole('button', { name: /^Typical engagements for / })
     await expect(buttons).toHaveCount(6)
     for (const button of await buttons.all()) {
       await button.click()

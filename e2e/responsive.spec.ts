@@ -100,9 +100,9 @@ for (const width of WIDTHS) {
       await expectNoHorizontalScroll(page)
     })
 
-    test(`all six Typical work disclosures open at ${width}px`, async ({ page }, testInfo) => {
+    test(`all six Typical engagements disclosures open at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
-      const buttons = page.getByRole('button', { name: /^Typical work for / })
+      const buttons = page.getByRole('button', { name: /^Typical engagements for / })
       await expect(buttons).toHaveCount(6)
       for (const button of await buttons.all()) {
         await button.click()
@@ -172,6 +172,36 @@ for (const width of WIDTHS) {
       }
       expect(lefts.size, `left edges ${[...lefts].join(', ')}`)
         .toBe(columns(width))
+    })
+
+    test(`service cards fit their text, with 44px toggles, all disclosures open, at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      const buttons = page.getByRole('button', { name: /^Typical engagements for / })
+      await expect(buttons).toHaveCount(6)
+      for (const button of await buttons.all()) {
+        await button.click()
+        await expect(button).toHaveAttribute('aria-expanded', 'true')
+        const box = await button.boundingBox()
+        if (!box) throw new Error('A toggle has no box')
+        expect(box.width, 'toggle width').toBeGreaterThanOrEqual(44)
+        expect(box.height, 'toggle height').toBeGreaterThanOrEqual(44)
+      }
+
+      // No text element in the section is wider than its own box, and no
+      // card is wider than its grid cell.
+      const overflowing = await page
+        .getByRole('region', { name: 'Services' })
+        .evaluate((section) =>
+          [...section.querySelectorAll('h2, h3, p, li, button, li > div')]
+            .filter(
+              (element) =>
+                element.scrollWidth > element.clientWidth + 1 ||
+                element.getBoundingClientRect().right >
+                  section.getBoundingClientRect().right + 1,
+            )
+            .map((element) => element.textContent?.slice(0, 40)),
+        )
+      expect(overflowing).toEqual([])
     })
 
     test(`header logo at least 120px wide at ${width}px`, async ({ page }, testInfo) => {
