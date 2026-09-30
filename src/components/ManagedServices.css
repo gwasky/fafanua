@@ -105,9 +105,10 @@
     gap: var(--space-4);
   }
 
-  /* Points right while the steps sit in a row. */
+  /* Points right while the steps sit in a row. The end margin keeps the
+     rotated corner inside the step's box. */
   .managed-services__step:not(:last-child)::after {
-    margin-inline-start: 0;
+    margin-inline: 0 var(--space-1);
     transform: rotate(-45deg);
   }
 }
