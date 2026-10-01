@@ -4,6 +4,13 @@
  * no card, border or fill, and no wider than the reading measure. The
  * grid is one column by default, two from 768px and three from 1024px
  * (literal breakpoints; see the note in tokens.css).
+ *
+ * From 768px, where the browser supports subgrid, each card lines up with
+ * the others in its row (#53). Every item spans five shared row tracks:
+ * title, label, description, button and the open list. The item and the
+ * card inside it are subgrids of those tracks (see ServiceCard.css), so
+ * the tracks size to the tallest content in the row. Without subgrid, and
+ * below 768px, cards keep their natural height.
  */
 
 .services {
@@ -60,5 +67,37 @@
 @media (min-width: 1024px) {
   .services__list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  @supports (grid-template-rows: subgrid) {
+    /* A row gap would also fall between the five tracks of each item, so
+       the space between card rows is a top margin on every item after
+       the first row instead. */
+    .services__list {
+      row-gap: 0;
+      align-items: stretch;
+    }
+
+    .services__list > li {
+      display: grid;
+      grid-row: span 5;
+      grid-template-rows: subgrid;
+      row-gap: 0;
+    }
+
+    .services__list > li:nth-child(n + 3) {
+      margin-block-start: var(--space-6);
+    }
+  }
+}
+
+/* Three columns: the first row is the first three items. */
+@media (min-width: 1024px) {
+  @supports (grid-template-rows: subgrid) {
+    .services__list > li:nth-child(3) {
+      margin-block-start: 0;
+    }
   }
 }

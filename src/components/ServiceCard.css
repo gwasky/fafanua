@@ -97,6 +97,51 @@
   border-block-start: var(--border-width) solid var(--color-border);
 }
 
+/*
+ * Aligned rows from 768px (#53; the list tracks are set in Services.css).
+ * A collapsed card spans the title, label, description and button
+ * tracks, so the titles, labels and buttons in a row line up and the
+ * cards end on the same line. The description track takes the tallest
+ * description, leaving any extra space above the button. An open card
+ * also spans the list track, so it grows without stretching the cards
+ * beside it. Its bottom padding then sizes the list track, so the button
+ * keeps an equal margin in the button track and the list is pulled back
+ * up to sit the usual 16px below the button.
+ */
+@media (min-width: 768px) {
+  @supports (grid-template-rows: subgrid) {
+    .service-card {
+      display: grid;
+      grid-row: 1 / span 4;
+      grid-template-rows: subgrid;
+      row-gap: 0;
+    }
+
+    .service-card--open {
+      grid-row: 1 / span 5;
+    }
+
+    /* Room for a two-line title, in the title's own line height. */
+    .service-card__title {
+      min-height: 2lh;
+    }
+
+    /* Natural width, at the top of its track. */
+    .service-card__toggle {
+      align-self: start;
+      justify-self: start;
+    }
+
+    .service-card--open > .service-card__toggle {
+      margin-block-end: calc(var(--space-6) + var(--border-width));
+    }
+
+    .service-card__work {
+      margin-block-start: calc(var(--space-4) - var(--space-6) - var(--border-width));
+    }
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .service-card__chevron {
     transition: transform var(--duration-fast) var(--ease-standard);
