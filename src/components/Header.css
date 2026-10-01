@@ -37,14 +37,20 @@
   }
 }
 
-/* A short viewport (a landscape phone, or a 1280px window at 200% zoom):
-   the header scrolls with the page instead of taking a large share of
-   the screen (WCAG 1.4.10). global.css drops the scroll margins at the
-   same height. */
+/* A short viewport (a landscape phone, or a 1280px window at 200% zoom),
+   or a header taller than a quarter of the viewport (Header.tsx sets
+   .header-static on <html>, for example at 320px with 200% text): the
+   header scrolls with the page instead of taking a large share of the
+   screen (WCAG 1.4.10). global.css drops the scroll margins in the same
+   cases. */
 @media (max-height: 479.98px) {
   .site-header {
     position: static;
   }
+}
+
+.header-static .site-header {
+  position: static;
 }
 
 /* The open menu's containing block (see .site-nav__list[data-open]). */

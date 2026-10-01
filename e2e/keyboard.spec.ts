@@ -294,21 +294,12 @@ test.describe('focus is never under the sticky header', () => {
     const detail = `"${name}": ${JSON.stringify({ focused, header, viewport })}`
     expect(focused.left, `${detail} left edge`).toBeGreaterThanOrEqual(0)
     expect(focused.right, `${detail} right edge`).toBeLessThanOrEqual(viewport.width)
-    if (focused.bottom - focused.top > viewport.height - header.bottom) {
-      // Taller than the space below the header, so it cannot all show.
-      // At 320px with 200% text the six disclosure buttons wrap their
-      // label a few letters to a line and are about 658px tall, with
-      // 543px below the 257px header (noted on #54). It must then fill
-      // that space: the header covers no more of it than it has to.
-      expect(focused.top, `${detail} top at or above the header's bottom`)
-        .toBeLessThanOrEqual(header.bottom)
-      expect(focused.bottom, `${detail} bottom at or below the viewport's`)
-        .toBeGreaterThanOrEqual(viewport.height)
-      return
-    }
     // Scroll positions are whole pixels and boxes are not, so an edge can
     // sit up to 1px past the one it is aligned to.
-    expect(focused.top, `${detail} top below the header`).toBeGreaterThanOrEqual(header.bottom - 1)
+    // A static header may have scrolled away, leaving the viewport's top.
+    expect(focused.top, `${detail} top below the header`).toBeGreaterThanOrEqual(
+      Math.max(0, header.bottom) - 1,
+    )
     expect(focused.bottom, `${detail} bottom in the viewport`).toBeLessThanOrEqual(viewport.height + 1)
   }
 
@@ -324,6 +315,14 @@ test.describe('focus is never under the sticky header', () => {
       }
       // 320 shows the Menu toggle, as 360 does.
       const sequence = SEQUENCE[width === 1440 ? 1440 : 360]
+      // With 200% text at 320px the header wraps to 257px, more than a
+      // quarter of the 800px viewport, so it is static and scrolls away;
+      // at the default size it sticks.
+      // Polled: the header's ResizeObserver switches it once the larger
+      // text has been laid out.
+      await expect
+        .poll(() => page.getByRole('banner').evaluate((element) => getComputedStyle(element).position))
+        .toBe(text === '200%' ? 'static' : 'sticky')
 
       for (const name of sequence) {
         await tabTo(page, name)

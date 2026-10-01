@@ -272,6 +272,48 @@ test.describe('320px at 200% text size', () => {
   })
 })
 
+test.describe('a header taller than a quarter of the viewport is static', () => {
+  // At 320 x 800 with 200% text the header wraps to two rows, 257px, so
+  // it scrolls away rather than covering a third of the screen, and
+  // sections land at the top of the viewport. At the default size it
+  // sticks.
+  const position = (page: Page) =>
+    page.getByRole('banner').evaluate((element) => getComputedStyle(element).position)
+
+  test('sticks at 320px with 100% text, and is static with 200% text', async ({ page }) => {
+    await openPage(page, 320)
+    expect(await position(page)).toBe('sticky')
+
+    await page.addStyleTag({ content: 'html { font-size: 200%; }' })
+    await expect.poll(() => position(page)).toBe('static')
+    const { height, viewport } = await page.evaluate(() => ({
+      height: document.querySelector('header')!.getBoundingClientRect().height,
+      viewport: window.innerHeight,
+    }))
+    expect(height).toBeGreaterThan(0.25 * viewport)
+
+    await page.getByRole('link', { name: 'See our services' }).click()
+    await expect(page).toHaveURL(/#services$/)
+    await expectLanded(page, '#services')
+    const { headerBottom, top } = await page.evaluate(() => ({
+      headerBottom: document.querySelector('header')!.getBoundingClientRect().bottom,
+      top: document.getElementById('services')!.getBoundingClientRect().top,
+    }))
+    expect(headerBottom).toBeLessThanOrEqual(0)
+    expect(Math.abs(top)).toBeLessThanOrEqual(1)
+  })
+
+  test('sticks again when the viewport grows tall enough', async ({ page }) => {
+    await openPage(page, 320)
+    await page.addStyleTag({ content: 'html { font-size: 200%; }' })
+    await expect.poll(() => position(page)).toBe('static')
+
+    // 257px is under a quarter of 1100px.
+    await page.setViewportSize({ width: 320, height: 1100 })
+    await expect.poll(() => position(page)).toBe('sticky')
+  })
+})
+
 test.describe('skip link overlays the header without moving it (#7)', () => {
   const layout = (page: Page) =>
     page.evaluate(() => {

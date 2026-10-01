@@ -283,6 +283,62 @@ describe('Header', () => {
     expect(value()).toBe('')
   })
 
+  describe('static when taller than a quarter of the viewport', () => {
+    const isStatic = () => document.documentElement.classList.contains('header-static')
+
+    function setInnerHeight(height: number) {
+      act(() => {
+        Object.defineProperty(window, 'innerHeight', { value: height, configurable: true })
+        window.dispatchEvent(new Event('resize'))
+      })
+    }
+
+    /** Renders the header as if it were `height` px tall. */
+    function renderTall(height: number) {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+        DOMRect.fromRect({ height }),
+      )
+      return render(<Header />)
+    }
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+      setInnerHeight(768)
+    })
+
+    it('sticks while the header is at most 25% of the viewport height', () => {
+      setInnerHeight(800)
+      renderTall(200)
+
+      expect(isStatic()).toBe(false)
+      expect(document.documentElement.style.getPropertyValue('--header-height')).toBe('200px')
+    })
+
+    it('is static, still publishing its height, above 25%', () => {
+      setInnerHeight(800)
+      renderTall(201)
+
+      expect(isStatic()).toBe(true)
+      expect(document.documentElement.style.getPropertyValue('--header-height')).toBe('201px')
+    })
+
+    it('follows the viewport height as the window resizes, and cleans up on unmount', () => {
+      setInnerHeight(800)
+      const { unmount } = renderTall(257)
+      expect(isStatic()).toBe(true)
+
+      setInnerHeight(1100)
+      expect(isStatic()).toBe(false)
+      setInnerHeight(1000)
+      expect(isStatic()).toBe(true)
+
+      unmount()
+      expect(isStatic()).toBe(false)
+      setInnerHeight(800)
+      expect(isStatic()).toBe(false)
+    })
+  })
+
   it('removes its media query listener on unmount', () => {
     const { unmount } = render(<App />)
     expect(listeners.size).toBe(1)

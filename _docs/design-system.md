@@ -203,7 +203,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 - Anchors: every element with an id, and every focusable element outside the header, has `scroll-margin-top: var(--header-height)`, so in-page links, hash loads and keyboard focus land below the header (WCAG 2.4.11). Do not also add `scroll-padding-top` to `html`: the two would add up.
 - `#top`, the logo link's target, is an empty element above the header, because scrolling to a stuck element does nothing.
 - The open mobile menu drops over the page from the header's bottom edge, full width, with `max-block-size` and `overflow-y: auto`, so a tall menu scrolls within itself and the page behind does not move.
-- Short viewports: below 480px of height (a landscape phone, or a 1280px window at 200% zoom) the header is `position: static` and the scroll margins are 0 (WCAG 1.4.10). At 360 × 640 the header is 81px tall, under the 96px (15%) limit.
+- Static when it would take too much of the screen: below 480px of height (a landscape phone, or a 1280px window at 200% zoom), and whenever the measured header is taller than 25% of the viewport's height (`Header.tsx` sets `.header-static` on `<html>`; for example 257px at 320 × 800 with 200% text, where it wraps to two rows), the header is `position: static` and the scroll margins are 0 (WCAG 1.4.10, and so every focused element can be shown whole, WCAG 2.4.11). `--header-height` keeps the real height for the overlay pull-up. At 360 × 640 the header is 81px tall (13%), under the 96px (15%) limit, and sticks.
 
 **Navigation and footer**
 

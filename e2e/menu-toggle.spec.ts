@@ -4,9 +4,10 @@ import { expectLanded, openPage, pressTab, test, waitForScrollSettle } from './f
 // The Menu toggle takes the shared secondary button look (#26): its size,
 // its default and hover colours, and the breakpoint at which the inline
 // navigation replaces it (1024px since #54). Also the open menu inside the
-// sticky header: it drops over the page, scrolls within itself when it is
-// taller than the viewport, and leaves the page where it was. Colours are read from the tokens in the page,
-// so no value is repeated here.
+// header: it drops over the page, scrolls within itself when it is taller
+// than the space below the header, and leaves the page where it was.
+// Colours are read from the tokens in the page, so no value is repeated
+// here.
 
 const menuButton = (page: Page) => page.getByRole('button', { name: 'Menu' })
 
@@ -116,7 +117,11 @@ test('is hidden at 1024px, where the inline navigation shows', async ({ page }) 
   ).toBeVisible()
 })
 
-test.describe('open menu in the sticky header at 360 x 640', () => {
+// With 100% text the header sticks, and the menu opens part way down the
+// page. With 200% text the header wraps to two rows, more than a quarter of
+// the viewport, so it is static: the menu is opened at the top, where the
+// header is, and is then taller than the space below it.
+test.describe('open menu at 360 x 640', () => {
   const WIDTH = 360
   const HEIGHT = 640
 
@@ -146,11 +151,17 @@ test.describe('open menu in the sticky header at 360 x 640', () => {
           .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
           .toBe('32px')
       }
-      // Part way down the page, so a jump of the page behind would show.
-      await page.evaluate(() => document.getElementById('how-we-work')?.scrollIntoView())
+      const sticky = text === '100%'
+      await expect
+        .poll(() => page.getByRole('banner').evaluate((element) => getComputedStyle(element).position))
+        .toBe(sticky ? 'sticky' : 'static')
+      if (sticky) {
+        // Part way down the page, so a jump of the page behind would show.
+        await page.evaluate(() => document.getElementById('how-we-work')?.scrollIntoView())
+      }
       await waitForScrollSettle(page)
       const pageY = await page.evaluate(() => window.scrollY)
-      expect(pageY).toBeGreaterThan(0)
+      if (sticky) expect(pageY).toBeGreaterThan(0)
 
       const toggle = menuButton(page)
       await toggle.focus()
