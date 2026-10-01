@@ -64,7 +64,7 @@ const ALLOWED_AI_PHRASES = [
 function renderFutureReady() {
   render(<FutureReady />)
   const section = screen.getByRole('region', { name: HEADING })
-  const graphic = section.querySelector<HTMLElement>('[aria-hidden="true"]')!
+  const graphic = section.querySelector<HTMLElement>('.future-ready__graphic')!
   return { section, graphic }
 }
 
@@ -127,7 +127,9 @@ describe('FutureReady', () => {
   it('hides the graphic from screen readers and lists the four labels in order', () => {
     const { section, graphic } = renderFutureReady()
 
-    expect(section.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1)
+    // The graphic and the technical grid behind the content.
+    expect(section.querySelectorAll('[aria-hidden="true"]')).toHaveLength(2)
+    expect(graphic).toHaveAttribute('aria-hidden', 'true')
     expect(graphic).not.toContainElement(
       within(section).getByRole('heading', { level: 2 }),
     )
@@ -136,6 +138,15 @@ describe('FutureReady', () => {
       [...graphic.querySelectorAll('li')].map((item) => item.textContent),
     ).toEqual(LABELS)
     expect(graphic.textContent).toBe(LABELS.join(''))
+  })
+
+  it('has exactly one technical grid, first, behind the content', () => {
+    const { section } = renderFutureReady()
+    const grids = section.querySelectorAll('.technical-grid')
+
+    expect(grids).toHaveLength(1)
+    expect(section.firstElementChild).toBe(grids[0])
+    expect(grids[0]).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('takes each graphic label word for word from the paragraph', () => {

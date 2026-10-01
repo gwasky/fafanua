@@ -1,0 +1,33 @@
+/*
+ * TechnicalGrid: 1px lines every --grid-size, drawn with two
+ * linear-gradient backgrounds and nothing else (no image, SVG, canvas or
+ * script). The pitch is in rem and the lines are whole pixels, with no
+ * transform, so the pattern stays even at any width and pixel ratio.
+ *
+ * The parent becomes the grid's containing block and its own stacking
+ * context, so z-index -1 puts the grid above the parent's background but
+ * below everything else in it, without the parent's CSS knowing.
+ */
+:has(> .technical-grid) {
+  position: relative;
+  isolation: isolate;
+}
+
+.technical-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(
+      to right,
+      var(--color-grid-line) var(--grid-line-width),
+      transparent var(--grid-line-width)
+    ),
+    linear-gradient(
+      to bottom,
+      var(--color-grid-line) var(--grid-line-width),
+      transparent var(--grid-line-width)
+    );
+  background-size: var(--grid-size) var(--grid-size);
+  pointer-events: none;
+}

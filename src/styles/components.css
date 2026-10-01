@@ -64,10 +64,35 @@
   background-color: var(--color-button-secondary-bg-hover);
 }
 
+/*
+ * An arrow after a call to action's label:
+ * <span class="button__arrow" aria-hidden="true">→</span>. Hidden from
+ * assistive technology, so "Discuss a project →" is named "Discuss a
+ * project". On hover and keyboard focus it moves --cta-arrow-shift towards
+ * the inline end; under reduced motion it stays still.
+ */
+.button__arrow {
+  display: inline-block;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .button {
     transition-property: background-color, border-color, color;
     transition-duration: var(--duration-fast);
     transition-timing-function: var(--ease-standard);
+  }
+
+  .button__arrow {
+    transition: translate var(--duration-cta-arrow) var(--ease-standard);
+  }
+
+  .button:hover .button__arrow,
+  .button:focus-visible .button__arrow {
+    translate: var(--cta-arrow-shift) 0;
+  }
+
+  .button:hover .button__arrow:dir(rtl),
+  .button:focus-visible .button__arrow:dir(rtl) {
+    translate: calc(-1 * var(--cta-arrow-shift)) 0;
   }
 }

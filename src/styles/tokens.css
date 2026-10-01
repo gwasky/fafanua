@@ -90,6 +90,10 @@
      not rely on the text colour (graphite 900 on white is 16.4:1). */
   --color-button-secondary-bg-hover: var(--white);
   --color-button-secondary-border-hover: var(--graphite-600);
+  /* Technical grid lines (TechnicalGrid). Graphics only, never text:
+     blended over its surface each stays at or below 1.25:1, which
+     scripts/contrast.test.ts checks. */
+  --color-grid-line: color-mix(in srgb, var(--graphite-900) 7%, transparent);
 
   /* Links on --color-surface-alt. Teal 700 on graphite 100 is 4.46:1 and
      fails AA, so links there use teal 800 (6.9:1), hovering to teal 900
@@ -127,6 +131,7 @@
   /* The light value is white, and paper text on white would fail. */
   --color-button-secondary-bg-hover-on-dark: var(--graphite-800);
   --color-button-secondary-border-hover-on-dark: var(--graphite-400);
+  --color-grid-line-on-dark: color-mix(in srgb, var(--paper) 7%, transparent);
 
   /* Typography. "Inter Variable" and "Inter Fallback" (Arial with
      metric overrides, so the swap does not move the layout) are defined
@@ -146,6 +151,18 @@
   --text-3xl: clamp(1.75rem, 1.5rem + 1.1vw, 2.25rem);
   --text-4xl: clamp(2.125rem, 1.6rem + 2.4vw, 3.5rem);
 
+  /* V2 display scale (plan V2 §7). Defined in #54 and applied to the
+     sections by #55-#60. Approximate sizes at 360 / 1024 / 1440px:
+     hero 44 / 79 / 96, section 32 / 52 / 56, service 22 / 26 / 28,
+     body-lg 17 / 19 / 20; scripts/tokens.test.ts checks the plan's
+     ranges at 1024 and 1440. */
+  --text-hero: clamp(2.75rem, 1.6rem + 5.2vw, 6rem);
+  --text-section: clamp(2rem, 1.2rem + 3.2vw, 3.5rem);
+  --text-service: clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem);
+  --text-body-lg: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  --text-eyebrow: 0.8125rem;
+
+  --leading-display: 1.05;
   --leading-tight: 1.15;
   --leading-snug: 1.3;
   --leading-normal: 1.6;
@@ -154,6 +171,11 @@
   /* Large headings (the hero h1): two or three balanced lines at the
      top of the type scale rather than one long line. */
   --measure-heading: 20ch;
+  /* Display headings at --text-hero and --text-section. */
+  --measure-display: 16ch;
+
+  /* Eyebrows (SectionEyebrow): uppercase, slightly spaced. */
+  --tracking-eyebrow: 0.08em;
 
   /* Spacing (4px steps) */
   --space-1: 0.25rem;
@@ -168,6 +190,11 @@
   --space-16: 4rem;
   --space-20: 5rem;
   --space-24: 6rem;
+
+  /* Vertical section padding (plan V2 §23). Defined in #54 and applied by
+     #55-#60. */
+  --space-section: clamp(4rem, 2.5rem + 6vw, 8rem);
+  --space-section-dark: clamp(5rem, 3rem + 8vw, 10rem);
 
   /* Radii */
   --radius-sm: 4px;
@@ -188,6 +215,13 @@
      cannot be used in media queries, so write it as the literal
      (min-width: 768px) everywhere (Header.css, Header.tsx). */
 
+  /* The header's rendered height. Header.tsx keeps it current on :root
+     (text zoom, wrapping, the font swap); this default matches the
+     header at the default text size, so it is right before any script
+     runs. Section scroll margins and the [data-header-overlay] pull-up
+     (global.css) use it. */
+  --header-height: calc(var(--space-12) + 2 * var(--space-4) + var(--border-width));
+
   /* Shadows, built from graphite 900 */
   --shadow-sm: 0 1px 2px rgb(28 32 36 / 0.06);
   --shadow-md: 0 2px 8px rgb(28 32 36 / 0.08), 0 1px 2px rgb(28 32 36 / 0.04);
@@ -197,9 +231,18 @@
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
 
+  /* Technical grid (TechnicalGrid): a rem pitch and whole-pixel lines,
+     so the pattern stays even at any width and pixel ratio. */
+  --grid-size: 4rem;
+  --grid-line-width: 1px;
+
   /* Motion */
   --duration-fast: 150ms;
   --duration-base: 250ms;
   --duration-slow: 400ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  /* Component aliases, so no component CSS holds a raw duration. */
+  --duration-header: var(--duration-base); /* header solid <-> transparent */
+  --duration-cta-arrow: var(--duration-fast); /* CTA arrow nudge */
+  --cta-arrow-shift: var(--space-1);
 }

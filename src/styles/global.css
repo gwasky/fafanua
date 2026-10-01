@@ -164,13 +164,19 @@ a:hover {
 }
 
 /*
- * Graphite 900 surface: the future-ready section, the page's only dark
- * section. Reassigns every semantic colour token to its -on-dark value
- * (tokens.css), so the global text, heading, link and focus rules and the
- * .button classes recolour inside it. It also sets the text colour, which
- * body resolved to the light value. Do not nest .surface-alt inside it.
+ * Graphite 900 surfaces (dark sections such as the future-ready section).
+ * .surface-dark reassigns every semantic colour token to its -on-dark
+ * value (tokens.css), so the global text, heading, link and focus rules
+ * and the .button classes recolour inside it. It also paints the
+ * background and sets the text colour, which body resolved to the light
+ * value. Do not nest .surface-alt inside it.
+ *
+ * .on-dark makes the same reassignment without painting a background,
+ * for something drawn over a dark surface it does not own: the header
+ * while it is transparent over a [data-header-overlay] section.
  */
-.surface-dark {
+.surface-dark,
+.on-dark {
   --color-bg: var(--color-bg-on-dark);
   --color-surface: var(--color-surface-on-dark);
   --color-surface-alt: var(--color-surface-alt-on-dark);
@@ -189,7 +195,10 @@ a:hover {
   --color-button-secondary-border: var(--color-button-secondary-border-on-dark);
   --color-button-secondary-bg-hover: var(--color-button-secondary-bg-hover-on-dark);
   --color-button-secondary-border-hover: var(--color-button-secondary-border-hover-on-dark);
+  --color-grid-line: var(--color-grid-line-on-dark);
+}
 
+.surface-dark {
   background-color: var(--color-bg);
   color: var(--color-text);
 }

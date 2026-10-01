@@ -1,3 +1,4 @@
+import TechnicalGrid from './TechnicalGrid.tsx'
 import './FutureReady.css'
 
 // The heading is the owner's wording from decision 5 on #52. The paragraph
@@ -17,7 +18,8 @@ const futureReadyLabels = [
 
 // The page's only dark section: a statement of direction, not a product.
 // The graphic repeats words already in the paragraph, so it is hidden
-// from screen readers. It has no links or other tab stops.
+// from screen readers. It has no links or other tab stops. The technical
+// grid sits behind the content.
 function FutureReady() {
   return (
     <section
@@ -25,6 +27,7 @@ function FutureReady() {
       className="future-ready surface-dark"
       aria-labelledby="future-ready-heading"
     >
+      <TechnicalGrid />
       <div className="container future-ready__layout">
         <div className="future-ready__text">
           <h2 id="future-ready-heading">{futureReadyHeading}</h2>

@@ -13,12 +13,13 @@ const globalCss = read('global.css')
 
 type Declarations = Record<string, string>
 
-// Custom property declarations inside the block for `selector`.
+// Custom property declarations inside the blocks whose selector list
+// includes `selector`.
 function customProperties(css: string, selector: string): Declarations {
   const withoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '')
   const declarations: Declarations = {}
   for (const block of withoutComments.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    if (block[1].trim() !== selector) continue
+    if (!block[1].split(',').some((part) => part.trim() === selector)) continue
     for (const [, name, value] of block[2].matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
       declarations[name] = value.trim()
     }
@@ -45,6 +46,11 @@ function luminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
+// A hex colour as its 0-255 sRGB channels, and back.
+const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+const toHex = (rgb: number[]) =>
+  `#${rgb.map((c) => Math.round(c).toString(16).padStart(2, '0')).join('')}`
+
 function contrast(a: string, b: string): number {
   const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x)
   return (light + 0.05) / (dark + 0.05)
@@ -54,6 +60,27 @@ const root = customProperties(tokensCss, ':root')
 const surfaceAlt = { ...root, ...customProperties(globalCss, '.surface-alt') }
 const surfaceDarkBlock = customProperties(globalCss, '.surface-dark')
 const surfaceDark = { ...root, ...surfaceDarkBlock }
+// The transparent header over a dark section makes the same reassignment.
+const onDarkBlock = customProperties(globalCss, '.on-dark')
+
+/**
+ * A translucent token, written color-mix(in srgb, var(--x) N%,
+ * transparent), drawn over a background: the browser composites in sRGB,
+ * so the result is the straight mix of the two colours' channels.
+ */
+function blend(name: string, background: string, tokens: Declarations): string {
+  const value = tokens[name]
+  if (value === undefined) throw new Error(`${name} is not defined`)
+  const reference = value.match(/^var\((--[\w-]+)\)$/)
+  if (reference) return blend(reference[1], background, tokens)
+  const mix = value.match(
+    /^color-mix\(in srgb, var\((--[\w-]+)\) (\d+(?:\.\d+)?)%, transparent\)$/,
+  )
+  if (!mix) throw new Error(`${name} is not a color-mix() with transparent`)
+  const alpha = Number(mix[2]) / 100
+  const [line, under] = [channels(resolve(mix[1], tokens)), channels(background)]
+  return toHex(line.map((c, i) => alpha * c + (1 - alpha) * under[i]))
+}
 
 const textTokens = [
   '--color-text',
@@ -160,5 +187,34 @@ describe('semantic colour tokens', () => {
     expect(surfaceDark['--color-button-secondary-bg-hover']).not.toBe(
       root['--color-button-secondary-bg-hover'],
     )
+  })
+
+  it('makes .on-dark the same reassignment as .surface-dark', () => {
+    expect(onDarkBlock).toEqual(surfaceDarkBlock)
+  })
+})
+
+describe('technical grid lines', () => {
+  // Low contrast (plan V2 §19): at most 1.25:1 against the surface each is
+  // drawn on, and still drawn (above 1:1).
+  const cases = [
+    ['light', '--paper', root],
+    ['dark', '--graphite-900', surfaceDark],
+  ] as const
+
+  it.each(cases)('the %s grid line is at most 1.25:1 on its surface', (_name, surface, tokens) => {
+    const background = resolve(surface, root)
+    const ratio = contrast(blend('--color-grid-line', background, tokens), background)
+
+    expect(ratio).toBeGreaterThan(1)
+    expect(ratio).toBeLessThanOrEqual(1.25)
+  })
+
+  it('are color-mix() of existing primitives with transparent, light and dark', () => {
+    expect(root['--color-grid-line']).toMatch(/^color-mix\(in srgb, var\(--[\w-]+\) [\d.]+%, transparent\)$/)
+    expect(root['--color-grid-line-on-dark']).toMatch(
+      /^color-mix\(in srgb, var\(--[\w-]+\) [\d.]+%, transparent\)$/,
+    )
+    expect(surfaceDarkBlock['--color-grid-line']).toBe('var(--color-grid-line-on-dark)')
   })
 })
