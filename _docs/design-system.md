@@ -1,6 +1,6 @@
 # Design System
 
-Read this before changing anything visible on the site. It condenses Sections 4, 14 and 15 of `_docs/plan.md`, plus decisions made since; when the two disagree, raise it with the owner rather than guessing.
+Read this before changing anything visible on the site. It condenses Sections 4, 14 and 15 of `_docs/plan.md`, plus decisions made since; when the two disagree, raise it with the owner rather than guessing. For the Version 2 visual upgrade, `_docs/fafanua-v2-visual-upgrade-plan.md` governs layout, hierarchy, composition, motion and visual treatment, and overrides earlier visual rules where they conflict.
 
 ## Principles
 
@@ -14,6 +14,26 @@ All design values live as CSS variables in `src/styles/tokens.css`: colours, typ
 
 - Never hard-code a hex value, font size or spacing value outside `tokens.css`. The lint step fails on hex colours elsewhere.
 - Structure tokens so a dark theme could be added later, but do not build dark mode in this release.
+
+V2 tokens (#54). They are defined now and applied section by section in #55 to #60; `scripts/tokens.test.ts` checks the values and the plan's ranges.
+
+| Token | Value | Use |
+|---|---|---|
+| `--text-hero` | `clamp(2.75rem, 1.6rem + 5.2vw, 6rem)` | Hero headline: about 44 / 79 / 96px at 360 / 1024 / 1440 (plan 72 to 104px on desktop) |
+| `--text-section` | `clamp(2rem, 1.2rem + 3.2vw, 3.5rem)` | Major section headings: 32 / 52 / 56px (plan 48 to 64px) |
+| `--text-service` | `clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem)` | Service headings: 22 / 26 / 28px (plan 24 to 28px) |
+| `--text-body-lg` | `clamp(1.0625rem, 1rem + 0.3vw, 1.25rem)` | Supporting body copy: 17 / 19 / 20px (plan 18 to 20px) |
+| `--text-eyebrow` | `0.8125rem` | Eyebrows and labels (13px) |
+| `--leading-display` | `1.05` | Line height for display headings |
+| `--tracking-eyebrow` | `0.08em` | Letter spacing for uppercase eyebrows |
+| `--measure-display` | `16ch` | Line length for display headings |
+| `--space-section` | `clamp(4rem, 2.5rem + 6vw, 8rem)` | Vertical padding of light sections |
+| `--space-section-dark` | `clamp(5rem, 3rem + 8vw, 10rem)` | Vertical padding of dark sections |
+| `--color-grid-line`, `--color-grid-line-on-dark` | 7% graphite 900, 7% paper (`color-mix()` with `transparent`) | Technical grid lines; graphics only |
+| `--grid-size`, `--grid-line-width` | `4rem`, `1px` | Technical grid pitch and line width |
+| `--duration-header` | `var(--duration-base)` | Header solid and transparent switch |
+| `--duration-cta-arrow`, `--cta-arrow-shift` | `var(--duration-fast)`, `var(--space-1)` | Call-to-action arrow movement |
+| `--header-height` | Measured | The sticky header's height, kept current by `Header.tsx` (see Header) |
 
 ## Colour
 
@@ -117,6 +137,8 @@ Use only these text and background combinations (WCAG 2.x ratios).
 
 Ratios are computed from the token hex values; `scripts/contrast.test.ts` checks every text and background pairing implied by the semantic tokens.
 
+The sticky header (#54) adds no pairing: when solid it uses the light pairings on paper, and when transparent over a dark section it uses the dark pairings on graphite 900 (paper text 14.9:1, primary button graphite 900 on teal 400 7.5:1, the Menu toggle as the secondary button on dark).
+
 Never use:
 
 - White text on teal 600 (3.6:1).
@@ -128,7 +150,8 @@ Never use:
 
 - Font: Inter, self-hosted with `@fontsource-variable/inter` (Latin subset), preloaded from `index.html`. No Google Fonts requests.
 - Fallback stack: `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`.
-- Weights: 300 for large headings, 400 for body text, 500 only for small labels and buttons. Never bold headings.
+- Weights: 300 for large headings, 400 for body text, 500 only for small labels and buttons. Never bold headings. Nothing on the page computes to a weight above 500 (checked end to end).
+- V2 display scale: hero and section headings use `--text-hero` and `--text-section` at weight 300 with `--leading-display` and `--measure-display`; eyebrows and buttons use weight 500. Until #55 to #60 apply them, headings keep the `--text-*` tokens they use today.
 - The heavy logo wordmark contrasts deliberately with the light site type. Do not match headings to the logo's weight.
 - Headings must wrap naturally at every width; do not rely on fixed line breaks.
 
@@ -152,10 +175,11 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 ## Layout and sections
 
 - Page background is paper; cards and raised surfaces are white with subtle graphite 200 borders.
-- The hero is light. The future-ready section is the page's only dark section (graphite 900), and the plan allows at most two.
-- The footer is light: the paper background with a graphite 200 top border, so the future-ready section remains the only dark section.
+- V2: the hero is dark (graphite 900 with the technical grid, delivered in #55). The hero and the future-ready section are dark sections (`.surface-dark`); #58 decides whether the Managed Services callout is dark.
+- The footer is light today (paper with a graphite 200 top border); #60 decides whether it becomes dark or graphite, as plan V2 §17 suggests.
 - In the future-ready section, the Intelligence colour may appear only as a restrained accent alongside teal.
 - Content must work at 360px, 768px, 1024px and 1440px with no horizontal scrolling. Cards reflow from one column on mobile to several on wider screens without compressing text.
+- Breakpoints are the literals 768px and 1024px (CSS variables cannot be used in media queries). The header's inline navigation starts at 1024px: at 768px the logo, four links and the call to action do not fit on one row, so #54 raised it from 768px.
 
 ## Components
 
@@ -167,6 +191,36 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 - Secondary: transparent fill, graphite 900 text, graphite 200 border (on dark: paper text, graphite 700 border). On hover it takes a white fill and a graphite 600 border (`--color-button-secondary-bg-hover`, `--color-button-secondary-border-hover`); the text stays graphite 900 (16.4:1 on white).
 - Weight 500. Minimum touch target of 44 × 44px, from `min-height` and padding rather than a fixed height, so labels wrap instead of being clipped.
 - Neither button is underlined in any state, and visited buttons keep their button colours.
+- Primary stays the visually dominant (filled) style and secondary stays outlined, on light and on `.surface-dark`.
+- Arrow: a call to action may end with `<span class="button__arrow" aria-hidden="true">→</span>` after its label. The arrow is hidden from assistive technology, so "Discuss a project →" is named "Discuss a project". On hover and `:focus-visible` it moves `--cta-arrow-shift` (4px) towards the inline end over `--duration-cta-arrow`; under reduced motion it does not move.
+- The header's call to action is a primary button with the arrow: **Discuss a project →**, to `#contact`.
+
+**Header**
+
+- Sticky: `position: sticky; top: 0`, CSS only. Solid by default: an opaque `--color-bg` (paper) background and a `--color-border` bottom border. No translucency or `backdrop-filter`, so contrast never depends on what scrolls underneath.
+- Overlay contract: a section marked `data-header-overlay` (the dark hero, #55) is pulled up under the header by a global rule (`margin-block-start: calc(-1 * var(--header-height)); padding-block-start: var(--header-height)`). The header is transparent only while such a section exists, the page is scrolled by less than 8px and the menu is closed. Then it takes `.on-dark` (the `.surface-dark` token reassignment without a background), no background, a transparent border (so its height does not change) and `fafanua-logo-reversed.svg` at the same size; otherwise it is solid with the positive logo. The switch animates only `background-color` and `border-color` over `--duration-header`, and not at all under reduced motion. The scroll position is read from a passive scroll listener that reads only `scrollY`.
+- `--header-height`: the header writes its rendered height to `:root` in a layout effect (so it is set before a hash lands) and keeps it current with a `ResizeObserver`; `tokens.css` has a default that matches the header at the default text size.
+- Anchors: every element with an id, and every focusable element outside the header, has `scroll-margin-top: var(--header-height)`, so in-page links, hash loads and keyboard focus land below the header (WCAG 2.4.11). Do not also add `scroll-padding-top` to `html`: the two would add up.
+- `#top`, the logo link's target, is an empty element above the header, because scrolling to a stuck element does nothing.
+- The open mobile menu drops over the page from the header's bottom edge, full width, with `max-block-size` and `overflow-y: auto`, so a tall menu scrolls within itself and the page behind does not move.
+- Short viewports: below 480px of height (a landscape phone, or a 1280px window at 200% zoom) the header is `position: static` and the scroll margins are 0 (WCAG 1.4.10). At 360 × 640 the header is 81px tall, under the 96px (15%) limit.
+
+**Navigation and footer**
+
+- Header: **Services · Solutions · How We Work · About**, then the **Discuss a project →** call to action, which replaces a separate Contact link. Below 1024px the four links and then the call to action (full width, last) sit in the Menu list; choosing any of them closes the menu.
+- Footer: five plain links, **Services · Solutions · How We Work · About · Contact** (plan V2 §17). Its look is unchanged until #60.
+- All labels and targets live in `src/data/navigation.ts` (`navigation`, `navigationCta`, `footerNavigation`).
+
+**TechnicalGrid**
+
+- `src/components/TechnicalGrid.tsx`: one `aria-hidden` div, absolutely positioned behind its parent's content (`inset: 0`, `pointer-events: none`), drawn with two `linear-gradient` backgrounds only. Place it as the first child of the section; its CSS positions the section and isolates it so the grid sits above the section background and below its content.
+- The line colour is `--color-grid-line`, which `.surface-dark` reassigns, so it works on light and dark without props. Each grid line is at most 1.25:1 against its surface (`scripts/contrast.test.ts`).
+- No moiré: the pitch is `--grid-size` in rem, lines are a whole 1px, and there is no `vw` or `%` size, transform or scale.
+- Use it only in the hero, the future-ready section and, optionally, a small footer area; never behind long reading sections. Today it is only in the future-ready section.
+
+**SectionEyebrow**
+
+- `src/components/SectionEyebrow.tsx`: a `<p>` (not a heading) shown as `01 — Capabilities`, with the number optional. `--text-eyebrow`, `--weight-medium`, `--tracking-eyebrow`, uppercase, in `--color-text-muted`, which passes AA on paper, white, `.surface-alt` and `.surface-dark`. Placed on the page by #56 and #59.
 
 **Links**
 
@@ -187,7 +241,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 ## Motion
 
-- Subtle and purposeful only, with durations from the motion tokens.
+- Subtle and purposeful only, with durations from the motion tokens. Component CSS uses tokens or their aliases (`--duration-header`, `--duration-cta-arrow`), never a raw `ms` or `s` value.
 - Wrap all non-essential animation in `@media (prefers-reduced-motion: no-preference)`, or disable it under `prefers-reduced-motion: reduce`.
 
 ## Accessibility
