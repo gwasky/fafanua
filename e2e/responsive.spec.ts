@@ -100,6 +100,7 @@ const currentHash = (page: Page) => page.evaluate(() => location.hash)
 type CardBox = {
   /** The item's top, which groups the cards into grid rows. */
   row: number
+  /** Card edges, relative to the top left of the card list. */
   top: number
   left: number
   width: number
@@ -118,50 +119,81 @@ type CardBox = {
   listBelow: number | null
 }
 
+const serviceList = (page: Page) =>
+  page.getByRole('region', { name: 'Services' }).getByRole('list').first()
+
 /**
- * Measures each service card (the bordered box inside each item), in page
- * coordinates, with the title, lifecycle label and toggle offsets from the
- * card's top edge.
+ * Measures each service card (the bordered box inside each item) relative
+ * to the card list, with the title, lifecycle label and toggle offsets
+ * from the card's top edge. Measuring from the list rather than the page
+ * keeps the values independent of anything above it: in WebKit, the
+ * Services intro heading can still reflow from two lines to one after the
+ * font has loaded, which moves the whole list down.
  */
 const measureCards = (page: Page): Promise<CardBox[]> =>
-  page
-    .getByRole('region', { name: 'Services' })
-    .getByRole('list')
-    .first()
-    .locator(':scope > li')
-    .evaluateAll((items) =>
-      items.map((item) => {
-        const card = item.firstElementChild!
-        const box = card.getBoundingClientRect()
-        const part = (selector: string) => card.querySelector(selector)!
-        const rect = (selector: string) => part(selector).getBoundingClientRect()
-        const title = rect('h3')
-        const toggle = rect('button')
-        const list = part('ul') as HTMLElement
-        const listBox = list.hidden ? null : list.getBoundingClientRect()
-        const range = document.createRange()
-        range.selectNodeContents(part('h3'))
-        return {
-          row: Math.round(item.getBoundingClientRect().top + scrollY),
-          top: box.top + scrollY,
-          left: box.left,
-          width: box.width,
-          height: box.height,
-          bottom: box.bottom + scrollY,
-          title: title.top - box.top,
-          label: rect('h3 + p').top - box.top,
-          toggle: toggle.top - box.top,
-          titleHeight: title.height,
-          titleLineHeight: parseFloat(getComputedStyle(part('h3')).lineHeight),
-          titleLines: new Set([...range.getClientRects()].map((line) => Math.round(line.top)))
-            .size,
-          toggleWidth: toggle.width,
-          toggleBelow: box.bottom - toggle.bottom,
-          listGap: listBox && listBox.top - toggle.bottom,
-          listBelow: listBox && box.bottom - listBox.bottom,
-        }
-      }),
-    )
+  serviceList(page).evaluate((list) => {
+    const origin = list.getBoundingClientRect()
+    return [...list.children].map((item) => {
+      const card = item.firstElementChild!
+      const box = card.getBoundingClientRect()
+      const part = (selector: string) => card.querySelector(selector)!
+      const rect = (selector: string) => part(selector).getBoundingClientRect()
+      const title = rect('h3')
+      const toggle = rect('button')
+      const panel = part('ul') as HTMLElement
+      const panelBox = panel.hidden ? null : panel.getBoundingClientRect()
+      const range = document.createRange()
+      range.selectNodeContents(part('h3'))
+      return {
+        row: Math.round(item.getBoundingClientRect().top - origin.top),
+        top: box.top - origin.top,
+        left: box.left - origin.left,
+        width: box.width,
+        height: box.height,
+        bottom: box.bottom - origin.top,
+        title: title.top - box.top,
+        label: rect('h3 + p').top - box.top,
+        toggle: toggle.top - box.top,
+        titleHeight: title.height,
+        titleLineHeight: parseFloat(getComputedStyle(part('h3')).lineHeight),
+        titleLines: new Set([...range.getClientRects()].map((line) => Math.round(line.top)))
+          .size,
+        toggleWidth: toggle.width,
+        toggleBelow: box.bottom - toggle.bottom,
+        listGap: panelBox && panelBox.top - toggle.bottom,
+        listBelow: panelBox && box.bottom - panelBox.bottom,
+      }
+    })
+  })
+
+/**
+ * Waits until the Services section's layout is settled: the boxes of its
+ * headings, paragraphs, cards and buttons, in page coordinates, are the
+ * same across three animation frames, twice in a row.
+ */
+async function waitForStableLayout(page: Page) {
+  const snapshot = () =>
+    page.getByRole('region', { name: 'Services' }).evaluate(async (section) => {
+      const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
+      const boxes = () =>
+        JSON.stringify(
+          [...section.querySelectorAll('h2, h3, p, li > div, button')].map((element) => {
+            const box = element.getBoundingClientRect()
+            return [box.left, box.top + scrollY, box.width, box.height]
+          }),
+        )
+      const first = boxes()
+      await frame()
+      await frame()
+      await frame()
+      return first === boxes()
+    })
+  await expect
+    .poll(async () => (await snapshot()) && (await snapshot()), {
+      message: 'Services layout is stable across animation frames',
+    })
+    .toBe(true)
+}
 
 /** The cards grouped into grid rows, in order, as indexes into the list. */
 function cardRows(cards: CardBox[]) {
@@ -290,6 +322,7 @@ for (const width of WIDTHS) {
     if (columns(width) > 1) {
       test(`service card titles, labels, toggles and heights line up in each row at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
+        await waitForStableLayout(page)
         const cards = await measureCards(page)
         const rows = cardRows(cards)
         expect(rows.map((row) => row.length)).toEqual(
@@ -329,18 +362,40 @@ for (const width of WIDTHS) {
         }
       })
 
+      test(`every service title reserves two lines, even when all fit on one, at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        // Test-only text in the browser; services.ts is unchanged. With
+        // every title on one line, only the title's own minimum height
+        // keeps the two-line block.
+        await serviceList(page)
+          .getByRole('heading', { level: 3 })
+          .evaluateAll((headings) => {
+            for (const heading of headings) heading.textContent = 'Data'
+          })
+        await waitForStableLayout(page)
+        const cards = await measureCards(page)
+
+        for (const [i, card] of cards.entries()) {
+          expect(card.titleLines, `card ${i + 1} title lines`).toBe(1)
+          expect(card.titleHeight, `card ${i + 1} title height`)
+            .toBeGreaterThanOrEqual(2 * card.titleLineHeight - 0.5)
+        }
+      })
+
       for (const [where, at] of [
         ['in the middle of', 1],
         ['at the start of', 0],
       ] as const) {
         test(`opening a service card ${where} a row grows only that card at ${width}px`, async ({ page }, testInfo) => {
           await open(page, testInfo, width)
+          await waitForStableLayout(page)
           const before = await measureCards(page)
           const row = cardRows(before).find((cells) => cells.includes(at))!
           const toggle = serviceToggles(page).nth(at)
 
           await toggle.click()
           await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+          await waitForStableLayout(page)
           const opened = await measureCards(page)
 
           const card = (i: number) => `card ${i + 1}`
@@ -361,16 +416,24 @@ for (const width of WIDTHS) {
 
           await toggle.click()
           await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+          await waitForStableLayout(page)
           const closed = await measureCards(page)
           expect(Math.abs(closed[at].height - before[at].height), `${card(at)} height after closing`)
             .toBeLessThanOrEqual(1)
           expect(Math.abs(closed[at].toggle - before[at].toggle), `${card(at)} toggle after closing`)
             .toBeLessThanOrEqual(1)
+          for (const i of row) {
+            for (const key of ['height', 'top', 'left'] as const) {
+              expect(Math.abs(closed[i][key] - before[i][key]), `${card(i)} ${key} after closing`)
+                .toBeLessThanOrEqual(1)
+            }
+          }
         })
       }
     } else {
       test(`service cards keep their natural height, with one-line titles one line tall, at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
+        await waitForStableLayout(page)
         const cards = await measureCards(page)
 
         const oneLine = cards.filter((card) => card.titleLines === 1)
@@ -388,16 +451,11 @@ for (const width of WIDTHS) {
       test(`a three-line title widens the title block for its row at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
         // Test-only text in the browser; services.ts is unchanged.
-        const title = page
-          .getByRole('region', { name: 'Services' })
-          .getByRole('list')
-          .first()
-          .locator(':scope > li')
-          .nth(1)
-          .getByRole('heading', { level: 3 })
+        const title = serviceList(page).getByRole('heading', { level: 3 }).nth(1)
         await title.evaluate((heading) => {
           heading.textContent = 'Data Warehousing, Lakehouse & Analytics Modelling Services'
         })
+        await waitForStableLayout(page)
         const cards = await measureCards(page)
         expect(cards[1].titleLines, 'the long title wraps to three lines').toBe(3)
 
