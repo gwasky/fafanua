@@ -89,6 +89,19 @@ describe('ServiceCard', () => {
     expect(screen.queryByRole('list')).not.toBeInTheDocument()
   })
 
+  it('marks the card as open while the list is shown', () => {
+    const { heading, button } = renderCard()
+    const card = heading.parentElement!
+
+    expect(card).not.toHaveClass('service-card--open')
+    fireEvent.click(button)
+    expect(button).toHaveAttribute('aria-expanded', 'true')
+    expect(card).toHaveClass('service-card--open')
+    fireEvent.click(button)
+    expect(button).toHaveAttribute('aria-expanded', 'false')
+    expect(card).not.toHaveClass('service-card--open')
+  })
+
   it('names the button with its visible text, then the service name', () => {
     const { button } = renderCard()
 

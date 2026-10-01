@@ -9,14 +9,17 @@ type ServiceCardProps = {
 // One service: name, lifecycle label with its colour marker, description
 // and a disclosure for the typical-engagements list. All copy comes from
 // the service passed in; the marker colour is chosen in ServiceCard.css
-// from the stage modifier class.
+// from the stage modifier class. The open modifier lets ServiceCard.css
+// give an open card the extra grid track its list sits in.
 function ServiceCard({ service }: ServiceCardProps) {
   const [open, setOpen] = useState(false)
   const headingId = `${service.id}-heading`
   const panelId = `${service.id}-typical-engagements`
 
   return (
-    <div className={`service-card service-card--${service.stage}`}>
+    <div
+      className={`service-card service-card--${service.stage}${open ? ' service-card--open' : ''}`}
+    >
       <h3 id={headingId} className="service-card__title">
         {service.name}
       </h3>
