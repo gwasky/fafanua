@@ -19,25 +19,22 @@ const LIST_ID = 'main-nav-list'
 // while the page is scrolled by less than this many pixels.
 const SCROLL_THRESHOLD = 8
 
-// Whether the header sits over a [data-header-overlay] section at the top
-// of the page. scrollY is checked first, so the document is only queried
-// near the top. Neither read causes layout, so a scroll event costs no
-// layout work, and React skips the render while the answer is unchanged.
-// The marker is rendered after the header, so the first render reads
-// false; React reads the value again when it subscribes, after the first
-// commit, and renders again if it has changed.
-function isOverOverlay() {
-  return (
-    window.scrollY < SCROLL_THRESHOLD &&
-    document.querySelector('[data-header-overlay]') !== null
-  )
-}
+// Whether the page is scrolled by less than SCROLL_THRESHOLD. The passive
+// scroll listener makes React read only scrollY, which causes no layout,
+// and React skips the render while the answer is unchanged.
+const isAtTop = () => window.scrollY < SCROLL_THRESHOLD
 
-// A passive scroll listener that reads nothing itself.
 function subscribeToScroll(onChange: () => void) {
   window.addEventListener('scroll', onChange, { passive: true })
   return () => window.removeEventListener('scroll', onChange)
 }
+
+// Whether a [data-header-overlay] section is on the page. It is part of
+// the page's markup, so nothing needs to be told when it changes. It is
+// rendered after the header, so the first render reads false; React reads
+// it again after the first commit and renders again once it is there.
+const hasOverlay = () => document.querySelector('[data-header-overlay]') !== null
+const subscribeToNothing = () => () => {}
 
 const LOGO = '/fafanua-logo.svg'
 const LOGO_REVERSED = '/fafanua-logo-reversed.svg'
@@ -91,8 +88,9 @@ function Header() {
     }
   }, [])
 
-  const overOverlay = useSyncExternalStore(subscribeToScroll, isOverOverlay, () => false)
-  const transparent = overOverlay && !menuOpen
+  const atTop = useSyncExternalStore(subscribeToScroll, isAtTop, () => true)
+  const overlay = useSyncExternalStore(subscribeToNothing, hasOverlay, () => false)
+  const transparent = overlay && atTop && !menuOpen
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key !== 'Escape' || !menuOpen) return
