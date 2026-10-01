@@ -8,6 +8,7 @@ A single-page marketing website for **Fafanua Technologies Limited**, presenting
 
 - **Primary Plan:** `_docs/plan.md` is the source of truth for content, brand, colours, accessibility and acceptance criteria. Read the relevant section before starting a task.
 - **Service Positioning:** `_docs/plan-fafanua-services-positioning.md` is the source of truth for Services, service copy, lifecycle labels, Managed Data & Analytics Services, Reverse ETL, Solutions and related commercial positioning, and wins where it conflicts with `_docs/plan.md`. `_docs/plan.md` stays authoritative for brand, design system, accessibility, architecture, deployment, How We Work and general site rules.
+- **Visual Upgrade Plan:** `_docs/fafanua-v2-visual-upgrade-plan.md` is the source of truth for the Version 2 visual and interaction upgrade. It governs layout, hierarchy, section composition, motion, and visual treatment while preserving the approved content and positioning documents.
 - **Backlog:** work is tracked as GitHub issues at https://github.com/gwasky/fafanua/issues. Follow `_docs/process.md` for how to pick up, work on and close an issue.
 
 ## Stack
