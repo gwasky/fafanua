@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
 import { email } from './data/contact.ts'
-import { navigation } from './data/navigation.ts'
+import { footerNavigation, navigation, navigationCta } from './data/navigation.ts'
 import { services } from './data/services.ts'
 import { accessibleNames, expectNoAxeViolations } from './test/axe.ts'
 
@@ -117,18 +117,24 @@ describe('App links and buttons', () => {
     expect([...(hrefs.get(email) ?? [])]).toEqual([`mailto:${email}`])
   })
 
-  it('matches the header and footer nav links to each other', () => {
+  it('gives the header and footer navs the same four section links, then the header call to action and the footer Contact link', () => {
     render(<App />)
-    const links = (landmark: HTMLElement) =>
-      within(landmark)
-        .getAllByRole('link')
-        .map((link) => [link.textContent, link.getAttribute('href')])
+    const links = (landmark: HTMLElement) => {
+      const found = within(landmark).getAllByRole('link')
+      const names = accessibleNames(found)
+      return found.map((link, i) => [names[i], link.getAttribute('href')])
+    }
     const [main, footer] = screen.getAllByRole('navigation')
+    const sections = navigation.map((item) => [item.label, `#${item.id}`])
 
-    expect(links(main)).toEqual(
-      navigation.map((item) => [item.label, `#${item.id}`]),
+    expect(links(main)).toEqual([
+      ...sections,
+      [navigationCta.label, `#${navigationCta.id}`],
+    ])
+    expect(links(footer)).toEqual(
+      footerNavigation.map((item) => [item.label, `#${item.id}`]),
     )
-    expect(links(footer)).toEqual(links(main))
+    expect(links(footer)).toEqual([...sections, ['Contact', '#contact']])
   })
 
   it('sends both info@fafanua.tech links to the mailto address', () => {

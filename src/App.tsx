@@ -14,8 +14,11 @@ function App() {
   // Once, after the first render, before the first paint.
   useLayoutEffect(landOnHash, [])
 
+  // #top is the logo link's target. It is an empty element above the
+  // sticky header, because scrolling to a stuck element does nothing.
   return (
     <>
+      <div id="top" />
       <Header />
       <main id="main" tabIndex={-1}>
         <Hero />

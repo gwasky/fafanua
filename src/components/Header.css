@@ -1,17 +1,55 @@
 /*
- * Header, skip link and main navigation. Below 768px the links sit behind
- * the Menu toggle; from 768px they show inline. The 768px breakpoint is a
- * literal because CSS variables cannot be used in media queries; keep it
- * the same as INLINE_NAV_QUERY in Header.tsx (see tokens.css).
+ * Header, skip link and main navigation. Below 1024px the links and the
+ * call to action sit behind the Menu toggle; from 1024px they show
+ * inline, on one row with the logo. The 1024px breakpoint is a literal
+ * because CSS variables cannot be used in media queries; keep it the same
+ * as INLINE_NAV_QUERY in Header.tsx (see tokens.css).
+ *
+ * The header sticks to the top of the viewport. It is solid: an opaque
+ * paper background and a bottom border, with no translucency or
+ * backdrop-filter, so its contrast never depends on what scrolls under
+ * it. Header.tsx adds .on-dark (global.css) while it is transparent over
+ * a [data-header-overlay] section: the dark tokens, with no background and
+ * a transparent border, which keeps the height the same.
  */
 
 .site-header {
-  position: relative;
+  position: sticky;
+  inset-block-start: 0;
+  /* Above the page's positioned content, such as the technical grid's
+     section, which comes later in the DOM. */
+  z-index: 1;
   border-block-end: var(--border-width) solid var(--color-border);
   background-color: var(--color-bg);
 }
 
+.site-header.on-dark {
+  border-block-end-color: transparent;
+  background-color: transparent;
+  color: var(--color-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .site-header {
+    transition-property: background-color, border-color;
+    transition-duration: var(--duration-header);
+    transition-timing-function: var(--ease-standard);
+  }
+}
+
+/* A short viewport (a landscape phone, or a 1280px window at 200% zoom):
+   the header scrolls with the page instead of taking a large share of
+   the screen (WCAG 1.4.10). global.css drops the scroll margins at the
+   same height. */
+@media (max-height: 479.98px) {
+  .site-header {
+    position: static;
+  }
+}
+
+/* The open menu's containing block (see .site-nav__list[data-open]). */
 .site-header__inner {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -95,13 +133,38 @@ main:focus {
   list-style: none;
 }
 
+/*
+ * The open menu drops down over the page from the header's bottom edge,
+ * full width, rather than making the header taller: the page behind does
+ * not move, and --header-height stays the closed header's height. A list
+ * taller than the viewport scrolls inside itself. It is solid, as the
+ * header is whenever the menu is open. z-index keeps it above the page
+ * when the header is static (short viewports).
+ */
 .site-nav__list[data-open] {
+  position: absolute;
+  inset-block-start: calc(100% + var(--border-width));
+  inset-inline: 0;
+  z-index: 1;
   display: block;
+  max-block-size: calc(100dvh - var(--header-height));
+  overflow-y: auto;
+  padding: var(--space-2) var(--container-padding) var(--space-4);
+  border-block-end: var(--border-width) solid var(--color-border);
+  background-color: var(--color-bg);
+}
+
+.site-nav__list[data-open] .site-nav__item + .site-nav__item {
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+/* The call to action is the menu's last item, full width. */
+.site-nav__list[data-open] .site-nav__cta {
   margin-block-start: var(--space-4);
 }
 
-.site-nav__list[data-open] li + li {
-  border-block-start: var(--border-width) solid var(--color-border);
+.site-nav__list[data-open] .site-nav__cta .button {
+  width: 100%;
 }
 
 .site-nav__link {
@@ -115,20 +178,22 @@ main:focus {
   text-underline-offset: var(--space-1);
 }
 
+/* The heading colour: graphite 900 on the solid header, as body text,
+   and paper while the header is transparent over a dark section. */
 .site-nav__link:link,
 .site-nav__link:visited,
 .site-nav__link:hover {
-  color: var(--color-text);
+  color: var(--color-heading);
 }
 
 .site-nav__link:hover {
   text-decoration-line: underline;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   /* .site-header lets this beat .button's later display: inline-flex. */
   .site-header .menu-toggle {
-    /* The inline nav replaces the toggle from 768px. */
+    /* The inline nav replaces the toggle from 1024px. */
     display: none;
   }
 
@@ -138,12 +203,28 @@ main:focus {
 
   .site-nav__list,
   .site-nav__list[data-open] {
+    position: static;
     display: flex;
+    align-items: center;
     gap: var(--space-2);
-    margin-block-start: 0;
+    max-block-size: none;
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    background-color: transparent;
   }
 
-  .site-nav__list[data-open] li + li {
+  .site-nav__list[data-open] .site-nav__item + .site-nav__item {
     border-block-start: 0;
+  }
+
+  .site-nav__cta,
+  .site-nav__list[data-open] .site-nav__cta {
+    margin-block-start: 0;
+    margin-inline-start: var(--space-4);
+  }
+
+  .site-nav__list[data-open] .site-nav__cta .button {
+    width: auto;
   }
 }

@@ -1,9 +1,10 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App.tsx'
-import { navigation } from '../data/navigation.ts'
+import { navigation, navigationCta } from '../data/navigation.ts'
+import Header from './Header.tsx'
 
-// jsdom has no matchMedia. This stand-in starts narrow (below 768px) and
+// jsdom has no matchMedia. This stand-in starts narrow (below 1024px) and
 // lets a test fire a change as if the window had been resized.
 type Listener = (event: MediaQueryListEvent) => void
 let listeners: Set<Listener>
@@ -30,7 +31,16 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  setScrollY(0)
 })
+
+/** Sets window.scrollY and fires the scroll event the header listens to. */
+function setScrollY(y: number) {
+  act(() => {
+    Object.defineProperty(window, 'scrollY', { value: y, configurable: true })
+    window.dispatchEvent(new Event('scroll'))
+  })
+}
 
 const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]'
 
@@ -46,8 +56,18 @@ describe('Header', () => {
   it('is the banner landmark, outside main', () => {
     const { banner } = renderPage()
 
-    expect(banner).toHaveAttribute('id', 'top')
     expect(screen.getByRole('main')).not.toContainElement(banner)
+  })
+
+  it('leaves #top to an empty element just before it, as it is sticky', () => {
+    const { banner } = renderPage()
+    const top = document.getElementById('top')
+
+    expect(banner).not.toHaveAttribute('id')
+    expect(top).not.toBeNull()
+    expect(top).toBeEmptyDOMElement()
+    expect(top?.nextElementSibling).toBe(banner)
+    expect(top?.previousElementSibling).toBeNull()
   })
 
   it('has one Main navigation landmark and adds no heading', () => {
@@ -60,7 +80,7 @@ describe('Header', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
   })
 
-  it('links to the five sections in the order of navigation.ts', () => {
+  it('links to the four sections in the order of navigation.ts, then the call to action', () => {
     const { nav } = renderPage()
     const links = within(nav).getAllByRole('link')
 
@@ -69,23 +89,49 @@ describe('Header', () => {
       ['Solutions', 'solutions'],
       ['How We Work', 'how-we-work'],
       ['About', 'about'],
-      ['Contact', 'contact'],
     ])
-    expect(links).toHaveLength(navigation.length)
+    expect(links).toHaveLength(navigation.length + 1)
     navigation.forEach((item, index) => {
       expect(links[index]).toBe(
         within(nav).getByRole('link', { name: item.label }),
       )
       expect(links[index]).toHaveAttribute('href', `#${item.id}`)
     })
+    expect(links.at(-1)).toBe(
+      within(nav).getByRole('link', { name: navigationCta.label }),
+    )
   })
 
-  it('has one list item per link', () => {
+  it('has no Contact link: the call to action replaces it', () => {
+    const { banner } = renderPage()
+
+    expect(
+      within(banner).queryByRole('link', { name: 'Contact' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('ends with "Discuss a project →", named without the arrow, to #contact', () => {
+    const { nav } = renderPage()
+    const cta = within(nav).getByRole('link', { name: 'Discuss a project' })
+
+    expect(navigationCta).toEqual({ label: 'Discuss a project', id: 'contact' })
+    expect(cta).toHaveAttribute('href', '#contact')
+    expect(cta).toHaveClass('button')
+    expect(cta).not.toHaveClass('button--secondary')
+    expect(cta.textContent).toBe('Discuss a project→')
+    const arrow = cta.querySelector('.button__arrow')
+    expect(arrow?.textContent).toBe('→')
+    expect(arrow).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('has one list item per link, with the call to action last', () => {
     const { nav } = renderPage()
     const list = within(nav).getByRole('list')
+    const items = within(list).getAllByRole('listitem')
 
-    expect(within(list).getAllByRole('listitem')).toHaveLength(
-      navigation.length,
+    expect(items).toHaveLength(navigation.length + 1)
+    expect(within(items.at(-1)!).getByRole('link')).toHaveAccessibleName(
+      'Discuss a project',
     )
   })
 
@@ -160,14 +206,17 @@ describe('Header', () => {
       .toBeInTheDocument()
   })
 
-  it('closes when a link is chosen', () => {
-    const { nav, toggle } = renderPage()
+  it.each([...navigation.map((item) => item.label), 'Discuss a project'])(
+    'closes when "%s" is chosen',
+    (name) => {
+      const { nav, toggle } = renderPage()
 
-    fireEvent.click(toggle)
-    fireEvent.click(within(nav).getByRole('link', { name: 'How We Work' }))
+      fireEvent.click(toggle)
+      fireEvent.click(within(nav).getByRole('link', { name }))
 
-    expect(toggle).toHaveAttribute('aria-expanded', 'false')
-  })
+      expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    },
+  )
 
   it('closes on Escape from a link and focuses the toggle', () => {
     const { nav, toggle } = renderPage()
@@ -194,7 +243,7 @@ describe('Header', () => {
 
   it('does nothing on Escape while closed', () => {
     const { nav, toggle } = renderPage()
-    const link = within(nav).getByRole('link', { name: 'Contact' })
+    const link = within(nav).getByRole('link', { name: 'Discuss a project' })
     link.focus()
 
     fireEvent.keyDown(link, { key: 'Escape' })
@@ -223,11 +272,123 @@ describe('Header', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
   })
 
+  it('publishes its height as --header-height on :root, and removes it on unmount', () => {
+    const { unmount } = render(<Header />)
+    const value = () =>
+      document.documentElement.style.getPropertyValue('--header-height')
+
+    // jsdom lays nothing out, so the measured height is 0.
+    expect(value()).toBe('0px')
+    unmount()
+    expect(value()).toBe('')
+  })
+
   it('removes its media query listener on unmount', () => {
     const { unmount } = render(<App />)
     expect(listeners.size).toBe(1)
 
     unmount()
     expect(listeners.size).toBe(0)
+  })
+})
+
+describe('Header over a [data-header-overlay] section', () => {
+  const POSITIVE = '/fafanua-logo.svg'
+  const REVERSED = '/fafanua-logo-reversed.svg'
+
+  /** The header, followed by a marked section when `overlay` is set. */
+  function renderHeader({ overlay }: { overlay: boolean }) {
+    render(
+      <>
+        <Header />
+        {overlay && <section data-header-overlay aria-label="Overlay" />}
+      </>,
+    )
+    const banner = screen.getByRole('banner')
+    const logo = within(banner).getByRole('img', { name: 'Fafanua Technologies' })
+    const toggle = screen.getByRole('button', { name: 'Menu' })
+    return { banner, logo, toggle }
+  }
+
+  const expectSolid = (banner: HTMLElement, logo: HTMLElement) => {
+    expect(banner).not.toHaveClass('on-dark')
+    expect(logo).toHaveAttribute('src', POSITIVE)
+  }
+
+  const expectTransparent = (banner: HTMLElement, logo: HTMLElement) => {
+    expect(banner).toHaveClass('on-dark')
+    expect(logo).toHaveAttribute('src', REVERSED)
+  }
+
+  it('is solid at scroll 0 with no marker on the page', () => {
+    const { banner, logo } = renderHeader({ overlay: false })
+
+    expectSolid(banner, logo)
+  })
+
+  it('stays solid at every scroll position with no marker', () => {
+    const { banner, logo } = renderHeader({ overlay: false })
+
+    for (const y of [0, 7, 8, 400, 0]) {
+      setScrollY(y)
+      expectSolid(banner, logo)
+    }
+  })
+
+  it('is transparent at scroll 0 with a marker', () => {
+    const { banner, logo } = renderHeader({ overlay: true })
+
+    expectTransparent(banner, logo)
+  })
+
+  it('turns solid at 8px of scroll and transparent again below it', () => {
+    const { banner, logo } = renderHeader({ overlay: true })
+
+    setScrollY(7)
+    expectTransparent(banner, logo)
+    setScrollY(8)
+    expectSolid(banner, logo)
+    setScrollY(600)
+    expectSolid(banner, logo)
+    setScrollY(0)
+    expectTransparent(banner, logo)
+  })
+
+  it('turns solid while the menu is open', () => {
+    const { banner, logo, toggle } = renderHeader({ overlay: true })
+
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expectSolid(banner, logo)
+
+    fireEvent.click(toggle)
+    expectTransparent(banner, logo)
+  })
+
+  it('keeps the logo the same size in both states', () => {
+    const { banner, logo } = renderHeader({ overlay: true })
+    const size = () => [logo.getAttribute('width'), logo.getAttribute('height')]
+    const transparentSize = size()
+
+    setScrollY(100)
+    expectSolid(banner, logo)
+    expect(size()).toEqual(transparentSize)
+    expect(transparentSize).toEqual(['296', '42'])
+  })
+
+  it('stops listening to scroll on unmount', () => {
+    const add = vi.spyOn(window, 'addEventListener')
+    const remove = vi.spyOn(window, 'removeEventListener')
+    const { unmount } = render(<Header />)
+    const scrollListeners = (spy: typeof add) =>
+      spy.mock.calls.filter(([type]) => type === 'scroll').map(([, listener]) => listener)
+
+    const added = scrollListeners(add)
+    expect(added).toHaveLength(1)
+    expect(add.mock.calls.find(([type]) => type === 'scroll')?.[2]).toEqual({ passive: true })
+    unmount()
+    expect(scrollListeners(remove)).toEqual(added)
+    add.mockRestore()
+    remove.mockRestore()
   })
 })

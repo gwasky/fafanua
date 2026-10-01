@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { navigation } from '../data/navigation.ts'
+import { footerNavigation } from '../data/navigation.ts'
 import Footer from './Footer.tsx'
 
 const EMAIL = 'info@fafanua.tech'
@@ -50,17 +50,25 @@ describe('Footer', () => {
     expect(footer.querySelectorAll('img, svg')).toHaveLength(1)
   })
 
-  it('has a nav named "Footer" with the navigation links in order', () => {
+  it('has a nav named "Footer" with five plain links: the four sections, then Contact', () => {
     const footer = renderFooter()
     const nav = within(footer).getByRole('navigation', { name: 'Footer' })
     const links = within(nav).getAllByRole('link')
 
     expect(links.map((link) => link.textContent)).toEqual(
-      navigation.map((item) => item.label),
+      footerNavigation.map((item) => item.label),
     )
+    expect(links.map((link) => link.textContent)).toEqual([
+      'Services',
+      'Solutions',
+      'How We Work',
+      'About',
+      'Contact',
+    ])
     expect(links.map((link) => link.getAttribute('href'))).toEqual(
-      navigation.map((item) => `#${item.id}`),
+      footerNavigation.map((item) => `#${item.id}`),
     )
+    for (const link of links) expect(link).not.toHaveClass('button')
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
       '#services',
       '#solutions',
@@ -123,7 +131,7 @@ describe('Footer', () => {
 
     expect(within(footer).getAllByRole('link')).toHaveLength(6)
     expect(footer.textContent).toBe(
-      navigation.map((item) => item.label).join('') +
+      footerNavigation.map((item) => item.label).join('') +
         EMAIL +
         `© ${year} Fafanua Technologies Limited`,
     )

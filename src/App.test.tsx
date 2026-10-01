@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
-import { navigation } from './data/navigation.ts'
+import { navigation, navigationCta } from './data/navigation.ts'
 import { processStages } from './data/process.ts'
 import { managedServices, servicesIntro } from './data/services.ts'
 import { solutions } from './data/solutions.ts'
@@ -172,12 +172,12 @@ describe('App', () => {
     expect(main.lastElementChild).toBe(contact)
   })
 
-  it('lands the header Contact link and the hero button on section#contact', () => {
+  it('lands the header call to action and the hero button on section#contact', () => {
     render(<App />)
     const contact = screen.getByRole('region', { name: CONTACT })
-    const nav = navigation.find((item) => item.label === 'Contact')
+    const nav = navigationCta
     const targets = [
-      within(screen.getByRole('banner')).getByRole('link', { name: 'Contact' }),
+      within(screen.getByRole('banner')).getByRole('link', { name: 'Discuss a project' }),
       screen.getByRole('link', { name: 'Contact our team' }),
     ]
 

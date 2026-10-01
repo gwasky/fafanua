@@ -1,15 +1,57 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent,
+} from 'react'
 import { flushSync } from 'react-dom'
-import { navigation } from '../data/navigation.ts'
+import { navigation, navigationCta } from '../data/navigation.ts'
 import './Header.css'
 
 // The width at which the inline nav replaces the menu toggle. Keep it in
-// step with the 768px media query in Header.css (see tokens.css).
-const INLINE_NAV_QUERY = '(min-width: 768px)'
+// step with the 1024px media query in Header.css (see tokens.css).
+const INLINE_NAV_QUERY = '(min-width: 1024px)'
 const LIST_ID = 'main-nav-list'
 
+// The header is transparent over a [data-header-overlay] section only
+// while the page is scrolled by less than this many pixels.
+const SCROLL_THRESHOLD = 8
+
+// Whether the header sits over a [data-header-overlay] section at the top
+// of the page. scrollY is checked first, so the document is only queried
+// near the top. Neither read causes layout, so a scroll event costs no
+// layout work, and React skips the render while the answer is unchanged.
+// The marker is rendered after the header, so the first render reads
+// false; React reads the value again when it subscribes, after the first
+// commit, and renders again if it has changed.
+function isOverOverlay() {
+  return (
+    window.scrollY < SCROLL_THRESHOLD &&
+    document.querySelector('[data-header-overlay]') !== null
+  )
+}
+
+// A passive scroll listener that reads nothing itself.
+function subscribeToScroll(onChange: () => void) {
+  window.addEventListener('scroll', onChange, { passive: true })
+  return () => window.removeEventListener('scroll', onChange)
+}
+
+const LOGO = '/fafanua-logo.svg'
+const LOGO_REVERSED = '/fafanua-logo-reversed.svg'
+
+// The sticky site header. Solid (paper, with a bottom border) by default.
+// While a [data-header-overlay] section exists, the page is at the top and
+// the menu is closed, it is transparent and takes the dark tokens
+// (.on-dark) and the reversed logo, so it reads over the dark section
+// pulled up beneath it (global.css). It publishes its height as
+// --header-height on :root, which the scroll margins and the overlay
+// pull-up use.
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const headerRef = useRef<HTMLElement>(null)
   const toggleRef = useRef<HTMLButtonElement>(null)
 
   // Close the menu when the inline nav takes over, so it is closed again
@@ -22,6 +64,35 @@ function Header() {
     query.addEventListener('change', onChange)
     return () => query.removeEventListener('change', onChange)
   }, [])
+
+  // A layout effect, so the height is on :root before App's landOnHash
+  // scrolls to a hash (child effects run first) and before the first
+  // paint. The ResizeObserver keeps it current after text zoom, wrapping
+  // or the font swap.
+  useLayoutEffect(() => {
+    const header = headerRef.current
+    if (!header) return
+    const root = document.documentElement
+    const publish = (height: number) =>
+      root.style.setProperty('--header-height', `${height}px`)
+
+    publish(header.getBoundingClientRect().height)
+    // jsdom, in the unit tests, has no ResizeObserver.
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(([entry]) => {
+            publish(entry.borderBoxSize[0].blockSize)
+          })
+    observer?.observe(header)
+    return () => {
+      observer?.disconnect()
+      root.style.removeProperty('--header-height')
+    }
+  }, [])
+
+  const overOverlay = useSyncExternalStore(subscribeToScroll, isOverOverlay, () => false)
+  const transparent = overOverlay && !menuOpen
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key !== 'Escape' || !menuOpen) return
@@ -36,14 +107,18 @@ function Header() {
   }
 
   return (
-    <header id="top" className="site-header" onKeyDown={onKeyDown}>
+    <header
+      ref={headerRef}
+      className={transparent ? 'site-header on-dark' : 'site-header'}
+      onKeyDown={onKeyDown}
+    >
       <a className="skip-link visually-hidden-focusable" href="#main">
         Skip to content
       </a>
       <div className="container site-header__inner">
         <a className="site-header__logo" href="#top">
           <img
-            src="/fafanua-logo.svg"
+            src={transparent ? LOGO_REVERSED : LOGO}
             alt="Fafanua Technologies"
             width="296"
             height="42"
@@ -66,7 +141,7 @@ function Header() {
             data-open={menuOpen || undefined}
           >
             {navigation.map((item) => (
-              <li key={item.id}>
+              <li key={item.id} className="site-nav__item">
                 <a
                   className="site-nav__link"
                   href={`#${item.id}`}
@@ -76,6 +151,18 @@ function Header() {
                 </a>
               </li>
             ))}
+            <li className="site-nav__cta">
+              <a
+                className="button"
+                href={`#${navigationCta.id}`}
+                onClick={onLinkClick}
+              >
+                {navigationCta.label}
+                <span className="button__arrow" aria-hidden="true">
+                  →
+                </span>
+              </a>
+            </li>
           </ul>
         </nav>
       </div>

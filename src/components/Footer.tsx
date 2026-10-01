@@ -1,12 +1,12 @@
 import { email } from '../data/contact.ts'
-import { navigation } from '../data/navigation.ts'
+import { footerNavigation } from '../data/navigation.ts'
 import './Footer.css'
 
 // The page footer, outside main: the positive logo (an image, not a link),
-// the section links from src/data/navigation.ts, the email link from
-// src/data/contact.ts and the copyright line. The year is read when the
-// component renders, so it is never fixed at build time. It uses no ids,
-// so nothing duplicates the header's.
+// the five footer links (footerNavigation in src/data/navigation.ts), the
+// email link from src/data/contact.ts and the copyright line. The year is
+// read when the component renders, so it is never fixed at build time. It
+// uses no ids, so nothing duplicates the header's.
 function Footer() {
   const year = new Date().getFullYear()
 
@@ -22,7 +22,7 @@ function Footer() {
         />
         <nav className="site-footer__nav" aria-label="Footer">
           <ul className="site-footer__list">
-            {navigation.map((item) => (
+            {footerNavigation.map((item) => (
               <li key={item.id}>
                 <a className="site-footer__link" href={`#${item.id}`}>
                   {item.label}

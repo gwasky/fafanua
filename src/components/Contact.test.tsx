@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { navigation } from '../data/navigation.ts'
+import { contactNavItem, footerNavigation, navigationCta } from '../data/navigation.ts'
 import Contact from './Contact.tsx'
 
 // Plan Section 11, character for character.
@@ -30,11 +30,12 @@ describe('Contact', () => {
     expect(heading).toHaveAttribute('id', 'contact-heading')
   })
 
-  it('uses the id of the Contact navigation entry', () => {
+  it('uses the id of the header call to action and the footer Contact entry', () => {
     const section = renderContact()
-    const nav = navigation.find((item) => item.label === 'Contact')
 
-    expect(section.id).toBe(nav?.id)
+    expect(section.id).toBe(navigationCta.id)
+    expect(section.id).toBe(contactNavItem.id)
+    expect(footerNavigation).toContain(contactNavItem)
   })
 
   it('has exactly one heading, an h2 with the plan wording', () => {

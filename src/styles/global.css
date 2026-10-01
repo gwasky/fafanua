@@ -212,6 +212,44 @@ a:hover {
 }
 
 /*
+ * The sticky header (Header.css) covers the top --header-height of the
+ * viewport. Every anchor target and every focusable element keeps that
+ * much clear above it whenever the browser scrolls it into view: after an
+ * in-page link, on a load with a hash, and when keyboard focus moves to
+ * something above or under the header (WCAG 2.4.11). Only scroll-margin
+ * is used, never scroll-padding on html as well, so the offsets never
+ * add up. #top sits above the header, so the margin cannot move it.
+ */
+[id],
+a[href],
+button,
+[tabindex] {
+  scroll-margin-top: var(--header-height);
+}
+
+/* Below 480px of height the header scrolls with the page (Header.css),
+   so nothing needs to stay clear of it. */
+@media (max-height: 479.98px) {
+  [id],
+  a[href],
+  button,
+  [tabindex] {
+    scroll-margin-top: 0;
+  }
+}
+
+/*
+ * The overlay contract: a section marked data-header-overlay (the dark
+ * hero, #55) is pulled up under the header, which turns transparent over
+ * it while the page is at the top (Header.tsx). Its own padding keeps its
+ * content clear of the header.
+ */
+[data-header-overlay] {
+  margin-block-start: calc(-1 * var(--header-height));
+  padding-block-start: var(--header-height);
+}
+
+/*
  * Hidden visually but still announced by screen readers. The 1px box is
  * the standard technique, not a spacing value.
  */
