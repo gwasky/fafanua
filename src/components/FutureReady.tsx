@@ -3,7 +3,7 @@ import './FutureReady.css'
 // The heading is the owner's wording from decision 5 on #52. The paragraph
 // is _docs/plan.md Section 9, verbatim. Not service copy, so it lives here
 // rather than in src/data/services.ts.
-const futureReadyHeading = 'Built for what comes next'
+const futureReadyHeading = 'Trusted foundations for what comes next'
 const futureReadyStatement =
   'The strongest analytics and AI systems begin with trusted data. Fafanua designs data foundations that preserve business definitions, access controls, quality signals, and provenance as organisations introduce more advanced analytics and AI capabilities.'
 
