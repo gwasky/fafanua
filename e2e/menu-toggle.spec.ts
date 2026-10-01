@@ -54,6 +54,13 @@ for (const width of [360, 1023]) {
       await openPage(page, width)
       // Keep the pointer off the toggle until a test hovers it.
       await page.mouse.move(0, page.viewportSize()!.height - 1)
+      // The webkit project does not reduce motion, and WebKit can still be
+      // running the toggle's colour transition from its first style when
+      // the page has loaded (measured: a background of
+      // rgba(192, 192, 192, 0.004)). Wait for every transition on it to end.
+      await menuButton(page).evaluate((element) =>
+        Promise.all(element.getAnimations().map((animation) => animation.finished)),
+      )
     })
 
     test('is at least 44 x 44px', async ({ page }) => {
