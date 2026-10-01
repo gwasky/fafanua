@@ -97,6 +97,84 @@ async function expectMenuClosed(page: Page) {
 
 const currentHash = (page: Page) => page.evaluate(() => location.hash)
 
+type CardBox = {
+  /** The item's top, which groups the cards into grid rows. */
+  row: number
+  top: number
+  left: number
+  width: number
+  height: number
+  bottom: number
+  /** Offsets from the card's top border edge. */
+  title: number
+  label: number
+  toggle: number
+  titleHeight: number
+  titleLineHeight: number
+  titleLines: number
+  toggleWidth: number
+  toggleBelow: number
+  listGap: number | null
+  listBelow: number | null
+}
+
+/**
+ * Measures each service card (the bordered box inside each item), in page
+ * coordinates, with the title, lifecycle label and toggle offsets from the
+ * card's top edge.
+ */
+const measureCards = (page: Page): Promise<CardBox[]> =>
+  page
+    .getByRole('region', { name: 'Services' })
+    .getByRole('list')
+    .first()
+    .locator(':scope > li')
+    .evaluateAll((items) =>
+      items.map((item) => {
+        const card = item.firstElementChild!
+        const box = card.getBoundingClientRect()
+        const part = (selector: string) => card.querySelector(selector)!
+        const rect = (selector: string) => part(selector).getBoundingClientRect()
+        const title = rect('h3')
+        const toggle = rect('button')
+        const list = part('ul') as HTMLElement
+        const listBox = list.hidden ? null : list.getBoundingClientRect()
+        const range = document.createRange()
+        range.selectNodeContents(part('h3'))
+        return {
+          row: Math.round(item.getBoundingClientRect().top + scrollY),
+          top: box.top + scrollY,
+          left: box.left,
+          width: box.width,
+          height: box.height,
+          bottom: box.bottom + scrollY,
+          title: title.top - box.top,
+          label: rect('h3 + p').top - box.top,
+          toggle: toggle.top - box.top,
+          titleHeight: title.height,
+          titleLineHeight: parseFloat(getComputedStyle(part('h3')).lineHeight),
+          titleLines: new Set([...range.getClientRects()].map((line) => Math.round(line.top)))
+            .size,
+          toggleWidth: toggle.width,
+          toggleBelow: box.bottom - toggle.bottom,
+          listGap: listBox && listBox.top - toggle.bottom,
+          listBelow: listBox && box.bottom - listBox.bottom,
+        }
+      }),
+    )
+
+/** The cards grouped into grid rows, in order, as indexes into the list. */
+function cardRows(cards: CardBox[]) {
+  const rows = new Map<number, number[]>()
+  cards.forEach((card, i) => rows.set(card.row, [...(rows.get(card.row) ?? []), i]))
+  return [...rows.values()]
+}
+
+const spread = (values: number[]) => Math.max(...values) - Math.min(...values)
+
+const serviceToggles = (page: Page) =>
+  page.getByRole('button', { name: /^Typical engagements for / })
+
 for (const width of WIDTHS) {
   test.describe('no horizontal scroll', () => {
     test(`page as loaded, everything closed, at ${width}px`, async ({ page }, testInfo) => {
@@ -208,6 +286,154 @@ for (const width of WIDTHS) {
         )
       expect(overflowing).toEqual([])
     })
+
+    if (columns(width) > 1) {
+      test(`service card titles, labels, toggles and heights line up in each row at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        const cards = await measureCards(page)
+        const rows = cardRows(cards)
+        expect(rows.map((row) => row.length)).toEqual(
+          Array(6 / columns(width)).fill(columns(width)),
+        )
+
+        for (const row of rows) {
+          const of = (key: keyof CardBox) => row.map((i) => cards[i][key] as number)
+          const context = `row ${row.map((i) => i + 1).join(', ')}`
+          expect(spread(of('title')), `${context} title tops ${of('title')}`).toBeLessThanOrEqual(1)
+          expect(spread(of('label')), `${context} label tops ${of('label')}`).toBeLessThanOrEqual(1)
+          expect(spread(of('toggle')), `${context} toggle tops ${of('toggle')}`).toBeLessThanOrEqual(1)
+          expect(spread(of('height')), `${context} heights ${of('height')}`).toBeLessThanOrEqual(1)
+        }
+        for (const [i, card] of cards.entries()) {
+          // A two-line title block, whether the title wraps or not.
+          expect(card.titleHeight, `card ${i + 1} title height`)
+            .toBeGreaterThanOrEqual(2 * card.titleLineHeight - 0.5)
+          // The toggle is last, 24px padding and a 1px border above the
+          // card's bottom edge, so any extra height is above it.
+          expect(Math.abs(card.toggleBelow - 25), `card ${i + 1} space below toggle ${card.toggleBelow}`)
+            .toBeLessThanOrEqual(1)
+          // Its natural width, not stretched across the card's content box.
+          expect(card.toggleWidth, `card ${i + 1} toggle width`).toBeLessThan(card.width - 50 - 1)
+        }
+        // Today's titles leave every label at the same offset.
+        expect(spread(cards.map((card) => card.label)), 'label offsets').toBeLessThanOrEqual(1)
+        // The toggles keep the one natural width.
+        expect(spread(cards.map((card) => card.toggleWidth)), 'toggle widths').toBeLessThanOrEqual(1)
+
+        // Rows are --space-6 (24px) apart.
+        for (let r = 1; r < rows.length; r++) {
+          const gap =
+            Math.min(...rows[r].map((i) => cards[i].top)) -
+            Math.max(...rows[r - 1].map((i) => cards[i].bottom))
+          expect(Math.abs(gap - 24), `gap above row ${r + 1}: ${gap}`).toBeLessThanOrEqual(1)
+        }
+      })
+
+      for (const [where, at] of [
+        ['in the middle of', 1],
+        ['at the start of', 0],
+      ] as const) {
+        test(`opening a service card ${where} a row grows only that card at ${width}px`, async ({ page }, testInfo) => {
+          await open(page, testInfo, width)
+          const before = await measureCards(page)
+          const row = cardRows(before).find((cells) => cells.includes(at))!
+          const toggle = serviceToggles(page).nth(at)
+
+          await toggle.click()
+          await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+          const opened = await measureCards(page)
+
+          const card = (i: number) => `card ${i + 1}`
+          expect(opened[at].height, `${card(at)} grew`).toBeGreaterThan(before[at].height + 24)
+          expect(Math.abs(opened[at].top - before[at].top), `${card(at)} top`).toBeLessThanOrEqual(1)
+          expect(Math.abs(opened[at].toggle - before[at].toggle), `${card(at)} toggle top`)
+            .toBeLessThanOrEqual(1)
+          expect(Math.abs(opened[at].listGap! - 16), `list gap ${opened[at].listGap}`)
+            .toBeLessThanOrEqual(1)
+          expect(Math.abs(opened[at].listBelow! - 25), `space below list ${opened[at].listBelow}`)
+            .toBeLessThanOrEqual(1)
+          for (const i of row.filter((cell) => cell !== at)) {
+            for (const key of ['height', 'top', 'left'] as const) {
+              expect(Math.abs(opened[i][key] - before[i][key]), `${card(i)} ${key}`)
+                .toBeLessThanOrEqual(1)
+            }
+          }
+
+          await toggle.click()
+          await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+          const closed = await measureCards(page)
+          expect(Math.abs(closed[at].height - before[at].height), `${card(at)} height after closing`)
+            .toBeLessThanOrEqual(1)
+          expect(Math.abs(closed[at].toggle - before[at].toggle), `${card(at)} toggle after closing`)
+            .toBeLessThanOrEqual(1)
+        })
+      }
+    } else {
+      test(`service cards keep their natural height, with one-line titles one line tall, at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        const cards = await measureCards(page)
+
+        const oneLine = cards.filter((card) => card.titleLines === 1)
+        expect(oneLine.length, 'cards with a one-line title').toBeGreaterThan(0)
+        for (const card of oneLine) {
+          expect(Math.abs(card.titleHeight - card.titleLineHeight), 'one-line title height')
+            .toBeLessThanOrEqual(1)
+        }
+        expect(spread(cards.map((card) => card.height)), 'card heights differ')
+          .toBeGreaterThan(1)
+      })
+    }
+
+    if (width === 1024) {
+      test(`a three-line title widens the title block for its row at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        // Test-only text in the browser; services.ts is unchanged.
+        const title = page
+          .getByRole('region', { name: 'Services' })
+          .getByRole('list')
+          .first()
+          .locator(':scope > li')
+          .nth(1)
+          .getByRole('heading', { level: 3 })
+        await title.evaluate((heading) => {
+          heading.textContent = 'Data Warehousing, Lakehouse & Analytics Modelling Services'
+        })
+        const cards = await measureCards(page)
+        expect(cards[1].titleLines, 'the long title wraps to three lines').toBe(3)
+
+        const [first, second] = cardRows(cards)
+        for (const row of [first, second]) {
+          const of = (key: keyof CardBox) => row.map((i) => cards[i][key] as number)
+          expect(spread(of('label')), `label tops ${of('label')}`).toBeLessThanOrEqual(1)
+          expect(spread(of('toggle')), `toggle tops ${of('toggle')}`).toBeLessThanOrEqual(1)
+          expect(spread(of('height')), `heights ${of('height')}`).toBeLessThanOrEqual(1)
+        }
+        for (const i of first) {
+          expect(cards[i].titleHeight, `card ${i + 1} title block`)
+            .toBeGreaterThanOrEqual(3 * cards[i].titleLineHeight - 0.5)
+        }
+        for (const i of second) {
+          expect(Math.abs(cards[i].titleHeight - 2 * cards[i].titleLineHeight), `card ${i + 1} title block`)
+            .toBeLessThanOrEqual(1)
+        }
+
+        // Nothing overflows its card.
+        const overflowing = await page
+          .locator('#services .services__list > li > div')
+          .evaluateAll((boxes) =>
+            boxes.flatMap((box) =>
+              [...box.children]
+                .filter(
+                  (child) =>
+                    child.getBoundingClientRect().bottom > box.getBoundingClientRect().bottom + 1 ||
+                    child.scrollWidth > child.clientWidth + 1,
+                )
+                .map((child) => child.textContent?.slice(0, 40)),
+            ),
+          )
+        expect(overflowing).toEqual([])
+      })
+    }
 
     test(`managed-services block spans the grid, keeps its order and fits its text at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
