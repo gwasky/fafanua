@@ -219,21 +219,17 @@ a:hover {
  * something above or under the header (WCAG 2.4.11). Only scroll-margin
  * is used, never scroll-padding on html as well, so the offsets never
  * add up. #top sits above the header, so the margin cannot move it.
+ * Nothing inside the header takes the margin: it is always in view, and
+ * with the margin, focusing one of its controls would scroll the page.
  */
-[id],
-a[href],
-button,
-[tabindex] {
+:is([id], a[href], button, [tabindex]):not(.site-header *) {
   scroll-margin-top: var(--header-height);
 }
 
 /* Below 480px of height the header scrolls with the page (Header.css),
    so nothing needs to stay clear of it. */
 @media (max-height: 479.98px) {
-  [id],
-  a[href],
-  button,
-  [tabindex] {
+  :is([id], a[href], button, [tabindex]):not(.site-header *) {
     scroll-margin-top: 0;
   }
 }
