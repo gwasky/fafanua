@@ -104,9 +104,15 @@
  * cards end on the same line. The description track takes the tallest
  * description, leaving any extra space above the button. An open card
  * also spans the list track, so it grows without stretching the cards
- * beside it. Its bottom padding then sizes the list track, so the button
- * keeps an equal margin in the button track and the list is pulled back
- * up to sit the usual 16px below the button.
+ * beside it.
+ *
+ * The card's bottom padding would size whichever track is its last, and
+ * move the open card's button down, so the space below the button and
+ * below the list is a margin on each instead. The list is pulled up past
+ * the button's margin and the collapsed neighbours' bottom border, to
+ * sit 16px below the button. Nothing on the button changes when the card
+ * opens: changing its margin then left the row 25px too tall after
+ * closing, in Chromium and WebKit, until the next layout.
  */
 @media (min-width: 768px) {
   @supports (grid-template-rows: subgrid) {
@@ -115,6 +121,7 @@
       grid-row: 1 / span 4;
       grid-template-rows: subgrid;
       row-gap: 0;
+      padding-block-end: 0;
     }
 
     .service-card--open {
@@ -130,14 +137,11 @@
     .service-card__toggle {
       align-self: start;
       justify-self: start;
-    }
-
-    .service-card--open > .service-card__toggle {
-      margin-block-end: calc(var(--space-6) + var(--border-width));
+      margin-block-end: var(--space-6);
     }
 
     .service-card__work {
-      margin-block-start: calc(var(--space-4) - var(--space-6) - var(--border-width));
+      margin-block: calc(var(--space-4) - var(--space-6) - var(--border-width)) var(--space-6);
     }
   }
 }
