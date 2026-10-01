@@ -213,12 +213,13 @@
   /* Breakpoints: 768px and 1024px. CSS variables cannot be used in
      media queries, so write them as the literals (min-width: 768px) and
      (min-width: 1024px) everywhere. Section layouts step at both. The
-     header shows its links and call to action inline from 1024px (raised
-     from 768px in #54, where the four links, the call to action and the
-     logo do not fit on one row); below it they sit behind the Menu
-     toggle (Header.css, Header.tsx). Below 480px of viewport height the
-     header stops sticking: (max-height: 479.98px) in Header.css and
-     global.css. */
+     header shows its links and call to action inline from 64em, which is
+     1024px at the default text size (raised from 768px in #54, where the
+     four links, the call to action and the logo do not fit on one row);
+     below it they sit behind the Menu toggle (Header.css, Header.tsx). It
+     is in em so a larger browser text size falls back to the Menu.
+     Below 480px of viewport height the header stops sticking:
+     (max-height: 479.98px) in Header.css and global.css. */
 
   /* The header's rendered height. Header.tsx keeps it current on :root
      (text zoom, wrapping, the font swap); this default matches the

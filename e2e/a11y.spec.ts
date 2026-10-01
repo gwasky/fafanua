@@ -314,6 +314,68 @@ test.describe('a header taller than a quarter of the viewport is static', () => 
   })
 })
 
+test.describe('browser text size 200%: the header falls back to the Menu', () => {
+  // The inline-nav breakpoint is 64em, and em in a media query follows the
+  // browser's default text size, not the page's CSS. Chromium's font size
+  // setting is set here through CDP (Page.setFontSizes), so this runs in
+  // the chromium project only; WebKit has no equivalent in Playwright.
+  // At 32px the breakpoint is 2048px, so a 1024px window shows the Menu
+  // instead of wrapping the inline row (it measured about 819px tall).
+  test.beforeEach(async ({ page }) => {
+    const session = await page.context().newCDPSession(page)
+    await session.send('Page.enable')
+    await session.send('Page.setFontSizes', { fontSizes: { standard: 32 } })
+  })
+
+  const header = (page: Page) =>
+    page.getByRole('banner').evaluate((element) => ({
+      height: element.getBoundingClientRect().height,
+      position: getComputedStyle(element).position,
+      rootFontSize: getComputedStyle(document.documentElement).fontSize,
+      viewport: window.innerHeight,
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+    }))
+  const toggle = (page: Page) => page.getByRole('button', { name: 'Menu' })
+  const inlineLink = (page: Page) =>
+    page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Services' })
+
+  test('shows the Menu at 1024px, on one sticky row, and the menu works', async ({ page }) => {
+    await openPage(page, 1024)
+    const state = await header(page)
+    const detail = JSON.stringify(state)
+
+    expect(state.rootFontSize).toBe('32px')
+    await expect(toggle(page)).toBeVisible()
+    await expect(inlineLink(page)).toBeHidden()
+    // The logo and the Menu on one row: 96px logo link plus 32px padding
+    // above and below and the border, a fifth of the 800px viewport.
+    expect(state.height, detail).toBe(161)
+    expect(state.height, detail).toBeLessThanOrEqual(0.25 * state.viewport)
+    expect(state.position, detail).toBe('sticky')
+    expect(state.scrollWidth, detail).toBeLessThanOrEqual(state.innerWidth)
+
+    await toggle(page).click()
+    await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true')
+    for (const name of ['Services', 'Solutions', 'How We Work', 'About', 'Discuss a project']) {
+      await expect(
+        page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }),
+      ).toBeVisible()
+    }
+  })
+
+  test('switches at 64em: Menu at 2047px, inline nav on one row at 2048px', async ({ page }) => {
+    await openPage(page, 2047)
+    await expect(toggle(page)).toBeVisible()
+    await expect(inlineLink(page)).toBeHidden()
+
+    await openPage(page, 2048)
+    await expect(toggle(page)).toBeHidden()
+    await expect(inlineLink(page)).toBeVisible()
+    expect((await header(page)).height).toBe(161)
+  })
+})
+
 test.describe('skip link overlays the header without moving it (#7)', () => {
   const layout = (page: Page) =>
     page.evaluate(() => {

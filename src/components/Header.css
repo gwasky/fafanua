@@ -1,9 +1,11 @@
 /*
- * Header, skip link and main navigation. Below 1024px the links and the
- * call to action sit behind the Menu toggle; from 1024px they show
- * inline, on one row with the logo. The 1024px breakpoint is a literal
- * because CSS variables cannot be used in media queries; keep it the same
- * as INLINE_NAV_QUERY in Header.tsx (see tokens.css).
+ * Header, skip link and main navigation. Below 64em (1024px at the default
+ * text size) the links and the call to action sit behind the Menu toggle;
+ * from 64em they show inline, on one row with the logo. The breakpoint is
+ * in em so that a larger browser text size moves it up and the header
+ * falls back to the Menu rather than wrapping. It is a literal because
+ * CSS variables cannot be used in media queries; keep it the same as
+ * INLINE_NAV_QUERY in Header.tsx (see tokens.css).
  *
  * The header sticks to the top of the viewport. It is solid: an opaque
  * paper background and a bottom border, with no translucency or
@@ -196,10 +198,10 @@ main:focus {
   text-decoration-line: underline;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 64em) {
   /* .site-header lets this beat .button's later display: inline-flex. */
   .site-header .menu-toggle {
-    /* The inline nav replaces the toggle from 1024px. */
+    /* The inline nav replaces the toggle from 64em. */
     display: none;
   }
 

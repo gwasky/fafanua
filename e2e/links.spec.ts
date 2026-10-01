@@ -35,8 +35,9 @@ const scrollBehavior = (page: Page) =>
 test.describe('breakpoint boundary', () => {
   // INLINE_NAV_QUERY in Header.tsx and the media query in Header.css must
   // switch at the same width.
-  // 1024px since #54: the logo, four links and call to action do not fit
-  // on one row at 768px.
+  // 64em, which is 1024px at the default text size, since #54: the logo,
+  // four links and call to action do not fit on one row at 768px. The
+  // em breakpoint at a larger text size is checked in a11y.spec.ts.
   test('Menu at 1023px, inline nav at 1024px', async ({ page }) => {
     await openPage(page, 1023)
     await expectMenuMode(page)

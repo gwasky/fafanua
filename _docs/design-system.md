@@ -179,7 +179,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 - The footer is light today (paper with a graphite 200 top border); #60 decides whether it becomes dark or graphite, as plan V2 §17 suggests.
 - In the future-ready section, the Intelligence colour may appear only as a restrained accent alongside teal.
 - Content must work at 360px, 768px, 1024px and 1440px with no horizontal scrolling. Cards reflow from one column on mobile to several on wider screens without compressing text.
-- Breakpoints are the literals 768px and 1024px (CSS variables cannot be used in media queries). The header's inline navigation starts at 1024px: at 768px the logo, four links and the call to action do not fit on one row, so #54 raised it from 768px.
+- Breakpoints are the literals 768px and 1024px (CSS variables cannot be used in media queries). The header's inline navigation starts at `64em`, which is 1024px at the default 16px text size: at 768px the logo, four links and the call to action do not fit on one row, so #54 raised it from 768px. It is in `em` so that a larger browser text size moves the switch up with the text, and the header falls back to the Menu rather than wrapping its inline row (at 1024px with a 32px default text size the header is the 161px logo-and-Menu row, not about 819px of wrapped links). `INLINE_NAV_QUERY` in `Header.tsx` and the media query in `Header.css` hold the same `(min-width: 64em)`, which `scripts/tokens.test.ts` checks.
 
 ## Components
 
@@ -207,7 +207,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 **Navigation and footer**
 
-- Header: **Services · Solutions · How We Work · About**, then the **Discuss a project →** call to action, which replaces a separate Contact link. Below 1024px the four links and then the call to action (full width, last) sit in the Menu list; choosing any of them closes the menu.
+- Header: **Services · Solutions · How We Work · About**, then the **Discuss a project →** call to action, which replaces a separate Contact link. Below 64em (1024px at the default text size) the four links and then the call to action (full width, last) sit in the Menu list; choosing any of them closes the menu.
 - Footer: five plain links, **Services · Solutions · How We Work · About · Contact** (plan V2 §17). Its look is unchanged until #60.
 - All labels and targets live in `src/data/navigation.ts` (`navigation`, `navigationCta`, `footerNavigation`).
 

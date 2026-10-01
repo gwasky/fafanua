@@ -10,9 +10,13 @@ import { flushSync } from 'react-dom'
 import { navigation, navigationCta } from '../data/navigation.ts'
 import './Header.css'
 
-// The width at which the inline nav replaces the menu toggle. Keep it in
-// step with the 1024px media query in Header.css (see tokens.css).
-const INLINE_NAV_QUERY = '(min-width: 1024px)'
+// The width at which the inline nav replaces the menu toggle: 64em, which
+// is 1024px at the default 16px text size. In em, a larger text-size
+// setting in the browser moves the switch up with the text, so enlarged
+// text falls back to the Menu instead of wrapping the inline row. Keep it
+// the same as the media query in Header.css (see tokens.css);
+// scripts/tokens.test.ts checks that they match.
+const INLINE_NAV_QUERY = '(min-width: 64em)'
 const LIST_ID = 'main-nav-list'
 
 // The header is transparent over a [data-header-overlay] section only

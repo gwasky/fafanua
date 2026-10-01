@@ -4,7 +4,7 @@ import App from '../App.tsx'
 import { navigation, navigationCta } from '../data/navigation.ts'
 import Header from './Header.tsx'
 
-// jsdom has no matchMedia. This stand-in starts narrow (below 1024px) and
+// jsdom has no matchMedia. This stand-in starts narrow (below 64em) and
 // lets a test fire a change as if the window had been resized.
 type Listener = (event: MediaQueryListEvent) => void
 let listeners: Set<Listener>

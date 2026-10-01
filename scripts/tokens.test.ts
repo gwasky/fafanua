@@ -96,3 +96,20 @@ describe('component durations', () => {
     expect(read(file)).not.toMatch(/(?<![\w-])\d*\.?\d+m?s\b/)
   })
 })
+
+describe('inline navigation breakpoint', () => {
+  // CSS variables cannot be used in media queries, so the breakpoint is
+  // written twice; these must stay the same.
+  const headerTsx = read('components/Header.tsx')
+  const headerCss = read('components/Header.css')
+
+  it('is 64em in Header.tsx and Header.css alike', () => {
+    const query = headerTsx.match(/const INLINE_NAV_QUERY = '([^']+)'/)?.[1]
+    const media = [...headerCss.matchAll(/@media ([^{]+)\{/g)]
+      .map((match) => match[1].trim())
+      .filter((condition) => condition.includes('min-width'))
+
+    expect(query).toBe('(min-width: 64em)')
+    expect(media).toEqual([query])
+  })
+})

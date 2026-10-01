@@ -3,7 +3,8 @@ import { expectLanded, openPage, pressTab, test, waitForScrollSettle } from './f
 
 // The Menu toggle takes the shared secondary button look (#26): its size,
 // its default and hover colours, and the breakpoint at which the inline
-// navigation replaces it (1024px since #54). Also the open menu inside the
+// navigation replaces it (64em, 1024px at the default text size, since
+// #54). Also the open menu inside the
 // header: it drops over the page, scrolls within itself when it is taller
 // than the space below the header, and leaves the page where it was.
 // Colours are read from the tokens in the page, so no value is repeated

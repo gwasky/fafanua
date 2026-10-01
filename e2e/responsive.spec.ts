@@ -50,7 +50,7 @@ const ANCHORS = [
   '#contact',
 ]
 
-// The inline nav shows from 1024px (#54).
+// The inline nav shows from 64em (#54): 1024px at the default text size.
 const hasMenu = (width: number) => width < 1024
 
 // The service and solutions grids: one column, two from 768px and three
