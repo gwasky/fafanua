@@ -1,6 +1,15 @@
 import { expect, type Page } from '@playwright/test'
 import { services } from '../src/data/services.ts'
-import { focusedName, focusStyle, openPage, pressTab, test } from './fixtures.ts'
+import {
+  focusAndHeaderBoxes,
+  focusedName,
+  focusStyle,
+  openPage,
+  pressTab,
+  test,
+  waitForFonts,
+  waitForScrollSettle,
+} from './fixtures.ts'
 
 // The automated part of the keyboard review: Tab order, focus rings,
 // the skip link, focus after in-page links, the Menu toggle, the
@@ -11,14 +20,18 @@ import { focusedName, focusStyle, openPage, pressTab, test } from './fixtures.ts
 test.use({ reducedMotion: 'reduce' })
 
 const disclosures = services.map((service) => `Typical engagements for ${service.name}`)
-const nav = ['Services', 'Solutions', 'How We Work', 'About', 'Contact']
+// The header's four section links and its call to action, which replaces
+// a Contact link; the footer keeps Contact.
+const sections = ['Services', 'Solutions', 'How We Work', 'About']
+const nav = [...sections, 'Discuss a project']
+const footerNav = [...sections, 'Contact']
 const fromHero = [
   'Contact our team',
   'See our services',
   ...disclosures,
   'Email us',
   'info@fafanua.tech',
-  ...nav,
+  ...footerNav,
   'info@fafanua.tech',
 ]
 
@@ -116,7 +129,7 @@ test.describe('focus after in-page links', () => {
     { from: 'header', link: 'Solutions', hash: '#solutions', next: 'Email us' },
     { from: 'header', link: 'How We Work', hash: '#how-we-work', next: 'Email us' },
     { from: 'header', link: 'About', hash: '#about', next: 'Email us' },
-    { from: 'header', link: 'Contact', hash: '#contact', next: 'Email us' },
+    { from: 'header', link: 'Discuss a project', hash: '#contact', next: 'Email us' },
     { from: 'main', link: 'See our services', hash: '#services', next: firstDisclosure },
     { from: 'main', link: 'Contact our team', hash: '#contact', next: 'Email us' },
     { from: 'footer', link: 'Services', hash: '#services', next: firstDisclosure },
@@ -195,7 +208,7 @@ test.describe('Menu toggle at 360px', () => {
     await expect(toggle).toBeFocused()
   })
 
-  test('Tab goes through the five open menu links to Contact our team', async ({ page }) => {
+  test('Tab goes through the four open menu links and the call to action to Contact our team', async ({ page }) => {
     await openPage(page, 360)
     const toggle = page.getByRole('button', { name: 'Menu' })
     await toggle.focus()
@@ -261,4 +274,65 @@ test.describe('mouse focus', () => {
     await expect(focused).toBeFocused()
     expect(await focused.evaluate((element) => element.matches(':focus-visible'))).toBe(false)
   })
+})
+
+// WCAG 2.4.11 Focus Not Obscured: the sticky header never covers the
+// focused element. Each Tab or Shift+Tab may scroll the page; once it has
+// settled, every focused element outside the header is wholly below the
+// header and inside the viewport.
+test.describe('focus is never under the sticky header', () => {
+  const cases = [
+    { width: 1440, text: '100%' },
+    { width: 360, text: '100%' },
+    { width: 320, text: '200%' },
+  ] as const
+
+  async function expectUnobscured(page: Page, name: string) {
+    await waitForScrollSettle(page)
+    const { inHeader, focused, header, viewport } = await focusAndHeaderBoxes(page)
+    if (inHeader) return
+    const detail = `"${name}": ${JSON.stringify({ focused, header, viewport })}`
+    expect(focused.left, `${detail} left edge`).toBeGreaterThanOrEqual(0)
+    expect(focused.right, `${detail} right edge`).toBeLessThanOrEqual(viewport.width)
+    if (focused.bottom - focused.top > viewport.height - header.bottom) {
+      // Taller than the space below the header, so it cannot all show.
+      // At 320px with 200% text the six disclosure buttons wrap their
+      // label a few letters to a line and are about 658px tall, with
+      // 543px below the 257px header (noted on #54). It must then fill
+      // that space: the header covers no more of it than it has to.
+      expect(focused.top, `${detail} top at or above the header's bottom`)
+        .toBeLessThanOrEqual(header.bottom)
+      expect(focused.bottom, `${detail} bottom at or below the viewport's`)
+        .toBeGreaterThanOrEqual(viewport.height)
+      return
+    }
+    // Scroll positions are whole pixels and boxes are not, so an edge can
+    // sit up to 1px past the one it is aligned to.
+    expect(focused.top, `${detail} top below the header`).toBeGreaterThanOrEqual(header.bottom - 1)
+    expect(focused.bottom, `${detail} bottom in the viewport`).toBeLessThanOrEqual(viewport.height + 1)
+  }
+
+  for (const { width, text } of cases) {
+    test(`Tab and Shift+Tab through every stop at ${width}px with ${text} text`, async ({ page }) => {
+      await openPage(page, width)
+      if (text !== '100%') {
+        await page.addStyleTag({ content: `html { font-size: ${text}; }` })
+        await expect
+          .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
+          .toBe('32px')
+        await waitForFonts(page)
+      }
+      // 320 shows the Menu toggle, as 360 does.
+      const sequence = SEQUENCE[width === 1440 ? 1440 : 360]
+
+      for (const name of sequence) {
+        await tabTo(page, name)
+        await expectUnobscured(page, name)
+      }
+      for (const name of [...sequence].reverse().slice(1)) {
+        await tabTo(page, name, { shift: true })
+        await expectUnobscured(page, name)
+      }
+    })
+  }
 })

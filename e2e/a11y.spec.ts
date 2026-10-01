@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { expectNoAxeViolations, openPage } from './fixtures.ts'
+import { expectLanded, expectNoAxeViolations, openPage } from './fixtures.ts'
 import { formatViolations } from '../src/test/axe.ts'
 
 // Axe on the production preview in a real browser, where contrast,
@@ -71,6 +71,25 @@ test.describe('axe, 200% browser zoom', () => {
 
     await expectNoAxeViolations(page, testInfo)
   })
+
+  // Below 480px of height the header scrolls away with the page instead
+  // of taking a large share of the screen (WCAG 1.4.10), and sections land
+  // at the top of the viewport.
+  test('the header is static and scrolls away at 640 x 400', async ({ page }) => {
+    await openPage(page, 640, 400)
+    const header = page.getByRole('banner')
+    expect(await header.evaluate((element) => getComputedStyle(element).position)).toBe('static')
+
+    await page.getByRole('link', { name: 'See our services' }).click()
+    await expect(page).toHaveURL(/#services$/)
+    await expectLanded(page, '#services')
+    const { headerBottom, top } = await page.evaluate(() => ({
+      headerBottom: document.querySelector('header')!.getBoundingClientRect().bottom,
+      top: document.getElementById('services')!.getBoundingClientRect().top,
+    }))
+    expect(headerBottom).toBeLessThanOrEqual(0)
+    expect(Math.abs(top)).toBeLessThanOrEqual(1)
+  })
 })
 
 test.describe('reduced motion', () => {
@@ -113,6 +132,35 @@ test.describe('reduced motion', () => {
     return results
   }
 
+  // The header's call to action and its arrow, and the header itself.
+  const cta = (page: Page) =>
+    page.getByRole('banner').getByRole('link', { name: 'Discuss a project' })
+
+  const arrowAndHeader = (page: Page) =>
+    page.evaluate(() => {
+      const arrow = document.querySelector('header .button__arrow')
+      const header = document.querySelector('header')
+      if (!arrow || !header) throw new Error('No arrow or header')
+      const style = getComputedStyle(arrow)
+      return {
+        arrowTranslate: style.translate,
+        arrowDuration: style.transitionDuration,
+        headerProperty: getComputedStyle(header).transitionProperty,
+        headerDuration: getComputedStyle(header).transitionDuration,
+      }
+    })
+
+  // A token resolved to its computed time, as a transition-duration.
+  const tokenDuration = (page: Page, name: string) =>
+    page.evaluate((token) => {
+      const probe = document.createElement('div')
+      probe.style.transitionDuration = `var(${token})`
+      document.body.append(probe)
+      const value = getComputedStyle(probe).transitionDuration
+      probe.remove()
+      return value
+    }, name)
+
   test('reduce: no smooth scrolling and near-zero transitions', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await openPage(page, 1440)
@@ -125,6 +173,20 @@ test.describe('reduced motion', () => {
         .toBeLessThanOrEqual(0.01)
     }
     expect(ms(result.chevron)).toBeLessThanOrEqual(0.01)
+
+    // The header has no transition, and the arrow stays still on hover
+    // and on keyboard focus.
+    const still = await arrowAndHeader(page)
+    expect(ms(still.headerDuration), 'header transition').toBeLessThanOrEqual(0.01)
+    expect(still.arrowTranslate).toBe('none')
+    await cta(page).hover()
+    expect((await arrowAndHeader(page)).arrowTranslate, 'arrow on hover').toBe('none')
+    await page.mouse.move(0, 799)
+    await page.getByRole('banner').getByRole('link', { name: 'About', exact: true }).focus()
+    await page.keyboard.press('Tab')
+    await expect(cta(page)).toBeFocused()
+    expect(await cta(page).evaluate((element) => element.matches(':focus-visible'))).toBe(true)
+    expect((await arrowAndHeader(page)).arrowTranslate, 'arrow on focus').toBe('none')
   })
 
   test('no-preference: smooth scrolling and 150ms button transitions', async ({ page }) => {
@@ -136,6 +198,24 @@ test.describe('reduced motion', () => {
     for (const { name, duration } of buttons) {
       expect.soft(duration, `longest transition-duration of "${name}"`).toBe(150)
     }
+
+    // The header animates only its background and border colours, over
+    // --duration-header; the arrow moves --cta-arrow-shift (4px) over
+    // --duration-cta-arrow on hover and on keyboard focus.
+    const moving = await arrowAndHeader(page)
+    expect(moving.headerProperty).toBe('background-color, border-color')
+    expect(moving.headerDuration).toBe(await tokenDuration(page, '--duration-header'))
+    expect(moving.arrowDuration).toBe(await tokenDuration(page, '--duration-cta-arrow'))
+    expect(moving.arrowTranslate).toBe('none')
+
+    await cta(page).hover()
+    await expect.poll(async () => (await arrowAndHeader(page)).arrowTranslate).toBe('4px')
+    await page.mouse.move(0, 799)
+    await expect.poll(async () => (await arrowAndHeader(page)).arrowTranslate).toBe('none')
+    await page.getByRole('banner').getByRole('link', { name: 'About', exact: true }).focus()
+    await page.keyboard.press('Tab')
+    await expect(cta(page)).toBeFocused()
+    await expect.poll(async () => (await arrowAndHeader(page)).arrowTranslate).toBe('4px')
   })
 })
 

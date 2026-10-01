@@ -190,16 +190,21 @@ export async function waitForScrollSettle(page: Page) {
 /**
  * Asserts that an in-page link has landed, once scrolling has settled.
  * For #top the page is at the very top. For a section, its top edge is
- * within 1px of the viewport top or, when the page cannot scroll that far,
- * the page is at its bottom limit and the section is in the viewport.
+ * within 1px of the sticky header's bottom edge, so the header hides none
+ * of it, or, when the page cannot scroll that far, the page is at its
+ * bottom limit and the section is in the viewport below the header.
  */
 export async function expectLanded(page: Page, hash: string) {
   await waitForScrollSettle(page)
   const metrics = await page.evaluate((id) => {
     const element = document.getElementById(id)
     if (!element) throw new Error(`No element with id "${id}"`)
+    const header = document.querySelector('header')
+    if (!header) throw new Error('No header')
     return {
       top: element.getBoundingClientRect().top,
+      // A static header (short viewports) may have scrolled away.
+      headerBottom: Math.max(0, header.getBoundingClientRect().bottom),
       scrollY: window.scrollY,
       maxScroll: document.documentElement.scrollHeight - window.innerHeight,
     }
@@ -208,10 +213,40 @@ export async function expectLanded(page: Page, hash: string) {
 
   if (hash === '#top') {
     expect(metrics.scrollY, detail).toBe(0)
-  } else if (Math.abs(metrics.top) <= 1) {
-    expect(Math.abs(metrics.top), detail).toBeLessThanOrEqual(1)
+  } else if (Math.abs(metrics.top - metrics.headerBottom) <= 1) {
+    expect(Math.abs(metrics.top - metrics.headerBottom), detail).toBeLessThanOrEqual(1)
   } else {
     expect(Math.abs(metrics.scrollY - metrics.maxScroll), detail).toBeLessThanOrEqual(1)
+    expect(metrics.top, detail).toBeGreaterThan(metrics.headerBottom)
     await expect(page.locator(`[id="${hash.slice(1)}"]`)).toBeInViewport()
   }
 }
+
+/**
+ * The focused element's box and the header's, in viewport coordinates,
+ * with whether the focused element is inside the header.
+ */
+export function focusAndHeaderBoxes(page: Page) {
+  return page.evaluate(() => {
+    const element = document.activeElement
+    const header = document.querySelector('header')
+    if (!element || !header) throw new Error('No focused element or header')
+    const box = (target: Element) => {
+      const { top, bottom, left, right } = target.getBoundingClientRect()
+      return { top, bottom, left, right }
+    }
+    return {
+      inHeader: header.contains(element),
+      focused: box(element),
+      header: box(header),
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+    }
+  })
+}
+
+// With includeHidden, Playwright counts aria-hidden content in the name,
+// so the call to action's is "Discuss a project →" there; everywhere
+// else it is "Discuss a project". This matches the label exactly, with
+// or without the arrow.
+export const linkName = (label: string) =>
+  new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?: →)?$`)

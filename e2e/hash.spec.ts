@@ -3,6 +3,7 @@ import { services } from '../src/data/services.ts'
 import {
   expectLanded,
   focusedName,
+  linkName,
   openPage,
   openPath,
   pressTab,
@@ -30,17 +31,17 @@ const disclosures = services.map((service) => `Typical engagements for ${service
 const navLink = (page: Page, name: string) =>
   page
     .getByRole('navigation', { name: 'Main' })
-    .getByRole('link', { name, exact: true, includeHidden: true })
+    .getByRole('link', { name: linkName(name), includeHidden: true })
 
 const menuButton = (page: Page) => page.getByRole('button', { name: 'Menu', includeHidden: true })
 
 /**
- * Shows a header nav link, opening the Menu below 768px, and scrolls it
- * into view. The header isn't sticky, so this scrolls to the top.
+ * Shows a header nav link, opening the Menu below 1024px. The header is
+ * sticky (#54), so the link is already in view and nothing scrolls.
  */
 async function showNav(page: Page, name: string) {
   const width = page.viewportSize()?.width ?? 0
-  if (width < 768) {
+  if (width < 1024) {
     await menuButton(page).click()
     await expect(menuButton(page)).toHaveAttribute('aria-expanded', 'true')
   }
@@ -49,7 +50,7 @@ async function showNav(page: Page, name: string) {
 }
 
 /**
- * Clicks a header nav link, through the Menu below 768px. Returns
+ * Clicks a header nav link, through the Menu below 1024px. Returns
  * window.scrollY just before the click: the position the current history
  * entry is left at, which WebKit restores when going back to it.
  */
@@ -130,7 +131,7 @@ test.describe('landing on a fresh load', () => {
             await expectLanded(page, hash)
             expect(await page.evaluate(() => location.hash)).toBe(hash)
             expect(await page.evaluate(() => history.length)).toBe(historyLength)
-            if (width < 768) {
+            if (width < 1024) {
               await expect(menuButton(page)).toHaveAttribute('aria-expanded', 'false')
             }
           })
@@ -259,8 +260,8 @@ test.describe('motion', () => {
             await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior),
           ).toBe(motion === 'reduce' ? 'auto' : 'smooth')
 
-          // Showing the link scrolls up to the header; the click then
-          // scrolls down to #services.
+          // The header is sticky, so showing the link scrolls nothing;
+          // the click then scrolls up from #contact to #services.
           await showNav(page, 'Services')
           const from = await scrollY(page)
           await page.evaluate(() => {
@@ -278,9 +279,9 @@ test.describe('motion', () => {
 
           // A smooth scroll passes through positions between the two.
           const to = await scrollY(page)
-          expect(to).toBeGreaterThan(from)
+          expect(to).toBeLessThan(from)
           const between = (await scrollSteps(page)).filter(
-            (step) => step.y > from && step.y < to,
+            (step) => step.y < from && step.y > to,
           )
           if (motion === 'no-preference') {
             expect(between.length).toBeGreaterThan(1)
@@ -477,15 +478,15 @@ test.describe('history', () => {
         await openPage(page, 1440)
         await clickNav(page, 'Services')
         await expectLanded(page, '#services')
-        const servicesLeftAt = await clickNav(page, 'Contact')
+        const servicesLeftAt = await clickNav(page, 'Discuss a project')
         await expectLanded(page, '#contact')
 
         await page.goBack()
         await expect(page).toHaveURL(/\/#services$/)
         if (browserName === 'webkit') {
           // WebKit restores the position the #services entry was left at,
-          // which is the top: showNav scrolled up to the non-sticky header
-          // before the click. Measured at 1440 × 800, both motion
+          // which was the top while the header was not sticky (before #54):
+          // showNav scrolled up to it before the click. Measured at 1440 × 800, both motion
           // settings: WebKit 0, Chromium 705 (it scrolls to the fragment).
           // A plain static page with the same ids and links does the same
           // in each engine. A Safari visitor goes back to where they were
@@ -525,7 +526,7 @@ test.describe('history', () => {
       }) => {
         await openPath(page, '/#services', 1440)
         await expectLanded(page, '#services')
-        const servicesLeftAt = await clickNav(page, 'Contact')
+        const servicesLeftAt = await clickNav(page, 'Discuss a project')
         await expectLanded(page, '#contact')
 
         await page.goBack()
@@ -596,11 +597,14 @@ test.describe('reload', () => {
           const after = await page.evaluate(() => ({
             y: window.scrollY,
             top: document.getElementById('contact')!.getBoundingClientRect().top,
+            headerBottom: document.querySelector('header')!.getBoundingClientRect().bottom,
             max: document.documentElement.scrollHeight - window.innerHeight,
           }))
           const stayed = Math.abs(after.y - before) <= 1
+          // Landed below the sticky header, or at the bottom limit.
           const onContact =
-            Math.abs(after.top) <= 1 || (Math.abs(after.y - after.max) <= 1 && after.top < 800)
+            Math.abs(after.top - after.headerBottom) <= 1 ||
+            (Math.abs(after.y - after.max) <= 1 && after.top < 800)
           const outcome = stayed ? 'where it was' : onContact ? 'on #contact' : 'elsewhere'
           testInfo.annotations.push({ type: 'reload outcome', description: outcome })
           console.log(`reload after scrolling to ${to}, ${motion}: ${outcome}`)

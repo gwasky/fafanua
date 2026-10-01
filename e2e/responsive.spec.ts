@@ -3,6 +3,7 @@ import { expect } from '@playwright/test'
 import {
   WIDTHS,
   expectLanded,
+  linkName,
   test,
   waitForFonts,
   waitForScrollSettle,
@@ -10,19 +11,23 @@ import {
 
 // The page at each width project in playwright.config.ts, in Chromium
 // (width-*) and WebKit (webkit-width-*): no horizontal scrolling, the
-// right navigation, the service grid and managed-services block, the
-// solutions grid, the logo size, and every in-page link landing on its
-// section. Playwright loads this file once for all projects, so every test
+// right navigation, the sticky header, the service grid and
+// managed-services block, the solutions grid, the logo size, and every
+// in-page link landing on its section below the header. Playwright loads this file once for all projects, so every test
 // is declared for each width, with the width at the end of its title, and
 // each project runs only its own (grep in the config). The width comes
 // from the project's viewport.
 
-const NAV = ['Services', 'Solutions', 'How We Work', 'About', 'Contact'] as const
-const HASH: Record<(typeof NAV)[number], string> = {
+// The header's four section links and its call to action; the footer's
+// four section links and Contact.
+const NAV = ['Services', 'Solutions', 'How We Work', 'About', 'Discuss a project'] as const
+const FOOTER_NAV = ['Services', 'Solutions', 'How We Work', 'About', 'Contact'] as const
+const HASH: Record<(typeof NAV)[number] | (typeof FOOTER_NAV)[number], string> = {
   Services: '#services',
   Solutions: '#solutions',
   'How We Work': '#how-we-work',
   About: '#about',
+  'Discuss a project': '#contact',
   Contact: '#contact',
 }
 
@@ -35,7 +40,7 @@ const ANCHORS = [
   '#solutions',
   '#how-we-work',
   '#about',
-  '#contact',
+  '#contact', // header call to action
   '#contact', // hero "Contact our team"
   '#services', // hero "See our services"
   '#services', // footer nav
@@ -45,7 +50,8 @@ const ANCHORS = [
   '#contact',
 ]
 
-const hasMenu = (width: number) => width < 768
+// The inline nav shows from 1024px (#54).
+const hasMenu = (width: number) => width < 1024
 
 // The service and solutions grids: one column, two from 768px and three
 // from 1024px.
@@ -78,11 +84,18 @@ async function expectNoHorizontalScroll(page: Page) {
 
 const menuButton = (page: Page) => page.getByRole('button', { name: 'Menu' })
 
+/** The header's box and computed position, in viewport coordinates. */
+const headerState = (page: Page) =>
+  page.getByRole('banner').evaluate((header) => {
+    const { top, bottom, height } = header.getBoundingClientRect()
+    return { top, bottom, height, position: getComputedStyle(header).position }
+  })
+
 /** A Main nav link, found whether or not it is currently shown. */
 const mainNavLink = (page: Page, name: string) =>
   page
     .getByRole('navigation', { name: 'Main' })
-    .getByRole('link', { name, exact: true, includeHidden: true })
+    .getByRole('link', { name: linkName(name), includeHidden: true })
 
 async function openMenu(page: Page) {
   const toggle = menuButton(page)
@@ -239,7 +252,7 @@ for (const width of WIDTHS) {
 
   test.describe('layout', () => {
     if (hasMenu(width)) {
-      test(`Menu shows the five nav links at ${width}px`, async ({ page }, testInfo) => {
+      test(`Menu shows the four nav links, then the call to action full width, at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
         const toggle = menuButton(page)
         await expect(toggle).toBeVisible()
@@ -249,27 +262,155 @@ for (const width of WIDTHS) {
         await toggle.click()
 
         await expect(toggle).toHaveAttribute('aria-expanded', 'true')
-        for (const name of NAV) await expect(mainNavLink(page, name)).toBeVisible()
-      })
-    } else {
-      test(`five nav links inline on one row, no Menu, at ${width}px`, async ({ page }, testInfo) => {
-        await open(page, testInfo, width)
-        await expect(menuButton(page)).toBeHidden()
-
-        const tops: number[] = []
+        const boxes = []
         for (const name of NAV) {
           const link = mainNavLink(page, name)
           await expect(link).toBeVisible()
           const box = await link.boundingBox()
           if (!box) throw new Error(`"${name}" has no box`)
-          expect(box.x, `"${name}" left edge`).toBeGreaterThanOrEqual(0)
-          expect(box.x + box.width, `"${name}" right edge`).toBeLessThanOrEqual(width)
-          tops.push(box.y)
+          expect(box.width, `"${name}" width`).toBeGreaterThanOrEqual(44)
+          expect(box.height, `"${name}" height`).toBeGreaterThanOrEqual(44)
+          boxes.push(box)
         }
-        expect(Math.max(...tops) - Math.min(...tops), `tops ${tops.join(', ')}`)
+        // One below the other, the call to action last, as wide as the
+        // links' list items.
+        for (let i = 1; i < boxes.length; i++) {
+          expect(boxes[i].y, `${NAV[i]} below ${NAV[i - 1]}`)
+            .toBeGreaterThanOrEqual(boxes[i - 1].y + boxes[i - 1].height)
+        }
+        const list = await page.locator('#main-nav-list').evaluate((element) => {
+          const style = getComputedStyle(element)
+          const box = element.getBoundingClientRect()
+          return {
+            left: box.left + parseFloat(style.paddingLeft),
+            right: box.right - parseFloat(style.paddingRight),
+          }
+        })
+        const cta = boxes.at(-1)!
+        expect(Math.abs(cta.x - list.left), 'call to action left edge').toBeLessThanOrEqual(1)
+        expect(Math.abs(cta.x + cta.width - list.right), 'call to action right edge')
           .toBeLessThanOrEqual(1)
       })
+    } else {
+      test(`logo, four nav links and the call to action on one row, no Menu, at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        await expect(menuButton(page)).toBeHidden()
+
+        const logo = await page.getByRole('link', { name: 'Fafanua Technologies' }).boundingBox()
+        if (!logo) throw new Error('The logo link has no box')
+        const boxes = [logo]
+        for (const name of NAV) {
+          const link = mainNavLink(page, name)
+          await expect(link).toBeVisible()
+          const box = await link.boundingBox()
+          if (!box) throw new Error(`"${name}" has no box`)
+          expect(box.width, `"${name}" width`).toBeGreaterThanOrEqual(44)
+          expect(box.height, `"${name}" height`).toBeGreaterThanOrEqual(44)
+          boxes.push(box)
+        }
+        const names = ['logo', ...NAV]
+        // The same row: the same top. Left to right with no overlap, all
+        // inside the page.
+        const tops = boxes.map((box) => box.y)
+        expect(Math.max(...tops) - Math.min(...tops), `tops ${tops.join(', ')}`)
+          .toBeLessThanOrEqual(1)
+        expect(boxes[0].x, 'logo left edge').toBeGreaterThanOrEqual(0)
+        for (let i = 1; i < boxes.length; i++) {
+          expect(boxes[i].x, `${names[i]} right of ${names[i - 1]}`)
+            .toBeGreaterThanOrEqual(boxes[i - 1].x + boxes[i - 1].width)
+        }
+        const last = boxes.at(-1)!
+        expect(last.x + last.width, 'call to action right edge').toBeLessThanOrEqual(width)
+
+        // No label wraps or is clipped: each link is one line, as wide as
+        // its content.
+        const clipped = await page
+          .getByRole('navigation', { name: 'Main' })
+          .getByRole('link')
+          .evaluateAll((links) =>
+            links
+              .filter((link) => {
+                const range = document.createRange()
+                range.selectNodeContents(link)
+                const lines = new Set([...range.getClientRects()].map((r) => Math.round(r.top)))
+                return lines.size > 1 || link.scrollWidth > link.clientWidth
+              })
+              .map((link) => link.textContent),
+          )
+        expect(clipped).toEqual([])
+
+        // The header is the one row: the logo link and its padding.
+        const header = await headerState(page)
+        expect(header.height, 'header height').toBeLessThan(2 * logo.height)
+      })
     }
+
+    test(`header sticks to the top while the page scrolls at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      const atTop = await headerState(page)
+      expect(atTop.position).toBe('sticky')
+      expect(atTop.top).toBe(0)
+
+      for (const target of ['#how-we-work', 'footer']) {
+        await page.evaluate((selector) => {
+          document.querySelector(selector)?.scrollIntoView({ block: 'start' })
+        }, target)
+        await waitForScrollSettle(page)
+        expect(await page.evaluate(() => window.scrollY), `scrolled to ${target}`).toBeGreaterThan(0)
+        const header = await headerState(page)
+        expect(header.top, `header top at ${target}`).toBe(0)
+        expect(header.height, `header height at ${target}`).toBe(atTop.height)
+        await expect(page.getByRole('link', { name: 'Fafanua Technologies' })).toBeInViewport({
+          ratio: 1,
+        })
+      }
+    })
+
+    test(`header is solid, with the positive logo, at every scroll position at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      // No [data-header-overlay] on the page yet (#55 adds it).
+      expect(await page.locator('[data-header-overlay]').count()).toBe(0)
+      const look = () =>
+        page.getByRole('banner').evaluate((header) => {
+          const style = getComputedStyle(header)
+          return {
+            background: style.backgroundColor,
+            border: `${style.borderBottomWidth} ${style.borderBottomStyle} ${style.borderBottomColor}`,
+            logo: header.querySelector('img')?.getAttribute('src'),
+          }
+        })
+      const expected = await page.evaluate(() => {
+        const probe = document.createElement('div')
+        probe.style.backgroundColor = 'var(--color-bg)'
+        probe.style.borderBottom = 'var(--border-width) solid var(--color-border)'
+        document.body.append(probe)
+        const style = getComputedStyle(probe)
+        const value = {
+          background: style.backgroundColor,
+          border: `${style.borderBottomWidth} ${style.borderBottomStyle} ${style.borderBottomColor}`,
+          logo: '/fafanua-logo.svg',
+        }
+        probe.remove()
+        return value
+      })
+
+      for (const y of [0, 4, 8, 600]) {
+        await page.evaluate((top) => window.scrollTo(0, top), y)
+        await waitForScrollSettle(page)
+        expect(await look(), `at scrollY ${y}`).toEqual(expected)
+      }
+    })
+
+    test(`no text is heavier than weight 500 at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      if (hasMenu(width)) await openMenu(page)
+      const heavy = await page.evaluate(() =>
+        [...document.querySelectorAll('body *')]
+          .filter((element) => Number(getComputedStyle(element).fontWeight) > 500)
+          .map((element) => `${element.tagName} ${element.textContent?.slice(0, 30)}`),
+      )
+      expect(heavy).toEqual([])
+    })
 
     test(`service cards in ${columns(width)} ${columns(width) === 1 ? 'column' : 'columns'} at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
@@ -625,7 +766,22 @@ for (const width of WIDTHS) {
       const box = await logo.boundingBox()
 
       expect(box?.width).toBeGreaterThanOrEqual(120)
+      const link = await page.getByRole('link', { name: 'Fafanua Technologies' }).boundingBox()
+      expect(link?.width, 'logo link width').toBeGreaterThanOrEqual(44)
+      expect(link?.height, 'logo link height').toBeGreaterThanOrEqual(44)
     })
+
+    if (width === 360) {
+      test(`header is at most 96px tall (15%) at 360 x 640 at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        await page.setViewportSize({ width, height: 640 })
+        await waitForFonts(page)
+        const header = await headerState(page)
+
+        expect(header.position).toBe('sticky')
+        expect(header.height).toBeLessThanOrEqual(96)
+      })
+    }
   })
 
   test.describe('in-page links', () => {
@@ -677,7 +833,7 @@ for (const width of WIDTHS) {
       })
     }
 
-    for (const name of NAV) {
+    for (const name of FOOTER_NAV) {
       test(`footer "${name}" lands on ${HASH[name]} at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
         const footer = page.getByRole('contentinfo')
@@ -698,13 +854,12 @@ for (const width of WIDTHS) {
       )
       await waitForScrollSettle(page)
       expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+      // The header is sticky, so the logo is in view at the bottom, and
+      // clicking it scrolls nothing before the link's own jump.
       const logo = page.getByRole('link', { name: 'Fafanua Technologies' })
-      await expect(logo).not.toBeInViewport()
+      await expect(logo).toBeInViewport({ ratio: 1 })
 
-      // A Playwright click would first scroll the logo into view, which
-      // takes the page to the top by itself. A dispatched click follows
-      // the link from where the page is, so the jump is the link's own.
-      await logo.dispatchEvent('click')
+      await logo.click()
 
       expect(await currentHash(page)).toBe('#top')
       await expectLanded(page, '#top')

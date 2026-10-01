@@ -1,12 +1,13 @@
 import { expect, type Page } from '@playwright/test'
-import { expectLanded, openPage, test, waitForScrollSettle } from './fixtures.ts'
+import { expectLanded, linkName, openPage, test, waitForScrollSettle } from './fixtures.ts'
 
 // Checks that don't change with the width, or that set their own
 // viewport, so they run once per engine, in the chromium and webkit
 // projects: the breakpoint boundary, the smooth-scrolling path, the email
 // links, and every internal link and asset.
 
-const NAV = ['Services', 'Solutions', 'How We Work', 'About', 'Contact'] as const
+// The header's four section links and its call to action.
+const NAV = ['Services', 'Solutions', 'How We Work', 'About', 'Discuss a project'] as const
 
 /** The Menu button, found whether or not it is currently shown. */
 const menuButton = (page: Page) =>
@@ -16,7 +17,7 @@ const menuButton = (page: Page) =>
 const mainNavLink = (page: Page, name: string) =>
   page
     .getByRole('navigation', { name: 'Main' })
-    .getByRole('link', { name, exact: true, includeHidden: true })
+    .getByRole('link', { name: linkName(name), includeHidden: true })
 
 async function expectMenuMode(page: Page) {
   await expect(menuButton(page)).toBeVisible()
@@ -34,25 +35,27 @@ const scrollBehavior = (page: Page) =>
 test.describe('breakpoint boundary', () => {
   // INLINE_NAV_QUERY in Header.tsx and the media query in Header.css must
   // switch at the same width.
-  test('Menu at 767px, inline nav at 768px', async ({ page }) => {
-    await openPage(page, 767)
+  // 1024px since #54: the logo, four links and call to action do not fit
+  // on one row at 768px.
+  test('Menu at 1023px, inline nav at 1024px', async ({ page }) => {
+    await openPage(page, 1023)
     await expectMenuMode(page)
 
-    await openPage(page, 768)
+    await openPage(page, 1024)
     await expectInlineMode(page)
   })
 
-  test('a menu open at 767px is closed after widening to 768px and back', async ({ page }) => {
-    await openPage(page, 767)
+  test('a menu open at 1023px is closed after widening to 1024px and back', async ({ page }) => {
+    await openPage(page, 1023)
     const toggle = menuButton(page)
     await toggle.click()
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
 
-    await page.setViewportSize({ width: 768, height: 800 })
+    await page.setViewportSize({ width: 1024, height: 800 })
     await expectInlineMode(page)
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
 
-    await page.setViewportSize({ width: 767, height: 800 })
+    await page.setViewportSize({ width: 1023, height: 800 })
     await expectMenuMode(page)
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
   })
@@ -63,7 +66,7 @@ test.describe('smooth scrolling', () => {
 
   const cases = [
     { from: 'header', name: 'Services', hash: '#services' },
-    { from: 'header', name: 'Contact', hash: '#contact' },
+    { from: 'header', name: 'Discuss a project', hash: '#contact' },
     { from: 'footer', name: 'Services', hash: '#services' },
   ] as const
 
@@ -74,7 +77,7 @@ test.describe('smooth scrolling', () => {
         expect(await scrollBehavior(page)).toBe('smooth')
 
         const footer = page.getByRole('contentinfo')
-        if (from === 'header' && width < 768) {
+        if (from === 'header' && width < 1024) {
           await menuButton(page).click()
           await expect(menuButton(page)).toHaveAttribute('aria-expanded', 'true')
         } else if (from === 'footer') {
