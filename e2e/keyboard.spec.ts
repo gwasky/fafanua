@@ -322,7 +322,7 @@ test.describe('focus is never under the sticky header', () => {
       // text has been laid out.
       await expect
         .poll(() => page.getByRole('banner').evaluate((element) => getComputedStyle(element).position))
-        .toBe(text === '200%' ? 'static' : 'sticky')
+        .toBe(text === '200%' ? 'relative' : 'sticky')
 
       for (const name of sequence) {
         await tabTo(page, name)

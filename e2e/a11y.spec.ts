@@ -78,7 +78,7 @@ test.describe('axe, 200% browser zoom', () => {
   test('the header is static and scrolls away at 640 x 400', async ({ page }) => {
     await openPage(page, 640, 400)
     const header = page.getByRole('banner')
-    expect(await header.evaluate((element) => getComputedStyle(element).position)).toBe('static')
+    expect(await header.evaluate((element) => getComputedStyle(element).position)).toBe('relative')
 
     await page.getByRole('link', { name: 'See our services' }).click()
     await expect(page).toHaveURL(/#services$/)
@@ -285,7 +285,7 @@ test.describe('a header taller than a quarter of the viewport is static', () => 
     expect(await position(page)).toBe('sticky')
 
     await page.addStyleTag({ content: 'html { font-size: 200%; }' })
-    await expect.poll(() => position(page)).toBe('static')
+    await expect.poll(() => position(page)).toBe('relative')
     const { height, viewport } = await page.evaluate(() => ({
       height: document.querySelector('header')!.getBoundingClientRect().height,
       viewport: window.innerHeight,
@@ -306,7 +306,7 @@ test.describe('a header taller than a quarter of the viewport is static', () => 
   test('sticks again when the viewport grows tall enough', async ({ page }) => {
     await openPage(page, 320)
     await page.addStyleTag({ content: 'html { font-size: 200%; }' })
-    await expect.poll(() => position(page)).toBe('static')
+    await expect.poll(() => position(page)).toBe('relative')
 
     // 257px is under a quarter of 1100px.
     await page.setViewportSize({ width: 320, height: 1100 })

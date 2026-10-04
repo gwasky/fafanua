@@ -155,7 +155,7 @@ test.describe('open menu at 360 x 640', () => {
       const sticky = text === '100%'
       await expect
         .poll(() => page.getByRole('banner').evaluate((element) => getComputedStyle(element).position))
-        .toBe(sticky ? 'sticky' : 'static')
+        .toBe(sticky ? 'sticky' : 'relative')
       if (sticky) {
         // Part way down the page, so a jump of the page behind would show.
         await page.evaluate(() => document.getElementById('how-we-work')?.scrollIntoView())

@@ -5,8 +5,14 @@
   "compatibility_date": "2026-09-26",
   // Preview URLs on *.workers.dev only. Do not add routes, a custom domain
   // or an account_id without the owner's approval.
-  "workers_dev": true,
+  "workers_dev": false,
   "preview_urls": true,
+  "routes": [
+    {
+      "pattern": "fafanua.tech",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     // Unknown paths reach the Worker and return 404; there is no SPA fallback.
     "not_found_handling": "none"

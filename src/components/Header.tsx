@@ -41,20 +41,20 @@ const hasOverlay = () => document.querySelector('[data-header-overlay]') !== nul
 const subscribeToNothing = () => () => {}
 
 // The largest share of the viewport's height the header may take and still
-// stick. Above it the header is static and scrolls away, like the short-
+// stick. Above it the header scrolls away with the page, like the short-
 // viewport rule in Header.css (WCAG 1.4.10): a sticky header that tall
 // leaves too little room to read, and an element taller than the space
 // left below it could never be shown whole when it takes focus (WCAG
 // 2.4.11). At the default text size the header is 81px: 13% of a 360 x 640
 // phone, and under 17% even at 480px of height, below which Header.css
-// makes it static anyway. With 200% text it is 161px (20%) at 768 x 800
+// stops it sticking anyway. With 200% text it is 161px (20%) at 768 x 800
 // and stays sticky, and 257px or more (32%) where it wraps to two rows,
-// as at 320, 360 and 1440px wide, and turns static. 25%, the top of the
-// 20-25% range agreed on #54, keeps the sticky header wherever it still
-// leaves three quarters of the screen.
+// as at 320 and 360px wide, and stops sticking. 25%, the top of the 20-25%
+// range agreed on #54, keeps the sticky header wherever it still leaves
+// three quarters of the screen.
 const MAX_STICKY_SHARE = 0.25
 
-// The class on <html> that makes the header static and drops the scroll
+// The class on <html> that stops the header sticking and drops the scroll
 // margins that keep content clear of it (Header.css, global.css).
 const STATIC_CLASS = 'header-static'
 
@@ -67,7 +67,7 @@ const LOGO_REVERSED = '/fafanua-logo-reversed.svg'
 // (.on-dark) and the reversed logo, so it reads over the dark section
 // pulled up beneath it (global.css). It publishes its height as
 // --header-height on :root, which the scroll margins and the overlay
-// pull-up use, and turns static when it would take more than
+// pull-up use, and stops sticking when it would take more than
 // MAX_STICKY_SHARE of the viewport's height.
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
