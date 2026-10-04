@@ -2,8 +2,12 @@
 // Data & Analytics Services block. The wording is copied verbatim from
 // _docs/plan-fafanua-services-positioning.md (Sections 3, 5-12 and 13),
 // which is authoritative for service copy, and
-// services.plan.test.ts checks it against that document. Components read
-// service copy from here and nowhere else.
+// services.plan.test.ts checks it against that document. Each service's
+// capability tags are the lists in plan V2 Section 9
+// (_docs/fafanua-v2-visual-upgrade-plan.md), checked by
+// services.tags.plan.test.ts. Components read service copy from here and
+// nowhere else: the lifecycle rail (LifecycleRail.tsx) and the cards
+// number the stages from each service's position in `services`.
 
 export type Stage = 'design' | 'connect' | 'model' | 'trust' | 'govern' | 'decide'
 
@@ -13,9 +17,12 @@ export type Service = {
   description: string
   engagements: readonly string[]
   stage: Stage
+  /** Capability tags, always shown on the card: 3 to 5, in plan order. */
+  tags: readonly string[]
 }
 
-// Lifecycle labels shown beside each card's colour marker.
+// Lifecycle labels shown beside each card's colour marker and in the
+// lifecycle rail above the cards.
 export const stages: Readonly<Record<Stage, string>> = {
   design: 'Design',
   connect: 'Connect',
@@ -51,6 +58,7 @@ export const services = [
       'Data architecture advisory',
     ],
     stage: 'design',
+    tags: ['Architecture', 'Cloud', 'Security', 'Modernisation'],
   },
   {
     id: 'data-engineering-and-integration',
@@ -69,6 +77,7 @@ export const services = [
       'Source-system integration',
     ],
     stage: 'connect',
+    tags: ['APIs', 'CDC', 'ERP / CRM', 'Reverse ETL', 'Orchestration'],
   },
   {
     id: 'data-warehousing-and-analytics-modelling',
@@ -86,6 +95,7 @@ export const services = [
       'Query and model performance optimisation',
     ],
     stage: 'model',
+    tags: ['Dimensional', 'Semantic', 'Metrics', 'Data Marts'],
   },
   {
     id: 'data-quality-and-reliability',
@@ -103,6 +113,7 @@ export const services = [
       'Pipeline reliability improvements',
     ],
     stage: 'trust',
+    tags: ['Freshness', 'Reconciliation', 'Data Contracts', 'Monitoring'],
   },
   {
     id: 'data-governance-and-metadata',
@@ -122,6 +133,7 @@ export const services = [
       'Master-data standardisation',
     ],
     stage: 'govern',
+    tags: ['Lineage', 'Glossary', 'Ownership', 'Metadata'],
   },
   {
     id: 'business-intelligence-and-analytics',
@@ -140,6 +152,7 @@ export const services = [
       'Embedded analytics and reporting APIs',
     ],
     stage: 'decide',
+    tags: ['Dashboards', 'KPIs', 'Forecasting', 'Segmentation'],
   },
 ] as const satisfies readonly Service[]
 

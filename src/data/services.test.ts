@@ -10,8 +10,8 @@ import {
 const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
 const NAV_ANCHORS = ['services', 'how-we-work', 'future-ready', 'about', 'contact']
 
-// Every string in the module: ids, names, descriptions, engagements, the
-// intro and the managed-services block.
+// Every string in the module: ids, names, descriptions, engagements, tags,
+// the intro and the managed-services block.
 const managedStrings = [
   managedServices.eyebrow,
   managedServices.heading,
@@ -26,6 +26,7 @@ const allStrings = [
     service.name,
     service.description,
     ...service.engagements,
+    ...service.tags,
   ]),
   servicesIntro.heading,
   ...servicesIntro.paragraphs,
@@ -70,6 +71,25 @@ describe('services', () => {
         expect(item).not.toBe('')
       }
       expect(new Set(service.engagements).size).toBe(service.engagements.length)
+    }
+  })
+
+  it('has 3 to 5 non-empty, unique capability tags', () => {
+    for (const service of services) {
+      expect(service.tags.length, service.id).toBeGreaterThanOrEqual(3)
+      expect(service.tags.length, service.id).toBeLessThanOrEqual(5)
+      for (const tag of service.tags) expect(tag).not.toBe('')
+      expect(new Set(service.tags).size, service.id).toBe(service.tags.length)
+    }
+  })
+
+  it('has short tags, never a copy of an engagement or the description', () => {
+    for (const service of services) {
+      for (const tag of service.tags) {
+        expect(tag.split(' ').length, tag).toBeLessThanOrEqual(3)
+        expect(service.engagements as readonly string[]).not.toContain(tag)
+        expect(tag).not.toBe(service.description)
+      }
     }
   })
 
@@ -166,6 +186,8 @@ describe('services types', () => {
     services.push(services[0])
     // @ts-expect-error engagement lists are read-only
     services[0].engagements.push('Changed')
+    // @ts-expect-error tag lists are read-only
+    services[0].tags.push('Changed')
     // @ts-expect-error the intro is read-only
     servicesIntro.heading = 'Changed'
     // @ts-expect-error the managed-services block is read-only
