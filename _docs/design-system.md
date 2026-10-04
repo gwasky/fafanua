@@ -235,7 +235,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 **Services introduction**
 
-- In order: `SectionEyebrow` **01 — Capabilities**, the approved intro heading as the section's only `h2` (so the region is named by it; the nav's "Services" links still land on `#services`), the two intro paragraphs, the lifecycle rail, then the cards. The intro is plain text, with no card, border or fill. The section has `--space-section` padding top and bottom.
+- In order: `SectionEyebrow` **01 — Capabilities**, the approved intro heading as the section's only `h2` (so the region is named by it; the nav's "Services" links still land on `#services`), the two intro paragraphs, the lifecycle rail, the cards, the system diagram (SystemFlow), then the managed-services block. The intro is plain text, with no card, border or fill. The section has `--space-section` padding top and bottom.
 
 **LifecycleRail**
 
@@ -252,9 +252,19 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 - Row alignment from `48em` where subgrid is supported (#53): each list item spans six row tracks (title, label, description, tags, button and the open list); a collapsed card spans the first five and an open one all six, so an open card grows alone. Below `48em`, and without subgrid, cards keep their natural height.
 - Hover: only under `@media (hover: hover)`, triggered from the card's list item (which does not move, so the card cannot slide out from under a resting cursor). The card lifts `--space-2` (8px), its border turns `--color-button-secondary-border-hover` (graphite 600) and its shadow rises from `--shadow-sm` to `--shadow-md`, over `--duration-card-hover`. Under `prefers-reduced-motion: reduce` the card does not move and nothing transitions; the border and shadow still change. Focus never moves the card.
 
+**SystemFlow**
+
+- `src/components/SystemFlow.tsx`: the system and data-flow diagram (plan V2 §11, #57). It sits inside Services, directly after the card list and before the managed-services block, so the services connect into one system that ends at activation, where managed operation picks up. Light, on the section's paper background; no image, SVG, canvas or library.
+- Copy: `src/data/systemFlow.ts`, copied from plan V2 §11 and checked against it by `systemFlow.plan.test.ts`. The heading is the section's stated goal, sentence-cased; the integration layer's name is read from `services.ts`. The labels are stored in sentence case and uppercased in CSS, so screen readers read them as words. The warehouse layer has no label, and there is no before/after framing.
+- Structure: a plain `div` (no landmark) holding an `h3`, **How the services connect into one operating data system**, and an `<ol role="list">` labelled by it (`aria-labelledby`), with six `li` layers in flow order. Each layer is its label (a `p`, if any), its name (a `p`) and its terms (a `<ul role="list">`, if any), in that order, so it reads top to bottom without CSS. No visible numbers, links, buttons, tab stops, titles or scroll containers, and no motion.
+- Look: labels at `--text-eyebrow`, `--weight-medium`, `--tracking-eyebrow`, uppercase, `--color-text-muted`; names at `--text-xl`, weight 400, `--color-heading`; terms at `--text-sm`, `--color-text-muted`; the `h3` at the global `--text-2xl`. Graphite 900 and 600 on paper only, no teal, no shadow or fill.
+- Layout: below `48em` each layer stacks label, name and terms under a graphite 200 hairline (the last one closed by another), using the full width; the markers sit inline before the name, so a name word too wide for the rest of the line moves to its own line rather than breaking. From `48em` each layer is a bordered row (graphite 200 hairline, `--radius-md`) of three columns, label, name and terms, at fixed shares of the row (a quarter, three eighths and the rest, less two `--space-6` gaps), the same in every row, so the names line up; the warehouse layer's name takes a start margin of the empty label column. The diagram spans the container. A row also needs the layer's content box to be at least `--flow-row` (36rem): each column's `flex-basis` is `--flow-stack`, a `clamp()` that is 0 from `--flow-row` and the whole box below it (the "switcher" pattern), so with enlarged page text, which a 48em media query does not follow, the layers stack instead of squeezing three columns; the warehouse layer's margin switches at the same layout unit. This needs no container query, so the breakpoint rule is unchanged.
+- Arrows: between each pair of layers, a shaft (`::before`) and a chevron head (`::after`), centred in the gap, drawn with `--color-text-muted` borders: no text, so nothing is announced, and still drawn in forced-colours mode. The term separators are dots drawn the same way, after each term but the last.
+- Markers: `aria-hidden` border-drawn dots before each name, from the stages each layer maps to in `systemFlow.ts`: Integration, Warehouse and Activation Build blue (Connect, Model, Connect); Quality + Governance Trust green and Govern purple; Analytics & Reporting Insights amber with its graphite 200 outline; Data Sources a neutral graphite 200 dot. From `48em` the markers' box is two markers wide, set to its end, so every name's text starts at the same place.
+
 **Managed Data & Analytics Services block**
 
-- Sits after the six cards on `.surface-alt` (graphite 100), spans the full container width, and is not a card: no stage label, colour marker or disclosure.
+- Sits after the six cards and the system diagram on `.surface-alt` (graphite 100), spans the full container width, and is not a card: no stage label, colour marker or disclosure.
 
 ## Motion
 
