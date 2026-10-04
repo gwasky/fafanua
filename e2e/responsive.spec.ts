@@ -779,14 +779,19 @@ for (const width of WIDTHS) {
       await expectNoHorizontalScroll(page)
     })
 
-    // The rail's connector (#56 QA): every pair of stages is joined by a
-    // graphite 200 rule at least 8px (--space-2) long. Measured across the
-    // widths where the six items are tightest (a 1fr column once left
-    // Connect to Model with no line from 768 to 775px), with the default
-    // text size and with 200% page text. Run from the 768px projects, in
-    // Chromium and WebKit.
+    // The rail's connector (#56 QA): the rail is either one row of six or
+    // one vertical column, never a wrapped row, and every pair of stages
+    // is joined by a graphite 200 rule at least 8px (--space-2) long that
+    // runs from just after one stage to just before the next. Measured at
+    // the default text size across the widths where the six items are
+    // tightest (a 1fr column once left Connect to Model with no line from
+    // 768 to 775px), and with 150% and 200% page text, which the 48em
+    // media query does not follow (a flex-wrap fallback once left the rail
+    // in two or three unjoined rows). Chromium also checks 32px browser
+    // text, set through CDP. Run from the 768px projects, in Chromium and
+    // WebKit.
     if (width === 768) {
-      test(`every lifecycle rail stage is joined to the next by a visible connector, 768 to 1024px, at ${width}px`, async ({ page }, testInfo) => {
+      test(`the lifecycle rail is one joined row or one joined column, with default and enlarged text, at ${width}px`, async ({ page, browserName }, testInfo) => {
         await open(page, testInfo, width)
         const rail = servicesRegion(page).getByRole('list').first()
         const measure = () =>
@@ -802,7 +807,9 @@ for (const width of WIDTHS) {
             probe.remove()
             const items = [...list.children]
             const markers = items.map((item) => item.firstElementChild!.getBoundingClientRect())
-            const horizontal = new Set(markers.map((marker) => Math.round(marker.left))).size > 1
+            const rows = new Set(markers.map((marker) => Math.round(marker.top))).size
+            const columns = new Set(markers.map((marker) => Math.round(marker.left))).size
+            const horizontal = columns > 1
             const segments = items.slice(0, -1).map((item, i) => {
               const after = getComputedStyle(item, '::after')
               const marker = markers[i]
@@ -823,19 +830,21 @@ for (const width of WIDTHS) {
               const start =
                 label.right + parseFloat(getComputedStyle(item).columnGap) + parseFloat(after.marginLeft)
               const end = start + parseFloat(after.width)
-              const sameRow = Math.abs(next.top - marker.top) <= 1
               return {
                 content: after.content,
                 border: `${after.borderTopWidth} ${after.borderTopStyle} ${after.borderTopColor}`,
                 length: parseFloat(after.width),
                 startGap: start - label.right,
-                // Up to the next marker when it is on the same row.
-                endGap: sameRow ? next.left - end : 0,
+                // Always measured to the next marker: on a wrapped row it
+                // is on another line, and this fails.
+                endGap: next.left - end,
               }
             })
             const box = list.getBoundingClientRect()
             return {
               want,
+              rows,
+              columns,
               horizontal,
               segments,
               // The rail stays inside its own box. (The page as a whole is
@@ -847,29 +856,66 @@ for (const width of WIDTHS) {
             }
           })
 
-        for (const text of ['100%', '200%']) {
-          if (text === '200%') await page.addStyleTag({ content: 'html { font-size: 200%; }' })
-          for (const w of [768, 775, 800, 1023, 1024]) {
+        const check = async (context: string, { row }: { row?: boolean } = {}) => {
+          // Chromium can report a pseudo-element's previous container-query
+          // styles until the next rendered frame after a resize or a text
+          // size change, so wait two frames before measuring.
+          await page.evaluate(
+            () =>
+              new Promise((resolve) =>
+                requestAnimationFrame(() => requestAnimationFrame(resolve)),
+              ),
+          )
+          const m = await measure()
+          const shape = `${context}: ${m.rows} rows, ${m.columns} columns`
+          // One row of six, or one column of six: never both several rows
+          // and several columns.
+          expect.soft(m.rows === 1 || m.columns === 1, shape).toBe(true)
+          if (row !== undefined) expect.soft(m.horizontal, `${shape}, one row expected: ${row}`).toBe(row)
+          expect.soft(m.segments, context).toHaveLength(5)
+          for (const [i, segment] of m.segments.entries()) {
+            const detail = `${context}, stage ${i + 1} to ${i + 2}: ${JSON.stringify(segment)}`
+            // Soft, so a failure lists every segment and width.
+            expect.soft(segment.content, detail).not.toBe('none')
+            expect.soft(segment.border, detail).toBe(m.want.border)
+            expect.soft(segment.length, detail).toBeGreaterThanOrEqual(m.want.min - 0.5)
+            // It starts just after the label (or marker) and runs up to the
+            // next marker: no gap wider than --space-2 at either end.
+            expect.soft(segment.startGap, detail).toBeLessThanOrEqual(m.want.min + 1)
+            expect.soft(segment.endGap, detail).toBeLessThanOrEqual(m.want.min + 1)
+            expect.soft(segment.endGap, detail).toBeGreaterThanOrEqual(-1)
+          }
+          expect.soft(m.overflow, `${context} rail overflow`).toBeLessThanOrEqual(1)
+        }
+
+        const cases: [string, number[]][] = [
+          ['100%', [768, 775, 800, 1023, 1024, 1440]],
+          ['150%', [768, 1024, 1440]],
+          ['200%', [768, 790, 1024, 1440]],
+        ]
+        const style = await page.addStyleTag({ content: '/* page text size */' })
+        for (const [text, widths] of cases) {
+          await style.evaluate((element, size) => {
+            element.textContent = `html { font-size: ${size}; }`
+          }, text)
+          for (const w of widths) {
             await page.setViewportSize({ width: w, height: 800 })
-            await waitForFonts(page)
-            const m = await measure()
-            const context = `${w}px, ${text} text`
             // At the default text size the rail is one row from 48em.
-            if (text === '100%') expect(m.horizontal, `${context} one row`).toBe(true)
-            expect(m.segments, context).toHaveLength(5)
-            for (const [i, segment] of m.segments.entries()) {
-              const detail = `${context}, stage ${i + 1} to ${i + 2}: ${JSON.stringify(segment)}`
-              // Soft, so a failure lists every segment and width.
-              expect.soft(segment.content, detail).not.toBe('none')
-              expect.soft(segment.border, detail).toBe(m.want.border)
-              expect.soft(segment.length, detail).toBeGreaterThanOrEqual(m.want.min - 0.5)
-              // It starts just after the label and runs up to the next
-              // marker: no gap wider than --space-2 at either end.
-              expect.soft(segment.startGap, detail).toBeLessThanOrEqual(m.want.min + 1)
-              expect.soft(segment.endGap, detail).toBeLessThanOrEqual(m.want.min + 1)
-              expect.soft(segment.endGap, detail).toBeGreaterThanOrEqual(-1)
-            }
-            expect(m.overflow, `${context} rail overflow`).toBeLessThanOrEqual(1)
+            await check(`${w}px, ${text} page text`, text === '100%' ? { row: true } : {})
+          }
+        }
+
+        if (browserName === 'chromium') {
+          await style.evaluate((element) => {
+            element.textContent = ''
+          })
+          const session = await page.context().newCDPSession(page)
+          await session.send('Page.enable')
+          await session.send('Page.setFontSizes', { fontSizes: { standard: 32 } })
+          for (const w of [768, 1024, 1440, 1600]) {
+            await page.setViewportSize({ width: w, height: 800 })
+            // 48em is 1536px here, so the rail is vertical below it.
+            await check(`${w}px, 32px browser text`, w < 1536 ? { row: false } : {})
           }
         }
       })
