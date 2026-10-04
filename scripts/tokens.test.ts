@@ -131,7 +131,7 @@ describe('content breakpoints', () => {
   // so the rail checks that its own box, in rem, is wide enough for its
   // six stages on one row, inside its (min-width: 48em) media query. It is
   // taken out before the check below, and only this exact query is.
-  const RAIL_QUERY = '@container lifecycle-rail (min-width: 44rem)'
+  const RAIL_QUERY = '@container lifecycle-rail (min-width: 42.5rem)'
   const withoutRailQuery = (file: string, css: string) =>
     file === 'components/LifecycleRail.css' ? css.replace(RAIL_QUERY, '') : css
 

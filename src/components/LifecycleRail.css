@@ -20,15 +20,19 @@
  * stays visibly joined (a fixed 1fr column left Connect to Model with no
  * line at 768px). Never a scroll container, and never a wrapped row.
  *
- * The row also needs the rail's own box to be at least 44rem wide: the
- * six stages need about 42rem on one row (672px at the default text
- * size). A media query in em moves with the browser's text size but not
- * with page text (html { font-size: 200% }), so the rail is a container
- * and queries its own width in rem, which does. At the default text size
- * its box is exactly 44rem (704px) at a 768px viewport, so it is one row
- * from 48em as before; with enlarged page text, where six stages do not
- * fit, it stays the vertical list. scripts/tokens.test.ts allows this one
- * container query.
+ * The row also needs the rail's own box to be at least 42.5rem wide. A
+ * media query in em moves with the browser's text size but not with page
+ * text (html { font-size: 200% }), so the rail is a container and
+ * queries its own width in rem, which does; with enlarged page text,
+ * where six stages do not fit, it stays the vertical list.
+ * scripts/tokens.test.ts allows this one container query.
+ *
+ * The margins at the default text size: the six stages with 8px
+ * connectors need 671.6px (41.98rem), so 42.5rem (680px) leaves 8.4px.
+ * At a 768px viewport the box is 704px without a scrollbar and 687px
+ * with an always-visible 17px one (689px with 15px), so the row still
+ * starts at 48em, with 7px to spare. (44rem, 704px, left it vertical
+ * from 768 to 784px next to a visible scrollbar.)
  */
 
 .lifecycle-rail-frame {
@@ -123,7 +127,7 @@
 }
 
 @media (min-width: 48em) {
-  @container lifecycle-rail (min-width: 44rem) {
+  @container lifecycle-rail (min-width: 42.5rem) {
     /* One row: the first five items grow, the last is as wide as its
        content, so the rail spans the container and ends at "Decide". */
     .lifecycle-rail {
