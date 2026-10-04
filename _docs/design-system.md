@@ -33,6 +33,7 @@ V2 tokens (#54). They are defined now and applied section by section in #55 to #
 | `--grid-size`, `--grid-line-width` | `4rem`, `1px` | Technical grid pitch and line width |
 | `--duration-header` | `var(--duration-base)` | Header solid and transparent switch |
 | `--duration-cta-arrow`, `--cta-arrow-shift` | `var(--duration-fast)`, `var(--space-1)` | Call-to-action arrow movement |
+| `--duration-card-hover` | `var(--duration-base)` | Service-card hover lift (#56) |
 | `--header-height` | Measured | The sticky header's height, kept current by `Header.tsx` (see Header) |
 
 ## Colour
@@ -151,7 +152,7 @@ Never use:
 - Font: Inter, self-hosted with `@fontsource-variable/inter` (Latin subset), preloaded from `index.html`. No Google Fonts requests.
 - Fallback stack: `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`.
 - Weights: 300 for large headings, 400 for body text, 500 only for small labels and buttons. Never bold headings. Nothing on the page computes to a weight above 500 (checked end to end).
-- V2 display scale: hero and section headings use `--text-hero` and `--text-section` at weight 300 with `--leading-display` and `--measure-display`; eyebrows and buttons use weight 500. The hero `h1` uses `--text-hero` (#55), with its supporting copy at `--text-body-lg`; until #56 to #60 apply the rest, other headings keep the `--text-*` tokens they use today.
+- V2 display scale: hero and section headings use `--text-hero` and `--text-section` at weight 300 with `--leading-display` and `--measure-display`; eyebrows and buttons use weight 500. The hero `h1` uses `--text-hero` (#55), with its supporting copy at `--text-body-lg`. Services (#56) uses `--text-section` for its `h2` (with `--leading-display` and `--measure-display`) and `--text-body-lg` for its intro paragraphs, and `--text-service` with `--leading-snug` for the card titles. Until #57 to #60 apply the rest, other headings keep the `--text-*` tokens they use today.
 - The heavy logo wordmark contrasts deliberately with the light site type. Do not match headings to the logo's weight.
 - Headings must wrap naturally at every width; do not rely on fixed line breaks.
 
@@ -176,7 +177,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 - Page background is paper; cards and raised surfaces are white with subtle graphite 200 borders.
 - V2: the hero is dark (delivered in #55). It is a `.surface-dark` section marked `data-header-overlay`, so it is pulled up under the transparent header, with the `TechnicalGrid` as its first child. From `64em` it is at least `85svh` (`85vh` where `svh` is unsupported), a minimum and never a fixed height, with its content centred below the header and `calc(var(--header-height) + var(--space-12))` / `var(--space-12)` block padding; below `64em` it has its natural height, with `--space-section-dark` above (after the header's height) and below. The hero and the future-ready section are dark sections (`.surface-dark`); #58 decides whether the Managed Services callout is dark.
-- The positioning statement sits directly after the hero, on its own, in muted text on paper (`Positioning.tsx`), until #56 replaces it with the plan V2 §8 positioning section.
+- The positioning section (plan V2 §8, #56) sits directly after the hero, on paper (`Positioning.tsx`): a plain `div`, not a card, with no heading, link or tab stop. It holds two paragraphs: a large statement (the core message from the services-positioning doc, Section 1) at `--text-3xl`, weight 300, `--leading-tight`, in `--color-heading`, and supporting copy (the East African statement) at `--text-body-lg` in `--color-text-muted`, no wider than `--measure`. From `64em` they sit in two top-aligned columns, the statement in the wider start column; below it they stack. It has `--space-section` padding top and bottom, and Services drops its own top padding after it (`.positioning + .services`), so the gap between them is not doubled.
 - The footer is light today (paper with a graphite 200 top border); #60 decides whether it becomes dark or graphite, as plan V2 §17 suggests.
 - In the future-ready section, the Intelligence colour may appear only as a restrained accent alongside teal.
 - Content must work at 360px, 768px, 1024px and 1440px with no horizontal scrolling. Cards reflow from one column on mobile to several on wider screens without compressing text.
@@ -221,7 +222,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 **SectionEyebrow**
 
-- `src/components/SectionEyebrow.tsx`: a `<p>` (not a heading) shown as `01 — Capabilities`, with the number optional. `--text-eyebrow`, `--weight-medium`, `--tracking-eyebrow`, uppercase, in `--color-text-muted`, which passes AA on paper, white, `.surface-alt` and `.surface-dark`. Placed on the page by #56 and #59.
+- `src/components/SectionEyebrow.tsx`: a `<p>` (not a heading) shown as `01 — Capabilities`, with the number optional. `--text-eyebrow`, `--weight-medium`, `--tracking-eyebrow`, uppercase, in `--color-text-muted`, which passes AA on paper, white, `.surface-alt` and `.surface-dark`. Placed on the page by #56 (**01 — Capabilities** in Services), #58 and #59.
 
 **Links**
 
@@ -232,9 +233,23 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 - 2px outline with 2px offset: teal 600 on light, teal 400 on dark. Focus must always be visible; never remove outlines without a replacement.
 
+**Services introduction**
+
+- In order: `SectionEyebrow` **01 — Capabilities**, the approved intro heading as the section's only `h2` (so the region is named by it; the nav's "Services" links still land on `#services`), the two intro paragraphs, the lifecycle rail, then the cards. The intro is plain text, with no card, border or fill. The section has `--space-section` padding top and bottom.
+
+**LifecycleRail**
+
+- `src/components/LifecycleRail.tsx`: an `<ol role="list">` of the six stages in `services` order, each a service-line marker, its two-digit number and its label from `stages` in `services.ts`. The number and the marker are `aria-hidden`, so each item reads as its label; it has no copy of its own, and no links, buttons or tab stops.
+- `--text-sm` at weight 500: the number in `--color-text-muted` with `tabular-nums`, the label in `--color-text`. Each item is one line, subordinate to the cards.
+- Markers match the cards' (border-drawn dots, so they stay visible in forced-colours mode; amber has a graphite 200 outline). A graphite 200 (`--color-border`) connector, drawn with a pseudo-element, joins the stages. No teal.
+- From `48em`: one row of six, the connector filling the space between each label and the next marker. Below `48em`: a vertical list with a vertical connector. Never a scroll container (no `overflow-x`).
+
 **Service cards**
 
-- Title, summary, service-line marker with its text label, and an accessible disclosure (`<button aria-expanded>` or `<details>`) revealing the Typical engagements list.
+- Title (`--text-service`, weight 300, `--leading-snug`), lifecycle line (marker, `aria-hidden` stage number from the service's position in `services`, then the label, so it reads as the label alone), description, capability tags, and an accessible disclosure (`<button aria-expanded>`) revealing the Typical engagements list.
+- Capability tags: `tags` in `services.ts`, the plan V2 §9 lists (3 to 5 per service). A `<ul role="list">` between the description and the button, always visible (not in the disclosure). `--text-xs` at weight 500 in `--color-text-muted` (graphite 600 on white, 6.6:1), each in a graphite 200 hairline with `--radius-sm`. No fill, teal, service-line colour, hover state or pointer cursor, so they never read as controls; not links or buttons, and no tab stops. They wrap onto further lines; a tag breaks a word only if it cannot fit on a line of its own.
+- Row alignment from `48em` where subgrid is supported (#53): each list item spans six row tracks (title, label, description, tags, button and the open list); a collapsed card spans the first five and an open one all six, so an open card grows alone. Below `48em`, and without subgrid, cards keep their natural height.
+- Hover: only under `@media (hover: hover)`, triggered from the card's list item (which does not move, so the card cannot slide out from under a resting cursor). The card lifts `--space-2` (8px), its border turns `--color-button-secondary-border-hover` (graphite 600) and its shadow rises from `--shadow-sm` to `--shadow-md`, over `--duration-card-hover`. Under `prefers-reduced-motion: reduce` the card does not move and nothing transitions; the border and shadow still change. Focus never moves the card.
 
 **Managed Data & Analytics Services block**
 
