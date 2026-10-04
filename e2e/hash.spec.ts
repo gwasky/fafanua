@@ -532,6 +532,11 @@ test.describe('history', () => {
         await openPath(page, '/#services', 1440)
         await expectLanded(page, '#services')
         const servicesLeftAt = await clickNav(page, 'Discuss a project')
+        // Chromium can take several frames to start a smooth scroll, which
+        // waitForScrollSettle (in expectLanded) would read as settled, so
+        // wait until the page moves first, as links.spec.ts does (#55). An
+        // instant jump has already moved.
+        await expect.poll(() => scrollY(page)).not.toBe(servicesLeftAt)
         await expectLanded(page, '#contact')
 
         await page.goBack()
