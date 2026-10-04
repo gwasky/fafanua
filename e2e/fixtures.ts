@@ -189,7 +189,10 @@ export async function waitForScrollSettle(page: Page) {
 
 /**
  * Asserts that an in-page link has landed, once scrolling has settled.
- * For #top the page is at the very top. For a section, its top edge is
+ * For #top the page is at the very top. So it is for #main: its first
+ * child, the dark hero, is pulled up under the header (#55), so main
+ * starts at the page's top, and landing on it leaves the page at scroll 0
+ * with the header transparent over the hero. For a section, its top edge is
  * within 1px of the sticky header's bottom edge, so the header hides none
  * of it, or, when the page cannot scroll that far, the page is at its
  * bottom limit and the section is in the viewport below the header.
@@ -213,6 +216,9 @@ export async function expectLanded(page: Page, hash: string) {
 
   if (hash === '#top') {
     expect(metrics.scrollY, detail).toBe(0)
+  } else if (hash === '#main') {
+    expect(metrics.scrollY, detail).toBe(0)
+    expect(metrics.top, detail).toBe(0)
   } else if (Math.abs(metrics.top - metrics.headerBottom) <= 1) {
     expect(Math.abs(metrics.top - metrics.headerBottom), detail).toBeLessThanOrEqual(1)
   } else {

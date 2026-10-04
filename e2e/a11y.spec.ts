@@ -12,6 +12,22 @@ test.describe('axe, page as loaded', () => {
   for (const width of [320, 360, 768, 1024, 1440]) {
     test(`everything closed at ${width}px`, async ({ page }, testInfo) => {
       await openPage(page, width)
+      // At the top: the header is transparent over the dark hero.
+      await expect(page.getByRole('banner')).toHaveClass(/\bon-dark\b/)
+
+      await expectNoAxeViolations(page, testInfo)
+    })
+  }
+})
+
+test.describe('axe, page scrolled', () => {
+  // The header is solid once the page has scrolled 8px or more; at the
+  // top it is transparent over the dark hero (checked as loaded, above).
+  for (const width of [360, 1440]) {
+    test(`header solid after scrolling at ${width}px`, async ({ page }, testInfo) => {
+      await openPage(page, width)
+      await page.evaluate(() => window.scrollTo(0, 600))
+      await expect(page.getByRole('banner')).not.toHaveClass(/\bon-dark\b/)
 
       await expectNoAxeViolations(page, testInfo)
     })
@@ -81,7 +97,7 @@ test.describe('axe, 200% browser zoom', () => {
     const header = page.getByRole('banner')
     expect(await header.evaluate((element) => getComputedStyle(element).position)).toBe('relative')
 
-    await page.getByRole('link', { name: 'See our services' }).click()
+    await page.getByRole('link', { name: 'Explore our capabilities' }).click()
     await expect(page).toHaveURL(/#services$/)
     await expectLanded(page, '#services')
     const { headerBottom, top } = await page.evaluate(() => ({
@@ -119,8 +135,8 @@ test.describe('reduced motion', () => {
   // visible at 1440px.
   const buttonDurations = async (page: Page) => {
     const links = {
-      'Contact our team': page.getByRole('link', { name: 'Contact our team' }),
-      'See our services': page.getByRole('link', { name: 'See our services' }),
+      'Discuss your data needs': page.getByRole('link', { name: 'Discuss your data needs' }),
+      'Explore our capabilities': page.getByRole('link', { name: 'Explore our capabilities' }),
     }
     const results: { name: string; duration: number }[] = []
     for (const [name, link] of Object.entries(links)) {
@@ -293,7 +309,7 @@ test.describe('a header taller than a quarter of the viewport is static', () => 
     }))
     expect(height).toBeGreaterThan(0.25 * viewport)
 
-    await page.getByRole('link', { name: 'See our services' }).click()
+    await page.getByRole('link', { name: 'Explore our capabilities' }).click()
     await expect(page).toHaveURL(/#services$/)
     await expectLanded(page, '#services')
     const { headerBottom, top } = await page.evaluate(() => ({

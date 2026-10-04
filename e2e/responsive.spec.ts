@@ -41,8 +41,8 @@ const ANCHORS = [
   '#how-we-work',
   '#about',
   '#contact', // header call to action
-  '#contact', // hero "Contact our team"
-  '#services', // hero "See our services"
+  '#contact', // hero "Discuss your data needs"
+  '#services', // hero "Explore our capabilities"
   '#services', // footer nav
   '#solutions',
   '#how-we-work',
@@ -366,10 +366,10 @@ for (const width of WIDTHS) {
       }
     })
 
-    test(`header is solid, with the positive logo, at every scroll position at ${width}px`, async ({ page }, testInfo) => {
+    test(`header is transparent over the hero at the top and solid from 8px at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
-      // No [data-header-overlay] on the page yet (#55 adds it).
-      expect(await page.locator('[data-header-overlay]').count()).toBe(0)
+      // The dark hero is the overlay section (#55).
+      await expect(page.locator('main > [data-header-overlay]')).toHaveCount(1)
       const look = () =>
         page.getByRole('banner').evaluate((header) => {
           const style = getComputedStyle(header)
@@ -394,10 +394,59 @@ for (const width of WIDTHS) {
         return value
       })
 
-      for (const y of [0, 4, 8, 600]) {
+      const transparent = {
+        background: 'rgba(0, 0, 0, 0)',
+        border: `${expected.border.split(' ').slice(0, 2).join(' ')} rgba(0, 0, 0, 0)`,
+        logo: '/fafanua-logo-reversed.svg',
+      }
+
+      // Below the 8px threshold transparent, from it solid, and
+      // transparent again back at the top.
+      for (const [y, want] of [
+        [0, transparent],
+        [4, transparent],
+        [8, expected],
+        [600, expected],
+        [0, transparent],
+      ] as const) {
         await page.evaluate((top) => window.scrollTo(0, top), y)
         await waitForScrollSettle(page)
-        expect(await look(), `at scrollY ${y}`).toEqual(expected)
+        await expect.poll(look, { message: `at scrollY ${y}` }).toEqual(want)
+      }
+    })
+
+    // The dark hero (#55): from 64em 80-90% of the viewport's height
+    // (85svh); below it, its natural height, with both calls to action on
+    // the first screen (the projects' viewport is 800px tall).
+    test(`hero height and calls to action at scroll 0 at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      const m = await page.evaluate(() => {
+        const hero = document.querySelector('main > [data-header-overlay]')!
+        const [primary, secondary] = [...hero.querySelectorAll('a')].map((link) => link.getBoundingClientRect())
+        const { top, height } = hero.getBoundingClientRect()
+        return {
+          top,
+          height,
+          minBlockSize: getComputedStyle(hero).minBlockSize,
+          primaryBottom: primary.bottom,
+          secondaryBottom: secondary.bottom,
+          headerBottom: document.querySelector('header')!.getBoundingClientRect().bottom,
+          viewport: window.innerHeight,
+        }
+      })
+      const detail = JSON.stringify(m)
+
+      expect(m.top, detail).toBe(0)
+      if (width >= 1024) {
+        expect(m.height / m.viewport, detail).toBeGreaterThanOrEqual(0.8)
+        expect(m.height / m.viewport, detail).toBeLessThanOrEqual(0.9)
+      } else {
+        expect(m.minBlockSize, detail).toBe('0px')
+      }
+      expect(m.primaryBottom, detail).toBeLessThanOrEqual(m.viewport)
+      expect(m.secondaryBottom, detail).toBeLessThanOrEqual(m.viewport)
+      for (const name of ['Discuss your data needs', 'Explore our capabilities']) {
+        await expect(page.getByRole('main').getByRole('link', { name, exact: true })).toBeInViewport({ ratio: 1 })
       }
     })
 
@@ -820,8 +869,8 @@ for (const width of WIDTHS) {
     }
 
     for (const [name, hash] of [
-      ['Contact our team', '#contact'],
-      ['See our services', '#services'],
+      ['Discuss your data needs', '#contact'],
+      ['Explore our capabilities', '#services'],
     ] as const) {
       test(`hero "${name}" lands on ${hash} at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)

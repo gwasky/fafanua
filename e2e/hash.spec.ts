@@ -424,7 +424,7 @@ test.describe('keyboard focus', () => {
     { path: '/#future-ready', next: 'Email us' },
     { path: '/#about', next: 'Email us' },
     { path: '/#contact', next: 'Email us' },
-    { path: '/#main', next: 'Contact our team' },
+    { path: '/#main', next: 'Discuss your data needs' },
     { path: '/#top', next: 'Skip to content' },
     { path: '/#nope', next: 'Skip to content' },
     { path: '/', next: 'Skip to content' },

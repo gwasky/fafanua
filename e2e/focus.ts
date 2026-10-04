@@ -13,8 +13,8 @@ const sections = ['Services', 'Solutions', 'How We Work', 'About']
 export const nav = [...sections, 'Discuss a project']
 const footerNav = [...sections, 'Contact']
 const fromHero = [
-  'Contact our team',
-  'See our services',
+  'Discuss your data needs',
+  'Explore our capabilities',
   ...disclosures,
   'Email us',
   'info@fafanua.tech',

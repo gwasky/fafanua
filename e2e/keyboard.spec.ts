@@ -68,7 +68,7 @@ test.describe('Tab order', () => {
 
 test.describe('skip link', () => {
   for (const width of [360, 1440]) {
-    test(`Enter moves focus to main, then Tab to Contact our team, at ${width}px`, async ({ page }) => {
+    test(`Enter moves focus to main, then Tab to Discuss your data needs, at ${width}px`, async ({ page }) => {
       await openPage(page, width)
       await tabTo(page, 'Skip to content')
       await page.keyboard.press('Enter')
@@ -82,7 +82,7 @@ test.describe('skip link', () => {
         }
       })
       expect(main).toEqual({ id: 'main', tag: 'MAIN', outline: 'none' })
-      await tabTo(page, 'Contact our team')
+      await tabTo(page, 'Discuss your data needs')
     })
   }
 })
@@ -96,8 +96,8 @@ test.describe('focus after in-page links', () => {
     { from: 'header', link: 'How We Work', hash: '#how-we-work', next: 'Email us' },
     { from: 'header', link: 'About', hash: '#about', next: 'Email us' },
     { from: 'header', link: 'Discuss a project', hash: '#contact', next: 'Email us' },
-    { from: 'main', link: 'See our services', hash: '#services', next: firstDisclosure },
-    { from: 'main', link: 'Contact our team', hash: '#contact', next: 'Email us' },
+    { from: 'main', link: 'Explore our capabilities', hash: '#services', next: firstDisclosure },
+    { from: 'main', link: 'Discuss your data needs', hash: '#contact', next: 'Email us' },
     { from: 'footer', link: 'Services', hash: '#services', next: firstDisclosure },
     { from: 'footer', link: 'Solutions', hash: '#solutions', next: 'Email us' },
   ] as const
@@ -174,14 +174,14 @@ test.describe('Menu toggle at 360px', () => {
     await expect(toggle).toBeFocused()
   })
 
-  test('Tab goes through the four open menu links and the call to action to Contact our team', async ({ page }) => {
+  test('Tab goes through the four open menu links and the call to action to Discuss your data needs', async ({ page }) => {
     await openPage(page, 360)
     const toggle = page.getByRole('button', { name: 'Menu' })
     await toggle.focus()
     await page.keyboard.press('Enter')
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
 
-    for (const name of [...nav, 'Contact our team']) {
+    for (const name of [...nav, 'Discuss your data needs']) {
       await tabTo(page, name)
       await expectRing(page, name)
     }
@@ -213,9 +213,9 @@ test.describe('disclosures', () => {
 })
 
 test.describe('mouse focus', () => {
-  test('a click on Contact our team or a disclosure shows no focus ring', async ({ page, browserName }) => {
+  test('a click on Discuss your data needs or a disclosure shows no focus ring', async ({ page, browserName }) => {
     await openPage(page, 1440)
-    const cta = page.getByRole('link', { name: 'Contact our team' })
+    const cta = page.getByRole('link', { name: 'Discuss your data needs' })
     await cta.click()
     await expect(page).toHaveURL(/#contact$/)
     expect(await cta.evaluate((element) => element.matches(':focus-visible'))).toBe(false)
