@@ -151,7 +151,7 @@ Never use:
 - Font: Inter, self-hosted with `@fontsource-variable/inter` (Latin subset), preloaded from `index.html`. No Google Fonts requests.
 - Fallback stack: `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`.
 - Weights: 300 for large headings, 400 for body text, 500 only for small labels and buttons. Never bold headings. Nothing on the page computes to a weight above 500 (checked end to end).
-- V2 display scale: hero and section headings use `--text-hero` and `--text-section` at weight 300 with `--leading-display` and `--measure-display`; eyebrows and buttons use weight 500. Until #55 to #60 apply them, headings keep the `--text-*` tokens they use today.
+- V2 display scale: hero and section headings use `--text-hero` and `--text-section` at weight 300 with `--leading-display` and `--measure-display`; eyebrows and buttons use weight 500. The hero `h1` uses `--text-hero` (#55), with its supporting copy at `--text-body-lg`; until #56 to #60 apply the rest, other headings keep the `--text-*` tokens they use today.
 - The heavy logo wordmark contrasts deliberately with the light site type. Do not match headings to the logo's weight.
 - Headings must wrap naturally at every width; do not rely on fixed line breaks.
 
@@ -175,7 +175,8 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 ## Layout and sections
 
 - Page background is paper; cards and raised surfaces are white with subtle graphite 200 borders.
-- V2: the hero is dark (graphite 900 with the technical grid, delivered in #55). The hero and the future-ready section are dark sections (`.surface-dark`); #58 decides whether the Managed Services callout is dark.
+- V2: the hero is dark (delivered in #55). It is a `.surface-dark` section marked `data-header-overlay`, so it is pulled up under the transparent header, with the `TechnicalGrid` as its first child. From `64em` it is at least `85svh` (`85vh` where `svh` is unsupported), a minimum and never a fixed height, with its content centred below the header and `calc(var(--header-height) + var(--space-12))` / `var(--space-12)` block padding; below `64em` it has its natural height, with `--space-section-dark` above (after the header's height) and below. The hero and the future-ready section are dark sections (`.surface-dark`); #58 decides whether the Managed Services callout is dark.
+- The positioning statement sits directly after the hero, on its own, in muted text on paper (`Positioning.tsx`), until #56 replaces it with the plan V2 §8 positioning section.
 - The footer is light today (paper with a graphite 200 top border); #60 decides whether it becomes dark or graphite, as plan V2 §17 suggests.
 - In the future-ready section, the Intelligence colour may appear only as a restrained accent alongside teal.
 - Content must work at 360px, 768px, 1024px and 1440px with no horizontal scrolling. Cards reflow from one column on mobile to several on wider screens without compressing text.
@@ -216,7 +217,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 - `src/components/TechnicalGrid.tsx`: one `aria-hidden` div, absolutely positioned behind its parent's content (`inset: 0`, `pointer-events: none`), drawn with two `linear-gradient` backgrounds only. Place it as the first child of the section; its CSS positions the section and isolates it so the grid sits above the section background and below its content.
 - The line colour is `--color-grid-line`, which `.surface-dark` reassigns, so it works on light and dark without props. Each grid line is at most 1.25:1 against its surface (`scripts/contrast.test.ts`).
 - No moiré: the pitch is `--grid-size` in rem, lines are a whole 1px, and there is no `vw` or `%` size, transform or scale.
-- Use it only in the hero, the future-ready section and, optionally, a small footer area; never behind long reading sections. Today it is only in the future-ready section.
+- Use it only in the hero, the future-ready section and, optionally, a small footer area; never behind long reading sections. Today it is in the hero and the future-ready section.
 
 **SectionEyebrow**
 
