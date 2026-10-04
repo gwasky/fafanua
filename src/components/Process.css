@@ -69,13 +69,13 @@
   text-wrap: pretty;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   .process {
     padding-block: var(--space-20);
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 64em) {
   .process__list {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }

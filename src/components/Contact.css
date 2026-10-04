@@ -38,7 +38,7 @@
   text-underline-offset: var(--space-1);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   .contact {
     padding-block: var(--space-20);
   }

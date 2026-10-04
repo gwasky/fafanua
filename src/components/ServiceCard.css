@@ -114,7 +114,7 @@
  * opens: changing its margin then left the row 25px too tall after
  * closing, in Chromium and WebKit, until the next layout.
  */
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   @supports (grid-template-rows: subgrid) {
     .service-card {
       display: grid;

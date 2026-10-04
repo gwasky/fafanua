@@ -113,3 +113,22 @@ describe('inline navigation breakpoint', () => {
     expect(media).toEqual([query])
   })
 })
+
+describe('content breakpoints', () => {
+  // Width breakpoints are in em, so a larger browser text size moves them
+  // up with the text (#54): 48em and 64em, 768px and 1024px at 16px.
+  const files = [
+    'styles/global.css',
+    'styles/components.css',
+    ...readdirSync(new URL('../src/components/', import.meta.url))
+      .filter((name) => name.endsWith('.css'))
+      .map((name) => `components/${name}`),
+  ]
+
+  it.each(files)('%s uses only (min-width: 48em) and (min-width: 64em)', (file) => {
+    const widths = [...read(file).matchAll(/\((?:min|max)-width:\s*([^)]+)\)/g)].map(
+      (match) => match[1].trim(),
+    )
+    for (const width of widths) expect(['48em', '64em']).toContain(width)
+  })
+})

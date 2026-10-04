@@ -81,13 +81,13 @@
   border-radius: var(--radius-full);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   .future-ready {
     padding-block: var(--space-20);
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 64em) {
   .future-ready__layout {
     grid-template-columns: minmax(0, 1fr) auto;
     column-gap: var(--space-16);

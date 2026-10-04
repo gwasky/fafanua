@@ -81,7 +81,7 @@
   transform: rotate(45deg);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   .managed-services {
     padding: var(--space-10);
   }
@@ -113,7 +113,7 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 64em) {
   .managed-services__capabilities {
     columns: 3;
   }

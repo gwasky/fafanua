@@ -76,7 +76,7 @@
   font-weight: var(--weight-regular);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 64em) {
   .site-footer__inner {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);

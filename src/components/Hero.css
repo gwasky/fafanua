@@ -35,7 +35,7 @@
   color: var(--color-text-muted);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   .hero {
     padding-block: var(--space-20) var(--space-24);
   }

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { expectLanded, expectNoAxeViolations, openPage } from './fixtures.ts'
+import { SEQUENCE, walkFocus } from './focus.ts'
 import { formatViolations } from '../src/test/axe.ts'
 
 // Axe on the production preview in a real browser, where contrast,
@@ -362,6 +363,27 @@ test.describe('browser text size 200%: the header falls back to the Menu', () =>
         page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }),
       ).toBeVisible()
     }
+  })
+
+  // Every Tab and Shift+Tab stop is wholly visible below the sticky
+  // header. The content breakpoints are in em too, so at 1024px with 32px
+  // text the service cards are one column and their disclosure buttons
+  // stay short (in three columns they were about 658px tall).
+  test('Tab and Shift+Tab keep every stop wholly visible at 1024 x 800', async ({ page }) => {
+    await openPage(page, 1024)
+    expect((await header(page)).position).toBe('sticky')
+    // The service cards: the items of the section's first list.
+    const columns = await page
+      .getByRole('region', { name: 'Services' })
+      .getByRole('list')
+      .first()
+      .locator(':scope > li')
+      .evaluateAll(
+        (items) => new Set(items.map((item) => Math.round(item.getBoundingClientRect().left))).size,
+      )
+    expect(columns, 'service card columns').toBe(1)
+
+    await walkFocus(page, SEQUENCE.menu)
   })
 
   test('switches at 64em: Menu at 2047px, inline nav on one row at 2048px', async ({ page }) => {

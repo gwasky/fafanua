@@ -54,7 +54,7 @@
   list-style: none;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   .services {
     padding-block: var(--space-20);
   }
@@ -85,7 +85,7 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 64em) {
   .services__list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

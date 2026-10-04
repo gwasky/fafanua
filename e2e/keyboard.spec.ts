@@ -1,15 +1,6 @@
 import { expect, type Page } from '@playwright/test'
-import { services } from '../src/data/services.ts'
-import {
-  focusAndHeaderBoxes,
-  focusedName,
-  focusStyle,
-  openPage,
-  pressTab,
-  test,
-  waitForFonts,
-  waitForScrollSettle,
-} from './fixtures.ts'
+import { focusedName, focusStyle, openPage, pressTab, test, waitForFonts } from './fixtures.ts'
+import { disclosures, nav, SEQUENCE as FOCUS_ORDER, tabTo, walkFocus } from './focus.ts'
 
 // The automated part of the keyboard review: Tab order, focus rings,
 // the skip link, focus after in-page links, the Menu toggle, the
@@ -19,25 +10,9 @@ import {
 // same stops are checked in both engines.
 test.use({ reducedMotion: 'reduce' })
 
-const disclosures = services.map((service) => `Typical engagements for ${service.name}`)
-// The header's four section links and its call to action, which replaces
-// a Contact link; the footer keeps Contact.
-const sections = ['Services', 'Solutions', 'How We Work', 'About']
-const nav = [...sections, 'Discuss a project']
-const footerNav = [...sections, 'Contact']
-const fromHero = [
-  'Contact our team',
-  'See our services',
-  ...disclosures,
-  'Email us',
-  'info@fafanua.tech',
-  ...footerNav,
-  'info@fafanua.tech',
-]
-
 const SEQUENCE: Record<number, string[]> = {
-  1440: ['Skip to content', 'Fafanua Technologies', ...nav, ...fromHero],
-  360: ['Skip to content', 'Fafanua Technologies', 'Menu', ...fromHero],
+  1440: FOCUS_ORDER.inline,
+  360: FOCUS_ORDER.menu,
 }
 
 // Polled rather than read once: under reduced motion every property still
@@ -47,15 +22,6 @@ async function expectRing(page: Page, name: string) {
   await expect
     .poll(() => focusStyle(page), { message: `focus ring on "${name}"` })
     .toEqual({ focusVisible: true, outline: '2px solid', offset: '2px' })
-}
-
-/**
- * Presses Tab, or Shift+Tab when `shift` is set, and expects the named
- * element to take focus.
- */
-async function tabTo(page: Page, name: string, { shift = false } = {}) {
-  await pressTab(page, { shift })
-  expect(await focusedName(page)).toBe(name)
 }
 
 test.describe('Tab order', () => {
@@ -287,22 +253,6 @@ test.describe('focus is never under the sticky header', () => {
     { width: 320, text: '200%' },
   ] as const
 
-  async function expectUnobscured(page: Page, name: string) {
-    await waitForScrollSettle(page)
-    const { inHeader, focused, header, viewport } = await focusAndHeaderBoxes(page)
-    if (inHeader) return
-    const detail = `"${name}": ${JSON.stringify({ focused, header, viewport })}`
-    expect(focused.left, `${detail} left edge`).toBeGreaterThanOrEqual(0)
-    expect(focused.right, `${detail} right edge`).toBeLessThanOrEqual(viewport.width)
-    // Scroll positions are whole pixels and boxes are not, so an edge can
-    // sit up to 1px past the one it is aligned to.
-    // A static header may have scrolled away, leaving the viewport's top.
-    expect(focused.top, `${detail} top below the header`).toBeGreaterThanOrEqual(
-      Math.max(0, header.bottom) - 1,
-    )
-    expect(focused.bottom, `${detail} bottom in the viewport`).toBeLessThanOrEqual(viewport.height + 1)
-  }
-
   for (const { width, text } of cases) {
     test(`Tab and Shift+Tab through every stop at ${width}px with ${text} text`, async ({ page }) => {
       await openPage(page, width)
@@ -324,14 +274,7 @@ test.describe('focus is never under the sticky header', () => {
         .poll(() => page.getByRole('banner').evaluate((element) => getComputedStyle(element).position))
         .toBe(text === '200%' ? 'relative' : 'sticky')
 
-      for (const name of sequence) {
-        await tabTo(page, name)
-        await expectUnobscured(page, name)
-      }
-      for (const name of [...sequence].reverse().slice(1)) {
-        await tabTo(page, name, { shift: true })
-        await expectUnobscured(page, name)
-      }
+      await walkFocus(page, sequence)
     })
   }
 })
