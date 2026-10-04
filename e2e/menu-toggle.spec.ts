@@ -12,12 +12,18 @@ import { expectLanded, openPage, pressTab, test, waitForScrollSettle } from './f
 
 const menuButton = (page: Page) => page.getByRole('button', { name: 'Menu' })
 
-/** A colour token resolved to the computed rgb() form. */
+/**
+ * A colour token resolved to the computed rgb() form, inside the header,
+ * so it takes the header's current values: the dark ones (.on-dark) while
+ * it is transparent over the hero at the top of the page (#55), and the
+ * light ones once it is solid.
+ */
 function token(page: Page, name: string) {
   return page.evaluate((name) => {
     const probe = document.createElement('div')
     probe.style.color = `var(${name})`
-    document.body.append(probe)
+    probe.style.position = 'absolute'
+    document.querySelector('header')!.append(probe)
     const value = getComputedStyle(probe).color
     probe.remove()
     return value
@@ -72,32 +78,53 @@ for (const width of [360, 1023]) {
       expect(box?.height).toBeGreaterThanOrEqual(44)
     })
 
-    test('has the secondary default colours', async ({ page }) => {
-      const want = await expected(page, '--color-button-secondary-border', 'transparent')
-      expect(await colours(page)).toEqual(want)
-    })
+    // At the top the header is transparent over the dark hero, so the
+    // toggle is the secondary button on dark; scrolled, it is on paper.
+    for (const state of ['over the hero', 'scrolled'] as const) {
+      const prepare = async (page: Page) => {
+        if (state === 'scrolled') {
+          await page.evaluate(() => window.scrollTo(0, 600))
+          await waitForScrollSettle(page)
+          await expect(page.getByRole('banner')).not.toHaveClass(/\bon-dark\b/)
+        } else {
+          await expect(page.getByRole('banner')).toHaveClass(/\bon-dark\b/)
+        }
+        await menuButton(page).evaluate((element) =>
+          Promise.all(element.getAnimations().map((animation) => animation.finished)),
+        )
+      }
 
-    test('takes the secondary hover colours', async ({ page }) => {
-      const want = await expected(
-        page,
-        '--color-button-secondary-border-hover',
-        '--color-button-secondary-bg-hover',
-      )
-      await menuButton(page).hover()
-      // Polled: the colours change over the .button transition.
-      await expect.poll(() => colours(page)).toEqual(want)
-    })
+      test(`has the secondary default colours, ${state}`, async ({ page }) => {
+        await prepare(page)
+        const want = await expected(page, '--color-button-secondary-border', 'transparent')
+        expect(await colours(page)).toEqual(want)
+      })
+
+      test(`takes the secondary hover colours, ${state}`, async ({ page }) => {
+        await prepare(page)
+        const want = await expected(
+          page,
+          '--color-button-secondary-border-hover',
+          '--color-button-secondary-bg-hover',
+        )
+        await menuButton(page).hover()
+        // Polled: the colours change over the .button transition.
+        await expect.poll(() => colours(page)).toEqual(want)
+      })
+    }
 
     test('keeps the focus ring and hover colours when focused and open', async ({ page }) => {
-      const want = await expected(
-        page,
-        '--color-button-secondary-border-hover',
-        '--color-button-secondary-bg-hover',
-      )
       await page.getByRole('link', { name: 'Fafanua Technologies' }).focus()
       await pressTab(page)
       await page.keyboard.press('Enter')
       await expect(menuButton(page)).toHaveAttribute('aria-expanded', 'true')
+      // Read once open: the open menu makes the header solid.
+      await expect(page.getByRole('banner')).not.toHaveClass(/\bon-dark\b/)
+      const want = await expected(
+        page,
+        '--color-button-secondary-border-hover',
+        '--color-button-secondary-bg-hover',
+      )
       await menuButton(page).hover()
 
       await expect.poll(() => colours(page)).toEqual(want)
@@ -159,6 +186,8 @@ test.describe('open menu at 360 x 640', () => {
       if (sticky) {
         // Part way down the page, so a jump of the page behind would show.
         await page.evaluate(() => document.getElementById('how-we-work')?.scrollIntoView())
+        // The scroll is smooth here and can take a few frames to start.
+        await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
       }
       await waitForScrollSettle(page)
       const pageY = await page.evaluate(() => window.scrollY)

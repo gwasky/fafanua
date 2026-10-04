@@ -86,12 +86,17 @@ test.describe('smooth scrolling', () => {
           await waitForScrollSettle(page)
         }
 
+        const startY = await page.evaluate(() => window.scrollY)
         await (from === 'header'
           ? mainNavLink(page, name)
           : footer.getByRole('link', { name, exact: true })
         ).click()
 
         expect(await page.evaluate(() => location.hash)).toBe(hash)
+        // Chromium can take several frames to start a smooth scroll, which
+        // waitForScrollSettle would read as settled (seen from the footer
+        // at 1440px once #55 made the hero taller), so wait until it moves.
+        await expect.poll(() => page.evaluate(() => window.scrollY)).not.toBe(startY)
         await expectLanded(page, hash)
       })
     }
