@@ -3,12 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
 import { navigation, navigationCta } from './data/navigation.ts'
 import { processStages } from './data/process.ts'
-import { managedServices, servicesIntro } from './data/services.ts'
+import { managedServices, services, servicesIntro } from './data/services.ts'
 import { solutions } from './data/solutions.ts'
 
 const FUTURE_READY = 'Trusted foundations for what comes next'
 const CONTACT = 'Discuss your data foundation.'
 const HERO = 'Trusted Data. Better Decisions.'
+// The Services section is named by its h2, the approved intro heading.
+const SERVICES = servicesIntro.heading
+const POSITIONING =
+  'Fafanua helps organisations build reliable data foundations, connect fragmented systems, improve trust in their data, and turn information into useful business intelligence.'
 const STATEMENT =
   'Fafanua helps East African businesses, government institutions and development organisations establish trusted data foundations for reliable reporting, better decisions and future governed analytics and AI.'
 
@@ -58,20 +62,42 @@ describe('App', () => {
     expect(hero).toHaveClass('surface-dark')
   })
 
-  it('renders the positioning statement after the hero, then Services, inside main', () => {
+  it('renders the positioning section after the hero, then Services, inside main', () => {
     render(<App />)
     const hero = screen.getByRole('region', { name: HERO })
+    const lead = screen.getByText(POSITIONING)
     const statement = screen.getByText(STATEMENT)
     const positioning = hero.nextElementSibling
-    const services = screen.getByRole('region', { name: 'Services' })
+    const services = screen.getByRole('region', { name: SERVICES })
 
     expect(screen.getByRole('main')).toContainElement(services)
     expect(hero).not.toContainElement(statement)
     expect(positioning).not.toBeNull()
+    expect(positioning!.tagName).toBe('DIV')
+    expect(positioning).toContainElement(lead)
     expect(positioning).toContainElement(statement)
+    expect(
+      lead.compareDocumentPosition(statement) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
     expect(positioning).not.toHaveClass('surface-dark')
     expect(positioning).not.toHaveClass('surface-alt')
     expect(positioning!.nextElementSibling).toBe(services)
+  })
+
+  it('orders main as hero, positioning, Services, Solutions, How We Work, future-ready, About, Contact', () => {
+    render(<App />)
+    const children = [...screen.getByRole('main').children]
+
+    expect(children).toEqual([
+      screen.getByRole('region', { name: HERO }),
+      screen.getByText(POSITIONING).closest('.positioning'),
+      screen.getByRole('region', { name: SERVICES }),
+      screen.getByRole('region', { name: 'Solutions' }),
+      screen.getByRole('region', { name: 'How We Work' }),
+      screen.getByRole('region', { name: FUTURE_READY }),
+      screen.getByRole('region', { name: 'About Fafanua' }),
+      screen.getByRole('region', { name: CONTACT }),
+    ])
   })
 
   it('has exactly two technical grids, in the hero and the future-ready section', () => {
@@ -87,7 +113,7 @@ describe('App', () => {
 
   it('lands the header and hero Services links on the services section', () => {
     render(<App />)
-    const services = screen.getByRole('region', { name: 'Services' })
+    const services = screen.getByRole('region', { name: SERVICES })
     const targets = [
       within(screen.getByRole('banner')).getByRole('link', {
         name: 'Services',
@@ -102,7 +128,7 @@ describe('App', () => {
 
   it('renders the Solutions section directly after Services', () => {
     render(<App />)
-    const services = screen.getByRole('region', { name: 'Services' })
+    const services = screen.getByRole('region', { name: SERVICES })
     const solutions = screen.getByRole('region', { name: 'Solutions' })
     const nav = navigation.find((item) => item.label === 'Solutions')
 
@@ -317,26 +343,32 @@ describe('App', () => {
     ).not.toMatch(/intelligence/i)
   })
 
-  it('orders headings h1, h2 Services, intro h3, six h3s, managed-services h3, h2 Solutions, five h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
+  it('orders headings h1, h2 Services intro heading, six h3s, managed-services h3, h2 Solutions, five h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
 
     expect(levels).toEqual([
-      1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2,
+      1, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2,
     ])
     expect(levels.filter((level) => level === 1)).toHaveLength(1)
-    expect(headings[1].textContent).toBe('Services')
-    expect(headings[2].textContent).toBe(servicesIntro.heading)
-    expect(headings[9].textContent).toBe(managedServices.heading)
-    expect(headings[10].textContent).toBe('Solutions')
-    expect(headings.slice(11, 16).map((heading) => heading.textContent)).toEqual(
+    // No level is skipped.
+    for (let i = 1; i < levels.length; i++) {
+      expect(levels[i], `heading ${i + 1}`).toBeLessThanOrEqual(levels[i - 1] + 1)
+    }
+    expect(headings[1].textContent).toBe(servicesIntro.heading)
+    expect(headings.slice(2, 8).map((heading) => heading.textContent)).toEqual(
+      services.map((service) => service.name),
+    )
+    expect(headings[8].textContent).toBe(managedServices.heading)
+    expect(headings[9].textContent).toBe('Solutions')
+    expect(headings.slice(10, 15).map((heading) => heading.textContent)).toEqual(
       solutions.map((solution) => solution.title),
     )
-    expect(headings[16].textContent).toBe('How We Work')
-    expect(headings[21].textContent).toBe(FUTURE_READY)
-    expect(headings[22].textContent).toBe('About Fafanua')
-    expect(headings[23].textContent).toBe(CONTACT)
+    expect(headings[15].textContent).toBe('How We Work')
+    expect(headings[20].textContent).toBe(FUTURE_READY)
+    expect(headings[21].textContent).toBe('About Fafanua')
+    expect(headings[22].textContent).toBe(CONTACT)
     expect(
       within(screen.getByRole('contentinfo')).queryAllByRole('heading'),
     ).toHaveLength(0)

@@ -1,9 +1,11 @@
 /*
- * Service card: a white card with a colour marker beside its lifecycle
- * label, and a "Typical engagements" disclosure. Each stage maps to one of
- * the four service-line colours, used only for the small marker, never for
- * text or the card's fills. Design, Connect and Model share Build blue; the
- * visible label tells them apart.
+ * Service card: a white card with a colour marker and the stage number
+ * beside its lifecycle label, a row of capability tags and a "Typical
+ * engagements" disclosure. Each stage maps to one of the four
+ * service-line colours, used only for the small marker, never for text,
+ * tags or the card's fills. Design, Connect and Model share Build blue;
+ * the visible label tells them apart. Text is graphite 900 and 600 on
+ * white. The hover lift is in Services.css, on the card's list item.
  */
 
 .service-card {
@@ -36,9 +38,10 @@
   --marker: var(--service-insights);
 }
 
+/* Weight 300 from the global heading styles. */
 .service-card__title {
   margin-block-end: var(--space-3);
-  font-size: var(--text-xl);
+  font-size: var(--text-service);
   line-height: var(--leading-snug);
 }
 
@@ -68,10 +71,41 @@
   outline: var(--border-width) solid var(--color-border);
 }
 
+/* Styled like the lifecycle rail's numbers (LifecycleRail.css). */
+.service-card__number {
+  font-variant-numeric: tabular-nums;
+}
+
 .service-card__summary {
-  margin-block: 0 var(--space-6);
+  margin-block: 0 var(--space-4);
   /* Avoids a lone word on the last line where the browser supports it. */
   text-wrap: pretty;
+}
+
+/* Capability tags: small graphite 600 text on white (6.6:1) in a graphite
+   200 hairline, with no fill, colour, hover or pointer, so they read as
+   labels, not controls. They wrap onto further lines rather than
+   overflowing, and a tag breaks a word only if it cannot fit on a line of
+   its own (not anywhere, as .container allows). */
+.service-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block: 0 var(--space-6);
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+}
+
+.service-card__tags li {
+  max-width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow-wrap: break-word;
 }
 
 .service-card__chevron {
@@ -99,12 +133,13 @@
 
 /*
  * Aligned rows from 768px (#53; the list tracks are set in Services.css).
- * A collapsed card spans the title, label, description and button
- * tracks, so the titles, labels and buttons in a row line up and the
- * cards end on the same line. The description track takes the tallest
- * description, leaving any extra space above the button. An open card
- * also spans the list track, so it grows without stretching the cards
- * beside it.
+ * A collapsed card spans the title, label, description, tags and button
+ * tracks, so the titles, labels, tag rows and buttons in a row line up
+ * and the cards end on the same line. The description track takes the
+ * tallest description, leaving any extra space above the tags; the tags
+ * track takes the tallest tag rows, leaving any extra space above the
+ * button. An open card also spans the list track, so it grows without
+ * stretching the cards beside it.
  *
  * The card's bottom padding would size whichever track is its last, and
  * move the open card's button down, so the space below the button and
@@ -118,14 +153,14 @@
   @supports (grid-template-rows: subgrid) {
     .service-card {
       display: grid;
-      grid-row: 1 / span 4;
+      grid-row: 1 / span 5;
       grid-template-rows: subgrid;
       row-gap: 0;
       padding-block-end: 0;
     }
 
     .service-card--open {
-      grid-row: 1 / span 5;
+      grid-row: 1 / span 6;
     }
 
     /* Room for a two-line title, in the title's own line height. */

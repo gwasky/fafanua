@@ -1,41 +1,54 @@
 /*
- * Services: the section heading, a short intro and a grid of service cards
- * on the page background. The intro is plain text, lighter than the grid:
- * no card, border or fill, and no wider than the reading measure. The
- * grid is one column by default, two from 768px and three from 1024px
+ * Services: the eyebrow and the display heading (plan V2 §9), a short
+ * intro, the lifecycle rail (LifecycleRail.css) and a grid of service
+ * cards on the page background. The intro is plain text, lighter than the
+ * grid: no card, border or fill, and no wider than the reading measure.
+ * The grid is one column by default, two from 768px and three from 1024px
  * (literal breakpoints; see the note in tokens.css).
  *
  * From 768px, where the browser supports subgrid, each card lines up with
- * the others in its row (#53). Every item spans five shared row tracks:
- * title, label, description, button and the open list. The item and the
- * card inside it are subgrids of those tracks (see ServiceCard.css), so
- * the tracks size to the tallest content in the row. Without subgrid, and
- * below 768px, cards keep their natural height.
+ * the others in its row (#53). Every item spans six shared row tracks:
+ * title, label, description, tags, button and the open list. The item and
+ * the card inside it are subgrids of those tracks (see ServiceCard.css),
+ * so the tracks size to the tallest content in the row. Without subgrid,
+ * and below 768px, cards keep their natural height.
  */
 
 .services {
-  padding-block: var(--space-16);
+  padding-block: var(--space-section);
   background-color: var(--color-bg);
 }
 
-.services__heading {
-  margin-block-end: var(--space-8);
+/* The positioning block above (Positioning.css) already ends with
+   --space-section, so the section adds no top padding of its own there
+   and the gap between them is not doubled. */
+.positioning + .services {
+  padding-block-start: 0;
 }
 
 .services__intro {
-  max-inline-size: var(--measure);
   margin-block-end: var(--space-10);
 }
 
-/* Weight 300 and graphite 900 from the global heading styles. */
-.services__intro-heading {
-  margin-block-end: var(--space-4);
+/* Graphite 900 on paper (14.9:1), weight 300 from the global heading
+   styles. */
+.services__heading {
+  max-width: var(--measure-display);
+  margin-block-end: var(--space-6);
+  font-size: var(--text-section);
+  line-height: var(--leading-display);
+  /* Break a word only if it cannot fit on a line of its own, rather than
+     anywhere as .container allows. */
+  overflow-wrap: break-word;
 }
 
 /* Graphite 600 on paper (6.0:1). */
 .services__intro-text {
+  max-width: var(--measure);
   margin-block: 0 var(--space-4);
   color: var(--color-text-muted);
+  font-size: var(--text-body-lg);
+  overflow-wrap: break-word;
   text-wrap: pretty;
 }
 
@@ -55,16 +68,12 @@
 }
 
 @media (min-width: 48em) {
-  .services {
-    padding-block: var(--space-20);
-  }
-
   .services__list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   @supports (grid-template-rows: subgrid) {
-    /* A row gap would also fall between the five tracks of each item, so
+    /* A row gap would also fall between the six tracks of each item, so
        the space between card rows is a top margin on every item after
        the first row instead. */
     .services__list {
@@ -74,7 +83,7 @@
 
     .services__list > li {
       display: grid;
-      grid-row: span 5;
+      grid-row: span 6;
       grid-template-rows: subgrid;
       row-gap: 0;
     }
@@ -95,5 +104,33 @@
     .services__list > li:nth-child(3) {
       margin-block-start: 0;
     }
+  }
+}
+
+/*
+ * Hover, on a pointer that can hover: the card lifts --space-2 (8px; plan
+ * V2 §9 asks for about 8-12px), its border darkens to graphite 600 and
+ * its shadow rises to --shadow-md. The hover is on the list item, which
+ * does not move, so the card cannot slide out from under a resting
+ * cursor and flicker. Focus moves nothing. Under reduced motion the card
+ * does not move and nothing transitions; the border and shadow still
+ * change.
+ */
+@media (hover: hover) {
+  .services__list > li:hover > .service-card {
+    border-color: var(--color-button-secondary-border-hover);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .services__list > li > .service-card {
+    transition-duration: var(--duration-card-hover);
+    transition-property: transform, border-color, box-shadow;
+    transition-timing-function: var(--ease-standard);
+  }
+
+  .services__list > li:hover > .service-card {
+    transform: translateY(calc(-1 * var(--space-2)));
   }
 }

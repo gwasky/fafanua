@@ -259,4 +259,5 @@
   --duration-header: var(--duration-base); /* header solid <-> transparent */
   --duration-cta-arrow: var(--duration-fast); /* CTA arrow nudge */
   --cta-arrow-shift: var(--space-1);
+  --duration-card-hover: var(--duration-base); /* service-card hover lift */
 }

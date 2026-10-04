@@ -58,6 +58,7 @@ describe('V2 tokens', () => {
       '--duration-header': 'var(--duration-base)',
       '--duration-cta-arrow': 'var(--duration-fast)',
       '--cta-arrow-shift': 'var(--space-1)',
+      '--duration-card-hover': 'var(--duration-base)',
     })
   })
 

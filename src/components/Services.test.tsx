@@ -11,13 +11,23 @@ import Services from './Services.tsx'
 
 function renderServices() {
   render(<Services />)
-  const section = screen.getByRole('region', { name: 'Services' })
-  // While every card is collapsed the section shows three lists: the card
-  // grid, then the managed-services capabilities and journey.
-  const [grid, capabilities, journey] = within(section).getAllByRole('list')
-  const cards = within(grid).getAllByRole('listitem')
+  const section = screen.getByRole('region', { name: servicesIntro.heading })
+  // While every card is collapsed the section's first two lists are the
+  // lifecycle rail and the card grid; each card holds its tag list, and
+  // the managed-services block its capabilities and journey.
+  const [rail, grid] = within(section).getAllByRole('list')
+  const cards = [...grid.children] as HTMLElement[]
   const managed = section.querySelector<HTMLElement>('#managed-services')!
-  return { section, grid, cards, capabilities, journey, managed }
+  const [capabilities, journey] = within(managed).getAllByRole('list')
+  return { section, rail, grid, cards, capabilities, journey, managed }
+}
+
+// The text a screen reader reads: the element's text without its
+// aria-hidden parts.
+function spokenText(element: Element) {
+  const copy = element.cloneNode(true) as Element
+  for (const hidden of copy.querySelectorAll('[aria-hidden="true"]')) hidden.remove()
+  return copy.textContent
 }
 
 function expectInOrder(elements: HTMLElement[]) {
@@ -30,71 +40,106 @@ function expectInOrder(elements: HTMLElement[]) {
 }
 
 describe('Services', () => {
-  it('is section#services, labelled by the Services h2 from the navigation', () => {
+  it('is section#services, named by its h2, the approved intro heading', () => {
     const { section } = renderServices()
     const heading = within(section).getByRole('heading', { level: 2 })
-    const nav = navigation.find((item) => item.id === 'services')
+    const nav = navigation.find((item) => item.label === 'Services')
 
     expect(section.tagName).toBe('SECTION')
     expect(section).toHaveAttribute('id', 'services')
     expect(heading).toHaveAttribute('id', 'services-heading')
     expect(section).toHaveAttribute('aria-labelledby', 'services-heading')
-    expect(heading).toHaveTextContent('Services')
-    expect(nav?.label).toBe(heading.textContent)
+    expect(heading.textContent).toBe(servicesIntro.heading)
+    expect(section).toHaveAccessibleName(servicesIntro.heading)
+    // The "Services" link still lands here.
+    expect(nav?.id).toBe(section.id)
   })
 
-  it('has the h2, the intro h3, six card h3s and the managed-services h3, and no other headings', () => {
+  it('has the h2, six card h3s and the managed-services h3, and no other headings', () => {
     const { section } = renderServices()
     const headings = within(section).getAllByRole('heading')
 
     expect(headings.map((heading) => heading.tagName)).toEqual([
       'H2',
-      'H3',
       ...services.map(() => 'H3'),
       'H3',
     ])
-    expect(headings[1]).toHaveTextContent(servicesIntro.heading)
-    expect(headings.slice(2, 8).map((heading) => heading.textContent)).toEqual(
+    expect(headings[0].textContent).toBe(servicesIntro.heading)
+    expect(headings.slice(1, 7).map((heading) => heading.textContent)).toEqual(
       services.map((service) => service.name),
     )
-    expect(headings[8].textContent).toBe(managedServices.heading)
+    expect(headings[7].textContent).toBe(managedServices.heading)
+    expect(within(section).queryByRole('heading', { name: 'Services' })).toBeNull()
   })
 
-  it('shows the intro heading and both paragraphs between the h2 and the grid', () => {
-    const { section } = renderServices()
+  it('opens with the eyebrow, the h2, the two intro paragraphs, the rail, then the grid', () => {
+    const { section, rail, grid } = renderServices()
+    const eyebrow = within(section).getByText('01 — Capabilities')
     const h2 = within(section).getByRole('heading', { level: 2 })
-    const introHeading = within(section).getByRole('heading', {
-      name: servicesIntro.heading,
-    })
     const paragraphs = servicesIntro.paragraphs.map((text) =>
       within(section).getByText(text),
     )
-    const grid = within(section).getAllByRole('list')[0]
 
-    expect(introHeading.tagName).toBe('H3')
-    expectInOrder([h2, introHeading, ...paragraphs, grid])
+    expect(eyebrow.tagName).toBe('P')
+    expect(eyebrow.textContent).toBe('01 \u2014 Capabilities')
+    expectInOrder([eyebrow, h2, ...paragraphs, rail, grid])
     for (const [index, paragraph] of paragraphs.entries()) {
       expect(paragraph.tagName).toBe('P')
       expect(paragraph.textContent).toBe(servicesIntro.paragraphs[index])
       expect(grid).not.toContainElement(paragraph)
+      expect(rail).not.toContainElement(paragraph)
     }
     expect(paragraphs[1].textContent).toContain('\u2014')
+    // Nothing comes before the eyebrow.
+    expect(section.textContent!.startsWith('01 \u2014 Capabilities')).toBe(true)
   })
 
-  it('lists six cards with name, label and description in data order', () => {
+  it('shows the lifecycle rail: six stages, 01 Design to 06 Decide, with hidden numbers', () => {
+    const { rail } = renderServices()
+    const items = within(rail).getAllByRole('listitem')
+
+    expect(rail.tagName).toBe('OL')
+    expect(items.map(spokenText)).toEqual([
+      'Design',
+      'Connect',
+      'Model',
+      'Trust',
+      'Govern',
+      'Decide',
+    ])
+    items.forEach((item, index) => {
+      const number = String(index + 1).padStart(2, '0')
+      const hidden = [...item.querySelectorAll('[aria-hidden="true"]')]
+      expect(hidden.map((element) => element.textContent)).toContain(number)
+      expect(item.textContent).toBe(`${number}${stages[services[index].stage]}`)
+    })
+  })
+
+  it('puts no link, button or tab stop in the rail', () => {
+    const { rail } = renderServices()
+
+    expect(within(rail).queryAllByRole('link')).toHaveLength(0)
+    expect(within(rail).queryAllByRole('button')).toHaveLength(0)
+    expect(rail.querySelector('a, button, [tabindex]')).toBeNull()
+  })
+
+  it('lists six cards with name, label, description and tags in data order', () => {
     const { grid, cards } = renderServices()
 
     expect(grid.tagName).toBe('UL')
     expect(cards).toHaveLength(6)
     cards.forEach((card, index) => {
       const service = services[index]
-      expect(
-        within(card).getByRole('heading', { level: 3 }),
-      ).toHaveTextContent(service.name)
-      expect(within(card).getByText(stages[service.stage])).toBeInTheDocument()
+      const heading = within(card).getByRole('heading', { level: 3 })
+      expect(heading).toHaveTextContent(service.name)
+      expect(spokenText(heading.nextElementSibling!)).toBe(stages[service.stage])
       expect(within(card).getByText(service.description).textContent).toBe(
         service.description,
       )
+      const [tags] = within(card).getAllByRole('list')
+      expect(
+        within(tags).getAllByRole('listitem').map((item) => item.textContent),
+      ).toEqual(service.tags)
     })
     // Strategy and architecture first, business intelligence last (checked
     // by id, as service wording may only live in services.ts).
@@ -108,17 +153,21 @@ describe('Services', () => {
     )
   })
 
-  it('labels the cards Design, Connect, Model, Trust, Govern, Decide', () => {
+  it('labels the cards 01 Design to 06 Decide, read as the label alone', () => {
     const { cards } = renderServices()
-    const labels = cards.map((card) =>
-      within(card).getByText(
-        (_, element) =>
-          element?.tagName === 'P' &&
-          Object.values(stages).includes(element.textContent ?? ''),
-      ).textContent,
+    const lines = cards.map(
+      (card) => within(card).getByRole('heading').nextElementSibling!,
     )
 
-    expect(labels).toEqual(['Design', 'Connect', 'Model', 'Trust', 'Govern', 'Decide'])
+    expect(lines.map(spokenText)).toEqual(['Design', 'Connect', 'Model', 'Trust', 'Govern', 'Decide'])
+    expect(lines.map((line) => line.textContent)).toEqual([
+      '01Design',
+      '02Connect',
+      '03Model',
+      '04Trust',
+      '05Govern',
+      '06Decide',
+    ])
   })
 
   it('starts with every card collapsed', () => {

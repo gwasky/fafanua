@@ -1,13 +1,17 @@
 import { services, servicesIntro } from '../data/services.ts'
+import LifecycleRail from './LifecycleRail.tsx'
 import ManagedServices from './ManagedServices.tsx'
+import SectionEyebrow from './SectionEyebrow.tsx'
 import ServiceCard from './ServiceCard.tsx'
 import './Services.css'
 
-// The Services section: a short intro, then the six services as cards, in
-// data order, then the managed-services block (ManagedServices.tsx) outside
-// the card list. The id and h2 match the "Services" entry in
-// src/data/navigation.ts; the intro and block headings are h3s, like the
-// card titles.
+// The Services section: the "01 — Capabilities" eyebrow, the approved
+// intro heading as the section's h2, the two intro paragraphs, the
+// lifecycle rail (LifecycleRail.tsx), then the six services as cards, in
+// data order, then the managed-services block (ManagedServices.tsx)
+// outside the card list. The id matches the "Services" entry in
+// src/data/navigation.ts; the section is named by its h2. The card titles
+// and the managed-services heading are h3s.
 function Services() {
   return (
     <section
@@ -16,17 +20,18 @@ function Services() {
       aria-labelledby="services-heading"
     >
       <div className="container">
-        <h2 id="services-heading" className="services__heading">
-          Services
-        </h2>
         <div className="services__intro">
-          <h3 className="services__intro-heading">{servicesIntro.heading}</h3>
+          <SectionEyebrow number="01" label="Capabilities" />
+          <h2 id="services-heading" className="services__heading">
+            {servicesIntro.heading}
+          </h2>
           {servicesIntro.paragraphs.map((paragraph) => (
             <p key={paragraph} className="services__intro-text">
               {paragraph}
             </p>
           ))}
         </div>
+        <LifecycleRail />
         <ul className="services__list" role="list">
           {services.map((service) => (
             <li key={service.id}>
