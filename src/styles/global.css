@@ -226,18 +226,38 @@ a:hover {
   scroll-margin-top: var(--header-height);
 }
 
+/* Elements that show the focus ring keep the whole ring in view: it is
+   drawn outside the box, so a margin of only the header's height left its
+   top edge under the header when Shift+Tab scrolled back up, and its
+   bottom edge below the viewport when Tab scrolled down (#54). Anchor
+   targets and main (tabindex -1, the skip link's target, with no ring)
+   still land exactly at the header's bottom edge. */
+:is(a[href], button, [tabindex]:not([tabindex='-1'])):not(.site-header *) {
+  scroll-margin-top: calc(var(--header-height) + var(--focus-ring-extent));
+  scroll-margin-bottom: var(--focus-ring-extent);
+}
+
 /* When the header is static, below 480px of height or when it is taller
    than a quarter of the viewport (.header-static, set by Header.tsx), it
    scrolls with the page (Header.css), so nothing needs to stay clear of
-   it. --header-height keeps the real height for the overlay pull-up. */
+   it but the focus ring of the viewport's top edge. --header-height keeps
+   the real height for the overlay pull-up. */
 @media (max-height: 479.98px) {
   :is([id], a[href], button, [tabindex]):not(.site-header *) {
     scroll-margin-top: 0;
+  }
+
+  :is(a[href], button, [tabindex]:not([tabindex='-1'])):not(.site-header *) {
+    scroll-margin-top: var(--focus-ring-extent);
   }
 }
 
 .header-static :is([id], a[href], button, [tabindex]):not(.site-header *) {
   scroll-margin-top: 0;
+}
+
+.header-static :is(a[href], button, [tabindex]:not([tabindex='-1'])):not(.site-header *) {
+  scroll-margin-top: var(--focus-ring-extent);
 }
 
 /*

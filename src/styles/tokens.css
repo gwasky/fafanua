@@ -240,6 +240,9 @@
   /* Focus ring */
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
+  /* How far the ring reaches outside the element's box: the scroll
+     margins keep it in view (global.css). */
+  --focus-ring-extent: calc(var(--focus-ring-width) + var(--focus-ring-offset));
 
   /* Technical grid (TechnicalGrid): a rem pitch and whole-pixel lines,
      so the pattern stays even at any width and pixel ratio. */

@@ -235,9 +235,17 @@ export function focusAndHeaderBoxes(page: Page) {
       const { top, bottom, left, right } = target.getBoundingClientRect()
       return { top, bottom, left, right }
     }
+    // How far the focus ring reaches outside the box: outline width plus
+    // offset, when there is an outline.
+    const style = getComputedStyle(element)
+    const ring =
+      style.outlineStyle === 'none'
+        ? 0
+        : parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset)
     return {
       inHeader: header.contains(element),
       focused: box(element),
+      ring,
       header: box(header),
       viewport: { width: window.innerWidth, height: window.innerHeight },
     }

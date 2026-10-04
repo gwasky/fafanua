@@ -38,23 +38,32 @@ export async function tabTo(page: Page, name: string, { shift = false } = {}) {
 }
 
 /**
- * Once scrolling has settled, expects the focused element, unless it is
- * in the header, to be wholly below the header and inside the viewport.
+ * Once scrolling has settled, expects the focused element and its focus
+ * ring, unless it is in the header, to be wholly below the header and
+ * inside the viewport.
  */
 export async function expectUnobscured(page: Page, name: string) {
   await waitForScrollSettle(page)
-  const { inHeader, focused, header, viewport } = await focusAndHeaderBoxes(page)
+  const { inHeader, focused, ring, header, viewport } = await focusAndHeaderBoxes(page)
   if (inHeader) return
-  const detail = `"${name}": ${JSON.stringify({ focused, header, viewport })}`
-  expect(focused.left, `${detail} left edge`).toBeGreaterThanOrEqual(0)
-  expect(focused.right, `${detail} right edge`).toBeLessThanOrEqual(viewport.width)
+  // The ring is drawn outside the box, so it is the ring that must clear
+  // the header and stay in the viewport.
+  const outer = {
+    top: focused.top - ring,
+    bottom: focused.bottom + ring,
+    left: focused.left - ring,
+    right: focused.right + ring,
+  }
+  const detail = `"${name}": ${JSON.stringify({ focused, ring, header, viewport })}`
+  expect(outer.left, `${detail} left edge`).toBeGreaterThanOrEqual(0)
+  expect(outer.right, `${detail} right edge`).toBeLessThanOrEqual(viewport.width)
   // Scroll positions are whole pixels and boxes are not, so an edge can
   // sit up to 1px past the one it is aligned to. A header that does not
   // stick may have scrolled away, leaving the viewport's top.
-  expect(focused.top, `${detail} top below the header`).toBeGreaterThanOrEqual(
+  expect(outer.top, `${detail} ring top below the header`).toBeGreaterThanOrEqual(
     Math.max(0, header.bottom) - 1,
   )
-  expect(focused.bottom, `${detail} bottom in the viewport`).toBeLessThanOrEqual(viewport.height + 1)
+  expect(outer.bottom, `${detail} ring bottom in the viewport`).toBeLessThanOrEqual(viewport.height + 1)
 }
 
 /** Tabs through every stop, then Shift+Tabs back, checking each one. */
