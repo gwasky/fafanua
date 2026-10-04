@@ -779,6 +779,102 @@ for (const width of WIDTHS) {
       await expectNoHorizontalScroll(page)
     })
 
+    // The rail's connector (#56 QA): every pair of stages is joined by a
+    // graphite 200 rule at least 8px (--space-2) long. Measured across the
+    // widths where the six items are tightest (a 1fr column once left
+    // Connect to Model with no line from 768 to 775px), with the default
+    // text size and with 200% page text. Run from the 768px projects, in
+    // Chromium and WebKit.
+    if (width === 768) {
+      test(`every lifecycle rail stage is joined to the next by a visible connector, 768 to 1024px, at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        const rail = servicesRegion(page).getByRole('list').first()
+        const measure = () =>
+          rail.evaluate((list) => {
+            const probe = document.createElement('div')
+            probe.style.borderTop = 'var(--border-width) solid var(--color-border)'
+            probe.style.width = 'var(--space-2)'
+            document.body.append(probe)
+            const want = {
+              border: `${getComputedStyle(probe).borderTopWidth} solid ${getComputedStyle(probe).borderTopColor}`,
+              min: parseFloat(getComputedStyle(probe).width),
+            }
+            probe.remove()
+            const items = [...list.children]
+            const markers = items.map((item) => item.firstElementChild!.getBoundingClientRect())
+            const horizontal = new Set(markers.map((marker) => Math.round(marker.left))).size > 1
+            const segments = items.slice(0, -1).map((item, i) => {
+              const after = getComputedStyle(item, '::after')
+              const marker = markers[i]
+              const next = markers[i + 1]
+              const label = item.lastElementChild!.getBoundingClientRect()
+              if (!horizontal) {
+                // Vertical: from below this marker to the top of the next.
+                const top = item.getBoundingClientRect().top + parseFloat(after.top)
+                return {
+                  content: after.content,
+                  border: `${after.borderLeftWidth} ${after.borderLeftStyle} ${after.borderLeftColor}`,
+                  length: parseFloat(after.height),
+                  startGap: top - marker.bottom,
+                  endGap: next.top - (top + parseFloat(after.height)),
+                }
+              }
+              // The item's flex gap and the rule's own margin come first.
+              const start =
+                label.right + parseFloat(getComputedStyle(item).columnGap) + parseFloat(after.marginLeft)
+              const end = start + parseFloat(after.width)
+              const sameRow = Math.abs(next.top - marker.top) <= 1
+              return {
+                content: after.content,
+                border: `${after.borderTopWidth} ${after.borderTopStyle} ${after.borderTopColor}`,
+                length: parseFloat(after.width),
+                startGap: start - label.right,
+                // Up to the next marker when it is on the same row.
+                endGap: sameRow ? next.left - end : 0,
+              }
+            })
+            const box = list.getBoundingClientRect()
+            return {
+              want,
+              horizontal,
+              segments,
+              // The rail stays inside its own box. (The page as a whole is
+              // not checked here: with 200% page text the header's inline
+              // nav overflows at 1024px, which is outside #56.)
+              overflow:
+                list.scrollWidth - list.clientWidth +
+                Math.max(0, ...items.map((item) => item.getBoundingClientRect().right - box.right)),
+            }
+          })
+
+        for (const text of ['100%', '200%']) {
+          if (text === '200%') await page.addStyleTag({ content: 'html { font-size: 200%; }' })
+          for (const w of [768, 775, 800, 1023, 1024]) {
+            await page.setViewportSize({ width: w, height: 800 })
+            await waitForFonts(page)
+            const m = await measure()
+            const context = `${w}px, ${text} text`
+            // At the default text size the rail is one row from 48em.
+            if (text === '100%') expect(m.horizontal, `${context} one row`).toBe(true)
+            expect(m.segments, context).toHaveLength(5)
+            for (const [i, segment] of m.segments.entries()) {
+              const detail = `${context}, stage ${i + 1} to ${i + 2}: ${JSON.stringify(segment)}`
+              // Soft, so a failure lists every segment and width.
+              expect.soft(segment.content, detail).not.toBe('none')
+              expect.soft(segment.border, detail).toBe(m.want.border)
+              expect.soft(segment.length, detail).toBeGreaterThanOrEqual(m.want.min - 0.5)
+              // It starts just after the label and runs up to the next
+              // marker: no gap wider than --space-2 at either end.
+              expect.soft(segment.startGap, detail).toBeLessThanOrEqual(m.want.min + 1)
+              expect.soft(segment.endGap, detail).toBeLessThanOrEqual(m.want.min + 1)
+              expect.soft(segment.endGap, detail).toBeGreaterThanOrEqual(-1)
+            }
+            expect(m.overflow, `${context} rail overflow`).toBeLessThanOrEqual(1)
+          }
+        }
+      })
+    }
+
     // The positioning block (#56): two columns from 64em, the statement
     // first; stacked below it. Its bottom padding is the only gap above
     // the Services eyebrow, and no word breaks mid-word.
