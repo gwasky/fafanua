@@ -14,7 +14,12 @@
  * Below 48em a vertical list, with the connector running down from each
  * marker to the next. From 48em (768px; literal breakpoint, see the note
  * in tokens.css) one row of six, with the connector filling the space
- * between each label and the next marker. Never a scroll container.
+ * between each label and the next marker. Each item is as wide as its
+ * content plus a connector of at least --rail-connector-min, and the
+ * spare width is shared between the connectors, so every pair of stages
+ * stays visibly joined (a fixed 1fr column left Connect to Model with no
+ * line at 768px). If enlarged page text no longer fits on one row, the
+ * items wrap rather than overflow. Never a scroll container.
  */
 
 .lifecycle-rail {
@@ -22,6 +27,8 @@
   --rail-marker: var(--space-3);
   /* The space between items in the vertical list. */
   --rail-gap: var(--space-3);
+  /* The shortest horizontal connector. */
+  --rail-connector-min: var(--space-2);
 
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -102,21 +109,32 @@
 }
 
 @media (min-width: 48em) {
-  /* Five equal columns and a last one as wide as its content, so the
-     rail spans the container and ends at "Decide". */
+  /* One row: the first five items grow, the last is as wide as its
+     content, so the rail spans the container and ends at "Decide". */
   .lifecycle-rail {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
-    row-gap: 0;
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: var(--rail-gap);
+  }
+
+  .lifecycle-rail__stage {
+    flex: 1 1 auto;
+  }
+
+  .lifecycle-rail__stage:last-child {
+    flex: none;
   }
 
   /* Horizontal connector: a rule filling the rest of each item, from
-     after its label to just before the next marker. */
+     after its label to just before the next marker, never shorter than
+     --rail-connector-min. */
   .lifecycle-rail__stage:not(:last-child)::after {
     position: static;
     flex: 1 1 0;
-    min-width: 0;
+    min-width: var(--rail-connector-min);
     height: 0;
-    margin-inline: var(--space-1) var(--space-2);
+    /* The item's gap already spaces it from the label. */
+    margin-inline: 0 var(--space-2);
     border-inline-start: 0;
     border-block-start: var(--border-width) solid var(--color-border);
   }
