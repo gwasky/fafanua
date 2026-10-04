@@ -164,7 +164,8 @@ a:hover {
 }
 
 /*
- * Graphite 900 surfaces (dark sections such as the future-ready section).
+ * Graphite 900 surfaces (the dark sections: the hero and the future-ready
+ * section).
  * .surface-dark reassigns every semantic colour token to its -on-dark
  * value (tokens.css), so the global text, heading, link and focus rules
  * and the .button classes recolour inside it. It also paints the

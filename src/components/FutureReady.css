@@ -1,5 +1,5 @@
 /*
- * Future-ready: the page's only dark section. .surface-dark (global.css)
+ * Future-ready: a dark section, like the hero. .surface-dark (global.css)
  * supplies the graphite 900 background and the dark text, heading, link
  * and accent colours, so nothing here is dark-specific. One column by
  * default; from 1024px (literal breakpoint; see the note in tokens.css)

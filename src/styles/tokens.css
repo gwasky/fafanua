@@ -104,7 +104,8 @@
   --color-link-on-surface-alt: var(--teal-800);
   --color-link-hover-on-surface-alt: var(--teal-900);
 
-  /* Semantic colours on a graphite 900 surface (the future-ready section).
+  /* Semantic colours on a graphite 900 surface (the hero and the
+     future-ready section).
      Do not use these directly: put the .surface-dark class (global.css)
      on the section, and it reassigns every --color-* token above to its
      value here, so everything inside it (text, headings, links, focus

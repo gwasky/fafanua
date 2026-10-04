@@ -16,7 +16,8 @@ const futureReadyLabels = [
   'provenance',
 ] as const
 
-// The page's only dark section: a statement of direction, not a product.
+// One of the page's two dark sections, with the hero: a statement of
+// direction, not a product.
 // The graphic repeats words already in the paragraph, so it is hidden
 // from screen readers. It has no links or other tab stops. The technical
 // grid sits behind the content.
