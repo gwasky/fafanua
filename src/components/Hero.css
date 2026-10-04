@@ -7,7 +7,9 @@
  *
  * The section is marked data-header-overlay, so the global rule pulls it
  * up under the header and pads its top by --header-height. The padding
- * here adds to that, never replaces it.
+ * here is written on .hero[data-header-overlay], so it outranks that rule
+ * whatever the stylesheet order, and its top always starts with
+ * --header-height, so it adds to the overlay padding, never replaces it.
  *
  * Below 64em its height is its content plus --space-section-dark above
  * and below. From 64em it is at least 85% of the viewport's height (plan
@@ -16,7 +18,7 @@
  * short viewport it grows to fit its content.
  */
 
-.hero {
+.hero[data-header-overlay] {
   padding-block: calc(var(--header-height) + var(--space-section-dark)) var(--space-section-dark);
 }
 
@@ -53,7 +55,7 @@
 }
 
 @media (min-width: 64em) {
-  .hero {
+  .hero[data-header-overlay] {
     display: flex;
     flex-direction: column;
     justify-content: center;
