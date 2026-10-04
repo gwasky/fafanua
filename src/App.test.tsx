@@ -8,6 +8,9 @@ import { solutions } from './data/solutions.ts'
 
 const FUTURE_READY = 'Trusted foundations for what comes next'
 const CONTACT = 'Discuss your data foundation.'
+const HERO = 'Trusted Data. Better Decisions.'
+const STATEMENT =
+  'Fafanua helps East African businesses, government institutions and development organisations establish trusted data foundations for reliable reporting, better decisions and future governed analytics and AI.'
 
 // jsdom has no matchMedia, which the header uses for its breakpoint.
 beforeEach(() => {
@@ -42,30 +45,44 @@ describe('App', () => {
     const headings = screen.getAllByRole('heading', { level: 1 })
 
     expect(headings).toHaveLength(1)
-    expect(headings[0]).toHaveAccessibleName(
-      'Build a data foundation you can trust.',
-    )
+    expect(headings[0]).toHaveAccessibleName(HERO)
     expect(screen.getByRole('main')).toContainElement(headings[0])
   })
 
   it('renders the hero as the first child of main', () => {
     render(<App />)
-    const hero = screen.getByRole('region', {
-      name: 'Build a data foundation you can trust.',
-    })
+    const hero = screen.getByRole('region', { name: HERO })
 
     expect(screen.getByRole('main').firstElementChild).toBe(hero)
+    expect(hero).toHaveAttribute('data-header-overlay')
+    expect(hero).toHaveClass('surface-dark')
   })
 
-  it('renders the services section directly after the hero, inside main', () => {
+  it('renders the positioning statement after the hero, then Services, inside main', () => {
     render(<App />)
-    const hero = screen.getByRole('region', {
-      name: 'Build a data foundation you can trust.',
-    })
+    const hero = screen.getByRole('region', { name: HERO })
+    const statement = screen.getByText(STATEMENT)
+    const positioning = hero.nextElementSibling
     const services = screen.getByRole('region', { name: 'Services' })
 
     expect(screen.getByRole('main')).toContainElement(services)
-    expect(hero.nextElementSibling).toBe(services)
+    expect(hero).not.toContainElement(statement)
+    expect(positioning).not.toBeNull()
+    expect(positioning).toContainElement(statement)
+    expect(positioning).not.toHaveClass('surface-dark')
+    expect(positioning).not.toHaveClass('surface-alt')
+    expect(positioning!.nextElementSibling).toBe(services)
+  })
+
+  it('has exactly two technical grids, in the hero and the future-ready section', () => {
+    render(<App />)
+    const grids = [...document.querySelectorAll('.technical-grid')]
+
+    expect(grids).toHaveLength(2)
+    expect(grids[0].parentElement).toBe(screen.getByRole('region', { name: HERO }))
+    expect(grids[1].parentElement).toBe(
+      screen.getByRole('region', { name: FUTURE_READY }),
+    )
   })
 
   it('lands the header and hero Services links on the services section', () => {
@@ -75,7 +92,7 @@ describe('App', () => {
       within(screen.getByRole('banner')).getByRole('link', {
         name: 'Services',
       }),
-      screen.getByRole('link', { name: 'See our services' }),
+      screen.getByRole('link', { name: 'Explore our capabilities' }),
     ]
 
     for (const link of targets) {
@@ -178,7 +195,7 @@ describe('App', () => {
     const nav = navigationCta
     const targets = [
       within(screen.getByRole('banner')).getByRole('link', { name: 'Discuss a project' }),
-      screen.getByRole('link', { name: 'Contact our team' }),
+      screen.getByRole('link', { name: 'Discuss your data needs' }),
     ]
 
     expect(contact.tagName).toBe('SECTION')
@@ -269,25 +286,34 @@ describe('App', () => {
     expect(document.querySelector('a[href*="future-ready"]')).toBeNull()
   })
 
-  it('uses .surface-dark only on the future-ready section', () => {
+  it('uses .surface-dark only on the hero and the future-ready section', () => {
     render(<App />)
-    const dark = document.querySelectorAll('.surface-dark')
+    const dark = [...document.querySelectorAll('.surface-dark')]
 
-    expect(dark).toHaveLength(1)
-    expect(dark[0]).toBe(screen.getByRole('region', { name: FUTURE_READY }))
-    expect(dark[0].querySelector('.surface-alt')).toBeNull()
+    expect(dark).toEqual([
+      screen.getByRole('region', { name: HERO }),
+      screen.getByRole('region', { name: FUTURE_READY }),
+    ])
+    for (const section of dark) {
+      expect(section.querySelector('.surface-alt')).toBeNull()
+    }
   })
 
   // "Intelligence" is allowed only where the services-positioning doc uses
-  // it for a service or solution, never as a Fafanua product name.
+  // it for a service or solution, and in the hero's supporting copy from
+  // plan V2 §5 ("turn organisational data into intelligence"), never as a
+  // Fafanua product name.
   it('never names Fafanua Intelligence or shows a "Ready for AI?" callout', () => {
     render(<App />)
     const text = document.body.textContent!
 
     expect(text).not.toMatch(/Fafanua Intelligence/i)
     expect(text).not.toMatch(/Ready for AI/i)
+    expect(text.match(/organisational data into intelligence/g)).toHaveLength(1)
     expect(
-      text.replace(/(business|payment) intelligence/gi, ''),
+      text
+        .replace(/(business|payment) intelligence/gi, '')
+        .replace('organisational data into intelligence', ''),
     ).not.toMatch(/intelligence/i)
   })
 

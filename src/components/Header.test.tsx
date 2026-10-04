@@ -143,6 +143,10 @@ describe('Header', () => {
 
     expect(logo).toHaveAttribute('href', '#top')
     const img = within(logo).getByRole('img', { name: 'Fafanua Technologies' })
+    // The page opens at the top over the dark hero (#55), so the header is
+    // transparent with the reversed logo; once scrolled it is the positive.
+    expect(img).toHaveAttribute('src', '/fafanua-logo-reversed.svg')
+    setScrollY(8)
     expect(img).toHaveAttribute('src', '/fafanua-logo.svg')
     // 296:42 is the SVG's 5046:714 ratio.
     expect(img).toHaveAttribute('width', '296')

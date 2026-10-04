@@ -5,6 +5,7 @@ import Footer from './components/Footer.tsx'
 import FutureReady from './components/FutureReady.tsx'
 import Header from './components/Header.tsx'
 import Hero from './components/Hero.tsx'
+import Positioning from './components/Positioning.tsx'
 import Process from './components/Process.tsx'
 import Services from './components/Services.tsx'
 import Solutions from './components/Solutions.tsx'
@@ -22,6 +23,7 @@ function App() {
       <Header />
       <main id="main" tabIndex={-1}>
         <Hero />
+        <Positioning />
         <Services />
         <Solutions />
         <Process />

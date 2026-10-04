@@ -1,0 +1,18 @@
+/*
+ * Positioning: the statement on its own, on the page background between
+ * the dark hero and Services, in muted text on paper (verified pairing).
+ * No card, border or fill. Services' own top padding spaces it from the
+ * section below.
+ */
+
+.positioning {
+  padding-block: var(--space-16) 0;
+  background-color: var(--color-bg);
+}
+
+.positioning__statement {
+  max-width: var(--measure);
+  margin-block: 0;
+  color: var(--color-text-muted);
+  overflow-wrap: break-word;
+}

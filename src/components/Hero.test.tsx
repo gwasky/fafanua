@@ -2,11 +2,9 @@ import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import Hero from './Hero.tsx'
 
-const HEADING = 'Build a data foundation you can trust.'
+const HEADING = 'Trusted Data. Better Decisions.'
 const SUPPORTING =
-  'Fafanua helps organisations design, build and strengthen the data foundations required for reliable reporting, better decisions and responsible AI.'
-const STATEMENT =
-  'Fafanua helps East African businesses, government institutions and development organisations establish trusted data foundations for reliable reporting, better decisions and future governed analytics and AI.'
+  'Fafanua designs and operates the data foundations that connect business systems, establish trust, and turn organisational data into intelligence.'
 
 function renderHero() {
   render(<Hero />)
@@ -19,16 +17,28 @@ describe('Hero', () => {
     const headings = within(hero).getAllByRole('heading')
 
     expect(headings).toHaveLength(1)
-    expect(headings[0]).toHaveTextContent(HEADING, { normalizeWhitespace: false })
     expect(within(hero).getByRole('heading', { level: 1 })).toBe(headings[0])
+    expect(headings[0]).toHaveAccessibleName(HEADING)
+    expect(headings[0].textContent).toBe(HEADING)
     expect(hero).toHaveAccessibleName(HEADING)
   })
 
-  it('shows the supporting line and positioning statement exactly', () => {
+  it('puts each sentence of the headline in its own line element', () => {
+    const hero = renderHero()
+    const heading = within(hero).getByRole('heading', { level: 1 })
+    const lines = [...heading.children]
+
+    expect(lines.map((line) => line.tagName)).toEqual(['SPAN', 'SPAN'])
+    expect(lines.map((line) => line.textContent)).toEqual([
+      'Trusted Data.',
+      'Better Decisions.',
+    ])
+  })
+
+  it('shows the supporting copy exactly', () => {
     const hero = renderHero()
 
     expect(within(hero).getByText(SUPPORTING).textContent).toBe(SUPPORTING)
-    expect(within(hero).getByText(STATEMENT).textContent).toBe(STATEMENT)
   })
 
   it('links the primary call to action to #contact and the secondary to #services', () => {
@@ -36,23 +46,39 @@ describe('Hero', () => {
     const links = within(hero).getAllByRole('link')
 
     expect(links).toHaveLength(2)
-    expect(links[0]).toHaveAccessibleName('Contact our team')
+    expect(links[0]).toHaveAccessibleName('Discuss your data needs')
     expect(links[0]).toHaveAttribute('href', '#contact')
-    expect(links[1]).toHaveAccessibleName('See our services')
+    expect(links[0]).toHaveClass('button')
+    expect(links[0]).not.toHaveClass('button--secondary')
+    expect(links[1]).toHaveAccessibleName('Explore our capabilities')
     expect(links[1]).toHaveAttribute('href', '#services')
+    expect(links[1]).toHaveClass('button', 'button--secondary')
     for (const link of links) {
       expect(link).not.toHaveAttribute('target')
       expect(link).not.toHaveAttribute('aria-label')
     }
   })
 
-  it('keeps the order heading, supporting line, calls to action, statement', () => {
+  it('ends only the primary call to action with a hidden arrow', () => {
+    const hero = renderHero()
+    const [primary, secondary] = within(hero).getAllByRole('link')
+    const arrow = primary.querySelector('.button__arrow')
+
+    expect(primary.textContent).toBe('Discuss your data needs→')
+    expect(arrow).not.toBeNull()
+    expect(arrow).toHaveTextContent('→')
+    expect(arrow).toHaveAttribute('aria-hidden', 'true')
+    expect(primary.lastElementChild).toBe(arrow)
+    expect(secondary.textContent).toBe('Explore our capabilities')
+    expect(secondary.querySelector('.button__arrow')).toBeNull()
+  })
+
+  it('keeps the order heading, supporting copy, calls to action', () => {
     const hero = renderHero()
     const order = [
       within(hero).getByRole('heading', { level: 1 }),
       within(hero).getByText(SUPPORTING),
       ...within(hero).getAllByRole('link'),
-      within(hero).getByText(STATEMENT),
     ]
 
     for (let i = 1; i < order.length; i++) {
@@ -63,20 +89,53 @@ describe('Hero', () => {
     }
   })
 
-  it('contains no other landmark and no emphasis or line breaks', () => {
+  it('is a dark overlay section with the technical grid as its first child', () => {
+    const hero = renderHero()
+    const grids = hero.querySelectorAll('[aria-hidden="true"]:not(.button__arrow)')
+
+    expect(hero.tagName).toBe('SECTION')
+    expect(hero).toHaveClass('hero', 'surface-dark')
+    expect(hero).toHaveAttribute('data-header-overlay')
+    expect(grids).toHaveLength(1)
+    expect(hero.firstElementChild).toBe(grids[0])
+    expect(hero.firstElementChild).toHaveClass('technical-grid')
+    expect(hero.children[1]).toHaveClass('container')
+    expect(hero.children).toHaveLength(2)
+  })
+
+  it('has only the heading, the supporting copy and the two links', () => {
+    const hero = renderHero()
+    const container = hero.querySelector('.container')!
+
+    expect([...container.children].map((child) => child.tagName)).toEqual(['H1', 'P', 'DIV'])
+    expect(hero.querySelectorAll('p')).toHaveLength(1)
+    expect(hero.textContent).toBe(
+      `${HEADING}${SUPPORTING}Discuss your data needs→Explore our capabilities`,
+    )
+  })
+
+  it('contains no other landmark, and no line breaks, images or emphasis', () => {
     const hero = renderHero()
 
     for (const role of ['region', 'navigation', 'complementary', 'banner', 'contentinfo']) {
       expect(within(hero).queryAllByRole(role)).toHaveLength(0)
     }
     expect(hero.querySelector('em, i, strong, b, br, img, svg')).toBeNull()
-    expect(hero.textContent).not.toContain(' ')
+    expect(hero.textContent).not.toContain('\u00a0')
   })
 
-  it('does not mention Fafanua Intelligence', () => {
+  it('does not mention Fafanua Intelligence or the old hero copy', () => {
     const hero = renderHero()
 
-    expect(within(hero).queryByText(/Intelligence/)).toBeNull()
-    expect(hero.textContent).not.toMatch(/Intelligence/)
+    expect(hero.textContent).not.toMatch(/Fafanua Intelligence/)
+    for (const old of [
+      'Build a data foundation you can trust.',
+      'responsible AI',
+      'Contact our team',
+      'See our services',
+      'East African',
+    ]) {
+      expect(hero.textContent).not.toContain(old)
+    }
   })
 })
