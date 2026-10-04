@@ -274,6 +274,11 @@ test.describe('motion', () => {
             requestAnimationFrame(tick)
           })
           await navLink(page, 'Services').click()
+          // Chromium can take several frames to start a smooth scroll,
+          // which waitForScrollSettle (in expectLanded) would read as
+          // settled, so wait until the page moves first, as links.spec.ts
+          // does (#55). An instant jump has already moved.
+          await expect.poll(() => scrollY(page)).not.toBe(from)
           await expectLanded(page, '#services')
           expect(await page.evaluate(() => location.hash)).toBe('#services')
 
