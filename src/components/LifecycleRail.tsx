@@ -6,23 +6,27 @@ import './LifecycleRail.css'
 // from services.ts, so the rail holds no copy of its own. The number and
 // the colour marker are hidden from screen readers, which announce each
 // item's position in the ordered list, so an item reads as its label.
-// Nothing here is a link or a button.
+// Nothing here is a link or a button. The plain wrapper is the container
+// whose width decides between the row and the vertical list
+// (LifecycleRail.css).
 function LifecycleRail() {
   return (
-    <ol className="lifecycle-rail" role="list">
-      {services.map((service, index) => (
-        <li
-          key={service.id}
-          className={`lifecycle-rail__stage lifecycle-rail__stage--${service.stage}`}
-        >
-          <span className="lifecycle-rail__marker" aria-hidden="true" />
-          <span className="lifecycle-rail__number" aria-hidden="true">
-            {String(index + 1).padStart(2, '0')}
-          </span>
-          <span className="lifecycle-rail__label">{stages[service.stage]}</span>
-        </li>
-      ))}
-    </ol>
+    <div className="lifecycle-rail-frame">
+      <ol className="lifecycle-rail" role="list">
+        {services.map((service, index) => (
+          <li
+            key={service.id}
+            className={`lifecycle-rail__stage lifecycle-rail__stage--${service.stage}`}
+          >
+            <span className="lifecycle-rail__marker" aria-hidden="true" />
+            <span className="lifecycle-rail__number" aria-hidden="true">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <span className="lifecycle-rail__label">{stages[service.stage]}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
   )
 }
 

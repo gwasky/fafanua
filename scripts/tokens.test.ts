@@ -126,10 +126,31 @@ describe('content breakpoints', () => {
       .map((name) => `components/${name}`),
   ]
 
+  // The one exception is the lifecycle rail's container query (#56): a
+  // media query in em does not move with page text (html { font-size }),
+  // so the rail checks that its own box, in rem, is wide enough for its
+  // six stages on one row, inside its (min-width: 48em) media query. It is
+  // taken out before the check below, and only this exact query is.
+  const RAIL_QUERY = '@container lifecycle-rail (min-width: 44rem)'
+  const withoutRailQuery = (file: string, css: string) =>
+    file === 'components/LifecycleRail.css' ? css.replace(RAIL_QUERY, '') : css
+
   it.each(files)('%s uses only (min-width: 48em) and (min-width: 64em)', (file) => {
-    const widths = [...read(file).matchAll(/\((?:min|max)-width:\s*([^)]+)\)/g)].map(
+    const css = withoutRailQuery(file, read(file))
+    const widths = [...css.matchAll(/\((?:min|max)-width:\s*([^)]+)\)/g)].map(
       (match) => match[1].trim(),
     )
     for (const width of widths) expect(['48em', '64em']).toContain(width)
+  })
+
+  it('has one container query, the lifecycle rail\'s, inside its 48em media query', () => {
+    const queries = files.flatMap((file) =>
+      [...read(file).matchAll(/@container[^{]*/g)].map((match) => `${file}: ${match[0].trim()}`),
+    )
+    expect(queries).toEqual([`components/LifecycleRail.css: ${RAIL_QUERY}`])
+    const rail = read('components/LifecycleRail.css')
+    const media = rail.indexOf('@media (min-width: 48em) {')
+    expect(media).toBeGreaterThan(-1)
+    expect(rail.indexOf(RAIL_QUERY)).toBeGreaterThan(media)
   })
 })

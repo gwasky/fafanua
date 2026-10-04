@@ -18,9 +18,23 @@
  * content plus a connector of at least --rail-connector-min, and the
  * spare width is shared between the connectors, so every pair of stages
  * stays visibly joined (a fixed 1fr column left Connect to Model with no
- * line at 768px). If enlarged page text no longer fits on one row, the
- * items wrap rather than overflow. Never a scroll container.
+ * line at 768px). Never a scroll container, and never a wrapped row.
+ *
+ * The row also needs the rail's own box to be at least 44rem wide: the
+ * six stages need about 42rem on one row (672px at the default text
+ * size). A media query in em moves with the browser's text size but not
+ * with page text (html { font-size: 200% }), so the rail is a container
+ * and queries its own width in rem, which does. At the default text size
+ * its box is exactly 44rem (704px) at a 768px viewport, so it is one row
+ * from 48em as before; with enlarged page text, where six stages do not
+ * fit, it stays the vertical list. scripts/tokens.test.ts allows this one
+ * container query.
  */
+
+.lifecycle-rail-frame {
+  container: lifecycle-rail / inline-size;
+  margin-block-end: var(--space-10);
+}
 
 .lifecycle-rail {
   /* The marker's size; the vertical connector's offsets use it. */
@@ -33,7 +47,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   row-gap: var(--rail-gap);
-  margin: 0 0 var(--space-10);
+  margin: 0;
   padding: 0;
   list-style: none;
   font-size: var(--text-sm);
@@ -109,33 +123,33 @@
 }
 
 @media (min-width: 48em) {
-  /* One row: the first five items grow, the last is as wide as its
-     content, so the rail spans the container and ends at "Decide". */
-  .lifecycle-rail {
-    display: flex;
-    flex-wrap: wrap;
-    row-gap: var(--rail-gap);
-  }
+  @container lifecycle-rail (min-width: 44rem) {
+    /* One row: the first five items grow, the last is as wide as its
+       content, so the rail spans the container and ends at "Decide". */
+    .lifecycle-rail {
+      display: flex;
+    }
 
-  .lifecycle-rail__stage {
-    flex: 1 1 auto;
-  }
+    .lifecycle-rail__stage {
+      flex: 1 1 auto;
+    }
 
-  .lifecycle-rail__stage:last-child {
-    flex: none;
-  }
+    .lifecycle-rail__stage:last-child {
+      flex: none;
+    }
 
-  /* Horizontal connector: a rule filling the rest of each item, from
-     after its label to just before the next marker, never shorter than
-     --rail-connector-min. */
-  .lifecycle-rail__stage:not(:last-child)::after {
-    position: static;
-    flex: 1 1 0;
-    min-width: var(--rail-connector-min);
-    height: 0;
-    /* The item's gap already spaces it from the label. */
-    margin-inline: 0 var(--space-2);
-    border-inline-start: 0;
-    border-block-start: var(--border-width) solid var(--color-border);
+    /* Horizontal connector: a rule filling the rest of each item, from
+       after its label to just before the next marker, never shorter than
+       --rail-connector-min. */
+    .lifecycle-rail__stage:not(:last-child)::after {
+      position: static;
+      flex: 1 1 0;
+      min-width: var(--rail-connector-min);
+      height: 0;
+      /* The item's gap already spaces it from the label. */
+      margin-inline: 0 var(--space-2);
+      border-inline-start: 0;
+      border-block-start: var(--border-width) solid var(--color-border);
+    }
   }
 }
