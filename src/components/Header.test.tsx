@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { renderToStaticMarkup } from 'react-dom/server'
 import App from '../App.tsx'
 import { navigation, navigationCta } from '../data/navigation.ts'
 import Header from './Header.tsx'
@@ -360,7 +361,7 @@ describe('Header over a [data-header-overlay] section', () => {
   function renderHeader({ overlay }: { overlay: boolean }) {
     render(
       <>
-        <Header />
+        <Header overlay={overlay} />
         {overlay && <section data-header-overlay aria-label="Overlay" />}
       </>,
     )
@@ -393,6 +394,17 @@ describe('Header over a [data-header-overlay] section', () => {
       setScrollY(y)
       expectSolid(banner, logo)
     }
+  })
+
+  // The first render, before any effect or re-render, is already
+  // transparent, so the header never paints solid and fades on load
+  // (#55 QA). Server rendering returns exactly that first render.
+  it('renders transparent from the first render, with no effects run', () => {
+    const html = renderToStaticMarkup(<Header overlay />)
+
+    expect(html).toContain('class="site-header on-dark"')
+    expect(html).toContain(`src="${REVERSED}"`)
+    expect(renderToStaticMarkup(<Header />)).toContain('class="site-header"')
   })
 
   it('is transparent at scroll 0 with a marker', () => {

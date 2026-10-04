@@ -33,13 +33,6 @@ function subscribeToScroll(onChange: () => void) {
   return () => window.removeEventListener('scroll', onChange)
 }
 
-// Whether a [data-header-overlay] section is on the page. It is part of
-// the page's markup, so nothing needs to be told when it changes. It is
-// rendered after the header, so the first render reads false; React reads
-// it again after the first commit and renders again once it is there.
-const hasOverlay = () => document.querySelector('[data-header-overlay]') !== null
-const subscribeToNothing = () => () => {}
-
 // The largest share of the viewport's height the header may take and still
 // stick. Above it the header scrolls away with the page, like the short-
 // viewport rule in Header.css (WCAG 1.4.10): a sticky header that tall
@@ -62,14 +55,22 @@ const LOGO = '/fafanua-logo.svg'
 const LOGO_REVERSED = '/fafanua-logo-reversed.svg'
 
 // The sticky site header. Solid (paper, with a bottom border) by default.
-// While a [data-header-overlay] section exists, the page is at the top and
+// When `overlay` is set (App.tsx renders the dark hero, a
+// [data-header-overlay] section, under it), the page is at the top and
 // the menu is closed, it is transparent and takes the dark tokens
 // (.on-dark) and the reversed logo, so it reads over the dark section
 // pulled up beneath it (global.css). It publishes its height as
 // --header-height on :root, which the scroll margins and the overlay
 // pull-up use, and stops sticking when it would take more than
 // MAX_STICKY_SHARE of the viewport's height.
-function Header() {
+//
+// `overlay` is a prop, set by the page that renders the overlay section,
+// rather than read from the DOM: the header renders before the section, so
+// a DOM query is false on the first render. The header then committed
+// solid, its layout effect resolved that style, and the switch to .on-dark
+// ran the colour transition from paper on every load (#55 QA). With the
+// prop the first render is already transparent, so nothing animates.
+function Header({ overlay = false }: { overlay?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const toggleRef = useRef<HTMLButtonElement>(null)
@@ -121,7 +122,6 @@ function Header() {
   }, [])
 
   const atTop = useSyncExternalStore(subscribeToScroll, isAtTop, () => true)
-  const overlay = useSyncExternalStore(subscribeToNothing, hasOverlay, () => false)
   const transparent = overlay && atTop && !menuOpen
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {

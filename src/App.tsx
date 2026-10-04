@@ -20,7 +20,8 @@ function App() {
   return (
     <>
       <div id="top" />
-      <Header />
+      {/* The hero below is a [data-header-overlay] section. */}
+      <Header overlay />
       <main id="main" tabIndex={-1}>
         <Hero />
         <Positioning />
