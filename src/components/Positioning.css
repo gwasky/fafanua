@@ -1,18 +1,55 @@
 /*
- * Positioning: the statement on its own, on the page background between
- * the dark hero and Services, in muted text on paper (verified pairing).
- * No card, border or fill. Services' own top padding spaces it from the
- * section below.
+ * Positioning: a light, spacious block between the dark hero and Services
+ * (plan V2 §8). Not a card: no border, fill, radius or shadow, on the
+ * page background. The statement is large and light, in graphite 900 on
+ * paper (14.9:1); the supporting copy is graphite 600 on paper (6.0:1).
+ *
+ * One column by default, the statement above the supporting copy. From
+ * 64em (1024px; literal breakpoint, see the note in tokens.css) two
+ * columns, top-aligned: the statement in the wider start column and the
+ * supporting copy beside it, so the visual order is the DOM order.
+ *
+ * Its --space-section bottom padding is the whole gap above Services:
+ * Services.css drops that section's top padding when it follows this
+ * block, so the gap is not doubled.
  */
 
 .positioning {
-  padding-block: var(--space-16) 0;
+  padding-block: var(--space-section);
   background-color: var(--color-bg);
 }
 
+.positioning__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+/* Both paragraphs break a word only if it cannot fit on a line of its
+   own, rather than anywhere as .container allows. */
 .positioning__statement {
+  margin-block: 0;
+  color: var(--color-heading);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-light);
+  line-height: var(--leading-tight);
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+
+.positioning__support {
   max-width: var(--measure);
   margin-block: 0;
   color: var(--color-text-muted);
+  font-size: var(--text-body-lg);
   overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+@media (min-width: 64em) {
+  .positioning__layout {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    column-gap: var(--space-16);
+  }
 }
