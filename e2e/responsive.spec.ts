@@ -1,5 +1,6 @@
 import type { Page, TestInfo } from '@playwright/test'
 import { expect } from '@playwright/test'
+import { servicesIntro } from '../src/data/services.ts'
 import {
   WIDTHS,
   expectLanded,
@@ -49,6 +50,11 @@ const ANCHORS = [
   '#about',
   '#contact',
 ]
+
+// The Services section is named by its h2, the approved intro heading
+// (#56).
+const servicesRegion = (page: Page) =>
+  page.getByRole('region', { name: servicesIntro.heading })
 
 // The inline nav shows from 64em (#54): 1024px at the default text size.
 const hasMenu = (width: number) => width < 1024
@@ -122,6 +128,8 @@ type CardBox = {
   /** Offsets from the card's top border edge. */
   title: number
   label: number
+  description: number
+  tags: number
   toggle: number
   titleHeight: number
   titleLineHeight: number
@@ -132,8 +140,12 @@ type CardBox = {
   listBelow: number | null
 }
 
+// The card grid: the section's one list with headings in it (the
+// lifecycle rail, the tag lists and the managed-services lists have none).
 const serviceList = (page: Page) =>
-  page.getByRole('region', { name: 'Services' }).getByRole('list').first()
+  servicesRegion(page)
+    .getByRole('list')
+    .filter({ has: page.getByRole('heading', { level: 3 }) })
 
 /**
  * Measures each service card (the bordered box inside each item) relative
@@ -153,7 +165,8 @@ const measureCards = (page: Page): Promise<CardBox[]> =>
       const rect = (selector: string) => part(selector).getBoundingClientRect()
       const title = rect('h3')
       const toggle = rect('button')
-      const panel = part('ul') as HTMLElement
+      // The engagements panel has an id; the tag list does not.
+      const panel = part('ul[id]') as HTMLElement
       const panelBox = panel.hidden ? null : panel.getBoundingClientRect()
       const range = document.createRange()
       range.selectNodeContents(part('h3'))
@@ -166,6 +179,8 @@ const measureCards = (page: Page): Promise<CardBox[]> =>
         bottom: box.bottom - origin.top,
         title: title.top - box.top,
         label: rect('h3 + p').top - box.top,
+        description: rect('h3 + p + p').top - box.top,
+        tags: rect('ul:not([id])').top - box.top,
         toggle: toggle.top - box.top,
         titleHeight: title.height,
         titleLineHeight: parseFloat(getComputedStyle(part('h3')).lineHeight),
@@ -186,7 +201,7 @@ const measureCards = (page: Page): Promise<CardBox[]> =>
  */
 async function waitForStableLayout(page: Page) {
   const snapshot = () =>
-    page.getByRole('region', { name: 'Services' }).evaluate(async (section) => {
+    servicesRegion(page).evaluate(async (section) => {
       const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
       const boxes = () =>
         JSON.stringify(
@@ -463,8 +478,7 @@ for (const width of WIDTHS) {
 
     test(`service cards in ${columns(width)} ${columns(width) === 1 ? 'column' : 'columns'} at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
-      const cards = page
-        .getByRole('region', { name: 'Services' })
+      const cards = servicesRegion(page)
         .getByRole('listitem')
         .filter({ has: page.getByRole('heading', { level: 3 }) })
       await expect(cards).toHaveCount(6)
@@ -494,8 +508,7 @@ for (const width of WIDTHS) {
 
       // No text element in the section is wider than its own box, and no
       // card is wider than its grid cell.
-      const overflowing = await page
-        .getByRole('region', { name: 'Services' })
+      const overflowing = await servicesRegion(page)
         .evaluate((section) =>
           [...section.querySelectorAll('h2, h3, p, li, button, li > div')]
             .filter(
@@ -524,10 +537,15 @@ for (const width of WIDTHS) {
           const context = `row ${row.map((i) => i + 1).join(', ')}`
           expect(spread(of('title')), `${context} title tops ${of('title')}`).toBeLessThanOrEqual(1)
           expect(spread(of('label')), `${context} label tops ${of('label')}`).toBeLessThanOrEqual(1)
+          expect(spread(of('description')), `${context} description tops ${of('description')}`).toBeLessThanOrEqual(1)
+          expect(spread(of('tags')), `${context} tag list tops ${of('tags')}`).toBeLessThanOrEqual(1)
           expect(spread(of('toggle')), `${context} toggle tops ${of('toggle')}`).toBeLessThanOrEqual(1)
           expect(spread(of('height')), `${context} heights ${of('height')}`).toBeLessThanOrEqual(1)
         }
         for (const [i, card] of cards.entries()) {
+          // The tags sit between the description and the toggle.
+          expect(card.tags, `card ${i + 1} tags below the description`).toBeGreaterThan(card.description)
+          expect(card.toggle, `card ${i + 1} toggle below the tags`).toBeGreaterThan(card.tags)
           // A two-line title block, whether the title wraps or not.
           expect(card.titleHeight, `card ${i + 1} title height`)
             .toBeGreaterThanOrEqual(2 * card.titleLineHeight - 0.5)
@@ -623,6 +641,15 @@ for (const width of WIDTHS) {
     } else {
       test(`service cards keep their natural height, with one-line titles one line tall, at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
+        // At --text-service (#56) no real title fits on one line at 320px,
+        // so the first card gets a short test-only title; services.ts is
+        // unchanged.
+        await serviceList(page)
+          .getByRole('heading', { level: 3 })
+          .first()
+          .evaluate((heading) => {
+            heading.textContent = 'Data'
+          })
         await waitForStableLayout(page)
         const cards = await measureCards(page)
 
@@ -643,7 +670,7 @@ for (const width of WIDTHS) {
         // Test-only text in the browser; services.ts is unchanged.
         const title = serviceList(page).getByRole('heading', { level: 3 }).nth(1)
         await title.evaluate((heading) => {
-          heading.textContent = 'Data Warehousing, Lakehouse & Analytics Modelling Services'
+          heading.textContent = 'Data Warehousing, Lakehouse & Analytics Modelling'
         })
         await waitForStableLayout(page)
         const cards = await measureCards(page)
@@ -653,6 +680,7 @@ for (const width of WIDTHS) {
         for (const row of [first, second]) {
           const of = (key: keyof CardBox) => row.map((i) => cards[i][key] as number)
           expect(spread(of('label')), `label tops ${of('label')}`).toBeLessThanOrEqual(1)
+          expect(spread(of('tags')), `tag list tops ${of('tags')}`).toBeLessThanOrEqual(1)
           expect(spread(of('toggle')), `toggle tops ${of('toggle')}`).toBeLessThanOrEqual(1)
           expect(spread(of('height')), `heights ${of('height')}`).toBeLessThanOrEqual(1)
         }
@@ -683,10 +711,185 @@ for (const width of WIDTHS) {
       })
     }
 
+    // The lifecycle rail (#56): one row of six from 768px, a vertical
+    // list below it, never a scroll container, each item one line.
+    test(`lifecycle rail is ${width < 768 ? 'vertical' : 'one row'}, unclipped, with no scroll container, at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      const rail = servicesRegion(page).getByRole('list').first()
+      const items = rail.getByRole('listitem')
+      await expect(items).toHaveCount(6)
+      await expect(rail).toContainText('Design')
+
+      const m = await rail.evaluate((list) => {
+        const box = list.getBoundingClientRect()
+        const lineHeight = (element: Element) => parseFloat(getComputedStyle(element).lineHeight)
+        return {
+          overflowX: getComputedStyle(list).overflowX,
+          scroll: list.scrollWidth - list.clientWidth,
+          left: box.left,
+          right: box.right,
+          items: [...list.children].map((item) => {
+            const b = item.getBoundingClientRect()
+            const label = item.lastElementChild!
+            const range = document.createRange()
+            range.selectNodeContents(label)
+            return {
+              left: b.left,
+              right: b.right,
+              top: b.top,
+              bottom: b.bottom,
+              height: b.height,
+              lineHeight: lineHeight(item),
+              labelLines: new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size,
+              labelClipped: label.scrollWidth > label.clientWidth + 1,
+              labelRight: label.getBoundingClientRect().right,
+            }
+          }),
+        }
+      })
+      const detail = JSON.stringify(m)
+
+      expect(m.overflowX, detail).toBe('visible')
+      expect(m.scroll, detail).toBeLessThanOrEqual(0)
+      for (const [i, item] of m.items.entries()) {
+        expect(item.labelLines, `item ${i + 1} label lines`).toBe(1)
+        expect(item.labelClipped, `item ${i + 1} label clipped`).toBe(false)
+        expect(item.left, `item ${i + 1} left`).toBeGreaterThanOrEqual(m.left - 1)
+        expect(item.labelRight, `item ${i + 1} label right`).toBeLessThanOrEqual(m.right + 1)
+        // Subordinate to the cards: no taller than two lines of --text-sm.
+        expect(item.height, `item ${i + 1} height`).toBeLessThanOrEqual(2 * item.lineHeight)
+      }
+      for (let i = 1; i < m.items.length; i++) {
+        const [before, after] = [m.items[i - 1], m.items[i]]
+        if (width < 768) {
+          expect(after.top, `item ${i + 1} below item ${i}`).toBeGreaterThanOrEqual(before.bottom)
+          expect(Math.abs(after.left - before.left), `item ${i + 1} left edge`).toBeLessThanOrEqual(1)
+        } else {
+          expect(Math.abs(after.top - before.top), `item ${i + 1} on the row`).toBeLessThanOrEqual(1)
+          expect(after.left, `item ${i + 1} right of item ${i}`).toBeGreaterThanOrEqual(before.right - 1)
+        }
+      }
+      // The rail sits between the intro and the card grid.
+      const railBox = await rail.boundingBox()
+      const gridBox = await serviceList(page).boundingBox()
+      const heading = await servicesRegion(page).getByRole('heading', { level: 2 }).boundingBox()
+      if (!railBox || !gridBox || !heading) throw new Error('The rail, grid or heading has no box')
+      expect(railBox.y).toBeGreaterThan(heading.y + heading.height)
+      expect(gridBox.y).toBeGreaterThan(railBox.y + railBox.height)
+      await expectNoHorizontalScroll(page)
+    })
+
+    // The positioning block (#56): two columns from 64em, the statement
+    // first; stacked below it. Its bottom padding is the only gap above
+    // the Services eyebrow, and no word breaks mid-word.
+    test(`positioning section layout, spacing and wrapping at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      const m = await page.evaluate(() => {
+        const block = document.querySelector('main > div:not([id])')!
+        const [statement, support] = [...block.querySelectorAll('p')]
+        const eyebrow = document.querySelector('#services p')!
+        const box = (element: Element) => element.getBoundingClientRect()
+        const probe = document.createElement('div')
+        probe.style.paddingTop = 'var(--space-section)'
+        document.body.append(probe)
+        const section = parseFloat(getComputedStyle(probe).paddingTop)
+        probe.remove()
+        // A word broken across lines leaves a line that starts or ends
+        // mid-word: compare each line's text with the paragraph's words.
+        const brokenWords = (element: Element) => {
+          const words = new Set(element.textContent!.split(/\s+/))
+          const text = element.firstChild!
+          const range = document.createRange()
+          const lines: string[] = []
+          let line = ''
+          let top: number | null = null
+          for (let i = 0; i < text.textContent!.length; i++) {
+            range.setStart(text, i)
+            range.setEnd(text, i + 1)
+            const rect = range.getClientRects()[0]
+            if (!rect) continue
+            if (top !== null && Math.abs(rect.top - top) > 2) {
+              lines.push(line)
+              line = ''
+            }
+            top = rect.top
+            line += text.textContent![i]
+          }
+          lines.push(line)
+          return lines.flatMap((l) => l.trim().split(/\s+/)).filter((word) => word && !words.has(word))
+        }
+        return {
+          section,
+          statement: box(statement),
+          support: box(support),
+          eyebrowTop: box(eyebrow).top,
+          eyebrowText: eyebrow.textContent,
+          blockPadding: getComputedStyle(block).paddingBottom,
+          broken: [...brokenWords(statement), ...brokenWords(support)],
+        }
+      })
+      const detail = JSON.stringify(m)
+
+      expect(m.eyebrowText, detail).toMatch(/Capabilities$/)
+      expect(m.broken, detail).toEqual([])
+      if (width >= 1024) {
+        expect(Math.abs(m.statement.top - m.support.top), detail).toBeLessThanOrEqual(1)
+        expect(m.support.left, detail).toBeGreaterThan(m.statement.right)
+        expect(m.statement.width, detail).toBeGreaterThan(m.support.width)
+      } else {
+        expect(m.support.top, detail).toBeGreaterThanOrEqual(m.statement.bottom)
+      }
+      expect(parseFloat(m.blockPadding), detail).toBeCloseTo(m.section, 0)
+      const gap = m.eyebrowTop - Math.max(m.statement.bottom, m.support.bottom)
+      expect(gap, detail).toBeGreaterThanOrEqual(m.section - 1)
+      if (width === 1440) {
+        expect(m.eyebrowTop - m.support.bottom, detail).toBeLessThanOrEqual(1.25 * m.section)
+      }
+    })
+
+    if (width === 1440) {
+      // The card hover (#56): with motion allowed, hovering a card's list
+      // item lifts the card 8px and darkens its border; under reduced
+      // motion the card does not move. Focus never moves it.
+      test(`service card hover lifts the card, except under reduced motion, at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        const card = serviceList(page).locator(':scope > li').nth(1)
+        const look = () =>
+          card.evaluate((item) => {
+            const style = getComputedStyle(item.firstElementChild!)
+            return { transform: style.transform, border: style.borderTopColor, shadow: style.boxShadow }
+          })
+        await card.scrollIntoViewIfNeeded()
+        const resting = await look()
+        expect(resting.transform).toBe('none')
+
+        // Reduced motion (the project's setting): border and shadow
+        // change, no movement.
+        await card.hover()
+        await expect.poll(look).not.toEqual(resting)
+        expect((await look()).transform).toBe('none')
+        await page.mouse.move(0, 0)
+        await expect.poll(look).toEqual(resting)
+
+        await page.emulateMedia({ reducedMotion: 'no-preference' })
+        await card.hover()
+        await expect.poll(async () => (await look()).transform).toBe('matrix(1, 0, 0, 1, 0, -8)')
+        // The list item itself does not move.
+        const itemBox = await card.boundingBox()
+        await page.mouse.move(0, 0)
+        await expect.poll(async () => (await look()).transform).toBe('none')
+        expect(await card.boundingBox()).toEqual(itemBox)
+
+        // Keyboard focus on the toggle moves nothing.
+        await card.getByRole('button').focus()
+        await page.waitForTimeout(300)
+        expect((await look()).transform).toBe('none')
+      })
+    }
+
     test(`managed-services block spans the grid, keeps its order and fits its text at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
-      const section = page.getByRole('region', { name: 'Services' })
-      const grid = section.getByRole('list').first()
+      const grid = serviceList(page)
       const block = page.locator('#managed-services')
       const capabilities = block.getByRole('list').first()
       const steps = block.getByRole('list').last().getByRole('listitem')

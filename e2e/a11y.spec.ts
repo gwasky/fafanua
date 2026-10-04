@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expectLanded, expectNoAxeViolations, openPage } from './fixtures.ts'
 import { SEQUENCE, walkFocus } from './focus.ts'
 import { formatViolations } from '../src/test/axe.ts'
+import { servicesIntro } from '../src/data/services.ts'
 
 // Axe on the production preview in a real browser, where contrast,
 // target size and reflow can be measured. Each state is its own test, so
@@ -58,6 +59,25 @@ test.describe('axe, all Typical engagements disclosures open', () => {
         await button.click()
         await expect(button).toHaveAttribute('aria-expanded', 'true')
       }
+
+      await expectNoAxeViolations(page, testInfo)
+    })
+  }
+})
+
+test.describe('axe, a service card hovered', () => {
+  for (const width of [768, 1440]) {
+    test(`second card hovered at ${width}px`, async ({ page }, testInfo) => {
+      await openPage(page, width)
+      const card = page
+        .getByRole('region', { name: servicesIntro.heading })
+        .getByRole('listitem')
+        .filter({ has: page.getByRole('heading', { level: 3 }) })
+        .nth(1)
+      await card.hover()
+      await expect
+        .poll(() => card.evaluate((item) => getComputedStyle(item.firstElementChild!).boxShadow))
+        .toContain('8px')
 
       await expectNoAxeViolations(page, testInfo)
     })
@@ -388,16 +408,19 @@ test.describe('browser text size 200%: the header falls back to the Menu', () =>
   test('Tab and Shift+Tab keep every stop wholly visible at 1024 x 800', async ({ page }) => {
     await openPage(page, 1024)
     expect((await header(page)).position).toBe('sticky')
-    // The service cards: the items of the section's first list.
-    const columns = await page
-      .getByRole('region', { name: 'Services' })
-      .getByRole('list')
-      .first()
-      .locator(':scope > li')
-      .evaluateAll(
-        (items) => new Set(items.map((item) => Math.round(item.getBoundingClientRect().left))).size,
-      )
-    expect(columns, 'service card columns').toBe(1)
+    // The section's first list is the lifecycle rail, the second the
+    // service cards.
+    const lists = page.getByRole('region', { name: servicesIntro.heading }).getByRole('list')
+    const lefts = (index: number) =>
+      lists
+        .nth(index)
+        .locator(':scope > li')
+        .evaluateAll((items) => items.map((item) => Math.round(item.getBoundingClientRect().left)))
+    expect(new Set(await lefts(1)).size, 'service card columns').toBe(1)
+    // The rail is vertical: one left edge, each stage below the last.
+    const rail = await lefts(0)
+    expect(rail, 'rail stages').toHaveLength(6)
+    expect(new Set(rail).size, 'rail columns').toBe(1)
 
     await walkFocus(page, SEQUENCE.menu)
   })
