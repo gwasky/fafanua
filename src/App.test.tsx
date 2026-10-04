@@ -5,6 +5,7 @@ import { navigation, navigationCta } from './data/navigation.ts'
 import { processStages } from './data/process.ts'
 import { managedServices, services, servicesIntro } from './data/services.ts'
 import { solutions } from './data/solutions.ts'
+import { systemFlow } from './data/systemFlow.ts'
 
 const FUTURE_READY = 'Trusted foundations for what comes next'
 const CONTACT = 'Discuss your data foundation.'
@@ -98,6 +99,21 @@ describe('App', () => {
       screen.getByRole('region', { name: 'About Fafanua' }),
       screen.getByRole('region', { name: CONTACT }),
     ])
+  })
+
+  it('places the system diagram in Services, after the card list and before the managed-services block', () => {
+    render(<App />)
+    const services = screen.getByRole('region', { name: SERVICES })
+    const flow = screen.getByRole('list', { name: systemFlow.heading })
+    const diagram = flow.parentElement!
+    const cards = within(services)
+      .getAllByRole('list')
+      .find((list) => within(list).queryAllByRole('heading', { level: 3 }).length === 6)!
+
+    expect(services).toContainElement(diagram)
+    expect(cards.nextElementSibling).toBe(diagram)
+    expect(diagram.nextElementSibling).toBe(document.getElementById('managed-services'))
+    expect(diagram.closest('section')).toBe(services)
   })
 
   it('has exactly two technical grids, in the hero and the future-ready section', () => {
@@ -343,13 +359,13 @@ describe('App', () => {
     ).not.toMatch(/intelligence/i)
   })
 
-  it('orders headings h1, h2 Services intro heading, six h3s, managed-services h3, h2 Solutions, five h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
+  it('orders headings h1, h2 Services intro heading, six h3s, the system diagram h3, managed-services h3, h2 Solutions, five h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
 
     expect(levels).toEqual([
-      1, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2,
+      1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2,
     ])
     expect(levels.filter((level) => level === 1)).toHaveLength(1)
     // No level is skipped.
@@ -360,15 +376,16 @@ describe('App', () => {
     expect(headings.slice(2, 8).map((heading) => heading.textContent)).toEqual(
       services.map((service) => service.name),
     )
-    expect(headings[8].textContent).toBe(managedServices.heading)
-    expect(headings[9].textContent).toBe('Solutions')
-    expect(headings.slice(10, 15).map((heading) => heading.textContent)).toEqual(
+    expect(headings[8].textContent).toBe(systemFlow.heading)
+    expect(headings[9].textContent).toBe(managedServices.heading)
+    expect(headings[10].textContent).toBe('Solutions')
+    expect(headings.slice(11, 16).map((heading) => heading.textContent)).toEqual(
       solutions.map((solution) => solution.title),
     )
-    expect(headings[15].textContent).toBe('How We Work')
-    expect(headings[20].textContent).toBe(FUTURE_READY)
-    expect(headings[21].textContent).toBe('About Fafanua')
-    expect(headings[22].textContent).toBe(CONTACT)
+    expect(headings[16].textContent).toBe('How We Work')
+    expect(headings[21].textContent).toBe(FUTURE_READY)
+    expect(headings[22].textContent).toBe('About Fafanua')
+    expect(headings[23].textContent).toBe(CONTACT)
     expect(
       within(screen.getByRole('contentinfo')).queryAllByRole('heading'),
     ).toHaveLength(0)

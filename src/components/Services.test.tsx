@@ -7,6 +7,7 @@ import {
   servicesIntro,
   stages,
 } from '../data/services.ts'
+import { systemFlow } from '../data/systemFlow.ts'
 import Services from './Services.tsx'
 
 function renderServices() {
@@ -19,7 +20,9 @@ function renderServices() {
   const cards = [...grid.children] as HTMLElement[]
   const managed = section.querySelector<HTMLElement>('#managed-services')!
   const [capabilities, journey] = within(managed).getAllByRole('list')
-  return { section, rail, grid, cards, capabilities, journey, managed }
+  const flow = within(section).getByRole('list', { name: systemFlow.heading })
+  const diagram = flow.parentElement!
+  return { section, rail, grid, cards, capabilities, journey, managed, flow, diagram }
 }
 
 // The text a screen reader reads: the element's text without its
@@ -55,7 +58,7 @@ describe('Services', () => {
     expect(nav?.id).toBe(section.id)
   })
 
-  it('has the h2, six card h3s and the managed-services h3, and no other headings', () => {
+  it('has the h2, six card h3s, the diagram h3 and the managed-services h3, and no other headings', () => {
     const { section } = renderServices()
     const headings = within(section).getAllByRole('heading')
 
@@ -63,12 +66,14 @@ describe('Services', () => {
       'H2',
       ...services.map(() => 'H3'),
       'H3',
+      'H3',
     ])
     expect(headings[0].textContent).toBe(servicesIntro.heading)
     expect(headings.slice(1, 7).map((heading) => heading.textContent)).toEqual(
       services.map((service) => service.name),
     )
-    expect(headings[7].textContent).toBe(managedServices.heading)
+    expect(headings[7].textContent).toBe(systemFlow.heading)
+    expect(headings[8].textContent).toBe(managedServices.heading)
     expect(within(section).queryByRole('heading', { name: 'Services' })).toBeNull()
   })
 
@@ -241,8 +246,33 @@ describe('Services', () => {
     expect(grid).not.toContainElement(managed)
     expect(managed.closest('li')).toBeNull()
     expect(section).toContainElement(managed)
-    expect(grid.nextElementSibling).toBe(managed)
+    expect(grid.nextElementSibling!.nextElementSibling).toBe(managed)
     expect(managed.nextElementSibling).toBeNull()
+  })
+
+  it('shows the system diagram directly after the card grid and before the managed-services block', () => {
+    const { section, grid, managed, flow, diagram } = renderServices()
+    const heading = within(diagram).getByRole('heading', { level: 3 })
+
+    expect(section).toContainElement(diagram)
+    expect(grid).not.toContainElement(diagram)
+    expect(managed).not.toContainElement(diagram)
+    expect(diagram.tagName).toBe('DIV')
+    expect(diagram.firstElementChild).toBe(heading)
+    expect(heading.textContent).toBe(systemFlow.heading)
+    expect(grid.nextElementSibling).toBe(diagram)
+    expect(diagram.nextElementSibling).toBe(managed)
+    expect(flow.children).toHaveLength(6)
+    // It ends at activation: Reverse ETL is in its last layer, the last
+    // thing before the managed-services content.
+    expect(flow.lastElementChild).toHaveTextContent('Reverse ETL')
+  })
+
+  it('adds no link, button or tab stop to the section', () => {
+    const { diagram } = renderServices()
+
+    expect(diagram.querySelector('a, button, [tabindex]')).toBeNull()
+    expect(screen.getAllByRole('button')).toHaveLength(6)
   })
 
   it('shows the eyebrow as a paragraph, then the h3, then the description', () => {
