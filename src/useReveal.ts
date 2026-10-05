@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { hashTarget } from './landOnHash.ts'
 
 /**
  * The one-time reveals (plan V2 §18, #61). An element marked
@@ -25,6 +26,15 @@ import { useEffect } from 'react'
  *   shows it in its final state at once, during the focus event, so the
  *   browser scrolls the focused element into view at its final place,
  *   clear of the header.
+ * - The rail's line waits for its section's own reveal to end before it
+ *   draws, so the stage labels and markers are fully shown, at rest, for
+ *   the whole of the draw.
+ * - A hash change (a typed hash, or a link to an element inside a
+ *   section) whose target is inside a section that is hidden or still
+ *   revealing shows that section in its final state at once and scrolls
+ *   to the target again, so it lands clear of the header, not
+ *   --reveal-shift too high. A section's own id needs nothing: the
+ *   section never moves.
  *
  * Only the section's children move, never the section, so an anchor
  * target is never transformed when the browser or landOnHash measures it.
@@ -37,6 +47,20 @@ export const REVEAL_STATE = 'data-reveal-state'
 export const LINE_THRESHOLD = 0.5
 
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
+
+const SECTION = `[${REVEAL_ATTRIBUTE}="section"]`
+
+/**
+ * The reveal transitions still running on a section's children, the
+ * only elements a reveal moves. Element.getAnimations flushes pending
+ * style first, so a reveal started in the same task is included. Empty
+ * where the Web Animations API is missing.
+ */
+function revealing(section: Element): Animation[] {
+  return [...section.children].flatMap((child) =>
+    typeof child.getAnimations === 'function' ? child.getAnimations() : [],
+  )
+}
 
 /**
  * Starts the reveals for every marked element in the document, and
@@ -54,6 +78,21 @@ export function startReveal(doc: Document = document): () => void {
   const targets = doc.querySelectorAll<HTMLElement>(`[${REVEAL_ATTRIBUTE}]`)
   // Elements the observer has reported at least once.
   const seen = new WeakSet<Element>()
+  let stopped = false
+
+  // Draws the line once its section's reveal, if one is running, has
+  // ended or been cut short.
+  const drawLine = (element: Element) => {
+    const section = element.closest(SECTION)
+    const pending = section ? revealing(section) : []
+    if (pending.length === 0) {
+      element.setAttribute(REVEAL_STATE, 'in')
+      return
+    }
+    void Promise.allSettled(pending.map((animation) => animation.finished)).then(() => {
+      if (!stopped) element.setAttribute(REVEAL_STATE, 'in')
+    })
+  }
 
   const observer = new IntersectionObserver(
     (entries) => {
@@ -73,10 +112,10 @@ export function startReveal(doc: Document = document): () => void {
           element.getAttribute(REVEAL_ATTRIBUTE) === 'line'
             ? entry.intersectionRatio >= LINE_THRESHOLD
             : entry.isIntersecting
-        if (ready) {
-          element.setAttribute(REVEAL_STATE, 'in')
-          observer.unobserve(element)
-        }
+        if (!ready) continue
+        observer.unobserve(element)
+        if (element.getAttribute(REVEAL_ATTRIBUTE) === 'line') drawLine(element)
+        else element.setAttribute(REVEAL_STATE, 'in')
       }
     },
     { threshold: [0, LINE_THRESHOLD] },
@@ -84,20 +123,41 @@ export function startReveal(doc: Document = document): () => void {
 
   // Removing the state shows the final state at once: a hidden section
   // skips its transition, and one still revealing has it cancelled.
-  const onFocusIn = (event: FocusEvent) => {
-    if (!(event.target instanceof Element)) return
-    const section = event.target.closest(`[${REVEAL_ATTRIBUTE}="section"]`)
-    if (!section?.hasAttribute(REVEAL_STATE)) return
+  const show = (section: Element) => {
     section.removeAttribute(REVEAL_STATE)
     observer.unobserve(section)
   }
 
+  const onFocusIn = (event: FocusEvent) => {
+    if (!(event.target instanceof Element)) return
+    const section = event.target.closest(SECTION)
+    if (section?.hasAttribute(REVEAL_STATE)) show(section)
+  }
+
+  // The browser has already scrolled to the target where it was, moved
+  // down with its hidden or revealing content; once that content is in
+  // its final place, scroll to the target again (smoothly, or not, as
+  // the CSS scroll-behavior says).
+  const onHashChange = () => {
+    const target = hashTarget(doc, doc.location.hash)
+    const section = target?.parentElement?.closest(SECTION)
+    if (!target || !section) return
+    const state = section.getAttribute(REVEAL_STATE)
+    if (state !== 'hidden' && !(state === 'in' && revealing(section).length > 0)) return
+    show(section)
+    target.scrollIntoView()
+  }
+
   for (const target of targets) observer.observe(target)
   doc.addEventListener('focusin', onFocusIn, true)
+  const view = doc.defaultView
+  view?.addEventListener('hashchange', onHashChange)
 
   return () => {
+    stopped = true
     observer.disconnect()
     doc.removeEventListener('focusin', onFocusIn, true)
+    view?.removeEventListener('hashchange', onHashChange)
     for (const target of targets) {
       if (target.getAttribute(REVEAL_STATE) === 'hidden') target.removeAttribute(REVEAL_STATE)
     }
