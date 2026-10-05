@@ -24,9 +24,20 @@ describe('solutions', () => {
     }
   })
 
-  it('holds only an id, a title and themes: no client types', () => {
+  it('has a four-item summary for each, with no empty or repeated item', () => {
     for (const solution of solutions) {
-      expect(Object.keys(solution).sort()).toEqual(['id', 'themes', 'title'])
+      expect(solution.summary).toHaveLength(4)
+      expect(new Set(solution.summary).size).toBe(4)
+      for (const item of solution.summary) {
+        expect(item).toBe(item.trim())
+        expect(item).not.toBe('')
+      }
+    }
+  })
+
+  it('holds only an id, a title, a summary and themes: no client types', () => {
+    for (const solution of solutions) {
+      expect(Object.keys(solution).sort()).toEqual(['id', 'summary', 'themes', 'title'])
     }
   })
 })

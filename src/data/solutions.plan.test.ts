@@ -1,8 +1,11 @@
 // Checks solutions.ts against _docs/plan-fafanua-services-positioning.md
-// Sections 15-19, which are authoritative for the Solutions copy, so the
-// wording on the site cannot drift from it. The ?raw import resolves
-// relative to this file and is never part of the production bundle.
+// Sections 15-19, which are authoritative for the Solutions titles and
+// themes, and the summaries against plan V2
+// (_docs/fafanua-v2-visual-upgrade-plan.md) Section 12, so the wording on
+// the site cannot drift from either. The ?raw imports resolve relative to
+// this file and are never part of the production bundle.
 import { describe, expect, it } from 'vitest'
+import planV2 from '../../_docs/fafanua-v2-visual-upgrade-plan.md?raw'
 import positioning from '../../_docs/plan-fafanua-services-positioning.md?raw'
 import solutionsSource from './solutions.ts?raw'
 import { solutions } from './solutions.ts'
@@ -48,6 +51,19 @@ function parseSolution(markdown: string, n: number): DocSolution {
 
 const docSolutions = [15, 16, 17, 18, 19].map((n) => parseSolution(doc, n))
 
+// Plan V2 Section 12's example rows: a `> **NN Title**` line, then a
+// `> ` line of items separated by ` · `. Each line ends with the two
+// spaces of a Markdown line break, which are trimmed.
+const v2Rows = [
+  ...section(planV2.replace(/\r\n/g, '\n'), 12).matchAll(
+    /^> \*\*(\d\d) (.+)\*\* *\n> (.+)$/gm,
+  ),
+].map((match) => ({
+  number: match[1],
+  title: match[2].trim(),
+  summary: match[3].trim().split(' · '),
+}))
+
 describe('positioning doc parser', () => {
   it('finds five solutions with seven themes each in Sections 15 to 19', () => {
     expect(docSolutions.map((solution) => solution.title)).toEqual([
@@ -69,6 +85,16 @@ describe('positioning doc parser', () => {
   })
 })
 
+describe('plan V2 Section 12 parser', () => {
+  it('finds five numbered rows, each with a four-item summary', () => {
+    expect(v2Rows.map((row) => row.number)).toEqual(['01', '02', '03', '04', '05'])
+    expect(v2Rows.map((row) => row.title)).toEqual(
+      docSolutions.map((solution) => solution.title),
+    )
+    for (const row of v2Rows) expect(row.summary).toHaveLength(4)
+  })
+})
+
 describe('solutions wording', () => {
   it.each(docSolutions.map((solution, index) => [solution.number, index]))(
     'matches the title and themes in Section %s',
@@ -78,6 +104,13 @@ describe('solutions wording', () => {
 
       expect(actual.title).toEqual(expected.title)
       expect(actual.themes).toEqual(expected.themes)
+    },
+  )
+
+  it.each(v2Rows.map((row, index) => [row.number, row.title, index] as const))(
+    'matches the summary of row %s, %s, in plan V2 Section 12',
+    (_number, _title, index) => {
+      expect(solutions[index].summary).toEqual(v2Rows[index].summary)
     },
   )
 
