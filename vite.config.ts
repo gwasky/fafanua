@@ -55,12 +55,23 @@ const MODULE_SCRIPT = /<script\b[^>]*\btype="module"[^>]*\bsrc="[^"]*"[^>]*><\/s
 const STYLESHEET = /<link\b[^>]*\brel="stylesheet"[^>]*>/gi
 
 /**
+ * An inline classic script, placed between the stylesheet and the module
+ * script. The parser stops at it until every stylesheet before it has
+ * loaded, in every engine, and the module script cannot run before the
+ * parser has finished. The tag order alone is not enough: WebKit runs a
+ * module script without waiting for a pending stylesheet (measured for
+ * #62 with the CSS delayed by 150, 400 and 1000 ms). It must not be empty,
+ * or browsers skip it without waiting.
+ */
+export const WAIT_FOR_STYLESHEET = '<script>/* Waits for the stylesheet (#62). */</script>'
+
+/**
  * Moves the module script Vite injects so that it comes after the
- * stylesheet links in the built head (#62). Vite writes the script first,
- * and WebKit can then run it before any CSS applies: the header paints in
- * the browser's default colours, and a hash landing scrolls in an
- * unstyled layout. Each script keeps its attributes; only the order
- * changes. The dev server is left alone.
+ * stylesheet links in the built head, with WAIT_FOR_STYLESHEET between
+ * them (#62). Vite writes the script first, and WebKit can then run it
+ * before any CSS applies: the header starts in the browser's default
+ * colours and fades from them, and a hash landing scrolls in an unstyled
+ * layout. Each script keeps its attributes. The dev server is left alone.
  */
 export function stylesheetFirst(): Plugin {
   return {
@@ -71,13 +82,12 @@ export function stylesheetFirst(): Plugin {
       handler(html) {
         const head = /<head\b[^>]*>[\s\S]*?<\/head>/i.exec(html)
         if (!head) throw new Error('index.html has no <head> to order')
-        const stylesheets = [...head[0].matchAll(STYLESHEET)]
-        if (stylesheets.length === 0) return html
+        if (head[0].search(STYLESHEET) === -1 || head[0].includes(WAIT_FOR_STYLESHEET)) return html
         const scripts = head[0].match(MODULE_SCRIPT) ?? []
         if (scripts.length === 0) return html
 
         // Take the scripts out, with the indentation before each, then put
-        // them back straight after the last stylesheet.
+        // them back straight after the last stylesheet, behind the wait.
         let body = head[0]
         for (const script of scripts) {
           body = body.replace(new RegExp(`\\n?[ \\t]*${escape(script)}`), '')
@@ -85,7 +95,8 @@ export function stylesheetFirst(): Plugin {
         const last = [...body.matchAll(STYLESHEET)].at(-1)!
         const end = last.index + last[0].length
         const indent = /[ \t]*$/.exec(body.slice(0, last.index))![0]
-        body = body.slice(0, end) + scripts.map((script) => `\n${indent}${script}`).join('') + body.slice(end)
+        const added = [WAIT_FOR_STYLESHEET, ...scripts].map((tag) => `\n${indent}${tag}`).join('')
+        body = body.slice(0, end) + added + body.slice(end)
         return html.slice(0, head.index) + body + html.slice(head.index + head[0].length)
       },
     },
@@ -96,26 +107,28 @@ const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /**
  * Checks that the built head links at least one stylesheet and loads at
- * least one module script, and that every stylesheet comes before the
- * first module script (#62). Throws when it does not.
+ * least one module script, that every stylesheet comes before the first
+ * module script, and that WAIT_FOR_STYLESHEET sits between them (#62).
+ * Throws when it does not.
  */
 export function checkStylesheetOrder(html: string) {
   const head = /<head\b[^>]*>([\s\S]*?)<\/head>/i.exec(html)?.[1]
-  if (head === undefined) {
-    throw new Error('index.html order check failed: no <head> element')
+  const fail = (problem: string) => {
+    throw new Error(`index.html order check failed: ${problem}`)
   }
-  const stylesheets = [...head.matchAll(STYLESHEET)].map((match) => match.index)
-  const scripts = [...head.matchAll(MODULE_SCRIPT)].map((match) => match.index)
-  if (stylesheets.length === 0) {
-    throw new Error('index.html order check failed: no stylesheet <link> in <head>')
+  if (head === undefined) fail('no <head> element')
+  const stylesheets = [...head!.matchAll(STYLESHEET)].map((match) => match.index)
+  const scripts = [...head!.matchAll(MODULE_SCRIPT)].map((match) => match.index)
+  if (stylesheets.length === 0) fail('no stylesheet <link> in <head>')
+  if (scripts.length === 0) fail('no module <script> in <head>')
+  const lastStylesheet = Math.max(...stylesheets)
+  const firstScript = Math.min(...scripts)
+  if (lastStylesheet > firstScript) {
+    fail('a module <script> comes before a stylesheet <link>, so WebKit can run the page before its CSS applies')
   }
-  if (scripts.length === 0) {
-    throw new Error('index.html order check failed: no module <script> in <head>')
-  }
-  if (Math.max(...stylesheets) > Math.min(...scripts)) {
-    throw new Error(
-      'index.html order check failed: a module <script> comes before a stylesheet <link>, so WebKit can run the page before its CSS applies (#62)',
-    )
+  const wait = head!.indexOf(WAIT_FOR_STYLESHEET, lastStylesheet)
+  if (wait === -1 || wait > firstScript) {
+    fail('no inline script waits for the stylesheet before the module <script>, so WebKit can run the page before its CSS applies')
   }
 }
 

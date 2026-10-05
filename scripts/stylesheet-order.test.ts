@@ -1,13 +1,18 @@
 // @vitest-environment node
 // Checks the plugin in vite.config.ts that puts the stylesheet before the
 // module script in the built head, and the build-time check that fails
-// the build when the script comes first (#62).
+// the build when the script comes first or nothing holds it back (#62).
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { Plugin } from 'vite'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { checkOrder, checkStylesheetOrder, stylesheetFirst } from '../vite.config.ts'
+import {
+  WAIT_FOR_STYLESHEET as WAIT,
+  checkOrder,
+  checkStylesheetOrder,
+  stylesheetFirst,
+} from '../vite.config.ts'
 
 const SCRIPT = '<script type="module" crossorigin src="/assets/index-abc.js"></script>'
 const STYLESHEET = '<link rel="stylesheet" crossorigin href="/assets/index-abc.css">'
@@ -46,19 +51,28 @@ describe('stylesheetFirst', () => {
     expect(plugin.transformIndexHtml.order).toBe('post')
   })
 
-  it('moves the module script to straight after the stylesheet, and changes nothing else', () => {
+  it('moves the module script to after the stylesheet, behind the wait, and changes nothing else', () => {
     expect(reorder(VITE)).toBe(
-      page(PRELOAD, '<link rel="icon" href="/favicon.svg">', STYLESHEET, SCRIPT, JSON_LD),
+      page(PRELOAD, '<link rel="icon" href="/favicon.svg">', STYLESHEET, WAIT, SCRIPT, JSON_LD),
     )
+  })
+
+  it('waits with a classic inline script that is not empty', () => {
+    expect(WAIT).toMatch(/^<script>[^<]+<\/script>$/)
+    expect(WAIT).not.toMatch(/\b(type|src|async|defer)=/)
   })
 
   it('puts the script after the last of several stylesheets', () => {
     const second = '<link rel="stylesheet" crossorigin href="/assets/other-abc.css">'
-    expect(reorder(page(SCRIPT, STYLESHEET, second))).toBe(page(STYLESHEET, second, SCRIPT))
+    expect(reorder(page(SCRIPT, STYLESHEET, second))).toBe(page(STYLESHEET, second, WAIT, SCRIPT))
+  })
+
+  it('adds the wait to a page with the script already after the stylesheet', () => {
+    expect(reorder(page(STYLESHEET, SCRIPT, JSON_LD))).toBe(page(STYLESHEET, WAIT, SCRIPT, JSON_LD))
   })
 
   it('leaves a page already in order, or without both tags, unchanged', () => {
-    for (const html of [page(STYLESHEET, SCRIPT, JSON_LD), page(SCRIPT), page(STYLESHEET), page()]) {
+    for (const html of [page(STYLESHEET, WAIT, SCRIPT, JSON_LD), page(SCRIPT), page(STYLESHEET), page()]) {
       expect(reorder(html)).toBe(html)
     }
   })
@@ -80,8 +94,18 @@ describe('stylesheetFirst', () => {
 })
 
 describe('checkStylesheetOrder', () => {
-  it('passes the stylesheet before the module script', () => {
-    expect(() => checkStylesheetOrder(page(PRELOAD, STYLESHEET, SCRIPT, JSON_LD))).not.toThrow()
+  it('passes the stylesheet, then the wait, then the module script', () => {
+    expect(() => checkStylesheetOrder(page(PRELOAD, STYLESHEET, WAIT, SCRIPT, JSON_LD))).not.toThrow()
+  })
+
+  it('fails the stylesheet before the module script with nothing to wait for it', () => {
+    expect(() => checkStylesheetOrder(page(STYLESHEET, SCRIPT))).toThrow('no inline script waits for the stylesheet')
+    expect(() => checkStylesheetOrder(page(WAIT, STYLESHEET, SCRIPT)), 'wait before the stylesheet').toThrow(
+      'no inline script waits',
+    )
+    expect(() => checkStylesheetOrder(page(STYLESHEET, SCRIPT, WAIT)), 'wait after the script').toThrow(
+      'no inline script waits',
+    )
   })
 
   it('fails the module script before the stylesheet', () => {
@@ -94,7 +118,7 @@ describe('checkStylesheetOrder', () => {
   })
 
   it('ignores the JSON-LD script, which is not a module', () => {
-    expect(() => checkStylesheetOrder(page(JSON_LD, STYLESHEET, SCRIPT))).not.toThrow()
+    expect(() => checkStylesheetOrder(page(JSON_LD, STYLESHEET, WAIT, SCRIPT))).not.toThrow()
   })
 
   it('fails a head with no stylesheet or no module script', () => {
