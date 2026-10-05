@@ -486,3 +486,54 @@ test.describe('focus never lands on hidden content (no-preference)', () => {
     })
   }
 })
+
+// The motion from earlier phases, checked for consistency in both
+// engines (#61); a11y.spec.ts and hero.spec.ts check each in Chromium.
+test.describe('earlier motion, consistent (no-preference)', () => {
+  test.use({ reducedMotion: 'no-preference' })
+
+  test('every CTA arrow nudges --cta-arrow-shift over --duration-cta-arrow on hover', async ({ page }) => {
+    await openPage(page, 1440)
+    const arrows = page.locator('.button:has(.button__arrow)')
+    // The header's, the hero's and the closing call to action's.
+    await expect(arrows).toHaveCount(3)
+    const duration = await tokenTime(page, '--duration-cta-arrow')
+    for (const button of await arrows.all()) {
+      const arrow = button.locator('.button__arrow')
+      expect(parseFloat(await arrow.evaluate((element) => getComputedStyle(element).transitionDuration))).toBe(
+        duration,
+      )
+      await button.scrollIntoViewIfNeeded()
+      await waitForMotion(page)
+      await button.hover()
+      await expect.poll(() => arrow.evaluate((element) => getComputedStyle(element).translate)).toBe('4px')
+      await page.mouse.move(0, 0)
+    }
+  })
+
+  test('the header switches over --duration-header with no blur, at the top and scrolled', async ({ page }) => {
+    await openPage(page, 1440)
+    const header = page.getByRole('banner')
+    const look = () =>
+      header.evaluate((element) => {
+        const style = getComputedStyle(element)
+        return {
+          backdrop: style.backdropFilter || 'none',
+          webkitBackdrop: (style as unknown as { webkitBackdropFilter?: string }).webkitBackdropFilter || 'none',
+          property: style.transitionProperty,
+          duration: parseFloat(style.transitionDuration),
+        }
+      })
+    const expected = {
+      backdrop: 'none',
+      webkitBackdrop: 'none',
+      property: 'background-color, border-color',
+      duration: await tokenTime(page, '--duration-header'),
+    }
+    await expect(header).toHaveClass(/\bon-dark\b/)
+    expect(await look()).toEqual(expected)
+    await page.evaluate(() => window.scrollTo({ top: 600, behavior: 'instant' }))
+    await expect(header).not.toHaveClass(/\bon-dark\b/)
+    expect(await look()).toEqual(expected)
+  })
+})
