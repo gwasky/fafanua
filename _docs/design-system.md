@@ -162,7 +162,7 @@ Never use:
 
 ## Logo
 
-Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, `fafanua-logo-mono.svg` (uses `currentColor`), `fafanua-mark.svg`, `fafanua-mark-reversed.svg`, `favicon.svg` and `apple-touch-icon.png`. The source archive `_docs/logos.zip` is kept out of git; never commit it. The header uses the positive logo, and the reversed one while it is transparent over the hero; the dark footer (#60) uses `fafanua-logo-reversed.svg`, 160px wide.
+Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, `fafanua-logo-mono.svg` (uses `currentColor`), `fafanua-mark.svg`, `fafanua-mark-reversed.svg`, `favicon.svg` and `apple-touch-icon.png`. The source archive `_docs/logos.zip` is kept out of git; never commit it. The header uses the positive logo, and the reversed one while it is transparent over the hero; the dark footer (#60) uses `fafanua-logo-reversed.svg`, 160px wide. Under a light forced-colours theme (`(forced-colors: active) and (prefers-color-scheme: light)`) the footer and the hero behind the transparent header are painted white, where the reversed logo's paper wordmark would vanish, so both logos sit in a `<picture>` whose only `<source>` serves `fafanua-logo.svg` for that query (#60). The `<picture>` is `display: contents`, so the image keeps its box, alt text and size; normal colours and a dark forced theme keep the reversed logo. `e2e/forced-colours-logo.spec.ts` checks the painted wordmark's contrast in both forced themes.
 
 | Variant | Background | Wordmark | F symbol |
 |---|---|---|---|
