@@ -307,15 +307,23 @@ test.describe('mouse focus', () => {
 // focused element. Each Tab or Shift+Tab may scroll the page; once it has
 // settled, every focused element outside the header is wholly below the
 // header and inside the viewport.
+//
+// With motion allowed (#61), sections below the first screen start
+// hidden, and focus entering one shows it at once, so the walk also
+// checks that no stop is scrolled to where a reveal then moves it.
 test.describe('focus is never under the sticky header', () => {
   const cases = [
-    { width: 1440, text: '100%' },
-    { width: 360, text: '100%' },
-    { width: 320, text: '200%' },
+    { width: 1440, text: '100%', motion: 'reduce' },
+    { width: 360, text: '100%', motion: 'reduce' },
+    { width: 320, text: '200%', motion: 'reduce' },
+    { width: 1440, text: '100%', motion: 'no-preference' },
+    { width: 360, text: '100%', motion: 'no-preference' },
   ] as const
 
-  for (const { width, text } of cases) {
-    test(`Tab and Shift+Tab through every stop at ${width}px with ${text} text`, async ({ page }) => {
+  for (const { width, text, motion } of cases) {
+    const title = `Tab and Shift+Tab through every stop at ${width}px with ${text} text`
+    test(motion === 'reduce' ? title : `${title}, ${motion}`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: motion })
       await openPage(page, width)
       if (text !== '100%') {
         await page.addStyleTag({ content: `html { font-size: ${text}; }` })

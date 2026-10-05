@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { expectLanded, expectNoAxeViolations, openPage, waitForMotion } from './fixtures.ts'
+import { expectLanded, expectNoAxeViolations, openPage, scrollThrough, waitForMotion } from './fixtures.ts'
 import { SEQUENCE, walkFocus } from './focus.ts'
 import { AXE_TAGS, formatViolations } from '../src/test/axe.ts'
 import { managedServices, servicesIntro } from '../src/data/services.ts'
@@ -41,6 +41,33 @@ test.describe('axe, page scrolled', () => {
       await page.evaluate(() => window.scrollTo(0, 600))
       await expect(page.getByRole('banner')).not.toHaveClass(/\bon-dark\b/)
 
+      await expectNoAxeViolations(page, testInfo)
+    })
+  }
+})
+
+// The section reveals (#61): with motion allowed, axe runs once every
+// section has revealed, so no partly faded text is measured; under
+// reduced motion nothing is ever hidden or faded.
+test.describe('axe, motion settings', () => {
+  for (const width of [360, 1440]) {
+    test(`no-preference, scrolled through to the bottom and back, at ${width}px`, async ({ page }, testInfo) => {
+      await page.emulateMedia({ reducedMotion: 'no-preference' })
+      await openPage(page, width)
+      await scrollThrough(page)
+      expect(await page.locator('[data-reveal-state="hidden"]').count()).toBe(0)
+
+      await expectNoAxeViolations(page, testInfo)
+    })
+
+    test(`reduce, as loaded and scrolled through, at ${width}px`, async ({ page }, testInfo) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' })
+      await openPage(page, width)
+      expect(await page.locator('[data-reveal-state]').count()).toBe(0)
+      await expectNoAxeViolations(page, testInfo)
+
+      await scrollThrough(page)
+      expect(await page.locator('[data-reveal-state]').count()).toBe(0)
       await expectNoAxeViolations(page, testInfo)
     })
   }
@@ -663,58 +690,63 @@ test.describe('browser text size 200%: the header falls back to the Menu', () =>
   // header. The content breakpoints are in em too, so at 1024px with 32px
   // text the service cards are one column and their disclosure buttons
   // stay short (in three columns they were about 658px tall).
-  test('Tab and Shift+Tab keep every stop wholly visible at 1024 x 800', async ({ page }) => {
-    await openPage(page, 1024)
-    expect((await header(page)).position).toBe('sticky')
-    // The section's first list is the lifecycle rail, the second the
-    // service cards.
-    const lists = page.getByRole('region', { name: servicesIntro.heading }).getByRole('list')
-    const lefts = (index: number) =>
-      lists
-        .nth(index)
+  for (const motion of ['no-preference', 'reduce'] as const) {
+    test(`Tab and Shift+Tab keep every stop wholly visible at 1024 x 800, ${motion}`, async ({ page }) => {
+      // With motion allowed the sections below the first screen start
+      // hidden (#61), and focus entering one shows it at once.
+      await page.emulateMedia({ reducedMotion: motion })
+      await openPage(page, 1024)
+      expect((await header(page)).position).toBe('sticky')
+      // The section's first list is the lifecycle rail, the second the
+      // service cards.
+      const lists = page.getByRole('region', { name: servicesIntro.heading }).getByRole('list')
+      const lefts = (index: number) =>
+        lists
+          .nth(index)
+          .locator(':scope > li')
+          .evaluateAll((items) => items.map((item) => Math.round(item.getBoundingClientRect().left)))
+      expect(new Set(await lefts(1)).size, 'service card columns').toBe(1)
+      // The rail is vertical: one left edge, each stage below the last.
+      const rail = await lefts(0)
+      expect(rail, 'rail stages').toHaveLength(6)
+      expect(new Set(rail).size, 'rail columns').toBe(1)
+
+      // Solutions is in its below-64em layout: each summary below its
+      // row's title, not beside it (#59).
+      const rows = await page
+        .getByRole('region', { name: 'Solutions' })
+        .getByRole('list')
+        .first()
         .locator(':scope > li')
-        .evaluateAll((items) => items.map((item) => Math.round(item.getBoundingClientRect().left)))
-    expect(new Set(await lefts(1)).size, 'service card columns').toBe(1)
-    // The rail is vertical: one left edge, each stage below the last.
-    const rail = await lefts(0)
-    expect(rail, 'rail stages').toHaveLength(6)
-    expect(new Set(rail).size, 'rail columns').toBe(1)
+        .evaluateAll((items) =>
+          items.map((item) => ({
+            titleBottom: item.querySelector('h3')!.getBoundingClientRect().bottom,
+            summaryTop: item.querySelector('h3 + ul')!.getBoundingClientRect().top,
+          })),
+        )
+      expect(rows).toHaveLength(5)
+      for (const row of rows) {
+        expect(row.summaryTop, JSON.stringify(row)).toBeGreaterThanOrEqual(row.titleBottom - 1)
+      }
+      // The How We Work timeline is vertical: one left edge, each stage
+      // below the last.
+      const stages = await page
+        .getByRole('region', { name: 'How We Work' })
+        .getByRole('listitem')
+        .evaluateAll((items) =>
+          items.map((item) => {
+            const box = item.getBoundingClientRect()
+            return { left: Math.round(box.left), top: box.top, bottom: box.bottom }
+          }),
+        )
+      expect(new Set(stages.map((stage) => stage.left)).size, 'timeline columns').toBe(1)
+      for (let i = 1; i < stages.length; i++) {
+        expect(stages[i].top, `stage ${i + 1} below stage ${i}`).toBeGreaterThanOrEqual(stages[i - 1].bottom)
+      }
 
-    // Solutions is in its below-64em layout: each summary below its
-    // row's title, not beside it (#59).
-    const rows = await page
-      .getByRole('region', { name: 'Solutions' })
-      .getByRole('list')
-      .first()
-      .locator(':scope > li')
-      .evaluateAll((items) =>
-        items.map((item) => ({
-          titleBottom: item.querySelector('h3')!.getBoundingClientRect().bottom,
-          summaryTop: item.querySelector('h3 + ul')!.getBoundingClientRect().top,
-        })),
-      )
-    expect(rows).toHaveLength(5)
-    for (const row of rows) {
-      expect(row.summaryTop, JSON.stringify(row)).toBeGreaterThanOrEqual(row.titleBottom - 1)
-    }
-    // The How We Work timeline is vertical: one left edge, each stage
-    // below the last.
-    const stages = await page
-      .getByRole('region', { name: 'How We Work' })
-      .getByRole('listitem')
-      .evaluateAll((items) =>
-        items.map((item) => {
-          const box = item.getBoundingClientRect()
-          return { left: Math.round(box.left), top: box.top, bottom: box.bottom }
-        }),
-      )
-    expect(new Set(stages.map((stage) => stage.left)).size, 'timeline columns').toBe(1)
-    for (let i = 1; i < stages.length; i++) {
-      expect(stages[i].top, `stage ${i + 1} below stage ${i}`).toBeGreaterThanOrEqual(stages[i - 1].bottom)
-    }
-
-    await walkFocus(page, SEQUENCE.menu)
-  })
+      await walkFocus(page, SEQUENCE.menu)
+    })
+  }
 
   test('switches at 64em: Menu at 2047px, inline nav on one row at 2048px', async ({ page }) => {
     await openPage(page, 2047)
