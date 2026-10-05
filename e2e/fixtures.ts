@@ -60,12 +60,18 @@ export async function openPath(page: Page, path: string, width: number, height =
 /**
  * Waits until no CSS animation or transition is running on the page: the
  * hero reveal on load, and any section reveal or rail line under way
- * (#61), so boxes and colours are measured in their final state. Returns
- * at once under reduced motion, where nothing runs.
+ * (#61), so boxes and colours are measured in their final state. Under
+ * reduced motion, where nothing runs, it returns after two frames.
  */
 export async function waitForMotion(page: Page) {
   await page.evaluate(async () => {
+    // Two frames first, each time: the reveal observer reports, and a
+    // transition starts, a frame after a scroll, so checking at once could
+    // miss a reveal that is about to begin.
+    const frames = () =>
+      new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
     for (;;) {
+      await frames()
       const running = document
         .getAnimations()
         .filter((animation) => animation.playState === 'running' || animation.pending)
