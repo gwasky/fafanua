@@ -1,6 +1,5 @@
 import { services, servicesIntro } from '../data/services.ts'
 import LifecycleRail from './LifecycleRail.tsx'
-import ManagedServices from './ManagedServices.tsx'
 import SectionEyebrow from './SectionEyebrow.tsx'
 import ServiceCard from './ServiceCard.tsx'
 import SystemFlow from './SystemFlow.tsx'
@@ -10,11 +9,10 @@ import './Services.css'
 // intro heading as the section's h2, the two intro paragraphs, the
 // lifecycle rail (LifecycleRail.tsx), then the six services as cards, in
 // data order, then the system and data-flow diagram (SystemFlow.tsx),
-// which shows how they connect and ends at activation, then the
-// managed-services block (ManagedServices.tsx) outside the card list. The
-// id matches the "Services" entry in src/data/navigation.ts; the section
-// is named by its h2. The card titles, the diagram's heading and the
-// managed-services heading are h3s.
+// which shows how they connect and ends at activation, where the Managed
+// Services section (ManagedServices.tsx) that follows picks up. The id
+// matches the "Services" entry in src/data/navigation.ts; the section is
+// named by its h2. The card titles and the diagram's heading are h3s.
 function Services() {
   return (
     <section
@@ -43,7 +41,6 @@ function Services() {
           ))}
         </ul>
         <SystemFlow />
-        <ManagedServices />
       </div>
     </section>
   )

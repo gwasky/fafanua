@@ -1,23 +1,51 @@
 /*
- * The managed-services block: a full-width block on a graphite 100
- * background (.surface-alt) below the card grid, so it reads as a separate
- * engagement model rather than another white card. Graphite 900 for the
- * heading and body (14.1:1) and graphite 600 for the eyebrow (5.7:1); no
- * teal text, which fails AA on graphite 100. The capabilities flow into two
- * columns from 768px and three from 1024px, top to bottom, so they keep
- * the data order. The journey stacks with downward arrows by default and
- * sits on one row from 768px (literal breakpoints; see the note in
- * tokens.css).
+ * Managed Services (plan V2 §10): a section on paper holding one graphite
+ * 900 panel inset within the container, so paper shows around it and it
+ * is not a third full-bleed dark band. Every colour inside the panel comes
+ * from the .surface-dark reassignment (global.css): paper headings
+ * (14.9:1), graphite 300 body and capability text (8.9:1), graphite 400
+ * eyebrows and journey arrows (5.9:1), graphite 700 capability dividers,
+ * and teal 400 only on the rail's separators (and the focus ring). No
+ * shadow, border, grid or image.
+ *
+ * From 64em the section eyebrow and h2 sit in one column and the approved
+ * eyebrow, h3 and description in a second beside it; the rail,
+ * capabilities and journey span the panel below. Below 64em everything
+ * stacks in DOM order. The capabilities flow into two columns from 48em
+ * and three from 64em, top to bottom, so they keep the data order. The
+ * journey stacks with downward arrows and sits on one row from 48em
+ * (literal breakpoints; see the note in tokens.css).
  */
 
 .managed-services {
-  margin-block-start: var(--space-12);
-  padding: var(--space-6);
-  border-radius: var(--radius-md);
-  color: var(--color-text);
+  padding-block: var(--space-section);
+  background-color: var(--color-bg);
 }
 
-/* A small label: weight 500, graphite 600. */
+.managed-services__panel {
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  /* Break a word only if it cannot fit on a line of its own, rather than
+     anywhere as .container allows. */
+  overflow-wrap: break-word;
+}
+
+.managed-services__intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-8);
+  margin-block-end: var(--space-10);
+}
+
+/* Paper, weight 300 from the global heading styles. */
+.managed-services__title {
+  max-width: var(--measure-display);
+  margin-block-end: 0;
+  font-size: var(--text-section);
+  line-height: var(--leading-display);
+}
+
+/* A small label: weight 500, graphite 400. */
 .managed-services__eyebrow {
   margin-block: 0 var(--space-3);
   color: var(--color-text-muted);
@@ -26,15 +54,51 @@
   line-height: var(--leading-snug);
 }
 
-/* Weight 300 and graphite 900 from the global heading styles. */
+/* Paper, weight 300 from the global heading styles. */
 .managed-services__heading {
   margin-block-end: var(--space-4);
+  font-size: var(--text-service);
+  line-height: var(--leading-snug);
 }
 
 .managed-services__description {
-  max-inline-size: var(--measure);
-  margin-block: 0 var(--space-8);
+  max-width: var(--measure);
+  margin-block: 0;
+  font-size: var(--text-body-lg);
   text-wrap: pretty;
+}
+
+/*
+ * The capability rail: four words in paper, each but the last followed by
+ * a small teal 400 dot. The dots are empty aria-hidden spans drawn with a
+ * border, so they have no text and stay drawn in forced-colours mode. The
+ * items wrap onto further lines when the row does not fit.
+ */
+.managed-services__rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-8);
+  padding: 0;
+  list-style: none;
+  color: var(--color-heading);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-snug);
+}
+
+.managed-services__rail-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.managed-services__rail-separator {
+  flex: none;
+  width: 0;
+  height: 0;
+  border: calc(var(--space-1) - var(--border-width)) solid var(--color-accent);
+  border-radius: var(--radius-full);
 }
 
 .managed-services__capabilities {
@@ -82,7 +146,7 @@
 }
 
 @media (min-width: 48em) {
-  .managed-services {
+  .managed-services__panel {
     padding: var(--space-10);
   }
 
@@ -114,6 +178,19 @@
 }
 
 @media (min-width: 64em) {
+  .managed-services__panel {
+    padding: var(--space-16);
+  }
+
+  /* Two top-aligned columns: the section eyebrow and h2, then the
+     approved eyebrow, h3 and description. */
+  .managed-services__intro {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: var(--space-12);
+    margin-block-end: var(--space-12);
+  }
+
   .managed-services__capabilities {
     columns: 3;
   }

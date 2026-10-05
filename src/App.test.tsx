@@ -12,6 +12,8 @@ const CONTACT = 'Discuss your data foundation.'
 const HERO = 'Trusted Data. Better Decisions.'
 // The Services section is named by its h2, the approved intro heading.
 const SERVICES = servicesIntro.heading
+// The Managed Services section is named by its h2, the plan V2 §10 heading.
+const MANAGED = managedServices.sectionHeading
 const POSITIONING =
   'Fafanua helps organisations build reliable data foundations, connect fragmented systems, improve trust in their data, and turn information into useful business intelligence.'
 const STATEMENT =
@@ -85,7 +87,7 @@ describe('App', () => {
     expect(positioning!.nextElementSibling).toBe(services)
   })
 
-  it('orders main as hero, positioning, Services, Solutions, How We Work, future-ready, About, Contact', () => {
+  it('orders main as hero, positioning, Services, Managed, Solutions, How We Work, future-ready, About, Contact', () => {
     render(<App />)
     const children = [...screen.getByRole('main').children]
 
@@ -93,6 +95,7 @@ describe('App', () => {
       screen.getByRole('region', { name: HERO }),
       screen.getByText(POSITIONING).closest('.positioning'),
       screen.getByRole('region', { name: SERVICES }),
+      screen.getByRole('region', { name: MANAGED }),
       screen.getByRole('region', { name: 'Solutions' }),
       screen.getByRole('region', { name: 'How We Work' }),
       screen.getByRole('region', { name: FUTURE_READY }),
@@ -101,7 +104,7 @@ describe('App', () => {
     ])
   })
 
-  it('places the system diagram in Services, after the card list and before the managed-services block', () => {
+  it('places the system diagram in Services, after the card list, last', () => {
     render(<App />)
     const services = screen.getByRole('region', { name: SERVICES })
     const flow = screen.getByRole('list', { name: systemFlow.heading })
@@ -112,8 +115,24 @@ describe('App', () => {
 
     expect(services).toContainElement(diagram)
     expect(cards.nextElementSibling).toBe(diagram)
-    expect(diagram.nextElementSibling).toBe(document.getElementById('managed-services'))
+    expect(diagram.nextElementSibling).toBeNull()
     expect(diagram.closest('section')).toBe(services)
+  })
+
+  it('renders the Managed Services section directly after Services and before Solutions', () => {
+    render(<App />)
+    const main = screen.getByRole('main')
+    const services = screen.getByRole('region', { name: SERVICES })
+    const managed = screen.getByRole('region', { name: MANAGED })
+
+    expect(managed.id).toBe('managed-services')
+    expect(managed.parentElement).toBe(main)
+    expect(services).not.toContainElement(managed)
+    expect(services.nextElementSibling).toBe(managed)
+    expect(managed.nextElementSibling).toBe(
+      screen.getByRole('region', { name: 'Solutions' }),
+    )
+    expect(document.querySelectorAll('#managed-services')).toHaveLength(1)
   })
 
   it('has exactly two technical grids, in the hero and the future-ready section', () => {
@@ -142,13 +161,13 @@ describe('App', () => {
     }
   })
 
-  it('renders the Solutions section directly after Services', () => {
+  it('renders the Solutions section directly after Managed Services', () => {
     render(<App />)
-    const services = screen.getByRole('region', { name: SERVICES })
+    const managed = screen.getByRole('region', { name: MANAGED })
     const solutions = screen.getByRole('region', { name: 'Solutions' })
     const nav = navigation.find((item) => item.label === 'Solutions')
 
-    expect(services.nextElementSibling).toBe(solutions)
+    expect(managed.nextElementSibling).toBe(solutions)
     expect(solutions.id).toBe(nav?.id)
     expect(solutions).not.toHaveClass('surface-alt')
     expect(solutions).not.toHaveClass('surface-dark')
@@ -328,17 +347,32 @@ describe('App', () => {
     expect(document.querySelector('a[href*="future-ready"]')).toBeNull()
   })
 
-  it('uses .surface-dark only on the hero and the future-ready section', () => {
+  it('has two dark sections, the hero and future-ready, and the inset Managed panel', () => {
     render(<App />)
     const dark = [...document.querySelectorAll('.surface-dark')]
+    const managed = screen.getByRole('region', { name: MANAGED })
 
-    expect(dark).toEqual([
+    // The full-bleed dark sections are main's children.
+    expect(
+      [...screen.getByRole('main').children].filter((section) =>
+        section.classList.contains('surface-dark'),
+      ),
+    ).toEqual([
       screen.getByRole('region', { name: HERO }),
       screen.getByRole('region', { name: FUTURE_READY }),
     ])
+    // The Managed panel is inside its section's container, on paper.
+    expect(dark).toHaveLength(3)
+    expect(dark[1].parentElement).toHaveClass('container')
+    expect(dark[1].parentElement!.parentElement).toBe(managed)
+    expect(managed).not.toHaveClass('surface-dark')
     for (const section of dark) {
       expect(section.querySelector('.surface-alt')).toBeNull()
     }
+    // Only the hero is pulled up under the transparent header.
+    expect([...document.querySelectorAll('[data-header-overlay]')]).toEqual([
+      screen.getByRole('region', { name: HERO }),
+    ])
   })
 
   // "Intelligence" is allowed only where the services-positioning doc uses
@@ -359,13 +393,13 @@ describe('App', () => {
     ).not.toMatch(/intelligence/i)
   })
 
-  it('orders headings h1, h2 Services intro heading, six h3s, the system diagram h3, managed-services h3, h2 Solutions, five h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
+  it('orders headings h1, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its h3, h2 Solutions, five h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
 
     expect(levels).toEqual([
-      1, 2, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2,
+      1, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 2, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2,
     ])
     expect(levels.filter((level) => level === 1)).toHaveLength(1)
     // No level is skipped.
@@ -377,15 +411,16 @@ describe('App', () => {
       services.map((service) => service.name),
     )
     expect(headings[8].textContent).toBe(systemFlow.heading)
-    expect(headings[9].textContent).toBe(managedServices.heading)
-    expect(headings[10].textContent).toBe('Solutions')
-    expect(headings.slice(11, 16).map((heading) => heading.textContent)).toEqual(
+    expect(headings[9].textContent).toBe(MANAGED)
+    expect(headings[10].textContent).toBe(managedServices.heading)
+    expect(headings[11].textContent).toBe('Solutions')
+    expect(headings.slice(12, 17).map((heading) => heading.textContent)).toEqual(
       solutions.map((solution) => solution.title),
     )
-    expect(headings[16].textContent).toBe('How We Work')
-    expect(headings[21].textContent).toBe(FUTURE_READY)
-    expect(headings[22].textContent).toBe('About Fafanua')
-    expect(headings[23].textContent).toBe(CONTACT)
+    expect(headings[17].textContent).toBe('How We Work')
+    expect(headings[22].textContent).toBe(FUTURE_READY)
+    expect(headings[23].textContent).toBe('About Fafanua')
+    expect(headings[24].textContent).toBe(CONTACT)
     expect(
       within(screen.getByRole('contentinfo')).queryAllByRole('heading'),
     ).toHaveLength(0)

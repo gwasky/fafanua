@@ -14,15 +14,12 @@ function renderServices() {
   render(<Services />)
   const section = screen.getByRole('region', { name: servicesIntro.heading })
   // While every card is collapsed the section's first two lists are the
-  // lifecycle rail and the card grid; each card holds its tag list, and
-  // the managed-services block its capabilities and journey.
+  // lifecycle rail and the card grid; each card holds its tag list.
   const [rail, grid] = within(section).getAllByRole('list')
   const cards = [...grid.children] as HTMLElement[]
-  const managed = section.querySelector<HTMLElement>('#managed-services')!
-  const [capabilities, journey] = within(managed).getAllByRole('list')
   const flow = within(section).getByRole('list', { name: systemFlow.heading })
   const diagram = flow.parentElement!
-  return { section, rail, grid, cards, capabilities, journey, managed, flow, diagram }
+  return { section, rail, grid, cards, flow, diagram }
 }
 
 // The text a screen reader reads: the element's text without its
@@ -58,7 +55,7 @@ describe('Services', () => {
     expect(nav?.id).toBe(section.id)
   })
 
-  it('has the h2, six card h3s, the diagram h3 and the managed-services h3, and no other headings', () => {
+  it('has the h2, six card h3s and the diagram h3, and no other headings', () => {
     const { section } = renderServices()
     const headings = within(section).getAllByRole('heading')
 
@@ -66,14 +63,12 @@ describe('Services', () => {
       'H2',
       ...services.map(() => 'H3'),
       'H3',
-      'H3',
     ])
     expect(headings[0].textContent).toBe(servicesIntro.heading)
     expect(headings.slice(1, 7).map((heading) => heading.textContent)).toEqual(
       services.map((service) => service.name),
     )
     expect(headings[7].textContent).toBe(systemFlow.heading)
-    expect(headings[8].textContent).toBe(managedServices.heading)
     expect(within(section).queryByRole('heading', { name: 'Services' })).toBeNull()
   })
 
@@ -236,35 +231,44 @@ describe('Services', () => {
     })
   })
 
-  it('shows the managed-services block after the card grid, outside it, as the section\'s last part', () => {
-    const { section, grid, managed } = renderServices()
-    const heading = within(section).getByRole('heading', {
-      name: managedServices.heading,
-    })
+  it('no longer holds the Managed Services content, which is its own section', () => {
+    const { section } = renderServices()
 
-    expect(managed).toContainElement(heading)
-    expect(grid).not.toContainElement(managed)
-    expect(managed.closest('li')).toBeNull()
-    expect(section).toContainElement(managed)
-    expect(grid.nextElementSibling!.nextElementSibling).toBe(managed)
-    expect(managed.nextElementSibling).toBeNull()
+    expect(section.querySelector('#managed-services')).toBeNull()
+    expect(section.querySelector('.surface-dark, .surface-alt')).toBeNull()
+    expect(section.querySelector('#managed-services-heading')).toBeNull()
+    expect(within(section).getAllByRole('heading', { level: 2 })).toHaveLength(1)
+    // Some capabilities, such as the Reverse ETL one, are also service
+    // engagements, so only the block's own text is checked.
+    for (const text of [
+      managedServices.sectionHeading,
+      managedServices.eyebrow,
+      managedServices.heading,
+      managedServices.description,
+    ]) {
+      expect(section.textContent, text).not.toContain(text)
+    }
+    expect(within(section).queryByText(managedServices.capabilities[0])).toBeNull()
+    // No journey: the one unlabelled ordered list is the lifecycle rail.
+    expect([...section.querySelectorAll('ol:not([aria-labelledby])')]).toEqual([
+      within(section).getAllByRole('list')[0],
+    ])
   })
 
-  it('shows the system diagram directly after the card grid and before the managed-services block', () => {
-    const { section, grid, managed, flow, diagram } = renderServices()
+  it('shows the system diagram directly after the card grid, as the section\'s last part', () => {
+    const { section, grid, flow, diagram } = renderServices()
     const heading = within(diagram).getByRole('heading', { level: 3 })
 
     expect(section).toContainElement(diagram)
     expect(grid).not.toContainElement(diagram)
-    expect(managed).not.toContainElement(diagram)
     expect(diagram.tagName).toBe('DIV')
     expect(diagram.firstElementChild).toBe(heading)
     expect(heading.textContent).toBe(systemFlow.heading)
     expect(grid.nextElementSibling).toBe(diagram)
-    expect(diagram.nextElementSibling).toBe(managed)
+    expect(diagram.nextElementSibling).toBeNull()
     expect(flow.children).toHaveLength(6)
     // It ends at activation: Reverse ETL is in its last layer, the last
-    // thing before the managed-services content.
+    // thing before the Managed Services section.
     expect(flow.lastElementChild).toHaveTextContent('Reverse ETL')
   })
 
@@ -273,59 +277,6 @@ describe('Services', () => {
 
     expect(diagram.querySelector('a, button, [tabindex]')).toBeNull()
     expect(screen.getAllByRole('button')).toHaveLength(6)
-  })
-
-  it('shows the eyebrow as a paragraph, then the h3, then the description', () => {
-    const { managed } = renderServices()
-    const eyebrow = within(managed).getByText(managedServices.eyebrow)
-    const heading = within(managed).getByRole('heading')
-    const description = within(managed).getByText(managedServices.description)
-
-    expect(eyebrow.tagName).toBe('P')
-    expect(heading.tagName).toBe('H3')
-    expect(heading).toHaveTextContent(managedServices.heading)
-    expect(description.tagName).toBe('P')
-    expect(description.textContent).toBe(managedServices.description)
-    expectInOrder([eyebrow, heading, description])
-  })
-
-  it('lists the 13 capabilities in data order, visible without any interaction', () => {
-    const { managed, capabilities } = renderServices()
-    const items = within(capabilities).getAllByRole('listitem')
-
-    expect(managed).toContainElement(capabilities)
-    expect(capabilities.tagName).toBe('UL')
-    expect(items).toHaveLength(13)
-    expect(items.map((item) => item.textContent)).toEqual(
-      managedServices.capabilities,
-    )
-    for (const item of items) expect(item).toBeVisible()
-  })
-
-  it('shows the journey as an ordered list of three steps after the capabilities', () => {
-    const { managed, capabilities, journey } = renderServices()
-    const steps = within(journey).getAllByRole('listitem')
-
-    expect(managed).toContainElement(journey)
-    expect(journey.tagName).toBe('OL')
-    expect(steps.map((step) => step.textContent)).toEqual(
-      managedServices.journey,
-    )
-    expect(managed.textContent).not.toMatch(/\u2192/)
-    expectInOrder([capabilities, journey])
-  })
-
-  it('gives the block .surface-alt and no stage label, marker, button or link', () => {
-    const { managed } = renderServices()
-
-    expect(managed).toHaveClass('surface-alt')
-    expect(managed).not.toHaveClass('surface-dark')
-    expect(within(managed).queryByRole('button')).toBeNull()
-    expect(within(managed).queryByRole('link')).toBeNull()
-    expect(managed.querySelector('[tabindex], [aria-hidden]')).toBeNull()
-    for (const label of Object.values(stages)) {
-      expect(within(managed).queryByText(label)).toBeNull()
-    }
   })
 
   it('does not mention Fafanua Intelligence', () => {

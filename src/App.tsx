@@ -5,6 +5,7 @@ import Footer from './components/Footer.tsx'
 import FutureReady from './components/FutureReady.tsx'
 import Header from './components/Header.tsx'
 import Hero from './components/Hero.tsx'
+import ManagedServices from './components/ManagedServices.tsx'
 import Positioning from './components/Positioning.tsx'
 import Process from './components/Process.tsx'
 import Services from './components/Services.tsx'
@@ -26,6 +27,7 @@ function App() {
         <Hero />
         <Positioning />
         <Services />
+        <ManagedServices />
         <Solutions />
         <Process />
         <FutureReady />
