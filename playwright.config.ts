@@ -27,8 +27,9 @@ const BASE_URL = process.env.BASE_URL || LOCAL_URL
 // an overlay section (header-overlay.spec.ts, #54), and a cold load of
 // every section's hash (hash-landing.spec.ts, #62). They use the Desktop
 // Safari preset with its deviceScaleFactor of 2: assertions are in CSS
-// pixels, so only the screenshot size changes. The a11y, italics, fonts
-// and hash specs run in chromium only.
+// pixels, so only the screenshot size changes. The a11y, italics, fonts,
+// hash and forced-colours logo specs run in chromium only, as Playwright
+// emulates forced colours only there.
 // WebKit is installed with npx playwright install webkit.
 export default defineConfig({
   testDir: 'e2e',

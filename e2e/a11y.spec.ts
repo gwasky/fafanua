@@ -199,7 +199,8 @@ test.describe('axe, future-ready and the dark footer in view (#60)', () => {
     // background). The footer's links, logo and focus ring are checked as
     // painted instead: the links take the forced link colour on the forced
     // background, the logo is shown at its full size, and a focused link
-    // draws a solid ring.
+    // draws a solid ring. The logo's wordmark contrast in light and dark
+    // forced themes is checked in forced-colours-logo.spec.ts.
     test(`footer in view, forced colours, at ${width}px`, async ({ page }, testInfo) => {
       await page.emulateMedia({ forcedColors: 'active' })
       await openPage(page, width)
