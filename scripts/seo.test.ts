@@ -9,7 +9,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { email } from '../src/data/contact.ts'
+import { email, phone } from '../src/data/contact.ts'
 import {
   DESCRIPTION,
   SITE_URL,
@@ -62,8 +62,10 @@ describe('index.html', () => {
     )
   })
 
-  it('does not type the email address', () => {
+  it('does not type the email address or the phone number', () => {
     expect(SOURCE).not.toContain(email)
+    expect(SOURCE).not.toContain(phone)
+    expect(SOURCE).not.toContain(phone.replace(/ /g, ''))
     expect(SOURCE).not.toContain('application/ld+json')
   })
 
@@ -101,7 +103,7 @@ describe('structuredData', () => {
     expect(html).toMatch(/<script type="application\/ld\+json">\{.*\}<\/script>\n {2}<\/head>$/)
   })
 
-  it('publishes exactly the organisation fields, with the contact email', () => {
+  it('publishes exactly the organisation fields, with the contact email and phone', () => {
     expect(JSON.parse(jsonLdOf(BUILT))).toEqual({
       '@context': 'https://schema.org',
       '@type': 'Organization',
@@ -109,8 +111,16 @@ describe('structuredData', () => {
       url: 'https://fafanua.tech/',
       logo: 'https://fafanua.tech/apple-touch-icon.png',
       email,
+      telephone: phone,
     })
     expect(email).not.toMatch(/^mailto:/)
+  })
+
+  // The owner's addition on #61 (2026-10-05): the number as the page shows
+  // it, read from src/data/contact.ts, which the CTA and footer also use.
+  it('publishes the telephone +256 752 008822, the number the page links to', () => {
+    expect(JSON.parse(jsonLdOf(BUILT)).telephone).toBe('+256 752 008822')
+    expect(phone).toBe('+256 752 008822')
   })
 
   it('follows the email constant it is given', () => {
@@ -176,8 +186,18 @@ describe('checkHtml', () => {
       `JSON-LD email is "info@example.org", expected "${email}" (from src/data/contact.ts)`,
     ],
     [
+      'a mismatched telephone',
+      [`"telephone":"${phone}"`, '"telephone":"+256 700 000000"'],
+      `JSON-LD telephone is "+256 700 000000", expected "${phone}" (from src/data/contact.ts)`,
+    ],
+    [
+      'a missing telephone',
+      [`,"telephone":"${phone}"`, ''],
+      'JSON-LD has keys',
+    ],
+    [
       'an extra JSON-LD field',
-      ['"@type":"Organization",', '"@type":"Organization","telephone":"1",'],
+      ['"@type":"Organization",', '"@type":"Organization","faxNumber":"1",'],
       'JSON-LD has keys',
     ],
     ['a noindex robots tag', ['</title>', '</title><meta name="robots" content="noindex">'], 'must not block indexing'],

@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Plugin } from 'vite'
 import { configDefaults, defineConfig } from 'vitest/config'
-import { email } from './src/data/contact.ts'
+import { email, phone } from './src/data/contact.ts'
 
 // The Inter woff2 imported by src/styles/fonts.css. Its built name is
 // hashed, so a static preload link in index.html cannot point at it.
@@ -190,7 +190,10 @@ const NAMES: Record<string, string> = {
   'twitter:image:alt': PROPERTIES['og:image:alt'],
 }
 
-/** The schema.org organisation data published as JSON-LD. */
+/**
+ * The schema.org organisation data published as JSON-LD. The telephone is
+ * the phone number as the page shows it (owner decision, 2026-10-05, #61).
+ */
 export function organisation(address: string) {
   return {
     '@context': 'https://schema.org',
@@ -199,13 +202,14 @@ export function organisation(address: string) {
     url: SITE_URL,
     logo: `${SITE_URL}apple-touch-icon.png`,
     email: address,
+    telephone: phone,
   }
 }
 
 /**
  * Adds the organisation JSON-LD as the last element in <head>, in dev and
- * in the build. The email comes from src/data/contact.ts, so it is never
- * typed into index.html. "<" is escaped so the JSON cannot close the
+ * in the build. The email and the telephone come from
+ * src/data/contact.ts, so neither is typed into index.html. "<" is escaped so the JSON cannot close the
  * script tag.
  */
 export function structuredData(address = email): Plugin {
@@ -337,7 +341,7 @@ export function checkHtml(html: string, address = email) {
       }
       for (const [key, value] of Object.entries(expected)) {
         if (key in actual && actual[key] !== value) {
-          const source = key === 'email' ? ' (from src/data/contact.ts)' : ''
+          const source = ['email', 'telephone'].includes(key) ? ' (from src/data/contact.ts)' : ''
           problems.push(
             `JSON-LD ${key} is ${JSON.stringify(actual[key])}, expected ${JSON.stringify(value)}${source}`,
           )
