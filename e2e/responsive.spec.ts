@@ -9,6 +9,7 @@ import {
   waitForFonts,
   waitForScrollSettle,
 } from './fixtures.ts'
+import { expectFlow, flowList, flowProblems, measureFlow } from './systemFlow.ts'
 
 // The page at each width project in playwright.config.ts, in Chromium
 // (width-*) and WebKit (webkit-width-*): no horizontal scrolling, the
@@ -1027,6 +1028,72 @@ for (const width of WIDTHS) {
         await page.waitForTimeout(300)
         expect((await look()).transform).toBe('none')
       })
+    }
+
+    // The system and data-flow diagram (#57): after the card grid and
+    // before the managed-services block, one row of three columns per
+    // layer from 768px with the names lined up, stacked below it, with no
+    // overflow, no word broken across lines and every arrow joining two
+    // layers.
+    test(`system diagram is ${width < 768 ? 'stacked' : 'rows with the names lined up'}, after the cards, at ${width}px`, async ({ page, browserName }, testInfo) => {
+      await open(page, testInfo, width)
+      const flow = flowList(page)
+      await expect(flow.locator(':scope > li')).toHaveCount(6)
+
+      expectFlow(await measureFlow(page), `${width}px`, { row: width >= 768 })
+
+      const gridBox = await serviceList(page).boundingBox()
+      const flowBox = await flow.boundingBox()
+      const managedBox = await page.locator('#managed-services').boundingBox()
+      if (!gridBox || !flowBox || !managedBox) throw new Error('The grid, diagram or block has no box')
+      expect(flowBox.y, 'below the cards').toBeGreaterThan(gridBox.y + gridBox.height)
+      expect(managedBox.y, 'above the managed-services block').toBeGreaterThan(flowBox.y + flowBox.height)
+      // The full container width, like the card grid.
+      expect(Math.abs(flowBox.x - gridBox.x), 'left edge').toBeLessThanOrEqual(1)
+      expect(Math.abs(flowBox.width - gridBox.width), 'width').toBeLessThanOrEqual(1)
+      await expectNoHorizontalScroll(page)
+
+      await flow.locator('..').screenshot({
+        path: `${testInfo.project.outputDir}/screenshots/${browserName}-system-flow-${width}.png`,
+      })
+    })
+
+    // Every width from 320 to 1440px, one pixel at a time, at the default
+    // text size and with 200% and 150% page text (enlarged page text does
+    // not move the 48em media query): one shape for every layer, rows from
+    // 768px at the default size, names lined up, nothing overflowing, no
+    // word broken across lines, and every arrow joined. Run from the 768px
+    // projects, in Chromium and WebKit. With enlarged page text only the
+    // diagram is checked for overflow, not the page: the header's inline
+    // nav overflows at 1024px with 200% page text, outside #57.
+    if (width === 768) {
+      for (const text of ['100%', '200%', '150%'] as const) {
+        test(`the system diagram holds its shape from 320 to 1440px with ${text} page text, at ${width}px`, async ({ page }, testInfo) => {
+          test.setTimeout(600_000)
+          await open(page, testInfo, width)
+          await page.addStyleTag({ content: `html { font-size: ${text}; }` })
+          const failures: string[] = []
+          for (let w = 320; w <= 1440; w++) {
+            await page.setViewportSize({ width: w, height: 800 })
+            // Chromium can report the previous media query's styles until
+            // the next rendered frame after a resize (as for the rail), so
+            // wait two frames before measuring.
+            await page.evaluate(
+              () =>
+                new Promise((resolve) =>
+                  requestAnimationFrame(() => requestAnimationFrame(resolve)),
+                ),
+            )
+            const problems = flowProblems(
+              await measureFlow(page),
+              text === '100%' ? { row: w >= 768 } : { page: false },
+            )
+            for (const problem of problems) failures.push(`${w}px: ${problem}`)
+          }
+          // The first 20, so a failure across many widths stays readable.
+          expect(failures.slice(0, 20), `${failures.length} problems`).toEqual([])
+        })
+      }
     }
 
     test(`managed-services block spans the grid, keeps its order and fits its text at ${width}px`, async ({ page }, testInfo) => {
