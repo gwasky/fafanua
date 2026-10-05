@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
 import { navigation, navigationCta } from './data/navigation.ts'
+import { positioningProblem, positioningResponse } from './data/positioning.ts'
 import { processStages } from './data/process.ts'
 import { managedServices, services, servicesIntro } from './data/services.ts'
 import { solutions } from './data/solutions.ts'
@@ -15,10 +16,9 @@ const HERO = 'Trusted Data. Better Decisions.'
 const SERVICES = servicesIntro.heading
 // The Managed Services section is named by its h2, the plan V2 §10 heading.
 const MANAGED = managedServices.sectionHeading
-const POSITIONING =
-  'Fafanua helps organisations build reliable data foundations, connect fragmented systems, improve trust in their data, and turn information into useful business intelligence.'
-const STATEMENT =
-  'Fafanua helps East African businesses, government institutions and development organisations establish trusted data foundations for reliable reporting, better decisions and future governed analytics and AI.'
+// The positioning section's problem and response (refinement plan §3).
+const POSITIONING = positioningProblem
+const STATEMENT = positioningResponse
 
 // jsdom has no matchMedia, which the header uses for its breakpoint.
 beforeEach(() => {
@@ -86,6 +86,14 @@ describe('App', () => {
     expect(positioning).not.toHaveClass('surface-dark')
     expect(positioning).not.toHaveClass('surface-alt')
     expect(positioning!.nextElementSibling).toBe(services)
+  })
+
+  it('shows neither paragraph the refinement replaced anywhere on the page (#63)', () => {
+    render(<App />)
+    const text = document.body.textContent!
+
+    expect(text).not.toContain('Fafanua helps organisations build reliable data foundations')
+    expect(text).not.toContain('Fafanua helps East African businesses')
   })
 
   it('orders main as hero, positioning, Services, Managed, Solutions, How We Work, future-ready, About, Contact', () => {

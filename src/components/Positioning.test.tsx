@@ -2,15 +2,16 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import Positioning from './Positioning.tsx'
 
-// The core message from the services-positioning doc, Section 1, and the
-// statement #55 moved out of the hero.
+// The problem and Fafanua's response, the refinement plan §3's left and
+// right columns, character for character (positioning.plan.test.ts checks
+// them against the plan).
 const STATEMENT =
-  'Fafanua helps organisations build reliable data foundations, connect fragmented systems, improve trust in their data, and turn information into useful business intelligence.'
+  'Most organisations already have data, reporting and operational systems. The challenge is making the information flowing through them connected, consistent and trusted.'
 const SUPPORT =
-  'Fafanua helps East African businesses, government institutions and development organisations establish trusted data foundations for reliable reporting, better decisions and future governed analytics and AI.'
+  'Fafanua helps organisations build and strengthen the foundations underneath reporting, analytics and operations \u2014 from integration and modelling to quality, governance and ongoing platform support.'
 
 describe('Positioning', () => {
-  it('shows the statement, then the supporting copy, each exactly, in two paragraphs', () => {
+  it('shows the problem, then the response, each exactly, in two paragraphs', () => {
     const { container } = render(<Positioning />)
     const paragraphs = [...container.querySelectorAll('p')]
 
@@ -40,5 +41,12 @@ describe('Positioning', () => {
       expect(screen.queryAllByRole(role)).toHaveLength(0)
     }
     expect(container.querySelector('section, [aria-label], [aria-labelledby], [role]')).toBeNull()
+  })
+
+  it('no longer shows the two paragraphs the refinement replaced', () => {
+    const { container } = render(<Positioning />)
+
+    expect(container.textContent).not.toContain('build reliable data foundations')
+    expect(container.textContent).not.toContain('East African')
   })
 })
