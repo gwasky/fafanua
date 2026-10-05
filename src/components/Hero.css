@@ -11,20 +11,24 @@
  * whatever the stylesheet order, and its top always starts with
  * --header-height, so it adds to the overlay padding, never replaces it.
  *
- * Below 64em its height is its content plus --space-section-dark above
- * and below. From 64em it is at least 85% of the viewport's height (plan
+ * Below 64em its height is its content plus --space-12 above (after the
+ * header) and --space-section-dark below. Below 64em the gaps between
+ * the h1, the brand promise, the supporting copy and the CTAs are also
+ * tighter and the supporting copy is body size (owner decision on #63),
+ * so the longer refinement-plan copy keeps the primary CTA on the first
+ * screen at 360 x 640; from 64em the spacing and type are as before. From 64em it is at least 85% of the viewport's height (plan
  * V2 §5: about 80-90vh) and centres its content in the space below the
  * header. A minimum, never a fixed height, and nothing is clipped: on a
  * short viewport it grows to fit its content.
  */
 
 .hero[data-header-overlay] {
-  padding-block: calc(var(--header-height) + var(--space-section-dark)) var(--space-section-dark);
+  padding-block: calc(var(--header-height) + var(--space-12)) var(--space-section-dark);
 }
 
 .hero__heading {
   max-width: var(--measure-display);
-  margin-block-end: var(--space-6);
+  margin-block-end: var(--space-4);
   color: var(--color-heading);
   font-size: var(--text-hero);
   font-weight: var(--weight-light);
@@ -47,7 +51,7 @@
  */
 .hero__promise {
   max-width: var(--measure);
-  margin-block: 0 var(--space-6);
+  margin-block: 0 var(--space-4);
   color: var(--color-heading);
   font-size: var(--text-3xl);
   font-weight: var(--weight-light);
@@ -58,9 +62,9 @@
 
 .hero__lead {
   max-width: var(--measure);
-  margin-block: 0 var(--space-8);
+  margin-block: 0 var(--space-6);
   color: var(--color-text);
-  font-size: var(--text-body-lg);
+  font-size: var(--text-base);
   overflow-wrap: break-word;
   text-wrap: pretty;
 }
@@ -83,6 +87,17 @@
     /* Less padding than below 64em, so the content fits within 85% of
        the viewport at 1280 x 720 and the hero is not taller than that. */
     padding-block: calc(var(--header-height) + var(--space-12)) var(--space-12);
+  }
+
+  /* Desktop keeps the spacing and type it had before #63. */
+  .hero__heading,
+  .hero__promise {
+    margin-block-end: var(--space-6);
+  }
+
+  .hero__lead {
+    margin-block-end: var(--space-8);
+    font-size: var(--text-body-lg);
   }
 }
 

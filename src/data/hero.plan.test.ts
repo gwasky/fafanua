@@ -1,8 +1,8 @@
 // Checks hero.ts against the plans, so the hero's wording on the site
-// cannot drift from them: the headline, the core brand promise, the
-// supporting copy and the calls to action against plan V2 §5, and the
-// brand promise against the primary proposition in _docs/plan.md
-// Section 5. Both plans and AGENTS.md record the headline and the brand
+// cannot drift from them: the headline, the core brand promise and the
+// calls to action against plan V2 §5, the brand promise against the
+// primary proposition in _docs/plan.md Section 5, and the supporting copy
+// against the V2 refinement plan §2 (#63), which replaced plan V2's. Both plans and AGENTS.md record the headline and the brand
 // promise as protected positioning (owner decision on #61). The ?raw
 // imports resolve relative to this file and are never part of the
 // production bundle.
@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest'
 import agents from '../../AGENTS.md?raw'
 import plan from '../../_docs/plan.md?raw'
 import planV2 from '../../_docs/fafanua-v2-visual-upgrade-plan.md?raw'
+import refinement from '../../_docs/fafanua-v2-refinement-plan.md?raw'
 import heroSource from './hero.ts?raw'
 import {
   heroHeadingLines,
@@ -21,6 +22,7 @@ import {
 
 const markdown = plan.replace(/\r\n/g, '\n')
 const markdownV2 = planV2.replace(/\r\n/g, '\n')
+const markdownRefinement = refinement.replace(/\r\n/g, '\n')
 
 // The text of _docs/plan.md Section 5, up to the next `## ` section.
 const planStart = markdown.indexOf('\n## 5. Core Positioning\n')
@@ -35,10 +37,30 @@ const v2Quotes = [...v2Section.matchAll(/^> (.+)$/gm)].map((match) =>
   match[1].trimEnd().replace(/^\*\*(.+)\*\*$/, '$1'),
 )
 
+// The one `> ` blockquote under "## Update supporting copy" in the
+// refinement plan §2, without its bold markers.
+const refinementStart = markdownRefinement.indexOf('\n# 2. Hero Section\n')
+const refinementSection = markdownRefinement.slice(
+  refinementStart,
+  markdownRefinement.indexOf('\n# ', refinementStart + 1),
+)
+const updateStart = refinementSection.indexOf('\n## Update supporting copy\n')
+const refinementQuotes = [
+  ...refinementSection.slice(updateStart).matchAll(/^> (.+)$/gm),
+].map((match) => match[1].trimEnd().replace(/^\*\*(.+)\*\*$/, '$1'))
+
 describe('plan parser', () => {
-  it('finds plan Section 5 and plan V2 §5', () => {
+  it('finds plan Section 5, plan V2 §5 and the refinement plan §2', () => {
     expect(planStart).toBeGreaterThan(-1)
     expect(v2Start).toBeGreaterThan(-1)
+    expect(refinementStart).toBeGreaterThan(-1)
+    expect(updateStart).toBeGreaterThan(-1)
+  })
+
+  it('finds exactly one one-line blockquote under the refinement plan\'s "Update supporting copy"', () => {
+    expect(refinementQuotes).toHaveLength(1)
+    expect(refinementQuotes[0]).not.toBe('')
+    expect(refinementQuotes[0]).not.toContain('*')
   })
 
   it('finds exactly six one-line blockquotes in plan V2 §5', () => {
@@ -59,8 +81,15 @@ describe('hero wording', () => {
     expect(planSection).toContain(`Primary proposition:\n\n> ${heroPromise}\n`)
   })
 
-  it('uses the plan V2 §5 supporting copy', () => {
-    expect(heroSupporting).toBe(v2Quotes[3])
+  it('uses the refinement plan §2 supporting copy, character for character', () => {
+    expect(heroSupporting).toBe(refinementQuotes[0])
+    // An em dash with a space each side, as the plan writes it.
+    expect(heroSupporting).toContain(' \u2014 ')
+  })
+
+  it('keeps the headline and the brand promise the refinement plan §2 retains', () => {
+    expect(refinementSection).toContain(`> **${heroHeadingLines.join(' ')}**`)
+    expect(refinementSection).toContain(`> **${heroPromise}**`)
   })
 
   it('labels the calls to action as plan V2 §5 does, the primary without its arrow', () => {

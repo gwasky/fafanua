@@ -410,22 +410,18 @@ describe('App', () => {
     ])
   })
 
-  // "Intelligence" is allowed only where the services-positioning doc uses
-  // it for a service or solution, and in the hero's supporting copy from
-  // plan V2 §5 ("turn organisational data into intelligence"), never as a
-  // Fafanua product name.
+  // "Intelligence" is allowed only as "business intelligence" (the
+  // services-positioning doc's services and solutions, and the hero's
+  // supporting copy from the refinement plan §2) and "payment
+  // intelligence", never as a Fafanua product name.
   it('never names Fafanua Intelligence or shows a "Ready for AI?" callout', () => {
     render(<App />)
     const text = document.body.textContent!
 
     expect(text).not.toMatch(/Fafanua Intelligence/i)
     expect(text).not.toMatch(/Ready for AI/i)
-    expect(text.match(/organisational data into intelligence/g)).toHaveLength(1)
-    expect(
-      text
-        .replace(/(business|payment) intelligence/gi, '')
-        .replace('organisational data into intelligence', ''),
-    ).not.toMatch(/intelligence/i)
+    expect(text.match(/organisational information into reliable business intelligence/g)).toHaveLength(1)
+    expect(text.replace(/(business|payment) intelligence/gi, '')).not.toMatch(/intelligence/i)
   })
 
   it('orders headings h1, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its h3, h2 Solutions, five h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {

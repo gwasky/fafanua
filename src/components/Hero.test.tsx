@@ -5,7 +5,7 @@ import Hero from './Hero.tsx'
 const HEADING = 'Trusted Data. Better Decisions.'
 const PROMISE = 'Build a data foundation you can trust.'
 const SUPPORTING =
-  'Fafanua designs and operates the data foundations that connect business systems, establish trust, and turn organisational data into intelligence.'
+  'Fafanua helps organisations build and strengthen the data foundations behind their reporting, analytics and operations — connecting fragmented systems, improving trust in data, and turning organisational information into reliable business intelligence.'
 
 function renderHero() {
   render(<Hero />)

@@ -187,9 +187,11 @@ test.describe('brand promise', () => {
 
 test.describe('type', () => {
   // The computed styles of the h1 and the supporting copy, with the same
-  // properties of a probe set from the tokens inside the hero.
-  const typeStyles = (page: Page) =>
-    page.evaluate(() => {
+  // properties of a probe set from the tokens inside the hero. The
+  // supporting copy is body size below 64em (owner decision on #63) and
+  // --text-body-lg from 64em.
+  const typeStyles = (page: Page, leadSize: string) =>
+    page.evaluate((leadSize) => {
       const section = document.querySelector('main > [data-header-overlay] .container')!
       const read = (element: Element) => {
         const s = getComputedStyle(element)
@@ -220,12 +222,12 @@ test.describe('type', () => {
           'font-size: var(--text-3xl); font-weight: var(--weight-light); line-height: var(--leading-snug); max-width: var(--measure); color: var(--color-heading)',
         ),
         leadTokens: probe(
-          'font-size: var(--text-body-lg); font-weight: var(--weight-regular); line-height: var(--leading-normal); max-width: var(--measure); color: var(--color-text)',
+          `font-size: var(${leadSize}); font-weight: var(--weight-regular); line-height: var(--leading-normal); max-width: var(--measure); color: var(--color-text)`,
         ),
         paper: probe('color: var(--paper)').color,
         graphite300: probe('color: var(--graphite-300)').color,
       }
-    })
+    }, leadSize)
 
   for (const [width, size] of [
     [360, 44],
@@ -234,7 +236,7 @@ test.describe('type', () => {
   ]) {
     test(`h1 about ${size}px at ${width}px, in the display tokens`, async ({ page }) => {
       await openAt(page, width, 800)
-      const t = await typeStyles(page)
+      const t = await typeStyles(page, width < 1024 ? '--text-base' : '--text-body-lg')
 
       expect(t.heading).toEqual(t.headingTokens)
       expect(t.promise).toEqual(t.promiseTokens)

@@ -26,7 +26,8 @@ const BASE_URL = process.env.BASE_URL || LOCAL_URL
 // and the Menu toggle are checked in Safari's engine, and the header over
 // an overlay section (header-overlay.spec.ts, #54), and a cold load of
 // every section's hash (hash-landing.spec.ts, #62), and the motion layer
-// and its safety rules (motion.spec.ts, #61). They use the Desktop
+// and its safety rules (motion.spec.ts, #61), and the hero's calls to
+// action on the first screen (hero-fold.spec.ts, #63). They use the Desktop
 // Safari preset with its deviceScaleFactor of 2: assertions are in CSS
 // pixels, so only the screenshot size changes. The a11y, italics, fonts,
 // hash and forced-colours logo specs run in chromium only, as Playwright
@@ -68,6 +69,7 @@ export default defineConfig({
         'header-overlay.spec.ts',
         'hash-landing.spec.ts',
         'motion.spec.ts',
+        'hero-fold.spec.ts',
       ],
     },
     ...WIDTHS.map((width) => ({
