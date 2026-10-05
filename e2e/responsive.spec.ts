@@ -1205,7 +1205,8 @@ for (const width of WIDTHS) {
       expect(Math.abs(m.panel.right - m.content.right), 'right edge').toBeLessThanOrEqual(1)
       expect(m.panel.left, 'paper on the left').toBeGreaterThanOrEqual(16)
       expect(m.viewport - m.panel.right, 'paper on the right').toBeGreaterThanOrEqual(16)
-      expect(m.panel.top - m.section.top, 'paper above').toBeGreaterThanOrEqual(64)
+      // Paper above comes from Services' bottom padding (the gap test below).
+      expect(m.panel.top - m.servicesBottom, 'paper above').toBeGreaterThanOrEqual(0)
       expect(m.section.bottom - m.panel.bottom, 'paper below').toBeGreaterThanOrEqual(64)
       if (width >= 1024) {
         const gridBox = await serviceList(page).boundingBox()
@@ -1304,6 +1305,34 @@ for (const width of WIDTHS) {
 
       expect(await managedOverflow(page), 'overflowing or broken words').toEqual([])
       await expectNoHorizontalScroll(page)
+    })
+
+    // One section padding above the panel (owner decision on #58): the
+    // Managed section adds no top padding after Services, so the gap from
+    // the end of Services' content (it ends with the system diagram) to the panel is
+    // Services' bottom padding alone, as Positioning to Services is.
+    test(`one section padding above the managed-services panel at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      const m = await page.evaluate(() => {
+        const services = document.getElementById('services')!
+        const section = document.getElementById('managed-services')!
+        const panel = section.querySelector('.surface-dark')!
+        const servicesContent = services.querySelector(':scope > .container')!
+        const positioningContent = document.querySelector('.positioning > .container')!
+        return {
+          gap: panel.getBoundingClientRect().top - servicesContent.getBoundingClientRect().bottom,
+          servicesPadding: parseFloat(getComputedStyle(services).paddingBottom),
+          sectionPadding: parseFloat(getComputedStyle(section).paddingTop),
+          rhythm:
+            servicesContent.getBoundingClientRect().top -
+            positioningContent.getBoundingClientRect().bottom,
+        }
+      })
+      const detail = JSON.stringify(m)
+      expect(m.sectionPadding, detail).toBe(0)
+      expect(m.servicesPadding, detail).toBeGreaterThanOrEqual(64)
+      expect(Math.abs(m.gap - m.servicesPadding), detail).toBeLessThanOrEqual(1)
+      expect(Math.abs(m.gap - m.rhythm), `same as Positioning to Services: ${detail}`).toBeLessThanOrEqual(1)
     })
 
     // A fresh load of /#managed-services lands the section's top on the

@@ -22,6 +22,13 @@
   background-color: var(--color-bg);
 }
 
+/* Services' bottom padding already separates the two sections on the
+   same paper, so the gap above the panel is one section padding, not
+   two, as for .positioning + .services (owner decision on #58). */
+.services + .managed-services {
+  padding-block-start: 0;
+}
+
 .managed-services__panel {
   padding: var(--space-6);
   border-radius: var(--radius-lg);

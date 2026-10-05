@@ -112,7 +112,9 @@ test.describe('axe, Managed Services panel in view', () => {
     // the solid header's call to action fails the same way, while the page
     // paints black on white (`color` rgb(0, 0, 0) on rgb(255, 255, 255),
     // checked here and in the screenshot). So the painted contrast is
-    // checked directly instead.
+    // checked directly instead. The owner accepted this substitution on
+    // #58 (2026-10-05): only color-contrast is off, only in this run, and
+    // the normal-colour runs above keep every rule.
     test(`panel in view, forced colours, at ${width}px`, async ({ page }, testInfo) => {
       await page.emulateMedia({ forcedColors: 'active' })
       await openPage(page, width)
