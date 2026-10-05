@@ -15,14 +15,16 @@ import { useEffect } from 'react'
  * shows in its final state.
  *
  * - An element already in view when the observer first reports it, on a
- *   cold load, a hash landing or a restored scroll position, is never
- *   hidden, so it shows in its final state with no animation.
+ *   cold load or a hash landing, is never hidden, so it shows in its final
+ *   state with no animation. A reload or a history traversal hides
+ *   nothing, as the browser restores the scroll position later.
  * - One out of view is hidden, then revealed ("in", which transitions)
  *   the first time it comes into view, and unobserved: it never hides
  *   again.
- * - Keyboard focus entering a hidden section reveals it at once, with no
- *   transition, during the focus event, so the browser scrolls the
- *   focused element into view at its final place, clear of the header.
+ * - Keyboard focus entering a section that is hidden or still revealing
+ *   shows it in its final state at once, during the focus event, so the
+ *   browser scrolls the focused element into view at its final place,
+ *   clear of the header.
  *
  * Only the section's children move, never the section, so an anchor
  * target is never transformed when the browser or landOnHash measures it.
@@ -43,6 +45,11 @@ const REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
 export function startReveal(doc: Document = document): () => void {
   if (typeof IntersectionObserver !== 'function') return () => {}
   if (typeof matchMedia === 'function' && matchMedia(REDUCED_MOTION).matches) return () => {}
+  // A reload or a history traversal restores the visitor's scroll
+  // position after the observer's first report, so what is in view then
+  // could not be told apart: nothing is hidden at all.
+  const [navigation] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
+  if (navigation && navigation.type !== 'navigate') return () => {}
 
   const targets = doc.querySelectorAll<HTMLElement>(`[${REVEAL_ATTRIBUTE}]`)
   // Elements the observer has reported at least once.
@@ -75,11 +82,12 @@ export function startReveal(doc: Document = document): () => void {
     { threshold: [0, LINE_THRESHOLD] },
   )
 
-  // Removing the state shows the final state at once, with no transition.
+  // Removing the state shows the final state at once: a hidden section
+  // skips its transition, and one still revealing has it cancelled.
   const onFocusIn = (event: FocusEvent) => {
     if (!(event.target instanceof Element)) return
     const section = event.target.closest(`[${REVEAL_ATTRIBUTE}="section"]`)
-    if (section?.getAttribute(REVEAL_STATE) !== 'hidden') return
+    if (!section?.hasAttribute(REVEAL_STATE)) return
     section.removeAttribute(REVEAL_STATE)
     observer.unobserve(section)
   }

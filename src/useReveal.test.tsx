@@ -87,6 +87,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe('useReveal', () => {
@@ -146,6 +147,16 @@ describe('useReveal', () => {
     expect(observer().observed.has(one)).toBe(false)
   })
 
+  it('cuts short a reveal under way when focus enters the section', () => {
+    const { container, getByRole } = render(<Page />)
+    const [one] = sections(container)
+    observer().report([one, 0])
+    observer().report([one, 0.1])
+    expect(one).toHaveAttribute(REVEAL_STATE, 'in')
+    getByRole('button', { name: 'Inside' }).focus()
+    expect(one).not.toHaveAttribute(REVEAL_STATE)
+  })
+
   it('disconnects, stops listening for focus and shows anything hidden on unmount', () => {
     const { container, unmount } = render(<Page />)
     const [one, two] = sections(container)
@@ -169,6 +180,26 @@ describe('useReveal', () => {
     vi.stubGlobal('IntersectionObserver', undefined)
     const { container } = render(<Page />)
     expect(container.querySelector(`[${REVEAL_STATE}]`)).toBeNull()
+  })
+
+  it('on a reload or a history traversal creates no observer and hides nothing', () => {
+    for (const type of ['reload', 'back_forward']) {
+      vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
+        { type } as PerformanceNavigationTiming,
+      ])
+      const { container, unmount } = render(<Page />)
+      expect(FakeObserver.instances).toHaveLength(0)
+      expect(container.querySelector(`[${REVEAL_STATE}]`)).toBeNull()
+      unmount()
+    }
+  })
+
+  it('runs on a fresh navigation', () => {
+    vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
+      { type: 'navigate' } as PerformanceNavigationTiming,
+    ])
+    render(<Page />)
+    expect(FakeObserver.instances).toHaveLength(1)
   })
 
   it('returns a no-op stop when it cannot run', () => {

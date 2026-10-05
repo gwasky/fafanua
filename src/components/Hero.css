@@ -74,7 +74,9 @@
  * supporting copy, then --duration-reveal-stagger later the CTA row,
  * rise --reveal-shift and fade in over --duration-reveal, and the grid
  * fades in over --duration-grid-fade. The h1 never animates, so it is
- * painted in the first frame. CSS animations run once when the element
+ * painted in the first frame. The fill is backwards only: the CTA row is
+ * held at the start during its delay, and once each animation ends it
+ * leaves no transform behind. CSS animations run once when the element
  * is first rendered, so nothing replays on scroll or hash navigation.
  */
 @keyframes hero-reveal {
@@ -93,7 +95,7 @@
 @media screen and (prefers-reduced-motion: no-preference) {
   .hero__lead,
   .hero__actions {
-    animation: hero-reveal var(--duration-reveal) var(--ease-standard) both;
+    animation: hero-reveal var(--duration-reveal) var(--ease-standard) backwards;
   }
 
   .hero__actions {
@@ -101,6 +103,6 @@
   }
 
   .hero > .technical-grid {
-    animation: hero-grid-fade var(--duration-grid-fade) var(--ease-standard) both;
+    animation: hero-grid-fade var(--duration-grid-fade) var(--ease-standard) backwards;
   }
 }
