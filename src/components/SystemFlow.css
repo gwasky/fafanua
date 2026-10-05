@@ -1,8 +1,9 @@
 /*
  * The system and data-flow diagram (plan V2 §11): six layers stacked as a
- * layered architecture on the Services section's paper background, each
- * in a graphite 200 hairline with no fill or shadow, and a down arrow
- * between each pair. Text is graphite 900 (names) and graphite 600
+ * layered architecture on the Services section's paper background, with
+ * a down arrow between each pair. A graphite 200 hairline is the only
+ * border: a rule above each layer below 48em, a box around it from 48em;
+ * no fill or shadow. Text is graphite 900 (names) and graphite 600
  * (labels and terms) on paper, 14.9:1 and 6.0:1; no teal.
  *
  * Each layer is its label, its name and its terms. Below 48em they stack.
