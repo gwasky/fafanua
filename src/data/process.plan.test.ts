@@ -1,8 +1,11 @@
-// Checks process.ts against _docs/plan.md Section 8, so the stage wording
-// on the site cannot drift from the plan. The ?raw import resolves relative
-// to this file and is never part of the production bundle.
+// Checks process.ts against _docs/plan.md Section 8 (names and
+// descriptions) and the V2 refinement plan §8 (each stage's output, #63),
+// so the stage wording on the site cannot drift from the plans. The ?raw
+// imports resolve relative to this file and are never part of the
+// production bundle.
 import { describe, expect, it } from 'vitest'
 import plan from '../../_docs/plan.md?raw'
+import refinement from '../../_docs/fafanua-v2-refinement-plan.md?raw'
 import processSource from './process.ts?raw'
 import { processStages } from './process.ts'
 
@@ -29,6 +32,21 @@ function parseStages(section: string): PlanStage[] {
 
 const planStages = parseStages(section8(plan.replace(/\r\n/g, '\n')))
 
+// The refinement plan §8, from its `# 8. ` heading up to the next `# `.
+const refinementDoc = refinement.replace(/\r\n/g, '\n')
+const r8Start = refinementDoc.indexOf('\n# 8. How We Work\n')
+const r8 = refinementDoc.slice(r8Start, refinementDoc.indexOf('\n# ', r8Start + 1))
+
+// Each `### 0N Name` stage: its name, and its output, the bold quote after
+// "Add short output:" or "Add:" (the stage's last quote; the first is its
+// current purpose).
+const refinementStages = [...r8.matchAll(/^### (\d\d) (.+)\n([\s\S]*?)(?=\n### |\n## |\n---)/gm)].map(
+  (match) => {
+    const quotes = [...match[3].matchAll(/^> \*\*(.+)\*\*$/gm)].map((quote) => quote[1])
+    return { number: match[1], name: match[2], outputs: quotes, add: /\nAdd( short output)?:\n/.test(match[3]) }
+  },
+)
+
 describe('plan Section 8 parser', () => {
   it('finds exactly four stages numbered 1 to 4', () => {
     expect(planStages.map((stage) => stage.number)).toEqual(['1', '2', '3', '4'])
@@ -41,6 +59,32 @@ describe('plan Section 8 parser', () => {
       expect(stage.description).not.toContain('\n')
     }
   })
+})
+
+describe('refinement plan §8 parser', () => {
+  it('finds four stages, 01 to 04, each with one bold output after "Add"', () => {
+    expect(r8Start).toBeGreaterThan(-1)
+    expect(refinementStages.map((stage) => stage.number)).toEqual(['01', '02', '03', '04'])
+    for (const stage of refinementStages) {
+      expect(stage.outputs, stage.name).toHaveLength(1)
+      expect(stage.add, stage.name).toBe(true)
+    }
+  })
+})
+
+describe('process outputs', () => {
+  it('names the stages as the refinement plan §8 does', () => {
+    expect(processStages.map((stage) => stage.name)).toEqual(
+      refinementStages.map((stage) => stage.name),
+    )
+  })
+
+  it.each(refinementStages.map((stage, index) => [stage.number, index]))(
+    'uses the refinement plan §8 output for stage %s, character for character',
+    (_number, index) => {
+      expect(processStages[index].output).toBe(refinementStages[index].outputs[0])
+    },
+  )
 })
 
 describe('process wording', () => {

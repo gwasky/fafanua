@@ -52,10 +52,11 @@ describe('Process', () => {
     expect(
       within(section).getAllByRole('heading').map((heading) => heading.tagName),
     ).toEqual(['H2', 'H3', 'H3', 'H3', 'H3'])
-    // Besides the eyebrow, the only paragraphs are the four descriptions.
+    // Besides the eyebrow, the only paragraphs are the four descriptions,
+    // each followed by its stage's output (#63).
     expect([...section.querySelectorAll('p')].map((p) => p.textContent)).toEqual([
       '04 — How We Work',
-      ...processStages.map((stage) => stage.description),
+      ...processStages.flatMap((stage) => [stage.description, stage.output]),
     ])
   })
 
@@ -69,12 +70,12 @@ describe('Process', () => {
     expect(stages).toHaveLength(4)
   })
 
-  it('shows each stage as number, h3 name, then description, in data order', () => {
+  it('shows each stage as number, h3 name, description, then output, in data order', () => {
     const { stages } = renderProcess()
 
     stages.forEach((stage, index) => {
-      const { name, description } = processStages[index]
-      const [number, heading, paragraph, ...rest] = stage.children
+      const { name, description, output } = processStages[index]
+      const [number, heading, paragraph, outputParagraph, ...rest] = stage.children
 
       expect(rest).toHaveLength(0)
       expect(number.textContent).toBe(String(index + 1).padStart(2, '0'))
@@ -83,7 +84,17 @@ describe('Process', () => {
       expect(heading.textContent).toBe(name)
       expect(paragraph.tagName).toBe('P')
       expect(paragraph.textContent).toBe(description)
+      // The output is plain text, not a heading, link or button.
+      expect(outputParagraph.tagName).toBe('P')
+      expect(outputParagraph.textContent).toBe(output)
+      expect(outputParagraph.children).toHaveLength(0)
     })
+    expect(stages.map((stage) => stage.lastElementChild!.textContent)).toEqual([
+      'Systems & needs assessment',
+      'Architecture & delivery roadmap',
+      'Pipelines, models & analytical products',
+      'Ownership, monitoring & continuous improvement',
+    ])
     expect(
       stages.map((stage) => within(stage).getByRole('heading').textContent),
     ).toEqual(['Assess', 'Design', 'Build', 'Govern'])
@@ -96,7 +107,7 @@ describe('Process', () => {
       expect(stage.textContent).toContain(String(index + 1))
       expect(accessibleText(stage)).not.toMatch(/\d/)
       expect(accessibleText(stage)).toBe(
-        processStages[index].name + processStages[index].description,
+        processStages[index].name + processStages[index].description + processStages[index].output,
       )
     })
   })
@@ -104,7 +115,7 @@ describe('Process', () => {
   it('draws the timeline in CSS: no extra elements, images or SVG', () => {
     const { stages } = renderProcess()
 
-    for (const stage of stages) expect(stage.children).toHaveLength(3)
+    for (const stage of stages) expect(stage.children).toHaveLength(4)
     expect(document.querySelectorAll('img, svg, canvas, hr')).toHaveLength(0)
   })
 

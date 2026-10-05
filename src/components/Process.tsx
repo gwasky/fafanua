@@ -11,8 +11,9 @@ import './Process.css'
 // entry in src/data/navigation.ts. The visible number is hidden from
 // screen readers, which already announce each item's position in the
 // ordered list; the timeline's line and node markers are drawn in CSS, so
-// they have no text. No introduction paragraph (#30), and no links,
-// buttons or tab stops.
+// they have no text. Each stage ends with its output (refinement plan §8),
+// a plain paragraph, secondary to the name and description. No
+// introduction paragraph (#30), and no links, buttons or tab stops.
 function Process() {
   return (
     <section
@@ -34,6 +35,7 @@ function Process() {
               </span>
               <h3 className="process__name">{stage.name}</h3>
               <p className="process__description">{stage.description}</p>
+              <p className="process__output">{stage.output}</p>
             </li>
           ))}
         </ol>

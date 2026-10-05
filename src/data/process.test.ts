@@ -18,7 +18,7 @@ describe('processStages', () => {
 
   it('has no markdown or " - " separator in any string', () => {
     for (const stage of processStages) {
-      for (const text of [stage.name, stage.description]) {
+      for (const text of [stage.name, stage.description, stage.output]) {
         expect(text).not.toContain('**')
         expect(text).not.toContain(' - ')
         expect(text).toBe(text.trim())

@@ -24,8 +24,9 @@
  * the DOM order.
  */
 
+/* A quarter less padding than the other sections (refinement plan §8). */
 .process {
-  padding-block: var(--space-section);
+  padding-block: var(--space-section-compact);
 }
 
 /* Weight 300 from the global heading styles. */
@@ -102,12 +103,23 @@
 
 .process__description {
   max-width: var(--measure);
-  margin-block: 0;
+  margin-block: 0 var(--space-3);
   color: var(--color-text);
   /* Break a word only if it cannot fit on a line of its own, rather than
      anywhere as .container allows. */
   overflow-wrap: break-word;
   text-wrap: pretty;
+}
+
+/* The stage's output: smaller than the description and secondary to it,
+   graphite 600 on graphite 100 (5.7:1). Not a heading, chip or card. */
+.process__output {
+  margin-block: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  overflow-wrap: break-word;
 }
 
 @media (min-width: 64em) {

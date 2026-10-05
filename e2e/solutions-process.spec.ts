@@ -214,6 +214,7 @@ test.describe('How We Work', () => {
           '    - listitem:',
           `      - heading "${stage.name}" [level=3]`,
           `      - paragraph: ${stage.description}`,
+          `      - paragraph: ${stage.output}`,
         ]),
       ].join('\n'),
     )
@@ -261,6 +262,7 @@ test.describe('How We Work', () => {
         number: style('.process__number').color,
         name: style('.process__name').color,
         description: style('.process__description').color,
+        output: style('.process__output').color,
         node: style('.process__stage', '::before').borderTopColor,
         nodeFill: style('.process__stage', '::before').backgroundColor,
         line: style('.process__stage', '::after').borderTopColor,
@@ -274,6 +276,8 @@ test.describe('How We Work', () => {
     // graphite 100, and no other text colour.
     expect([m.name, m.description]).toEqual([g900, g900])
     expect(m.eyebrow).toBe(g600)
+    // Each stage's output (#63) is graphite 600 on graphite 100 (5.7:1).
+    expect(m.output).toBe(g600)
     expect(m.number).toBe(teal800)
     expect(m.texts.sort()).toEqual([g900, g600, teal800].sort())
     // The graphics: a teal 600 ring filled with the section's background,
@@ -300,6 +304,8 @@ test.describe('How We Work', () => {
         h2: pick('h2'),
         name: pick('h3'),
         number: pick('.process__number'),
+        description: pick('.process__description'),
+        output: pick('.process__output'),
         weights: [root, ...root.querySelectorAll('*')].map((element) =>
           Number(getComputedStyle(element).fontWeight),
         ),
@@ -312,6 +318,9 @@ test.describe('How We Work', () => {
     expect(m.name.size).toBeCloseTo(sizes.service, 1)
     expect(m.name.weight).toBe('300')
     expect(m.number.size).toBeCloseTo(sizes.sm, 1)
+    // The output (#63) is --text-sm, smaller than the description.
+    expect(m.output.size).toBeCloseTo(sizes.sm, 1)
+    expect(m.output.size).toBeLessThan(m.description.size)
     expect(Math.max(...m.weights)).toBeLessThanOrEqual(500)
   })
 
@@ -396,7 +405,8 @@ test.describe('How We Work', () => {
     expect(railLook.markerBorder * 2).toBeGreaterThanOrEqual(railLook.markerWidth)
     expect(timelineLook.nodeBorder * 2).toBeLessThan(timelineLook.nodeWidth)
     expect(railLook.paragraphs).toBe(0)
-    expect(timelineLook.paragraphs).toBe(4)
+    // A description and an output (#63) per stage.
+    expect(timelineLook.paragraphs).toBe(8)
 
     const dir = `${testInfo.project.outputDir}/screenshots`
     await rail.screenshot({ path: `${dir}/lifecycle-rail-1440.png` })

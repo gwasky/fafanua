@@ -53,6 +53,7 @@ describe('V2 tokens', () => {
       '--measure-display': '16ch',
       '--space-section': 'clamp(4rem, 2.5rem + 6vw, 8rem)',
       '--space-section-dark': 'clamp(5rem, 3rem + 8vw, 10rem)',
+      '--space-section-compact': 'calc(var(--space-section) * 0.75)',
       '--grid-size': '4rem',
       '--grid-line-width': '1px',
       '--duration-header': 'var(--duration-base)',

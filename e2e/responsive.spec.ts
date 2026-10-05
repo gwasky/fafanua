@@ -1717,7 +1717,23 @@ for (const width of WIDTHS) {
                   },
             number: text('span'),
             name: text('h3'),
-            description: text('p'),
+            description: text('.process__description'),
+            output: text('.process__output'),
+            // Words split across lines in the description and output.
+            broken: [...item.querySelectorAll('p')].flatMap((p) => {
+              const words: string[] = []
+              const node = p.firstChild!
+              for (const match of p.textContent!.matchAll(/\S+/g)) {
+                const range = document.createRange()
+                range.setStart(node, match.index)
+                range.setEnd(node, match.index + match[0].length)
+                const tops = [...range.getClientRects()].filter((r) => r.width > 0).map((r) => r.top)
+                if (tops.length > 1 && Math.max(...tops) - Math.min(...tops) > 2) words.push(match[0])
+              }
+              return words
+            }),
+            outputSize: parseFloat(getComputedStyle(item.querySelector('.process__output')!).fontSize),
+            descriptionSize: parseFloat(getComputedStyle(item.querySelector('.process__description')!).fontSize),
           }
         })
       })
@@ -1750,17 +1766,33 @@ for (const width of WIDTHS) {
           expect(Math.abs(line.left + line.width / 2 - m[0].node.x), `segment ${i + 1} through the nodes: ${detail}`).toBeLessThanOrEqual(1)
         }
         for (const stage of m) {
-          for (const part of [stage.number, stage.name, stage.description]) {
+          for (const part of [stage.number, stage.name, stage.description, stage.output]) {
             expect(part.left, `text to the node's inline end: ${detail}`).toBeGreaterThanOrEqual(stage.node.right)
           }
           expect(Math.abs(stage.node.y - (stage.number.top + stage.number.bottom) / 2), `node on the number's line: ${detail}`).toBeLessThanOrEqual(1)
         }
       }
-      // Number, then name, then description, each below the last.
+      // Number, then name, then description, then the output (#63), each
+      // below the last; the output no larger than the description, and no
+      // word broken across lines.
       for (const stage of m) {
         expect(stage.name.top).toBeGreaterThanOrEqual(stage.number.bottom - 1)
         expect(stage.description.top).toBeGreaterThanOrEqual(stage.name.bottom - 1)
+        expect(stage.output.top).toBeGreaterThanOrEqual(stage.description.bottom - 1)
+        expect(stage.outputSize).toBeLessThanOrEqual(stage.descriptionSize)
+        expect(stage.broken, detail).toEqual([])
       }
+      // Its padding is --space-section-compact, a quarter less than the
+      // other light sections' --space-section (#63).
+      const padding = await page.evaluate(() => {
+        const read = (element: Element) => parseFloat(getComputedStyle(element).paddingTop)
+        const bottom = (element: Element) => parseFloat(getComputedStyle(element).paddingBottom)
+        const process = document.querySelector('#how-we-work')!
+        const about = document.querySelector('#about')!
+        return { top: read(process), bottom: bottom(process), section: read(about) }
+      })
+      expect(padding.top, JSON.stringify(padding)).toBeCloseTo(padding.section * 0.75, 1)
+      expect(padding.bottom, JSON.stringify(padding)).toBeCloseTo(padding.section * 0.75, 1)
       // A stage's scroll width includes its line segment, which reaches
       // into the next stage by design, so stages are checked by their box
       // only.

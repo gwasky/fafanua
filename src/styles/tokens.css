@@ -196,6 +196,10 @@
      #55-#60. */
   --space-section: clamp(4rem, 2.5rem + 6vw, 8rem);
   --space-section-dark: clamp(5rem, 3rem + 8vw, 10rem);
+  /* A quarter less than --space-section, for How We Work, whose content
+     is shorter than the other light sections' (refinement plan §8, #63):
+     48 / 65 / 76 / 95px at 360 / 768 / 1024 / 1440. */
+  --space-section-compact: calc(var(--space-section) * 0.75);
 
   /* Radii */
   --radius-sm: 4px;
