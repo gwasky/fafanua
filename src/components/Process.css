@@ -1,45 +1,86 @@
 /*
- * How We Work: the section heading and the four numbered stages on a
- * graphite 100 background (.surface-alt, which also makes --color-link
- * teal 800 there). One column by default and four in one row from 1024px
- * (literal breakpoint; see the note in tokens.css). No reordering, so the
- * visual order always matches the DOM order.
+ * How We Work (plan V2 §13): the eyebrow, the h2 and the four stages as a
+ * numbered timeline on a graphite 100 background (.surface-alt, which
+ * also makes --color-link teal 800 there). The line is graphite 200 and
+ * each stage's node is a teal 600 ring (--color-accent, graphics only),
+ * filled with the section's background so the line stops at its edge. No
+ * service-line colours, so it does not read as the Services lifecycle
+ * rail (LifecycleRail.css), whose stages are filled colour dots with
+ * small labels; here each stage has its full description.
+ *
+ * Below 64em a vertical timeline: the line runs down the inline-start
+ * edge through each node, and each stage's number, name and description
+ * sit to its inline-end side. From 64em (1024px; literal breakpoint, see
+ * the note in tokens.css) a horizontal one: the four stages in one row of
+ * equal columns, a node at the start of each, and the number, name and
+ * description below it. At 768px it stays vertical, as four description
+ * columns do not fit.
+ *
+ * The line is one segment per stage but the last, from its node's centre
+ * to the next node's centre, so the segments join into one continuous
+ * line under the nodes. Nodes and segments are pseudo-elements drawn with
+ * borders: they have no text, are never announced and stay drawn in
+ * forced-colours mode. No reordering, so the visual order always matches
+ * the DOM order.
  */
 
 .process {
-  padding-block: var(--space-16);
+  padding-block: var(--space-section);
 }
 
+/* Weight 300 from the global heading styles. */
 .process__heading {
-  margin-block-end: var(--space-8);
+  max-width: var(--measure-display);
+  margin-block-end: var(--space-10);
+  font-size: var(--text-section);
+  line-height: var(--leading-display);
+  overflow-wrap: break-word;
 }
 
 .process__list {
+  /* The node's size and the space between stages. */
+  --node: var(--space-4);
+  --stage-gap: var(--space-8);
+  /* Centres the node on the number's line. */
+  --node-top: calc((var(--text-sm) * var(--leading-snug) - var(--node)) / 2);
+
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-8);
+  gap: var(--stage-gap);
   margin: 0;
   padding: 0;
   list-style: none;
+  /* Keeps the nodes' and segments' stacking inside the list. */
+  isolation: isolate;
 }
 
-/* A graphite 200 rule above each stage, with a short teal accent at its
-   start. The accent is decorative; the number and order carry the
-   sequence. It is a border rather than a fill, so in forced-colours mode
-   it stays drawn over the rule instead of leaving a gap in it. */
 .process__stage {
   position: relative;
-  padding-block-start: var(--space-4);
-  border-block-start: var(--border-width) solid var(--color-border);
+  padding-inline-start: calc(var(--node) + var(--space-6));
 }
 
+/* The node: a teal 600 ring over the line. */
 .process__stage::before {
   content: '';
   position: absolute;
-  inset-block-start: calc(var(--border-width) * -1);
+  z-index: 1;
+  inset-block-start: var(--node-top);
   inset-inline-start: 0;
-  width: var(--space-8);
-  border-block-start: calc(var(--border-width) * 2) solid var(--color-accent);
+  width: var(--node);
+  height: var(--node);
+  border: calc(var(--border-width) * 2) solid var(--color-accent);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-alt);
+}
+
+/* The line: down from this node's centre to the next one's. */
+.process__stage:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  inset-block-start: calc(var(--node-top) + var(--node) / 2);
+  inset-inline-start: calc(var(--node) / 2 - var(--border-width) / 2);
+  height: calc(100% + var(--stage-gap));
+  border-inline-start: var(--border-width) solid var(--color-border);
 }
 
 /* Teal text via --color-link: teal 800 on graphite 100 (6.9:1). */
@@ -54,8 +95,8 @@
 }
 
 .process__name {
-  margin-block-end: var(--space-2);
-  font-size: var(--text-xl);
+  margin-block-end: var(--space-3);
+  font-size: var(--text-service);
   line-height: var(--leading-snug);
 }
 
@@ -69,14 +110,26 @@
   text-wrap: pretty;
 }
 
-@media (min-width: 48em) {
-  .process {
-    padding-block: var(--space-20);
-  }
-}
-
 @media (min-width: 64em) {
   .process__list {
+    --node-top: 0px;
+
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .process__stage {
+    padding-block-start: calc(var(--node) + var(--space-6));
+    padding-inline-start: 0;
+  }
+
+  /* The line: across from this node's centre to the next one's, at the
+     same height in every stage. */
+  .process__stage:not(:last-child)::after {
+    inset-block-start: calc(var(--node) / 2 - var(--border-width) / 2);
+    inset-inline-start: calc(var(--node) / 2);
+    width: calc(100% + var(--stage-gap));
+    height: 0;
+    border-inline-start: 0;
+    border-block-start: var(--border-width) solid var(--color-border);
   }
 }

@@ -34,17 +34,28 @@ describe('Process', () => {
     expect(nav?.label).toBe(heading.textContent)
   })
 
+  it('opens with the 04 — How We Work eyebrow, then the h2, then the timeline', () => {
+    const { list } = renderProcess()
+    const [eyebrow, heading, timeline, ...rest] = [...list.parentElement!.children]
+
+    expect(rest).toHaveLength(0)
+    expect(eyebrow.tagName).toBe('P')
+    expect(eyebrow).toHaveClass('section-eyebrow')
+    expect(eyebrow.textContent).toBe('04 — How We Work')
+    expect(heading.tagName).toBe('H2')
+    expect(timeline).toBe(list)
+  })
+
   it('has one h2 and then four h3s, and no introduction paragraph', () => {
-    const { section, list } = renderProcess()
+    const { section } = renderProcess()
 
     expect(
       within(section).getAllByRole('heading').map((heading) => heading.tagName),
     ).toEqual(['H2', 'H3', 'H3', 'H3', 'H3'])
-    // Only the heading and the list sit above the stages.
-    const container = list.parentElement!
-    expect([...container.children].map((child) => child.tagName)).toEqual([
-      'H2',
-      'OL',
+    // Besides the eyebrow, the only paragraphs are the four descriptions.
+    expect([...section.querySelectorAll('p')].map((p) => p.textContent)).toEqual([
+      '04 — How We Work',
+      ...processStages.map((stage) => stage.description),
     ])
   })
 
@@ -88,6 +99,13 @@ describe('Process', () => {
         processStages[index].name + processStages[index].description,
       )
     })
+  })
+
+  it('draws the timeline in CSS: no extra elements, images or SVG', () => {
+    const { stages } = renderProcess()
+
+    for (const stage of stages) expect(stage.children).toHaveLength(3)
+    expect(document.querySelectorAll('img, svg, canvas, hr')).toHaveLength(0)
   })
 
   it('contains no links, buttons or other tab stops', () => {

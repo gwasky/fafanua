@@ -1,10 +1,18 @@
 import { processStages } from '../data/process.ts'
+import SectionEyebrow from './SectionEyebrow.tsx'
 import './Process.css'
 
-// The engagement model as four numbered stages, in data order. The id and
-// heading match the "How We Work" entry in src/data/navigation.ts. The
-// visible number is hidden from screen readers, which already announce each
-// item's position in the ordered list.
+// How We Work (plan V2 §13): the "04 — How We Work" eyebrow, the h2, then
+// the engagement model as a numbered timeline of four stages, in data
+// order: horizontal from 64em and vertical below it (Process.css). It
+// answers how Fafanua delivers an engagement, so it is kept distinct from
+// the Services lifecycle rail: no service-line colours, and every stage
+// shows its full description. The id and heading match the "How We Work"
+// entry in src/data/navigation.ts. The visible number is hidden from
+// screen readers, which already announce each item's position in the
+// ordered list; the timeline's line and node markers are drawn in CSS, so
+// they have no text. No introduction paragraph (#30), and no links,
+// buttons or tab stops.
 function Process() {
   return (
     <section
@@ -13,6 +21,7 @@ function Process() {
       aria-labelledby="how-we-work-heading"
     >
       <div className="container">
+        <SectionEyebrow number="04" label="How We Work" />
         <h2 id="how-we-work-heading" className="process__heading">
           How We Work
         </h2>
