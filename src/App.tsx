@@ -11,10 +11,13 @@ import Process from './components/Process.tsx'
 import Services from './components/Services.tsx'
 import Solutions from './components/Solutions.tsx'
 import { landOnHash } from './landOnHash.ts'
+import { useReveal } from './useReveal.ts'
 
 function App() {
   // Once, after the first render, before the first paint.
   useLayoutEffect(landOnHash, [])
+  // The one-time section and rail reveals (#61), after landing.
+  useReveal()
 
   // #top is the logo link's target. It is an empty element above the
   // sticky header, because scrolling to a stuck element does nothing.

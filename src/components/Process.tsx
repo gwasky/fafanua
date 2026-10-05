@@ -17,6 +17,7 @@ function Process() {
   return (
     <section
       id="how-we-work"
+      data-reveal="section"
       className="process surface-alt"
       aria-labelledby="how-we-work-heading"
     >

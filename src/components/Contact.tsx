@@ -24,6 +24,7 @@ function Contact() {
   return (
     <section
       id="contact"
+      data-reveal="section"
       className="contact surface-alt"
       aria-labelledby="contact-heading"
     >

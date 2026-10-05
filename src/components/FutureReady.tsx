@@ -25,6 +25,7 @@ function FutureReady() {
   return (
     <section
       id="future-ready"
+      data-reveal="section"
       className="future-ready surface-dark"
       aria-labelledby="future-ready-heading"
     >

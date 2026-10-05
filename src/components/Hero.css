@@ -68,3 +68,39 @@
     padding-block: calc(var(--header-height) + var(--space-12)) var(--space-12);
   }
 }
+
+/*
+ * The hero reveal (#61), once on load and only with motion allowed: the
+ * supporting copy, then --duration-reveal-stagger later the CTA row,
+ * rise --reveal-shift and fade in over --duration-reveal, and the grid
+ * fades in over --duration-grid-fade. The h1 never animates, so it is
+ * painted in the first frame. CSS animations run once when the element
+ * is first rendered, so nothing replays on scroll or hash navigation.
+ */
+@keyframes hero-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(var(--reveal-shift));
+  }
+}
+
+@keyframes hero-grid-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media screen and (prefers-reduced-motion: no-preference) {
+  .hero__lead,
+  .hero__actions {
+    animation: hero-reveal var(--duration-reveal) var(--ease-standard) both;
+  }
+
+  .hero__actions {
+    animation-delay: var(--duration-reveal-stagger);
+  }
+
+  .hero > .technical-grid {
+    animation: hero-grid-fade var(--duration-grid-fade) var(--ease-standard) both;
+  }
+}

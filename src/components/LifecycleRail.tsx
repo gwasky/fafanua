@@ -11,7 +11,7 @@ import './LifecycleRail.css'
 // (LifecycleRail.css).
 function LifecycleRail() {
   return (
-    <div className="lifecycle-rail-frame">
+    <div className="lifecycle-rail-frame" data-reveal="line">
       <ol className="lifecycle-rail" role="list">
         {services.map((service, index) => (
           <li

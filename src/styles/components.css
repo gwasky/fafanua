@@ -96,3 +96,33 @@
     translate: calc(-1 * var(--cta-arrow-shift)) 0;
   }
 }
+
+/*
+ * Section reveals (#61): a main section marked data-reveal="section" whose
+ * content useReveal.ts has hidden (data-reveal-state="hidden") because it
+ * was out of view on load. Its children sit --reveal-shift lower at
+ * opacity 0, then rise and fade in over --duration-reveal once it comes
+ * into view ("in"). Only opacity and transform change, so nothing is laid
+ * out again (no layout shift). The section itself never moves, so an
+ * anchor target lands exactly; its background, and a technical grid
+ * behind it (which only fades), stay where they are.
+ *
+ * Only on screen with motion allowed: under reduced motion and in print
+ * the hidden state does nothing and the content is shown as it is.
+ */
+@media screen and (prefers-reduced-motion: no-preference) {
+  [data-reveal='section'][data-reveal-state='hidden'] > * {
+    opacity: 0;
+    transform: translateY(var(--reveal-shift));
+  }
+
+  [data-reveal='section'][data-reveal-state='hidden'] > .technical-grid {
+    transform: none;
+  }
+
+  [data-reveal='section'][data-reveal-state='in'] > * {
+    transition-duration: var(--duration-reveal);
+    transition-property: opacity, transform;
+    transition-timing-function: var(--ease-standard);
+  }
+}

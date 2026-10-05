@@ -26,6 +26,7 @@ function Solutions() {
   return (
     <section
       id="solutions"
+      data-reveal="section"
       className="solutions"
       aria-labelledby="solutions-heading"
     >

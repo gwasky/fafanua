@@ -17,6 +17,7 @@ function Services() {
   return (
     <section
       id="services"
+      data-reveal="section"
       className="services"
       aria-labelledby="services-heading"
     >

@@ -47,6 +47,10 @@
   --rail-gap: var(--space-3);
   /* The shortest horizontal connector. */
   --rail-connector-min: var(--space-2);
+  /* How a connector is held before the line draws in (#61, below): from
+     the top in the vertical list; the row draws from the inline start. */
+  --rail-undrawn: scaleY(0);
+  --rail-draw-from: top;
 
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -131,7 +135,14 @@
     /* One row: the first five items grow, the last is as wide as its
        content, so the rail spans the container and ends at "Decide". */
     .lifecycle-rail {
+      --rail-undrawn: scaleX(0);
+      --rail-draw-from: left;
+
       display: flex;
+    }
+
+    .lifecycle-rail:dir(rtl) {
+      --rail-draw-from: right;
     }
 
     .lifecycle-rail__stage {
@@ -155,5 +166,47 @@
       border-inline-start: 0;
       border-block-start: var(--border-width) solid var(--color-border);
     }
+  }
+}
+
+/*
+ * The line drawing in (#61): while useReveal.ts holds the rail hidden
+ * (data-reveal-state="hidden", out of view on load), each connector is
+ * scaled to nothing along its length; the first time the rail is at least
+ * half in view ("in"), the five connectors draw one after another, each
+ * over a fifth of --duration-rail-draw at an even pace, so the line runs
+ * from the first stage to the last: from the inline start in the row, from
+ * the top in the vertical list. The markers, numbers and labels never
+ * move or fade. Only on screen with motion allowed; a rail in view on
+ * load is drawn already.
+ */
+@media screen and (prefers-reduced-motion: no-preference) {
+  .lifecycle-rail-frame[data-reveal-state] .lifecycle-rail__stage::after {
+    transform-origin: var(--rail-draw-from);
+  }
+
+  .lifecycle-rail-frame[data-reveal-state='hidden'] .lifecycle-rail__stage::after {
+    transform: var(--rail-undrawn);
+  }
+
+  .lifecycle-rail-frame[data-reveal-state='in'] .lifecycle-rail__stage::after {
+    transition: transform calc(var(--duration-rail-draw) / 5) var(--ease-linear);
+    transition-delay: calc(var(--duration-rail-draw) / 5 * var(--rail-step, 0));
+  }
+
+  .lifecycle-rail__stage:nth-child(2) {
+    --rail-step: 1;
+  }
+
+  .lifecycle-rail__stage:nth-child(3) {
+    --rail-step: 2;
+  }
+
+  .lifecycle-rail__stage:nth-child(4) {
+    --rail-step: 3;
+  }
+
+  .lifecycle-rail__stage:nth-child(5) {
+    --rail-step: 4;
   }
 }

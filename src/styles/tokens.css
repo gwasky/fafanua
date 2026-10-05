@@ -260,4 +260,15 @@
   --duration-cta-arrow: var(--duration-fast); /* CTA arrow nudge */
   --cta-arrow-shift: var(--space-1);
   --duration-card-hover: var(--duration-base); /* service-card hover lift */
+  /* One-time reveals (#61): the hero's copy and CTA row on load, and each
+     main section after the positioning block the first time it scrolls
+     into view (useReveal.ts). None of them runs under reduced motion. */
+  --reveal-shift: var(--space-4); /* how far revealed content rises */
+  --duration-reveal: var(--duration-slow);
+  --duration-reveal-stagger: var(--duration-fast); /* hero CTA row after the copy */
+  --duration-grid-fade: var(--duration-slow); /* the hero's grid on load */
+  /* The lifecycle rail's line, drawn from the first stage to the last at
+     an even pace. */
+  --duration-rail-draw: calc(var(--duration-slow) * 2);
+  --ease-linear: linear;
 }

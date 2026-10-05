@@ -7,7 +7,12 @@ import './About.css'
 // src/data/navigation.ts. It has no links or other tab stops.
 function About() {
   return (
-    <section id="about" className="about" aria-labelledby="about-heading">
+    <section
+      id="about"
+      className="about"
+      aria-labelledby="about-heading"
+      data-reveal="section"
+    >
       <div className="container">
         <h2 id="about-heading" className="about__heading">
           {aboutHeading}

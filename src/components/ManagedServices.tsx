@@ -15,6 +15,7 @@ function ManagedServices() {
   return (
     <section
       id="managed-services"
+      data-reveal="section"
       className="managed-services"
       aria-labelledby="managed-services-heading"
     >

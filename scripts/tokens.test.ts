@@ -59,6 +59,12 @@ describe('V2 tokens', () => {
       '--duration-cta-arrow': 'var(--duration-fast)',
       '--cta-arrow-shift': 'var(--space-1)',
       '--duration-card-hover': 'var(--duration-base)',
+      '--reveal-shift': 'var(--space-4)',
+      '--duration-reveal': 'var(--duration-slow)',
+      '--duration-reveal-stagger': 'var(--duration-fast)',
+      '--duration-grid-fade': 'var(--duration-slow)',
+      '--duration-rail-draw': 'calc(var(--duration-slow) * 2)',
+      '--ease-linear': 'linear',
     })
   })
 
@@ -84,17 +90,47 @@ describe('V2 tokens', () => {
 })
 
 describe('component durations', () => {
-  // Every duration comes from a motion token; global.css's reduced-motion
-  // override (0.01ms) is the one literal.
+  // Every duration and easing comes from a motion token (#61): no CSS
+  // file under src/ but tokens.css holds a raw ms or s value, except
+  // global.css's reduced-motion override (0.01ms), which stays exactly
+  // as it is.
   const files = [
     'styles/components.css',
+    'styles/fonts.css',
+    'styles/global.css',
     ...readdirSync(new URL('../src/components/', import.meta.url))
       .filter((name) => name.endsWith('.css'))
       .map((name) => `components/${name}`),
   ]
+  const override = `@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}`
+
+  it('covers every CSS file under src/ but tokens.css', () => {
+    const all = readdirSync(new URL('../src/', import.meta.url), { recursive: true })
+      .map(String)
+      .filter((name) => name.endsWith('.css') && name !== 'styles/tokens.css')
+    expect([...all].sort()).toEqual([...files].sort())
+  })
 
   it.each(files)('%s has no raw ms or s duration', (file) => {
-    expect(read(file)).not.toMatch(/(?<![\w-])\d*\.?\d+m?s\b/)
+    const css = file === 'styles/global.css' ? read(file).replace(override, '') : read(file)
+    expect(css).not.toMatch(/(?<![\w-])\d*\.?\d+m?s\b/)
+  })
+
+  it('keeps the global reduced-motion override unchanged', () => {
+    expect(read('styles/global.css')).toContain(override)
+  })
+
+  it.each(files)('%s names no raw easing function', (file) => {
+    expect(read(file)).not.toMatch(/\b(?:cubic-bezier|steps)\(|(?<![\w-])(?:linear|ease|ease-in|ease-out|ease-in-out)\b(?!-)/)
   })
 })
 
