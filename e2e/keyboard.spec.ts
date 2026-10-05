@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { focusedName, focusStyle, openPage, pressTab, test, waitForFonts } from './fixtures.ts'
-import { disclosures, nav, SEQUENCE as FOCUS_ORDER, tabTo, walkFocus } from './focus.ts'
+import { disclosures, expectUnobscured, nav, sectors, SEQUENCE as FOCUS_ORDER, tabTo, walkFocus } from './focus.ts'
 
 // The automated part of the keyboard review: Tab order, focus rings,
 // the skip link, focus after in-page links, the Menu toggle, the
@@ -25,12 +25,12 @@ async function expectRing(page: Page, name: string) {
 }
 
 test.describe('Tab order', () => {
-  test('1440 has 23 stops', () => {
-    expect(SEQUENCE[1440]).toHaveLength(23)
+  test('1440 has 28 stops', () => {
+    expect(SEQUENCE[1440]).toHaveLength(28)
   })
 
-  test('360 with the menu closed has 19 stops', () => {
-    expect(SEQUENCE[360]).toHaveLength(19)
+  test('360 with the menu closed has 24 stops', () => {
+    expect(SEQUENCE[360]).toHaveLength(24)
   })
 
   for (const width of [1440, 360]) {
@@ -89,17 +89,19 @@ test.describe('skip link', () => {
 
 test.describe('focus after in-page links', () => {
   const firstDisclosure = disclosures[0]
+  // The first Solutions row's button (#59).
+  const firstSector = sectors[0]
 
   const cases = [
     { from: 'header', link: 'Services', hash: '#services', next: firstDisclosure },
-    { from: 'header', link: 'Solutions', hash: '#solutions', next: 'Email us' },
+    { from: 'header', link: 'Solutions', hash: '#solutions', next: firstSector },
     { from: 'header', link: 'How We Work', hash: '#how-we-work', next: 'Email us' },
     { from: 'header', link: 'About', hash: '#about', next: 'Email us' },
     { from: 'header', link: 'Discuss a project', hash: '#contact', next: 'Email us' },
     { from: 'main', link: 'Explore our capabilities', hash: '#services', next: firstDisclosure },
     { from: 'main', link: 'Discuss your data needs', hash: '#contact', next: 'Email us' },
     { from: 'footer', link: 'Services', hash: '#services', next: firstDisclosure },
-    { from: 'footer', link: 'Solutions', hash: '#solutions', next: 'Email us' },
+    { from: 'footer', link: 'Solutions', hash: '#solutions', next: firstSector },
   ] as const
 
   for (const { from, link, hash, next } of cases) {
@@ -131,7 +133,7 @@ test.describe('focus after in-page links', () => {
     await tabTo(page, firstDisclosure)
   })
 
-  test('menu "Solutions" closes the menu, then Tab goes to "Email us" at 360px', async ({ page }) => {
+  test('menu "Solutions" closes the menu, then Tab goes to the first Solutions row at 360px', async ({ page }) => {
     await openPage(page, 360)
     const toggle = page.getByRole('button', { name: 'Menu' })
     await toggle.focus()
@@ -143,7 +145,7 @@ test.describe('focus after in-page links', () => {
     await expect(page).toHaveURL(/#solutions$/)
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
 
-    await tabTo(page, 'Email us')
+    await tabTo(page, firstSector)
   })
 })
 
@@ -208,6 +210,56 @@ test.describe('disclosures', () => {
         await expect(panel).toHaveAttribute('hidden')
         await expect(button).toBeFocused()
       }
+    })
+  }
+})
+
+// The Solutions rows (#59): one button each, in an h3. Tab reaches each
+// without opening it (focus alone opens nothing, owner decision on #59),
+// Enter and Space toggle it with focus staying put, the ring stays clear
+// of the header, and Shift+Tab goes back up through them. Rows are
+// independent, so earlier rows stay open.
+test.describe('Solutions rows', () => {
+  for (const width of [360, 1440]) {
+    test(`Tab reaches each row closed, Enter and Space toggle it, and Shift+Tab goes back, at ${width}px`, async ({ page }) => {
+      await openPage(page, width)
+      await page.getByRole('button', { name: disclosures.at(-1), exact: true }).focus()
+
+      for (const name of sectors) {
+        const button = page.getByRole('button', { name, exact: true })
+        const panel = page.locator(`[id="${await button.getAttribute('aria-controls')}"]`)
+        await tabTo(page, name)
+        await expectRing(page, name)
+        await expectUnobscured(page, name)
+        await expect(button).toHaveAttribute('aria-expanded', 'false')
+        await expect(panel).toBeHidden()
+
+        await page.keyboard.press('Enter')
+        await expect(button).toHaveAttribute('aria-expanded', 'true')
+        await expect(panel).toBeVisible()
+        await expect(button).toBeFocused()
+        await page.keyboard.press('Space')
+        await expect(button).toHaveAttribute('aria-expanded', 'false')
+        await expect(panel).toBeHidden()
+        await expect(button).toBeFocused()
+        await page.keyboard.press('Space')
+        await expect(button).toHaveAttribute('aria-expanded', 'true')
+        await expect(button).toBeFocused()
+        await expectUnobscured(page, name)
+      }
+      // All five are open at once.
+      for (const name of sectors) {
+        await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute('aria-expanded', 'true')
+      }
+
+      // The theme lists add no tab stop: the next stop is Email us.
+      await tabTo(page, 'Email us')
+      for (const name of [...sectors].reverse()) {
+        await tabTo(page, name, { shift: true })
+        await expectRing(page, name)
+        await expectUnobscured(page, name)
+      }
+      await tabTo(page, disclosures.at(-1)!, { shift: true })
     })
   }
 })

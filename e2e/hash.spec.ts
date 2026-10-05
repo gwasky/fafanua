@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { services } from '../src/data/services.ts'
+import { solutions } from '../src/data/solutions.ts'
 import {
   expectLanded,
   focusedName,
@@ -35,6 +36,8 @@ const SECTIONS = [
 const INSIDE = ['#about-heading', '#data-quality-and-reliability-heading'] as const
 
 const disclosures = services.map((service) => `Typical engagements for ${service.name}`)
+// The Solutions rows' buttons (#59), named by the sector titles.
+const sectors = solutions.map((solution) => solution.title)
 
 /** A header nav link, found whether or not it is currently shown. */
 const navLink = (page: Page, name: string) =>
@@ -206,6 +209,25 @@ test.describe('hashes that name nothing visible', () => {
       expect(await page.evaluate(() => location.hash)).toBe(hash)
       await expect(page.locator(hash)).toBeHidden()
       for (const name of disclosures) {
+        await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute(
+          'aria-expanded',
+          'false',
+        )
+      }
+    })
+
+    // A row opens only on interaction (#59; a hash opening one is #44's
+    // question), so a hidden Solutions panel's id lands nowhere.
+    test(`a hidden Solutions panel stays at the top, with every row closed, at ${width}px`, async ({
+      page,
+    }) => {
+      const hash = `#${solutions[0].id}-themes`
+      await openPath(page, `/${hash}`, width)
+
+      await expectTop(page)
+      expect(await page.evaluate(() => location.hash)).toBe(hash)
+      await expect(page.locator(hash)).toBeHidden()
+      for (const name of sectors) {
         await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute(
           'aria-expanded',
           'false',
@@ -433,7 +455,7 @@ test.describe('keyboard focus', () => {
 
   const cases = [
     { path: '/#services', next: disclosures[0] },
-    { path: '/#solutions', next: 'Email us' },
+    { path: '/#solutions', next: sectors[0] },
     { path: '/#how-we-work', next: 'Email us' },
     { path: '/#future-ready', next: 'Email us' },
     { path: '/#about', next: 'Email us' },

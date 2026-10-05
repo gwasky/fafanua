@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { services } from '../src/data/services.ts'
+import { solutions } from '../src/data/solutions.ts'
 import { focusAndHeaderBoxes, focusedName, pressTab, waitForScrollSettle } from './fixtures.ts'
 
 // The page's Tab order, shared by keyboard.spec.ts and the enlarged-text
@@ -7,6 +8,8 @@ import { focusAndHeaderBoxes, focusedName, pressTab, waitForScrollSettle } from 
 // covers the focused element.
 
 export const disclosures = services.map((service) => `Typical engagements for ${service.name}`)
+// The Solutions rows' buttons (#59), each named by its sector title.
+export const sectors = solutions.map((solution) => solution.title)
 // The header's four section links and its call to action, which replaces
 // a Contact link; the footer keeps Contact.
 const sections = ['Services', 'Solutions', 'How We Work', 'About']
@@ -16,6 +19,7 @@ const fromHero = [
   'Discuss your data needs',
   'Explore our capabilities',
   ...disclosures,
+  ...sectors,
   'Email us',
   'info@fafanua.tech',
   ...footerNav,
