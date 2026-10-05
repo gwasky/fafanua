@@ -140,6 +140,8 @@ Ratios are computed from the token hex values; `scripts/contrast.test.ts` checks
 
 The Managed Services panel (#58) adds no pairing: it uses the dark ones on graphite 900 through `.surface-dark` (paper headings and rail 14.9:1, graphite 300 body and capability text 8.9:1, graphite 400 eyebrows and journey arrows 5.9:1), with graphite 700 dividers and teal 400 only on the rail's separator dots and the focus ring.
 
+Solutions and How We Work (#59) add no pairing: the Solutions rows use graphite 900 (titles and themes, 14.9:1) and graphite 600 (numbers, summaries and the chevron, 6.0:1) on paper with graphite 200 hairlines, and the How We Work timeline uses only graphite 900 (14.1:1), graphite 600 (the eyebrow, 5.7:1) and teal 800 (the numbers, 6.9:1) on graphite 100, with a graphite 200 line and teal 600 rings as graphics.
+
 The sticky header (#54) adds no pairing: when solid it uses the light pairings on paper, and when transparent over a dark section it uses the dark pairings on graphite 900 (paper text 14.9:1, primary button graphite 900 on teal 400 7.5:1, the Menu toggle as the secondary button on dark).
 
 Never use:
@@ -154,7 +156,7 @@ Never use:
 - Font: Inter, self-hosted with `@fontsource-variable/inter` (Latin subset), preloaded from `index.html`. No Google Fonts requests.
 - Fallback stack: `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`.
 - Weights: 300 for large headings, 400 for body text, 500 only for small labels and buttons. Never bold headings. Nothing on the page computes to a weight above 500 (checked end to end).
-- V2 display scale: hero and section headings use `--text-hero` and `--text-section` at weight 300 with `--leading-display` and `--measure-display`; eyebrows and buttons use weight 500. The hero `h1` uses `--text-hero` (#55), with its supporting copy at `--text-body-lg`. Services (#56) uses `--text-section` for its `h2` (with `--leading-display` and `--measure-display`) and `--text-body-lg` for its intro paragraphs, and `--text-service` with `--leading-snug` for the card titles. Managed Services (#58) uses `--text-section` for its `h2` (weight 300, `--leading-display`, `--measure-display`), `--text-service` for the approved `h3`, `--text-body-lg` for the description and `--text-xl` at weight 400 for the capability rail. Until #59 and #60 apply the rest, other headings keep the `--text-*` tokens they use today.
+- V2 display scale: hero and section headings use `--text-hero` and `--text-section` at weight 300 with `--leading-display` and `--measure-display`; eyebrows and buttons use weight 500. The hero `h1` uses `--text-hero` (#55), with its supporting copy at `--text-body-lg`. Services (#56) uses `--text-section` for its `h2` (with `--leading-display` and `--measure-display`) and `--text-body-lg` for its intro paragraphs, and `--text-service` with `--leading-snug` for the card titles. Managed Services (#58) uses `--text-section` for its `h2` (weight 300, `--leading-display`, `--measure-display`), `--text-service` for the approved `h3`, `--text-body-lg` for the description and `--text-xl` at weight 400 for the capability rail. Solutions and How We Work (#59) use `--text-section` for their `h2`s (weight 300, `--leading-display`, `--measure-display`) and `--text-service` with `--leading-snug` for the sector titles and stage names. Until #60 applies the rest, other headings keep the `--text-*` tokens they use today.
 - The heavy logo wordmark contrasts deliberately with the light site type. Do not match headings to the logo's weight.
 - Headings must wrap naturally at every width; do not rely on fixed line breaks.
 
@@ -225,7 +227,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 **SectionEyebrow**
 
-- `src/components/SectionEyebrow.tsx`: a `<p>` (not a heading) shown as `01 — Capabilities`, with the number optional. `--text-eyebrow`, `--weight-medium`, `--tracking-eyebrow`, uppercase, in `--color-text-muted`, which passes AA on paper, white, `.surface-alt` and `.surface-dark`. Placed on the page by #56 (**01 — Capabilities** in Services), #58 (**02 — Managed Services**, inside the dark panel, where it is graphite 400) and #59.
+- `src/components/SectionEyebrow.tsx`: a `<p>` (not a heading) shown as `01 — Capabilities`, with the number optional. `--text-eyebrow`, `--weight-medium`, `--tracking-eyebrow`, uppercase, in `--color-text-muted`, which passes AA on paper, white, `.surface-alt` and `.surface-dark`. Placed on the page by #56 (**01 — Capabilities** in Services), #58 (**02 — Managed Services**, inside the dark panel, where it is graphite 400) and #59 (**03 — Solutions** over the `h2` "Solutions", and **04 — How We Work** over the `h2` "How We Work", where it is graphite 600 on graphite 100).
 
 **Links**
 
@@ -275,6 +277,25 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 - Capabilities: one column below `48em`, two from `48em` and three from `64em`, top to bottom in data order, each above a graphite 700 (`--color-border`) divider. Journey: an `<ol role="list">`, stacked with down arrows below `48em` and one row with right arrows from `48em`; the arrows are border-drawn in `--color-text-muted` and never announced. The rail and the journey use `overflow-wrap: anywhere`, so a word wider than the panel (at 320px with 200% page text) breaks instead of overflowing.
 - Colours: every colour inside the panel comes from the `.surface-dark` reassignment; `ManagedServices.css` names no `-on-dark` token or colour value. Teal appears only on the rail's dots and the focus ring; no text is teal. No links, buttons or tab stops, and no motion.
 
+**Solution rows**
+
+- `src/components/Solutions.tsx`: plan V2 §12 (#59). The section is on paper, after Managed Services, and drops its top padding there (`.managed-services + .solutions`), so the gap below the panel is one `--space-section`, not two. In order: `SectionEyebrow` **03 — Solutions**, the `h2` **Solutions** (`--text-section`), then an `<ol role="list">` of five rows in data order. No introduction paragraph.
+- Each row is the WAI-ARIA accordion header pattern: an `h3` wrapping one native `<button type="button" aria-expanded aria-controls>`, showing the `aria-hidden` number (01 to 05), the sector title and an `aria-hidden`, non-focusable chevron, so its accessible name is the title alone and each sector stays in the headings list. Then the summary, a `<ul role="list">` always visible and outside the button, and the panel (`hidden` while collapsed) holding the full approved theme list as a `<ul role="list">`.
+- Copy: titles and themes from the services-positioning doc §15 to §19; each `summary` in `solutions.ts` is the four-item line under the sector in plan V2 §12, checked by `solutions.plan.test.ts`. The summary's separators are border-drawn dots after each item but the last, so they have no text and are never announced.
+- Not card-like: no fill, shadow, radius or per-row border box, only a graphite 200 hairline above each row and one below the last.
+- Independent rows: each has its own React state, so any number can be open at once, and all five start collapsed. A row opens and closes only on a click, a tap, or Enter or Space on its focused button: focus alone opens nothing (owner decision on #59) and hover never opens or reveals anything. Opening a row does not move focus. A row never opens from a URL hash (see #44).
+- The button spans the row's full width at every breakpoint and is at least `--space-12` (48px) tall, so the number, the title and the space up to the chevron all toggle it; the summary does not. Open state: `aria-expanded`, the chevron turned 180° and the visible panel, never colour alone.
+- Hover (`@media (hover: hover)`): the title is underlined and, with motion allowed, the chevron moves `--cta-arrow-shift` in the direction it points (down while closed, up while open). The chevron turns over `--duration-fast` only under `prefers-reduced-motion: no-preference`; under reduced motion nothing moves or transitions.
+- Layout: below `48em` the number, title and chevron share the first line, with the summary beneath them and the open panel beneath the summary, inside the row; the themes are one column. From `48em` the number column is `--space-10` wide and the summary, panel and themes line up with the title; the themes flow into two columns, top to bottom. From `64em` the number (`tabular-nums`), title, summary and chevron sit on one line in four columns, the same in every row (on the row and repeated on its button), so the titles and summaries line up; the summary is placed over the button's empty third column, as wide as its text, and the open panel sits beneath the row in the title and summary columns. With all five collapsed the list is no taller than 5 × (title line height + `--space-12`) at 1440px.
+- Type: titles `--text-service` at weight 300 in `--color-heading`; numbers (weight 500) and the summary `--text-sm` in `--color-text-muted`; themes `--text-base` in `--color-text`.
+
+**Process timeline**
+
+- `src/components/Process.tsx`: plan V2 §13 (#59). The section keeps `.surface-alt` (graphite 100). In order: `SectionEyebrow` **04 — How We Work**, the `h2` **How We Work** (`--text-section`), then the four stages, Assess, Design, Build and Govern, as an `<ol role="list">`, each its `aria-hidden` two-digit number, its `h3` name and its full description from `process.ts`. No introduction paragraph (#30), and no links, buttons or tab stops.
+- From `64em`: horizontal, the four stages in one row of equal columns. Each stage has a node at its start, with its number and name below it and its description below them; the line runs at one height from the first node to the last. Below `64em` (including 768px, where four description columns do not fit): vertical, the line running down the inline-start edge through each node, centred on the number's line, with the number, name and description to its inline-end side.
+- Drawing: the node is a teal 600 ring (`--color-accent`, graphics only) filled with `--color-surface-alt`, so the line stops at its edge; the line is graphite 200 (`--color-border`), one segment per stage but the last, from its node's centre to the next node's centre, so the segments join into one continuous line. Both are pseudo-elements drawn with borders: no text, never announced, and still drawn in forced-colours mode.
+- Distinct from the lifecycle rail: the rail is small (`--text-sm` labels at weight 500), one line per stage, with filled service-line colour dots and no descriptions, and answers what Fafanua provides; the timeline answers how an engagement runs, with `--text-service` stage names, teal rings, no service-line colours and every stage's full description. Numbers are teal 800 on graphite 100 (6.9:1, `--color-link` inside `.surface-alt`), names and descriptions graphite 900.
+
 ## Motion
 
 - Subtle and purposeful only, with durations from the motion tokens. Component CSS uses tokens or their aliases (`--duration-header`, `--duration-cta-arrow`), never a raw `ms` or `s` value.
@@ -284,6 +305,6 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 - Semantic landmarks (`header`, `nav`, `main`, `footer`) and a skip-to-content link.
 - One `h1`, then a logical heading order with no skipped levels.
-- Full keyboard navigation, including the mobile menu and service-card disclosures.
+- Full keyboard navigation, including the mobile menu, the service-card disclosures and the Solutions rows.
 - Descriptive accessible names for every control; no meaning conveyed by colour alone.
 - Meet WCAG AA contrast using only the verified pairings above.
