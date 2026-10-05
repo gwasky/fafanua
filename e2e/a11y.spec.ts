@@ -9,6 +9,17 @@ import { managedServices, servicesIntro } from '../src/data/services.ts'
 // target size and reflow can be measured. Each state is its own test, so
 // a failure names the state and width that broke.
 
+/** Opens all five Solutions rows (#59) with the keyboard. */
+async function openAllSectors(page: Page) {
+  const buttons = page.getByRole('region', { name: 'Solutions' }).getByRole('button')
+  await expect(buttons).toHaveCount(5)
+  for (const button of await buttons.all()) {
+    await button.focus()
+    await page.keyboard.press('Enter')
+    await expect(button).toHaveAttribute('aria-expanded', 'true')
+  }
+}
+
 test.describe('axe, page as loaded', () => {
   for (const width of [320, 360, 768, 1024, 1440]) {
     test(`everything closed at ${width}px`, async ({ page }, testInfo) => {
@@ -59,6 +70,17 @@ test.describe('axe, all Typical engagements disclosures open', () => {
         await button.click()
         await expect(button).toHaveAttribute('aria-expanded', 'true')
       }
+
+      await expectNoAxeViolations(page, testInfo)
+    })
+  }
+})
+
+test.describe('axe, all five Solutions rows open', () => {
+  for (const width of [320, 768, 1440]) {
+    test(`five rows open at ${width}px`, async ({ page }, testInfo) => {
+      await openPage(page, width)
+      await openAllSectors(page)
 
       await expectNoAxeViolations(page, testInfo)
     })
@@ -211,12 +233,22 @@ test.describe('reduced motion', () => {
   const durations = (page: Page) =>
     page.evaluate(() => {
       const chevron = document.querySelector('.service-card__chevron')
-      if (!chevron) throw new Error('No chevron found')
+      const sector = document.querySelector('.solution-row__chevron')
+      if (!chevron || !sector) throw new Error('No chevron found')
       return {
         scroll: getComputedStyle(document.documentElement).scrollBehavior,
         chevron: getComputedStyle(chevron).transitionDuration,
+        sector: getComputedStyle(sector).transitionDuration,
       }
     })
+
+  // The first Solutions row's button and its chevron's nudge (#59).
+  const sector = (page: Page) =>
+    page.getByRole('region', { name: 'Solutions' }).getByRole('button').first()
+  // Its title: at 1440 the summary sits over the middle of the button.
+  const sectorTitle = (page: Page) => sector(page).locator('.solution-row__title')
+  const sectorShift = (page: Page) =>
+    sector(page).evaluate((button) => getComputedStyle(button.querySelector('svg')!).translate)
 
   // The hero's two calls to action, one of each button style, both
   // visible at 1440px.
@@ -277,6 +309,28 @@ test.describe('reduced motion', () => {
         .toBeLessThanOrEqual(0.01)
     }
     expect(ms(result.chevron)).toBeLessThanOrEqual(0.01)
+    expect(ms(result.sector), 'Solutions chevron').toBeLessThanOrEqual(0.01)
+
+    // The Solutions chevron does not move on hover, and still turns to
+    // show the open state, with no transition.
+    await sectorTitle(page).hover()
+    expect(await sectorShift(page), 'Solutions chevron on hover').toBe('none')
+    await sectorTitle(page).click()
+    await expect(sector(page)).toHaveAttribute('aria-expanded', 'true')
+    expect(await sectorShift(page), 'open Solutions chevron on hover').toBe('none')
+    // Polled: every property still has a 0.01ms transition here. A half
+    // turn is matrix(-1, ~0, ~0, -1, 0, 0).
+    await expect
+      .poll(() =>
+        sector(page).evaluate((button) =>
+          getComputedStyle(button.querySelector('svg')!)
+            .transform.replace(/^matrix\(|\)$/g, '')
+            .split(',')
+            .map((value) => Math.round(parseFloat(value))),
+        ),
+      )
+      .toEqual([-1, 0, 0, -1, 0, 0])
+    await sectorTitle(page).click()
 
     // The header has no transition, and the arrow stays still on hover
     // and on keyboard focus.
@@ -298,7 +352,20 @@ test.describe('reduced motion', () => {
     await openPage(page, 1440)
     const buttons = await buttonDurations(page)
 
-    expect((await durations(page)).scroll).toBe('smooth')
+    const moved = await durations(page)
+    expect(moved.scroll).toBe('smooth')
+    // The Solutions chevron turns over --duration-fast (150ms), and on
+    // hover nudges --cta-arrow-shift (4px) down, or up once open (#59).
+    expect(ms(moved.sector)).toBe(150)
+    expect(await sectorShift(page)).toBe('none')
+    await sectorTitle(page).hover()
+    await expect.poll(() => sectorShift(page)).toBe('0px 4px')
+    await sectorTitle(page).click()
+    await expect(sector(page)).toHaveAttribute('aria-expanded', 'true')
+    await expect.poll(() => sectorShift(page)).toBe('0px -4px')
+    await sectorTitle(page).click()
+    await page.mouse.move(0, 799)
+    await expect.poll(() => sectorShift(page)).toBe('none')
     for (const { name, duration } of buttons) {
       expect.soft(duration, `longest transition-duration of "${name}"`).toBe(150)
     }
@@ -364,6 +431,12 @@ test.describe('320px at 200% text size', () => {
       await button.click()
       await expect(button).toHaveAttribute('aria-expanded', 'true')
     }
+
+    await noHorizontalScroll(page)
+  })
+
+  test('no horizontal scroll with all five Solutions rows open', async ({ page }) => {
+    await openAllSectors(page)
 
     await noHorizontalScroll(page)
   })
@@ -488,6 +561,39 @@ test.describe('browser text size 200%: the header falls back to the Menu', () =>
     const rail = await lefts(0)
     expect(rail, 'rail stages').toHaveLength(6)
     expect(new Set(rail).size, 'rail columns').toBe(1)
+
+    // Solutions is in its below-64em layout: each summary below its
+    // row's title, not beside it (#59).
+    const rows = await page
+      .getByRole('region', { name: 'Solutions' })
+      .getByRole('list')
+      .first()
+      .locator(':scope > li')
+      .evaluateAll((items) =>
+        items.map((item) => ({
+          titleBottom: item.querySelector('h3')!.getBoundingClientRect().bottom,
+          summaryTop: item.querySelector('h3 + ul')!.getBoundingClientRect().top,
+        })),
+      )
+    expect(rows).toHaveLength(5)
+    for (const row of rows) {
+      expect(row.summaryTop, JSON.stringify(row)).toBeGreaterThanOrEqual(row.titleBottom - 1)
+    }
+    // The How We Work timeline is vertical: one left edge, each stage
+    // below the last.
+    const stages = await page
+      .getByRole('region', { name: 'How We Work' })
+      .getByRole('listitem')
+      .evaluateAll((items) =>
+        items.map((item) => {
+          const box = item.getBoundingClientRect()
+          return { left: Math.round(box.left), top: box.top, bottom: box.bottom }
+        }),
+      )
+    expect(new Set(stages.map((stage) => stage.left)).size, 'timeline columns').toBe(1)
+    for (let i = 1; i < stages.length; i++) {
+      expect(stages[i].top, `stage ${i + 1} below stage ${i}`).toBeGreaterThanOrEqual(stages[i - 1].bottom)
+    }
 
     await walkFocus(page, SEQUENCE.menu)
   })
