@@ -1,73 +1,245 @@
 /*
- * Solutions: the section heading and a grid of sector cards on the page
- * background, like Services above it. A graphite 200 rule across the full
- * width separates the two paper sections. The grid follows the service
- * grid: one column by default, two from 768px and three from 1024px
- * (literal breakpoints; see the note in tokens.css). Cards in a row share
- * its height, and a short last row stays left-aligned.
+ * Solutions (plan V2 §12): the eyebrow, the h2 and five sector rows on
+ * paper. The rows are a list, not cards: no fill, shadow, radius or
+ * border box, only a graphite 200 hairline between rows, above the first
+ * and below the last. Each row's button spans the row's full width at
+ * every breakpoint and is at least 48px tall; the summary sits outside it
+ * and does not toggle it.
+ *
+ * Below 48em the number, title and chevron share the first line, with the
+ * summary beneath them and the open panel beneath the summary, all inside
+ * the row. From 48em the number column has a fixed width and the summary,
+ * panel and theme list line up with the title; the themes flow into two
+ * columns, top to bottom. From 64em the number, title, summary and
+ * chevron sit on one line in four columns that are the same in every row
+ * (on the row and, repeated, on its button), so the titles and summaries
+ * line up, and the open panel sits beneath the row in the title and
+ * summary columns. The summary is placed over the button's empty third
+ * column, sized to its text, so the space after it up to the chevron
+ * still toggles the row (literal breakpoints; see the note in tokens.css).
+ *
+ * Text: the titles graphite 900 on paper (14.9:1), the numbers, summary
+ * and chevron graphite 600 (6.0:1), the themes graphite 900. The open
+ * state shows as the rotated chevron and the visible panel, never colour
+ * alone. Hover underlines the title and, on a pointer that can hover and
+ * with motion allowed, nudges the chevron by --cta-arrow-shift.
  */
 
 .solutions {
-  padding-block: var(--space-16);
-  border-block-start: var(--border-width) solid var(--color-border);
+  padding-block: var(--space-section);
   background-color: var(--color-bg);
 }
 
-.solutions__heading {
-  margin-block-end: var(--space-8);
-}
-
-.solutions__list {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-6);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* The service card's border, radius, padding and shadow, without its
-   colour marker. Graphite 900 on white (16.4:1). */
-.solution-card {
-  padding: var(--space-6);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-md);
-  background-color: var(--color-surface);
-  box-shadow: var(--shadow-sm);
-  color: var(--color-text);
+/* The Managed Services section above ends with its own --space-section
+   on the same paper, so the gap above the eyebrow is one section padding,
+   not two (as .services + .managed-services, #58). */
+.managed-services + .solutions {
+  padding-block-start: 0;
 }
 
 /* Weight 300 from the global heading styles. */
-.solution-card__title {
-  margin-block-end: var(--space-4);
-  font-size: var(--text-xl);
-  line-height: var(--leading-snug);
+.solutions__heading {
+  max-width: var(--measure-display);
+  margin-block-end: var(--space-10);
+  font-size: var(--text-section);
+  line-height: var(--leading-display);
+  overflow-wrap: break-word;
 }
 
-.solution-card__themes {
+.solutions__list {
   margin: 0;
   padding: 0;
+  border-block-end: var(--border-width) solid var(--color-border);
   list-style: none;
-  font-size: var(--text-sm);
 }
 
-.solution-card__themes li {
-  padding-block: var(--space-2);
+.solution-row {
+  /* The number column (set from 48em), the space between columns and the
+     chevron's size. */
+  --row-number: auto;
+  --row-gap: var(--space-3);
+  --row-chevron: var(--space-4);
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   border-block-start: var(--border-width) solid var(--color-border);
 }
 
-@media (min-width: 48em) {
-  .solutions {
-    padding-block: var(--space-20);
+/* Weight 300 from the global heading styles; the button inherits it. */
+.solution-row__heading {
+  margin: 0;
+  font-size: var(--text-service);
+  line-height: var(--leading-snug);
+}
+
+.solution-row__toggle {
+  display: grid;
+  grid-template-columns: var(--row-number) minmax(0, 1fr) var(--row-chevron);
+  align-items: baseline;
+  column-gap: var(--row-gap);
+  width: 100%;
+  min-height: var(--space-12);
+  margin: 0;
+  padding: var(--space-4) 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--color-heading);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.solution-row__number {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-snug);
+}
+
+.solution-row__chevron {
+  align-self: center;
+  width: var(--row-chevron);
+  height: var(--row-chevron);
+  color: var(--color-text-muted);
+}
+
+.solution-row__toggle[aria-expanded='true'] .solution-row__chevron {
+  transform: rotate(180deg);
+}
+
+/* The summary: four short items on one line where they fit, each but the
+   last followed by a small dot drawn with a border, so the dots have no
+   text, are never announced and stay drawn in forced-colours mode. */
+.solution-row__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  padding: 0 0 var(--space-4);
+  list-style: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+.solution-row__summary li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.solution-row__summary li:not(:last-child)::after {
+  content: '';
+  flex: none;
+  width: 0;
+  height: 0;
+  border: calc(var(--space-1) / 2) solid var(--color-text-muted);
+  border-radius: var(--radius-full);
+}
+
+/* No display rule here, so [hidden] always hides the panel. */
+.solution-row__panel {
+  padding-block-end: var(--space-6);
+}
+
+.solution-row__themes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  column-gap: var(--space-8);
+  color: var(--color-text);
+  font-size: var(--text-base);
+  line-height: var(--leading-snug);
+}
+
+.solution-row__themes li {
+  padding-block: var(--space-1);
+  break-inside: avoid;
+  overflow-wrap: break-word;
+}
+
+@media (hover: hover) {
+  .solution-row__toggle:hover .solution-row__title {
+    text-decoration-line: underline;
+    text-decoration-thickness: var(--border-width);
+    text-underline-offset: 0.15em;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .solution-row__chevron {
+    transition-duration: var(--duration-fast);
+    transition-property: transform, translate;
+    transition-timing-function: var(--ease-standard);
+  }
+}
+
+/* The nudge points the way the chevron does: down while closed, up while
+   open. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .solution-row__toggle:hover .solution-row__chevron {
+    translate: 0 var(--cta-arrow-shift);
   }
 
-  .solutions__list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .solution-row__toggle[aria-expanded='true']:hover .solution-row__chevron {
+    translate: 0 calc(-1 * var(--cta-arrow-shift));
+  }
+}
+
+@media (min-width: 48em) {
+  .solution-row {
+    --row-number: var(--space-10);
+    --row-gap: var(--space-4);
+  }
+
+  /* In line with the title. */
+  .solution-row__summary,
+  .solution-row__panel {
+    margin-inline-start: calc(var(--row-number) + var(--row-gap));
+  }
+
+  .solution-row__themes {
+    columns: 2;
   }
 }
 
 @media (min-width: 64em) {
-  .solutions__list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .solution-row {
+    --row-gap: var(--space-6);
+    --row-columns: var(--row-number) minmax(0, 2fr) minmax(0, 3fr) var(--row-chevron);
+
+    grid-template-columns: var(--row-columns);
+    column-gap: var(--row-gap);
+  }
+
+  .solution-row__heading {
+    grid-row: 1;
+    grid-column: 1 / -1;
+  }
+
+  .solution-row__toggle {
+    grid-template-columns: var(--row-columns);
+    padding-block: var(--space-5);
+  }
+
+  .solution-row__chevron {
+    grid-column: 4;
+  }
+
+  /* Over the button's empty third column, as wide as its text. */
+  .solution-row__summary {
+    grid-row: 1;
+    grid-column: 3;
+    align-self: center;
+    justify-self: start;
+    margin-inline-start: 0;
+    padding: 0;
+  }
+
+  .solution-row__panel {
+    grid-row: 2;
+    grid-column: 2 / 4;
+    margin-inline-start: 0;
   }
 }
