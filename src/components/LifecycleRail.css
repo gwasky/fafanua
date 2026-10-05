@@ -177,8 +177,9 @@
  * over a fifth of --duration-rail-draw at an even pace, so the line runs
  * from the first stage to the last: from the inline start in the row, from
  * the top in the vertical list. The markers, numbers and labels never
- * move or fade. Only on screen with motion allowed; a rail in view on
- * load is drawn already.
+ * move or fade: useReveal.ts holds the draw until the Services section's
+ * own reveal has ended, so they are at rest for all of it. Only on
+ * screen with motion allowed; a rail in view on load is drawn already.
  */
 @media screen and (prefers-reduced-motion: no-preference) {
   .lifecycle-rail-frame[data-reveal-state] .lifecycle-rail__stage::after {
