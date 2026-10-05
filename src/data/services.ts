@@ -1,11 +1,13 @@
-// The Services section: its intro, the six service cards and the Managed
-// Data & Analytics Services block. The wording is copied verbatim from
-// _docs/plan-fafanua-services-positioning.md (Sections 3, 5-12 and 13),
-// which is authoritative for service copy, and
+// The Services section (its intro and the six service cards) and the
+// Managed Services section that follows it. The wording is copied
+// verbatim from _docs/plan-fafanua-services-positioning.md (Sections 3,
+// 5-12 and 13), which is authoritative for service copy, and
 // services.plan.test.ts checks it against that document. Each service's
 // capability tags are the lists in plan V2 Section 9
 // (_docs/fafanua-v2-visual-upgrade-plan.md), checked by
-// services.tags.plan.test.ts. Components read service copy from here and
+// services.tags.plan.test.ts, and the Managed Services section's heading,
+// eyebrow label and rail are from plan V2 Section 10, checked by
+// services.managed.plan.test.ts. Components read service copy from here and
 // nowhere else: the lifecycle rail (LifecycleRail.tsx) and the cards
 // number the stages from each service's position in `services`.
 
@@ -156,10 +158,11 @@ export const services = [
   },
 ] as const satisfies readonly Service[]
 
-// Shown after the six cards as an ongoing engagement model, not a seventh
-// lifecycle card (Section 12). The journey is the Section 12 "Commercial
-// intent" line, one step per item. Reverse ETL appears both here and under
-// Data Engineering & Integration, as Section 13 requires.
+// The Managed Services section, directly after Services: an ongoing
+// engagement model, not a seventh lifecycle card (Section 12). The
+// journey is the Section 12 "Commercial intent" line, one step per item.
+// Reverse ETL appears both here and under Data Engineering & Integration,
+// as Section 13 requires.
 export const managedServices = {
   eyebrow: 'Need ongoing data capability?',
   heading: 'Managed Data & Analytics Services',
@@ -181,4 +184,11 @@ export const managedServices = {
     'Documentation and knowledge transfer',
   ],
   journey: ['Assessment', 'Implementation', 'Managed Service'],
+  // From plan V2 Section 10 (_docs/fafanua-v2-visual-upgrade-plan.md),
+  // checked by services.managed.plan.test.ts: the section's eyebrow label
+  // (shown as "02 — Managed Services", the Section 9 numbering), its
+  // heading, and the capability rail, one word per item.
+  sectionLabel: 'Managed Services',
+  sectionHeading: 'Your data capability, continuously operated.',
+  rail: ['Monitor', 'Maintain', 'Improve', 'Activate'],
 } as const

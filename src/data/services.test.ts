@@ -11,13 +11,16 @@ const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
 const NAV_ANCHORS = ['services', 'how-we-work', 'future-ready', 'about', 'contact']
 
 // Every string in the module: ids, names, descriptions, engagements, tags,
-// the intro and the managed-services block.
+// the intro and the Managed Services section.
 const managedStrings = [
   managedServices.eyebrow,
   managedServices.heading,
   managedServices.description,
   ...managedServices.capabilities,
   ...managedServices.journey,
+  managedServices.sectionLabel,
+  managedServices.sectionHeading,
+  ...managedServices.rail,
 ]
 
 const allStrings = [
@@ -123,6 +126,14 @@ describe('managedServices', () => {
     expect(managedServices.journey).toHaveLength(3)
   })
 
+  it('has a section label, a section heading and a four-word rail', () => {
+    expect(managedServices.sectionLabel).not.toBe('')
+    expect(managedServices.sectionHeading).not.toBe('')
+    expect(managedServices.sectionHeading).not.toBe(managedServices.heading)
+    expect(managedServices.rail).toHaveLength(4)
+    for (const word of managedServices.rail) expect(word).toMatch(/^[A-Z][a-z]+$/)
+  })
+
   it('has no empty or duplicate strings', () => {
     for (const text of managedStrings) expect(text).not.toBe('')
     expect(new Set(managedStrings).size).toBe(managedStrings.length)
@@ -138,6 +149,9 @@ describe('managedServices', () => {
       'description',
       'capabilities',
       'journey',
+      'sectionLabel',
+      'sectionHeading',
+      'rail',
     ])
   })
 })
@@ -196,6 +210,8 @@ describe('services types', () => {
     managedServices.capabilities.push('Changed')
     // @ts-expect-error the journey is read-only
     managedServices.journey.push('Changed')
+    // @ts-expect-error the rail is read-only
+    managedServices.rail.push('Changed')
     // @ts-expect-error 'operate' is not a stage
     const operate: Stage = 'operate'
     // @ts-expect-error 'intelligence' is not a stage
