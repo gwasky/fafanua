@@ -1,6 +1,7 @@
 import type { Page, TestInfo } from '@playwright/test'
 import { expect } from '@playwright/test'
 import { managedServices, servicesIntro } from '../src/data/services.ts'
+import { solutions } from '../src/data/solutions.ts'
 import {
   WIDTHS,
   expectLanded,
@@ -15,7 +16,8 @@ import { expectFlow, flowList, flowProblems, measureFlow } from './systemFlow.ts
 // The page at each width project in playwright.config.ts, in Chromium
 // (width-*) and WebKit (webkit-width-*): no horizontal scrolling, the
 // right navigation, the sticky header, the service grid, the Managed
-// Services panel, the solutions grid, the logo size, and every in-page
+// Services panel, the Solutions rows, the How We Work timeline, the logo
+// size, and every in-page
 // link landing on its section below the header. Playwright loads this
 // file once for all projects, so every test
 // is declared for each width, with the width at the end of its title, and
@@ -62,8 +64,7 @@ const servicesRegion = (page: Page) =>
 // The inline nav shows from 64em (#54): 1024px at the default text size.
 const hasMenu = (width: number) => width < 1024
 
-// The service and solutions grids: one column, two from 768px and three
-// from 1024px.
+// The service grid: one column, two from 768px and three from 1024px.
 const columns = (width: number) => (width < 768 ? 1 : width < 1024 ? 2 : 3)
 
 /**
@@ -280,6 +281,119 @@ function cardRows(cards: CardBox[]) {
 
 const spread = (values: number[]) => Math.max(...values) - Math.min(...values)
 
+// The Solutions section's five row buttons (#59), in order.
+const sectorButtons = (page: Page) =>
+  page.getByRole('region', { name: 'Solutions' }).getByRole('button')
+
+/** Opens every Solutions row with a click on its title. */
+async function openAllSectors(page: Page) {
+  for (const button of await sectorButtons(page).all()) {
+    // The title, not the button's centre: from 1024px the summary sits
+    // over the middle of the button and does not toggle the row.
+    await button.locator('.solution-row__title').click()
+    await expect(button).toHaveAttribute('aria-expanded', 'true')
+  }
+}
+
+type Box = { left: number; right: number; top: number; bottom: number; height: number }
+
+type SectorBox = {
+  row: Box
+  button: Box
+  number: Box
+  title: Box
+  chevron: Box
+  summary: Box
+  panel: Box
+  panelHidden: boolean
+  summaryLines: number
+  titleLineHeight: number
+  themes: { text: string; left: number; top: number; bottom: number }[]
+  style: { background: string; shadow: string; radius: string; sides: string; top: string }
+}
+
+/**
+ * Measures each Solutions row: its box and its parts' boxes, the number
+ * of lines its summary takes, its theme items and its own decoration.
+ */
+const measureSectors = (page: Page) =>
+  page
+    .getByRole('region', { name: 'Solutions' })
+    .getByRole('list')
+    .first()
+    .evaluate((list) => {
+      const box = (element: Element): Box => {
+        const { left, right, top, bottom, height } = element.getBoundingClientRect()
+        return { left, right, top, bottom, height }
+      }
+      const border = (style: CSSStyleDeclaration, side: 'top' | 'bottom') =>
+        `${style.getPropertyValue(`border-${side}-width`)} ${style.getPropertyValue(`border-${side}-style`)} ${style.getPropertyValue(`border-${side}-color`)}`
+      // The border token, resolved.
+      const probe = document.createElement('div')
+      probe.style.border = '1px solid var(--color-border)'
+      document.body.append(probe)
+      const hairline = border(getComputedStyle(probe), 'top')
+      probe.remove()
+      return {
+        hairline,
+        listBorder: border(getComputedStyle(list), 'bottom'),
+        listHeight: list.getBoundingClientRect().height,
+        rows: [...list.children].map((row): SectorBox => {
+          const part = (selector: string) => row.querySelector(selector)!
+          const panel = part('[id]')
+          const style = getComputedStyle(row)
+          const summaryItems = [...part('h3 + ul').children]
+          return {
+            row: box(row),
+            button: box(part('button')),
+            number: box(part('.solution-row__number')),
+            title: box(part('.solution-row__title')),
+            chevron: box(part('svg')),
+            summary: box(part('h3 + ul')),
+            panel: box(panel),
+            panelHidden: panel.hasAttribute('hidden'),
+            summaryLines: new Set(summaryItems.map((item) => Math.round(item.getBoundingClientRect().top))).size,
+            titleLineHeight: parseFloat(getComputedStyle(part('h3')).lineHeight),
+            themes: [...panel.querySelectorAll('li')].map((item) => {
+              const { left, top, bottom } = item.getBoundingClientRect()
+              return { text: item.textContent ?? '', left, top, bottom }
+            }),
+            style: {
+              background: style.backgroundColor,
+              shadow: style.boxShadow,
+              radius: style.borderTopLeftRadius,
+              sides: `${style.borderLeftWidth} ${style.borderRightWidth}`,
+              top: border(style, 'top'),
+            },
+          }
+        }),
+      }
+    })
+
+/**
+ * Text in the Solutions section that does not fit: an element wider than
+ * its own box, or reaching past the section's content box.
+ */
+const sectorOverflow = (page: Page) =>
+  page.getByRole('region', { name: 'Solutions' }).evaluate((section) => {
+    const container = section.firstElementChild!
+    const style = getComputedStyle(container)
+    const { left, right } = container.getBoundingClientRect()
+    const inner = {
+      left: left + parseFloat(style.paddingLeft) - 1,
+      right: right - parseFloat(style.paddingRight) + 1,
+    }
+    return [...section.querySelectorAll('h2, h3, button, span, ul, li, p, svg')]
+      .filter((element) => {
+        const box = element.getBoundingClientRect()
+        return (
+          element.scrollWidth > element.clientWidth + 1 ||
+          (box.width > 0 && (box.left < inner.left || box.right > inner.right))
+        )
+      })
+      .map((element) => `${element.tagName}: ${element.textContent?.slice(0, 40)}`)
+  })
+
 const serviceToggles = (page: Page) =>
   page.getByRole('button', { name: /^Typical engagements for / })
 
@@ -299,6 +413,13 @@ for (const width of WIDTHS) {
         await button.click()
         await expect(button).toHaveAttribute('aria-expanded', 'true')
       }
+
+      await expectNoHorizontalScroll(page)
+    })
+
+    test(`all five Solutions rows open at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      await openAllSectors(page)
 
       await expectNoHorizontalScroll(page)
     })
@@ -1360,51 +1481,249 @@ for (const width of WIDTHS) {
       })
     }
 
-    test(`solution cards in ${columns(width)} ${columns(width) === 1 ? 'column' : 'columns'}, even rows, fitting their text, at ${width}px`, async ({ page }, testInfo) => {
+    // The Solutions rows (#59): a list, not cards. Each row's button spans
+    // the row and is at least 44px tall, and the summary sits outside it.
+    // From 1024px the number, title, summary and chevron are on one line,
+    // with the titles and the summaries lined up across the rows; below
+    // it the summary is beneath the title. Opened, each panel sits
+    // beneath the row's summary, inside the row, aligned with the title
+    // from 1024px, its themes in data order in one column below 768px and
+    // at most two, top to bottom, from 768px. Nothing overflows.
+    test(`solutions rows are ${width >= 1024 ? 'one line each, lined up' : 'title then summary'}, not cards, and open beneath the row, at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
-      const section = page.getByRole('region', { name: 'Solutions' })
-      const cards = section.getByRole('list').first().locator(':scope > li')
-      await expect(cards).toHaveCount(5)
+      await expect(sectorButtons(page)).toHaveCount(5)
 
-      const boxes = await cards.evaluateAll((items) =>
-        items.map((item) => {
-          const box = item.getBoundingClientRect()
-          return { left: Math.round(box.left), top: Math.round(box.top), height: box.height }
-        }),
-      )
-      const lefts = [...new Set(boxes.map((box) => box.left))]
-      expect(lefts.length, `left edges ${lefts.join(', ')}`).toBe(columns(width))
-
-      // Filled row by row, in data order, with a short last row starting
-      // at the first column; cards in a row are the same height.
-      const rows = new Map<number, typeof boxes>()
-      for (const box of boxes) rows.set(box.top, [...(rows.get(box.top) ?? []), box])
-      expect([...rows.values()].map((row) => row.length)).toEqual(
-        columns(width) === 1 ? [1, 1, 1, 1, 1] : columns(width) === 2 ? [2, 2, 1] : [3, 2],
-      )
-      for (const row of rows.values()) {
-        expect(row[0].left, 'row starts at the first column').toBe(Math.min(...lefts))
-        for (const box of row) {
-          expect(Math.abs(box.height - row[0].height), 'same height as its row').toBeLessThanOrEqual(1)
+      const closed = await measureSectors(page)
+      const detail = (row: SectorBox) => JSON.stringify(row)
+      expect(closed.listBorder, 'hairline below the last row').toEqual(closed.hairline)
+      for (const row of closed.rows) {
+        // Not card-like: no fill, shadow, radius or side borders; one
+        // graphite 200 hairline above.
+        expect(row.style, detail(row)).toEqual({
+          background: 'rgba(0, 0, 0, 0)',
+          shadow: 'none',
+          radius: '0px',
+          sides: '0px 0px',
+          top: closed.hairline,
+        })
+        expect(Math.abs(row.button.left - row.row.left), `button spans the row: ${detail(row)}`).toBeLessThanOrEqual(1)
+        expect(Math.abs(row.button.right - row.row.right), `button spans the row: ${detail(row)}`).toBeLessThanOrEqual(1)
+        expect(row.button.height, `button height: ${detail(row)}`).toBeGreaterThanOrEqual(44)
+        expect(Math.abs(row.chevron.right - row.button.right), `chevron at the end: ${detail(row)}`).toBeLessThanOrEqual(1)
+        // Number and title on one line.
+        expect(row.number.top < row.title.bottom && row.number.bottom > row.title.top, `number beside the title: ${detail(row)}`).toBe(true)
+        expect(row.title.left, `title after the number: ${detail(row)}`).toBeGreaterThanOrEqual(row.number.right)
+        expect(row.panelHidden, detail(row)).toBe(true)
+        if (width >= 1024) {
+          expect(row.summary.top < row.title.bottom && row.summary.bottom > row.title.top, `summary beside the title: ${detail(row)}`).toBe(true)
+          expect(row.summary.left, `summary after the title column: ${detail(row)}`).toBeGreaterThan(row.title.left)
+          expect(row.summary.right, `summary before the chevron: ${detail(row)}`).toBeLessThanOrEqual(row.chevron.left)
+          expect(row.summaryLines, `summary on one line: ${detail(row)}`).toBe(1)
+        } else {
+          expect(row.summary.top, `summary beneath the title: ${detail(row)}`).toBeGreaterThanOrEqual(row.button.bottom - 1)
+          expect(row.summary.bottom, `summary inside the row: ${detail(row)}`).toBeLessThanOrEqual(row.row.bottom + 1)
         }
       }
+      if (width >= 1024) {
+        expect(spread(closed.rows.map((row) => row.title.left)), 'titles lined up').toBeLessThanOrEqual(1)
+        expect(spread(closed.rows.map((row) => row.summary.left)), 'summaries lined up').toBeLessThanOrEqual(1)
+        expect(spread(closed.rows.map((row) => row.number.left)), 'numbers lined up').toBeLessThanOrEqual(1)
+      }
+      // Compact: no taller than 5 x (title line height + --space-12).
+      if (width === 1440) {
+        const limit = 5 * (closed.rows[0].titleLineHeight + 48)
+        expect(closed.listHeight, `list height, limit ${limit}`).toBeLessThanOrEqual(limit)
+      }
+      expect(await sectorOverflow(page), 'overflowing, collapsed').toEqual([])
 
-      // No text element in the section is wider than its own box, and no
-      // card goes past the section.
-      const overflowing = await section.evaluate((root) =>
-        [...root.querySelectorAll('h2, h3, li')]
+      await openAllSectors(page)
+      const opened = await measureSectors(page)
+      opened.rows.forEach((row, index) => {
+        expect(row.panelHidden, detail(row)).toBe(false)
+        expect(row.panel.top, `panel beneath the summary: ${detail(row)}`).toBeGreaterThanOrEqual(
+          Math.max(row.summary.bottom, row.button.bottom) - 1,
+        )
+        expect(row.panel.bottom, `panel inside the row: ${detail(row)}`).toBeLessThanOrEqual(row.row.bottom + 1)
+        if (width >= 768) {
+          expect(Math.abs(row.panel.left - row.title.left), `panel aligned with the title: ${detail(row)}`).toBeLessThanOrEqual(1)
+        }
+        // The themes in data order, one column below 768px, at most two
+        // from 768px, flowing down each column.
+        expect(row.themes.map((theme) => theme.text)).toEqual(solutions[index].themes)
+        const lefts = new Set(row.themes.map((theme) => Math.round(theme.left)))
+        expect(lefts.size, `theme columns: ${detail(row)}`).toBeLessThanOrEqual(width >= 768 ? 2 : 1)
+        for (let i = 1; i < row.themes.length; i++) {
+          const [before, after] = [row.themes[i - 1], row.themes[i]]
+          expect(
+            after.left > before.left + 1 || (Math.abs(after.left - before.left) <= 1 && after.top >= before.bottom - 1),
+            `theme ${i + 1} follows theme ${i}: ${detail(row)}`,
+          ).toBe(true)
+        }
+      })
+      // Opening a row moves no other row's title sideways.
+      opened.rows.forEach((row, index) => {
+        expect(Math.abs(row.title.left - closed.rows[index].title.left)).toBeLessThanOrEqual(1)
+      })
+      expect(await sectorOverflow(page), 'overflowing, all open').toEqual([])
+      await expectNoHorizontalScroll(page)
+    })
+
+    // A tap opens and closes a row, on its number, its title or the space
+    // before the chevron, and leaves the other rows closed.
+    test.describe('touch', () => {
+      test.use({ hasTouch: true })
+
+      test(`a tap opens and closes a Solutions row at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        const button = sectorButtons(page).nth(1)
+        const panel = page.locator(`[id="${await button.getAttribute('aria-controls')}"]`)
+        await button.scrollIntoViewIfNeeded()
+
+        await button.locator('.solution-row__title').tap()
+        await expect(button).toHaveAttribute('aria-expanded', 'true')
+        await expect(panel).toBeVisible()
+        await button.locator('.solution-row__number').tap()
+        await expect(button).toHaveAttribute('aria-expanded', 'false')
+        await expect(panel).toBeHidden()
+        const box = await button.boundingBox()
+        if (!box) throw new Error('No button box')
+        // Just before the chevron, which is --space-4 wide at the end.
+        await page.touchscreen.tap(box.x + box.width - 16 - 4, box.y + box.height / 2)
+        await expect(button).toHaveAttribute('aria-expanded', 'true')
+
+        // A mouse click on the summary toggles nothing. A tap there is not
+        // checked: in WebKit, touch adjustment sends a tap that close to
+        // the button to the button, as Safari on iOS does (measured for
+        // #59: a tap on "Inventory" at 360px opened Retail & Distribution
+        // in WebKit, and did nothing in Chromium).
+        await sectorButtons(page).nth(1).locator('xpath=../../ul[1]/li[1]').click()
+        await expect(button).toHaveAttribute('aria-expanded', 'true')
+        await button.locator('.solution-row__title').tap()
+        await expect(button).toHaveAttribute('aria-expanded', 'false')
+        for (const other of [0, 2, 3, 4]) {
+          await expect(sectorButtons(page).nth(other)).toHaveAttribute('aria-expanded', 'false')
+        }
+      })
+    })
+
+    if (width === 320) {
+      test(`solutions rows fit with 200% page text, collapsed and open, at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        await page.addStyleTag({ content: 'html { font-size: 200%; }' })
+        await waitForFonts(page)
+
+        expect(await sectorOverflow(page), 'overflowing, collapsed').toEqual([])
+        await expectNoHorizontalScroll(page)
+        await openAllSectors(page)
+        expect(await sectorOverflow(page), 'overflowing, all open').toEqual([])
+        await expectNoHorizontalScroll(page)
+      })
+    }
+
+    // How We Work (#59): a horizontal timeline from 1024px, the four
+    // stages in one row of equal columns, and a vertical one below it.
+    // The line is one segment per stage but the last, which together run
+    // from the first node's centre to the last one's: horizontal at one
+    // height, or vertical at one inline position. Each stage's text sits
+    // below its node (horizontal) or to its inline end (vertical).
+    test(`the How We Work timeline is ${width >= 1024 ? 'horizontal' : 'vertical'}, with one continuous line through the nodes, at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      const region = page.getByRole('region', { name: 'How We Work' })
+      await expect(region.getByRole('heading', { level: 3 })).toHaveText(['Assess', 'Design', 'Build', 'Govern'])
+
+      const m = await region.getByRole('list').evaluate((list) => {
+        const px = (value: string) => parseFloat(value)
+        return [...list.children].map((item) => {
+          const box = item.getBoundingClientRect()
+          const node = getComputedStyle(item, '::before')
+          const line = getComputedStyle(item, '::after')
+          const nodeLeft = box.left + px(node.left)
+          const nodeTop = box.top + px(node.top)
+          const text = (selector: string) => item.querySelector(selector)!.getBoundingClientRect()
+          return {
+            box: { left: box.left, top: box.top, width: box.width, bottom: box.bottom },
+            node: {
+              left: nodeLeft,
+              right: nodeLeft + px(node.width),
+              top: nodeTop,
+              bottom: nodeTop + px(node.height),
+              x: nodeLeft + px(node.width) / 2,
+              y: nodeTop + px(node.height) / 2,
+            },
+            line:
+              line.content === 'none'
+                ? null
+                : {
+                    left: box.left + px(line.left),
+                    top: box.top + px(line.top),
+                    width: px(line.width) + px(line.borderLeftWidth),
+                    height: px(line.height) + px(line.borderTopWidth),
+                  },
+            number: text('span'),
+            name: text('h3'),
+            description: text('p'),
+          }
+        })
+      })
+      const detail = JSON.stringify(m)
+      expect(m).toHaveLength(4)
+      expect(m[3].line, 'no line after the last stage').toBeNull()
+
+      if (width >= 1024) {
+        expect(spread(m.map((stage) => stage.box.top)), 'one row').toBeLessThanOrEqual(1)
+        expect(spread(m.map((stage) => stage.box.width)), 'equal columns').toBeLessThanOrEqual(1)
+        expect(spread(m.map((stage) => stage.node.y)), 'nodes at one height').toBeLessThanOrEqual(0.5)
+        for (let i = 0; i < 3; i++) {
+          const line = m[i].line!
+          expect(m[i + 1].box.left, `stage ${i + 2} right of stage ${i + 1}`).toBeGreaterThan(m[i].box.left)
+          expect(Math.abs(line.left - m[i].node.x), `segment ${i + 1} starts at its node: ${detail}`).toBeLessThanOrEqual(1)
+          expect(Math.abs(line.left + line.width - m[i + 1].node.x), `segment ${i + 1} reaches the next node: ${detail}`).toBeLessThanOrEqual(1)
+          expect(Math.abs(line.top + line.height / 2 - m[0].node.y), `segment ${i + 1} at the nodes' height: ${detail}`).toBeLessThanOrEqual(1)
+        }
+        for (const stage of m) {
+          expect(stage.number.top, `text below the node: ${detail}`).toBeGreaterThanOrEqual(stage.node.bottom)
+        }
+      } else {
+        expect(spread(m.map((stage) => stage.box.left)), 'one column').toBeLessThanOrEqual(1)
+        expect(spread(m.map((stage) => stage.node.x)), 'nodes at one inline position').toBeLessThanOrEqual(0.5)
+        for (let i = 0; i < 3; i++) {
+          const line = m[i].line!
+          expect(m[i + 1].box.top, `stage ${i + 2} below stage ${i + 1}`).toBeGreaterThanOrEqual(m[i].box.bottom)
+          expect(Math.abs(line.top - m[i].node.y), `segment ${i + 1} starts at its node: ${detail}`).toBeLessThanOrEqual(1)
+          expect(Math.abs(line.top + line.height - m[i + 1].node.y), `segment ${i + 1} reaches the next node: ${detail}`).toBeLessThanOrEqual(1)
+          expect(Math.abs(line.left + line.width / 2 - m[0].node.x), `segment ${i + 1} through the nodes: ${detail}`).toBeLessThanOrEqual(1)
+        }
+        for (const stage of m) {
+          for (const part of [stage.number, stage.name, stage.description]) {
+            expect(part.left, `text to the node's inline end: ${detail}`).toBeGreaterThanOrEqual(stage.node.right)
+          }
+          expect(Math.abs(stage.node.y - (stage.number.top + stage.number.bottom) / 2), `node on the number's line: ${detail}`).toBeLessThanOrEqual(1)
+        }
+      }
+      // Number, then name, then description, each below the last.
+      for (const stage of m) {
+        expect(stage.name.top).toBeGreaterThanOrEqual(stage.number.bottom - 1)
+        expect(stage.description.top).toBeGreaterThanOrEqual(stage.name.bottom - 1)
+      }
+      // A stage's scroll width includes its line segment, which reaches
+      // into the next stage by design, so stages are checked by their box
+      // only.
+      const overflowing = await region.evaluate((root) =>
+        [...root.querySelectorAll('h2, h3, p, span')]
           .filter(
             (element) =>
               element.scrollWidth > element.clientWidth + 1 ||
-              element.getBoundingClientRect().right > root.getBoundingClientRect().right + 1 ||
-              [...element.children].some(
-                (child) =>
-                  child.getBoundingClientRect().right > element.getBoundingClientRect().right + 1,
-              ),
+              element.getBoundingClientRect().right > root.getBoundingClientRect().right + 1,
           )
           .map((element) => element.textContent?.slice(0, 40)),
       )
       expect(overflowing).toEqual([])
+      const section = await region.boundingBox()
+      if (!section) throw new Error('No How We Work box')
+      for (const stage of m) {
+        expect(stage.box.left + stage.box.width, `stage inside the section: ${detail}`)
+          .toBeLessThanOrEqual(section.x + section.width + 1)
+      }
       await expectNoHorizontalScroll(page)
     })
 
