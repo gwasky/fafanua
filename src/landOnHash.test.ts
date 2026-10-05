@@ -101,6 +101,7 @@ describe('landOnHash', () => {
   let fontsLoaded: () => void
   let scrolls: { id: string; options: unknown }[]
   let top: number
+  let scrollY: number
 
   /** Runs the queued animation frames, once each. */
   function frame(count = 1) {
@@ -125,6 +126,8 @@ describe('landOnHash', () => {
     frames = []
     scrolls = []
     top = 500
+    scrollY = 0
+    Object.defineProperty(window, 'scrollY', { configurable: true, get: () => scrollY })
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => frames.push(callback))
     Object.defineProperty(document, 'fonts', {
       configurable: true,
@@ -150,6 +153,7 @@ describe('landOnHash', () => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
     delete (document as { fonts?: unknown }).fonts
+    delete (window as { scrollY?: unknown }).scrollY
     delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView
   })
 
@@ -216,6 +220,133 @@ describe('landOnHash', () => {
     frame(2)
     document.body.dispatchEvent(new Event('wheel', { bubbles: true }))
     frame(10)
+
+    expect(scrolls).toEqual([instant])
+  })
+
+  /**
+   * Scrolls the page by a distance with no input event, as find-in-page,
+   * a screen reader or a script would, moving the target the other way.
+   */
+  function scrollBy(distance: number) {
+    scrollY += distance
+    top -= distance
+  }
+
+  it('does not scroll again when the page has scrolled away before the fonts load', async () => {
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    landOnHash()
+    scrollBy(-1500)
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 5)
+
+    expect(scrolls).toEqual([instant])
+    expect(frames, 'stops checking').toEqual([])
+  })
+
+  it('does not scroll again when the page scrolls away while the target is settling', async () => {
+    const { landOnHash } = await load('#contact')
+    landOnHash()
+    fontsLoaded()
+    await Promise.resolve()
+    frame(2)
+    scrollBy(800)
+    frame(10)
+
+    expect(scrolls).toEqual([instant])
+    expect(frames).toEqual([])
+  })
+
+  it('does not scroll again after a scroll away and part of the way back', async () => {
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    landOnHash()
+    scrollBy(400)
+    scrollBy(-398)
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 5)
+
+    expect(scrolls).toEqual([instant])
+  })
+
+  it('still scrolls again after a scroll of a pixel or less', async () => {
+    const { landOnHash, STABLE_FRAMES, MOVE_TOLERANCE } = await load('#contact')
+    landOnHash()
+    scrollBy(MOVE_TOLERANCE)
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 1)
+
+    expect(scrolls).toEqual([instant, instant])
+  })
+
+  it('still scrolls again when only the target moves, as a font swap does without scroll anchoring', async () => {
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    landOnHash()
+    top = 466
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 1)
+
+    expect(scrolls).toEqual([instant, instant])
+  })
+
+  it('still scrolls again when the scroll position changes but the target stays in place, as scroll anchoring does', async () => {
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    landOnHash()
+    scrollY = 34
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 1)
+
+    expect(scrolls).toEqual([instant, instant])
+  })
+
+  it('still scrolls again after the browser scrolls back to the target and the target then shifts', async () => {
+    // Measured in WebKit at 360px for #managed-services: the font swap
+    // moves the target down, WebKit's fragment scroll follows it, then
+    // the heading re-balances and moves it up 34px (#62).
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    landOnHash()
+    top = 522
+    frame()
+    scrollY = 22
+    top = 500
+    frame()
+    fontsLoaded()
+    await Promise.resolve()
+    top = 466
+    frame(STABLE_FRAMES + 1)
+
+    expect(scrolls).toEqual([instant, instant])
+  })
+
+  it('still scrolls again while the browser glides back towards the target', async () => {
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    landOnHash()
+    top = 560
+    frame()
+    for (const y of [20, 40, 55, 60]) {
+      scrollY = y
+      top = 560 - y
+      frame()
+    }
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 1)
+
+    expect(scrolls).toEqual([instant, instant])
+  })
+
+  it('does not scroll again after a scroll away in the same frame as a font swap', async () => {
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    landOnHash()
+    top = 466
+    scrollBy(1500)
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 5)
 
     expect(scrolls).toEqual([instant])
   })

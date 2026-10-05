@@ -137,3 +137,76 @@ for (const motion of MOTIONS) {
     }
   })
 }
+
+// The scroll landOnHash makes once the fonts have loaded must not pull a
+// visitor back who has already moved away from the target, even when no
+// wheel, touch, key or pointer event fired (#62): find-in-page, a screen
+// reader, a scroll-to-text link or a scrollbar drag. Here the web font is
+// held back, the hash lands in the fallback font, and the page then
+// scrolls away in script, before the font arrives. Before the fix, the
+// page jumped back to the target once the font loaded, 12 of 12 times
+// (#62 QA).
+for (const motion of MOTIONS) {
+  for (const width of WIDTHS) {
+    test(`a scroll away with no input event before the font loads is kept, at ${width}px, ${motion}`, async ({
+      browser,
+      baseURL,
+    }) => {
+      const hash = '#about'
+      const away = 2000
+      const context = await browser.newContext({
+        baseURL,
+        viewport: { width, height: 800 },
+        reducedMotion: motion,
+      })
+      try {
+        const page = await context.newPage()
+        const errors: string[] = []
+        page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`))
+        page.on('console', (message) => {
+          if (message.type() === 'error') errors.push(`console.error: ${message.text()}`)
+        })
+        let release = () => {}
+        const held = new Promise<void>((resolve) => (release = resolve))
+        await page.route(/\.woff2$/, async (route) => {
+          await held
+          await route.continue()
+        })
+
+        // The load event would wait for the held font.
+        await page.goto(`/${hash}`, { waitUntil: 'domcontentloaded' })
+        // Landed in the fallback font: the target is near the top of the
+        // viewport, and the web font has not loaded.
+        await page.waitForFunction(
+          (id) => {
+            const top = document.getElementById(id)!.getBoundingClientRect().top
+            return window.scrollY > 0 && top >= 0 && top < 200
+          },
+          hash.slice(1),
+          { polling: 'raf' },
+        )
+        expect(await page.evaluate(() => document.fonts.status)).toBe('loading')
+
+        // A scroll with no input event, then the font.
+        await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), away)
+        expect(await page.evaluate(() => window.scrollY)).toBe(away)
+        release()
+        await waitForLanding(page, hash)
+
+        const metrics = await page.evaluate((id) => ({
+          scrollY: window.scrollY,
+          top: document.getElementById(id)!.getBoundingClientRect().top,
+          viewport: window.innerHeight,
+        }), hash.slice(1))
+        const detail = JSON.stringify(metrics)
+        // The font swap can move the page a little (scroll anchoring), but
+        // the target stays far below the viewport.
+        expect(Math.abs(metrics.scrollY - away), detail).toBeLessThan(400)
+        expect(metrics.top, detail).toBeGreaterThan(metrics.viewport)
+        expect(errors).toEqual([])
+      } finally {
+        await context.close()
+      }
+    })
+  }
+}
