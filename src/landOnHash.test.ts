@@ -270,10 +270,92 @@ describe('landOnHash', () => {
     expect(scrolls).toEqual([instant])
   })
 
-  it('still scrolls again after a scroll of a pixel or less', async () => {
-    const { landOnHash, STABLE_FRAMES, MOVE_TOLERANCE } = await load('#contact')
+  it('still scrolls again after a scroll of DRIFT_TOLERANCE or less', async () => {
+    const { landOnHash, STABLE_FRAMES, DRIFT_TOLERANCE } = await load('#contact')
     landOnHash()
-    scrollBy(MOVE_TOLERANCE)
+    scrollBy(DRIFT_TOLERANCE)
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 1)
+
+    expect(scrolls).toEqual([instant, instant])
+  })
+
+  it('does not scroll again after a slow scroll away of 1px a frame before the fonts load', async () => {
+    // A slow scrollbar drag or an assistive-technology scroll: no single
+    // frame moves more than a pixel, but it adds up (#62 QA).
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    landOnHash()
+    for (let i = 0; i < 90; i++) {
+      scrollBy(1)
+      frame()
+    }
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 5)
+
+    expect(scrolls).toEqual([instant])
+    expect(frames, 'stops checking').toEqual([])
+  })
+
+  it('does not scroll again after a slow scroll up of 1px a frame while the target is settling', async () => {
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    landOnHash()
+    fontsLoaded()
+    await Promise.resolve()
+    frame()
+    // The font swap moves the target down, so scrolling up moves it
+    // further from where it landed.
+    top = 534
+    for (let i = 0; i < 10; i++) {
+      scrollBy(-1)
+      frame()
+    }
+    frame(STABLE_FRAMES + 5)
+
+    expect(scrolls).toEqual([instant])
+  })
+
+  it('does not scroll again after a slow drift of half a pixel a frame', async () => {
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    landOnHash()
+    for (let i = 0; i < 20; i++) {
+      scrollBy(0.5)
+      frame()
+    }
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 5)
+
+    expect(scrolls).toEqual([instant])
+  })
+
+  it('still scrolls again after a slow drift that stays within DRIFT_TOLERANCE in all', async () => {
+    const { landOnHash, STABLE_FRAMES, DRIFT_TOLERANCE } = await load('#contact')
+    landOnHash()
+    for (let i = 0; i < DRIFT_TOLERANCE * 4; i++) {
+      scrollBy(0.25)
+      frame()
+    }
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 1)
+
+    expect(scrolls).toEqual([instant, instant])
+  })
+
+  it('still scrolls again after many layout shifts, each followed by scroll anchoring or the browser', async () => {
+    // A layout shift moves the target in the page; the viewport follows
+    // it, in the same frame or the next. None of it is the visitor's.
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    landOnHash()
+    for (let i = 0; i < 30; i++) {
+      top += 3
+      frame()
+      scrollY += 3
+      top -= 3
+      frame()
+    }
     fontsLoaded()
     await Promise.resolve()
     frame(STABLE_FRAMES + 1)

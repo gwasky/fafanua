@@ -46,12 +46,13 @@ const INPUT = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const
 export const STABLE_FRAMES = 3
 
 /**
- * How far, in CSS pixels, the target may move away from where landing
- * left it in the viewport in one frame, beyond what a layout shift
- * explains, before the page counts as scrolled away. Allows for subpixel
- * rounding.
+ * How far in all, in CSS pixels, the target may have moved away from
+ * where landing left it in the viewport, beyond what layout shifts
+ * explain, before the page counts as scrolled away. It is summed across
+ * frames, so a slow scroll of a pixel a frame adds up (#62). Allows for
+ * subpixel rounding.
  */
-export const MOVE_TOLERANCE = 1
+export const DRIFT_TOLERANCE = 1
 
 /**
  * Scrolls instantly to the element the URL's hash names, once, after the
@@ -74,12 +75,13 @@ export const MOVE_TOLERANCE = 1
  * landing left it, whatever moved it: find-in-page, a screen reader, a
  * scroll-to-text link or a scrollbar drag fire none of those input
  * events (#62). From landing on, every frame compares the target's place
- * in the viewport with where landing left it. The page has moved away
- * when that distance grows by more than the target itself moved in the
- * page that frame. A font swap moves the target in the page (and WebKit
- * has no scroll anchoring to follow it), and scroll anchoring or WebKit's
- * own fragment scroll moves the viewport back towards the target, so
- * none of those cancel the correction.
+ * in the viewport with where landing left it. Whatever that distance grew
+ * by, beyond how far the target itself moved in the page that frame, is
+ * drift, and the drift is summed across frames: once it passes
+ * DRIFT_TOLERANCE, the page has moved away, however slowly. A font swap
+ * moves the target in the page (and WebKit has no scroll anchoring to
+ * follow it), and scroll anchoring or WebKit's own fragment scroll moves
+ * the viewport back towards the target, so none of those add drift.
  */
 export function landOnHash() {
   if (done) return
@@ -102,9 +104,10 @@ export function landOnHash() {
 
   const landedTop = target.getBoundingClientRect().top
   // The target's place in the page and its distance from where landing
-  // left it in the viewport, at the last frame.
+  // left it in the viewport, at the last frame, and the drift so far.
   let lastPlace = landedTop + window.scrollY
   let lastDistance = 0
+  let drift = 0
   let fontsReady = false
   let place = NaN
   let stable = 0
@@ -114,7 +117,8 @@ export function landOnHash() {
     const { top } = target.getBoundingClientRect()
     const now = top + window.scrollY
     const distance = Math.abs(top - landedTop)
-    if (distance - lastDistance > Math.abs(now - lastPlace) + MOVE_TOLERANCE) return stop()
+    drift += Math.max(0, distance - lastDistance - Math.abs(now - lastPlace))
+    if (drift > DRIFT_TOLERANCE) return stop()
     lastPlace = now
     lastDistance = distance
 
