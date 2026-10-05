@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { expectLanded, expectNoAxeViolations, openPage } from './fixtures.ts'
+import { expectLanded, expectNoAxeViolations, openPage, waitForMotion } from './fixtures.ts'
 import { SEQUENCE, walkFocus } from './focus.ts'
 import { AXE_TAGS, formatViolations } from '../src/test/axe.ts'
 import { managedServices, servicesIntro } from '../src/data/services.ts'
@@ -306,10 +306,16 @@ test.describe('reduced motion', () => {
       const chevron = document.querySelector('.service-card__chevron')
       const sector = document.querySelector('.solution-row__chevron')
       if (!chevron || !sector) throw new Error('No chevron found')
+      const card = document.querySelector('.service-card')
+      if (!card) throw new Error('No service card found')
       return {
         scroll: getComputedStyle(document.documentElement).scrollBehavior,
         chevron: getComputedStyle(chevron).transitionDuration,
         sector: getComputedStyle(sector).transitionDuration,
+        sectorProperty: getComputedStyle(sector).transitionProperty,
+        sectorEasing: getComputedStyle(sector).transitionTimingFunction,
+        card: getComputedStyle(card).transitionDuration,
+        cardEasing: getComputedStyle(card).transitionTimingFunction,
       }
     })
 
@@ -420,7 +426,7 @@ test.describe('reduced motion', () => {
     expect((await arrowAndHeader(page)).arrowTranslate, 'arrow on focus').toBe('none')
   })
 
-  test('no-preference: smooth scrolling and 150ms button transitions', async ({ page }) => {
+  test('no-preference: smooth scrolling, 150ms button transitions and the card-hover nudge', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' })
     await openPage(page, 1440)
     const buttons = await buttonDurations(page)
@@ -428,8 +434,18 @@ test.describe('reduced motion', () => {
     const moved = await durations(page)
     expect(moved.scroll).toBe('smooth')
     // The Solutions chevron turns over --duration-fast (150ms), and on
-    // hover nudges --cta-arrow-shift (4px) down, or up once open (#59).
-    expect(ms(moved.sector)).toBe(150)
+    // hover nudges --cta-arrow-shift (4px) down, or up once open (#59),
+    // over the service cards' hover duration and easing (#61).
+    expect(moved.sectorProperty).toBe('transform, translate')
+    expect(moved.sector).toBe(
+      `${await tokenDuration(page, '--duration-fast')}, ${await tokenDuration(page, '--duration-card-hover')}`,
+    )
+    expect(moved.card.split(', ')[0]).toBe(await tokenDuration(page, '--duration-card-hover'))
+    expect(moved.sectorEasing.split(', ')[0]).toBe(moved.cardEasing.split(', ')[0])
+    // Solutions reveals as it scrolls into view (#61): let it finish, so
+    // the pointer is not left over a row that has since moved.
+    await sector(page).scrollIntoViewIfNeeded()
+    await waitForMotion(page)
     expect(await sectorShift(page)).toBe('none')
     await sectorTitle(page).hover()
     await expect.poll(() => sectorShift(page)).toBe('0px 4px')

@@ -54,6 +54,47 @@ export async function openPath(page: Page, path: string, width: number, height =
   await page.setViewportSize({ width, height })
   await page.goto(path)
   await waitForFonts(page)
+  await waitForMotion(page)
+}
+
+/**
+ * Waits until no CSS animation or transition is running on the page: the
+ * hero reveal on load, and any section reveal or rail line under way
+ * (#61), so boxes and colours are measured in their final state. Returns
+ * at once under reduced motion, where nothing runs.
+ */
+export async function waitForMotion(page: Page) {
+  await page.evaluate(async () => {
+    for (;;) {
+      const running = document
+        .getAnimations()
+        .filter((animation) => animation.playState === 'running' || animation.pending)
+      if (running.length === 0) return
+      await Promise.all(running.map((animation) => animation.finished.catch(() => undefined)))
+    }
+  })
+}
+
+/**
+ * Scrolls the page from the top to the bottom one viewport at a time,
+ * instantly, giving the reveal observer two frames at each step, so every
+ * section and the lifecycle rail reveals (#61). Then waits for the
+ * reveals to finish and returns to where the page was.
+ */
+export async function scrollThrough(page: Page) {
+  await page.evaluate(async () => {
+    const frame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    const start = window.scrollY
+    const step = Math.max(1, Math.floor(window.innerHeight / 2))
+    for (let y = 0; ; y += step) {
+      window.scrollTo({ top: y, behavior: 'instant' })
+      await frame()
+      if (y >= document.documentElement.scrollHeight - window.innerHeight) break
+    }
+    window.scrollTo({ top: start, behavior: 'instant' })
+    await frame()
+  })
+  await waitForMotion(page)
 }
 
 /**
@@ -89,6 +130,8 @@ export async function waitForFonts(page: Page) {
  */
 export async function expectNoAxeViolations(page: Page, testInfo: TestInfo) {
   await waitForFonts(page)
+  // Partly faded text would give contrast results for a midway colour.
+  await waitForMotion(page)
   const results = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze()
 
   if (results.incomplete.length > 0) {

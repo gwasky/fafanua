@@ -169,9 +169,12 @@
   }
 }
 
+/* The turn takes --duration-fast, as the service cards' chevrons do; the
+   hover nudge takes --duration-card-hover, as the service cards' hover
+   lift does (#61), with the same easing. */
 @media (prefers-reduced-motion: no-preference) {
   .solution-row__chevron {
-    transition-duration: var(--duration-fast);
+    transition-duration: var(--duration-fast), var(--duration-card-hover);
     transition-property: transform, translate;
     transition-timing-function: var(--ease-standard);
   }
