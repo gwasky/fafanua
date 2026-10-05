@@ -72,11 +72,16 @@
  * The capability rail: four words in paper, each but the last followed by
  * a small teal 400 dot. The dots are empty aria-hidden spans drawn with a
  * border, so they have no text and stay drawn in forced-colours mode. The
- * items wrap onto further lines when the row does not fit.
+ * items wrap onto further lines when the row does not fit. A word wider
+ * than the whole line (at 320px with 200% page text the panel's text box
+ * is 160px) breaks rather than overflowing: break-word would not let the
+ * flex items shrink below the word, so this list and the journey use
+ * anywhere, which only ever breaks a word that cannot fit on a line.
  */
 .managed-services__rail {
   display: flex;
   flex-wrap: wrap;
+  overflow-wrap: anywhere;
   gap: var(--space-2) var(--space-4);
   margin: 0 0 var(--space-8);
   padding: 0;
@@ -122,6 +127,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
+  overflow-wrap: anywhere;
 }
 
 .managed-services__step {
