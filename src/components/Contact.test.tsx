@@ -3,12 +3,18 @@ import { describe, expect, it } from 'vitest'
 import { contactNavItem, footerNavigation, navigationCta } from '../data/navigation.ts'
 import Contact from './Contact.tsx'
 
-// Plan Section 11, character for character.
-const HEADING = 'Discuss your data foundation.'
+// Plan V2 §16 and plan Section 11, character for character: the heading
+// with its typographic apostrophe (U+2019), the supporting copy and the
+// button label without its arrow. The phone number is the owner's
+// decision on #60.
+const HEADING = 'Let\u2019s build a data foundation your organisation can trust.'
 const PARAGRAPH =
   'Tell us about the systems, reporting challenges, or data priorities your organisation is working through.'
+const LABEL = 'Discuss your data needs'
 const EMAIL = 'info@fafanua.tech'
 const HREF = 'mailto:info@fafanua.tech'
+const PHONE = '+256 752 008822'
+const TEL = 'tel:+256752008822'
 
 // Claims the section must not make: an existing Intelligence product, or
 // SaaS or AI features.
@@ -55,38 +61,58 @@ describe('Contact', () => {
     expect(paragraphs[0].textContent).toBe(PARAGRAPH)
   })
 
-  it('has exactly two links, "Email us" then the address, both to the mailto', () => {
+  it('has exactly three links: the button and the address, both to the mailto, then the phone number', () => {
     const section = renderContact()
     const links = within(section).getAllByRole('link')
 
-    expect(links).toHaveLength(2)
-    expect(links[0]).toHaveAccessibleName('Email us')
-    expect(links[0].textContent).toBe('Email us')
+    expect(links).toHaveLength(3)
+    expect(links[0]).toHaveAccessibleName(LABEL)
     expect(links[1]).toHaveAccessibleName(EMAIL)
     expect(links[1].textContent).toBe(EMAIL)
+    expect(links[2]).toHaveAccessibleName(PHONE)
+    expect(links[2].textContent).toBe(PHONE)
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([HREF, HREF, TEL])
     for (const link of links) {
       expect(link.tagName).toBe('A')
-      expect(link.getAttribute('href')).toBe(HREF)
       expect(link).not.toHaveAttribute('target')
       expect(link).not.toHaveAttribute('onclick')
     }
   })
 
-  it('styles "Email us" as the primary button and keeps the address out of it', () => {
+  it('styles the button as the primary one, with a hidden arrow, and keeps the address and number out of it', () => {
     const section = renderContact()
-    const button = within(section).getByRole('link', { name: 'Email us' })
+    const button = within(section).getByRole('link', { name: LABEL })
     const address = within(section).getByRole('link', { name: EMAIL })
+    const phone = within(section).getByRole('link', { name: PHONE })
+    const arrow = button.querySelector('.button__arrow')
 
     expect(button).toHaveClass('button')
     expect(button).not.toHaveClass('button--secondary')
-    expect(button).not.toContainElement(address)
-    expect(address).not.toHaveClass('button')
+    expect(button.textContent).toBe(LABEL + '→')
+    expect(arrow?.tagName).toBe('SPAN')
+    expect(arrow).toHaveAttribute('aria-hidden', 'true')
+    expect(arrow?.textContent).toBe('→')
+    for (const link of [address, phone]) {
+      expect(button).not.toContainElement(link)
+      expect(link).not.toHaveClass('button')
+    }
   })
 
-  it('contains only the heading, paragraph and two links', () => {
+  it('gives the phone number the address link\'s treatment, after it', () => {
+    const section = renderContact()
+    const address = within(section).getByRole('link', { name: EMAIL })
+    const phone = within(section).getByRole('link', { name: PHONE })
+
+    expect(address).toHaveClass('contact__email')
+    expect(phone).toHaveClass('contact__phone')
+    expect(phone.parentElement).toBe(address.parentElement)
+    expect(address.nextElementSibling).toBe(phone)
+  })
+
+  it('contains only the heading, paragraph and three links', () => {
     const section = renderContact()
 
-    expect(section.textContent).toBe(HEADING + PARAGRAPH + 'Email us' + EMAIL)
+    expect(section.textContent).toBe(HEADING + PARAGRAPH + LABEL + '→' + EMAIL + PHONE)
   })
 
   it('has no form, input, textarea, button or iframe', () => {
@@ -117,12 +143,12 @@ describe('Contact', () => {
     expect(section.textContent?.toLowerCase()).not.toContain(phrase.toLowerCase())
   })
 
-  it('has no phone number or web link', () => {
+  it('has one phone number, the tel: link, and no web link', () => {
     const section = renderContact()
 
-    expect(section.textContent).not.toMatch(/\+?\d[\d\s().-]{6,}\d/)
-    expect(section.textContent).not.toMatch(/\d/)
-    expect(section.querySelector('a[href^="http"], a[href^="tel:"]')).toBeNull()
+    expect(section.textContent?.replace(PHONE, '')).not.toMatch(/\d/)
+    expect([...section.querySelectorAll('a[href^="tel:"]')].map((link) => link.getAttribute('href'))).toEqual([TEL])
+    expect(section.querySelector('a[href^="http"]')).toBeNull()
   })
 
   it('sits on the graphite 100 surface, not a dark one', () => {

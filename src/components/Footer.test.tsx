@@ -1,9 +1,13 @@
 import { render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { footerNavigation } from '../data/navigation.ts'
+import footerCss from './Footer.css?raw'
 import Footer from './Footer.tsx'
 
 const EMAIL = 'info@fafanua.tech'
+// The owner's decision on #60.
+const PHONE = '+256 752 008822'
+const TEL = 'tel:+256752008822'
 const COPYRIGHT = /^© \d{4} Fafanua Technologies Limited$/
 
 // Claims the footer must not make, and details it must not invent.
@@ -38,12 +42,12 @@ describe('Footer', () => {
     expect(screen.getAllByRole('contentinfo')).toHaveLength(1)
   })
 
-  it('shows the positive logo as an image, not a link', () => {
+  it('shows the reversed logo as an image, not a link', () => {
     const footer = renderFooter()
     const logo = within(footer).getByRole('img', { name: 'Fafanua Technologies' })
 
     expect(logo.tagName).toBe('IMG')
-    expect(logo).toHaveAttribute('src', '/fafanua-logo.svg')
+    expect(logo).toHaveAttribute('src', '/fafanua-logo-reversed.svg')
     expect(logo).toHaveAttribute('width', '296')
     expect(logo).toHaveAttribute('height', '42')
     expect(logo.closest('a')).toBeNull()
@@ -88,6 +92,20 @@ describe('Footer', () => {
     expect(footer.querySelectorAll('a[href^="mailto:"]')).toHaveLength(1)
   })
 
+  it('links the phone number to its tel:, next to the address', () => {
+    const footer = renderFooter()
+    const address = within(footer).getByRole('link', { name: EMAIL })
+    const link = within(footer).getByRole('link', { name: PHONE })
+
+    expect(link.textContent).toBe(PHONE)
+    expect(link.getAttribute('href')).toBe(TEL)
+    expect(link).not.toHaveAttribute('target')
+    expect(footer.querySelectorAll('a[href^="tel:"]')).toHaveLength(1)
+    expect(link.parentElement).toBe(address.parentElement)
+    expect(address.nextElementSibling).toBe(link)
+    expect(link).toHaveClass('site-footer__phone')
+  })
+
   it('shows the copyright line with the current year', () => {
     const footer = renderFooter()
     const line = copyright(footer)
@@ -108,12 +126,13 @@ describe('Footer', () => {
     )
   })
 
-  it('orders the logo, nav, email link and copyright line', () => {
+  it('orders the logo, nav, email link, phone link and copyright line', () => {
     const footer = renderFooter()
     const parts = [
       within(footer).getByRole('img'),
       within(footer).getByRole('navigation'),
       within(footer).getByRole('link', { name: EMAIL }),
+      within(footer).getByRole('link', { name: PHONE }),
       copyright(footer),
     ]
 
@@ -125,14 +144,15 @@ describe('Footer', () => {
     }
   })
 
-  it('contains nothing else: six links, no headings, ids or forms', () => {
+  it('contains nothing else: seven links, no headings, ids or forms', () => {
     const footer = renderFooter()
     const year = new Date().getFullYear()
 
-    expect(within(footer).getAllByRole('link')).toHaveLength(6)
+    expect(within(footer).getAllByRole('link')).toHaveLength(7)
     expect(footer.textContent).toBe(
       footerNavigation.map((item) => item.label).join('') +
         EMAIL +
+        PHONE +
         `© ${year} Fafanua Technologies Limited`,
     )
     expect(footer.querySelectorAll('h1, h2, h3, h4, h5, h6')).toHaveLength(0)
@@ -148,20 +168,28 @@ describe('Footer', () => {
     expect(footer.textContent?.toLowerCase()).not.toContain(phrase.toLowerCase())
   })
 
-  it('has no phone number or web link', () => {
+  it('has one phone number, the tel: link, and no web link', () => {
     const footer = renderFooter()
-    // Digits appear only in the year.
-    const text = footer.textContent?.replace(/© \d{4}/, '')
+    // Digits appear only in the phone number and the year.
+    const text = footer.textContent?.replace(PHONE, '').replace(/© \d{4}/, '')
 
     expect(text).not.toMatch(/\d/)
-    expect(footer.querySelector('a[href^="http"], a[href^="tel:"]')).toBeNull()
+    expect(footer.querySelector('a[href^="http"]')).toBeNull()
   })
 
-  it('is light: no dark or alternate surface', () => {
+  it('takes every colour from the .surface-dark reassignment: no -on-dark token or colour value in Footer.css', () => {
+    const css = footerCss.replace(/\/\*[\s\S]*?\*\//g, '')
+
+    expect(css).not.toMatch(/-on-dark|#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(|color-mix|--graphite-|--teal-|--paper/i)
+    expect(css).not.toMatch(/border-block-start|background/)
+  })
+
+  it('is dark: .surface-dark, with nothing nested in it and no technical grid', () => {
     const footer = renderFooter()
 
-    expect(footer).not.toHaveClass('surface-dark')
+    expect(footer).toHaveClass('site-footer', 'surface-dark')
     expect(footer).not.toHaveClass('surface-alt')
-    expect(footer.querySelector('.surface-dark, .surface-alt')).toBeNull()
+    expect(footer.querySelector('.surface-dark, .surface-alt, .technical-grid')).toBeNull()
+    expect(footer.querySelectorAll('[aria-hidden]')).toHaveLength(0)
   })
 })

@@ -1,17 +1,19 @@
 /*
- * Footer: light, on the page background (set explicitly) with a graphite
- * 200 top border, so it reads as separate from the graphite 100 Contact
- * section above it; future-ready stays the only dark section. Logo, nav,
- * email and copyright stack in DOM order; from 1024px the logo and nav
- * share the first row and the email and copyright the second (literal
- * breakpoints; see the note in tokens.css). No reordering, so the visual
- * order always matches the DOM order.
+ * Footer: dark and minimal (plan V2 §17, #60). .surface-dark (global.css)
+ * paints the graphite 900 background and reassigns the colour tokens, so
+ * nothing here is dark-specific: the links are paper (14.9:1), the email
+ * and phone links teal 400 (7.5:1), hovering to teal 300 (9.5:1), the
+ * copyright graphite 400 (5.9:1) and the focus ring teal 400. The change
+ * from the graphite 100 Contact section above is the only separator, so
+ * there is no border, and there is no technical grid. Logo, nav, email
+ * and phone, and copyright stack in DOM order; from 1024px the logo and
+ * nav share the first row and the contact links and copyright the second
+ * (literal breakpoints; see the note in tokens.css). No reordering, so
+ * the visual order always matches the DOM order.
  */
 
 .site-footer {
   padding-block: var(--space-10);
-  border-block-start: var(--border-width) solid var(--color-border);
-  background-color: var(--color-bg);
 }
 
 .site-footer__inner {
@@ -37,7 +39,7 @@
   list-style: none;
 }
 
-/* As the header nav: graphite 900, underlined on hover only. Each link
+/* Paper, the heading colour on dark, underlined on hover only. Each link
    box is at least 48px tall. */
 .site-footer__link {
   display: flex;
@@ -52,16 +54,25 @@
 .site-footer__link:link,
 .site-footer__link:visited,
 .site-footer__link:hover {
-  color: var(--color-text);
+  color: var(--color-heading);
 }
 
 .site-footer__link:hover {
   text-decoration-line: underline;
 }
 
-/* The global link colours and underline apply: teal 700 on paper, hover
-   teal 800. The address never breaks. */
-.site-footer__email {
+/* The address, then the phone number: one row, wrapping. */
+.site-footer__contact {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-6);
+}
+
+/* The global link colours and underline apply: teal 400 on dark, hover
+   teal 300. Each box is at least 48px tall, and neither the address nor
+   the number breaks. */
+.site-footer__email,
+.site-footer__phone {
   display: inline-flex;
   align-items: center;
   min-height: var(--space-12);

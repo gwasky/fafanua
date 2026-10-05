@@ -8,7 +8,8 @@ import { solutions } from './data/solutions.ts'
 import { systemFlow } from './data/systemFlow.ts'
 
 const FUTURE_READY = 'Trusted foundations for what comes next'
-const CONTACT = 'Discuss your data foundation.'
+// Plan V2 §16, with its typographic apostrophe (U+2019).
+const CONTACT = 'Let\u2019s build a data foundation your organisation can trust.'
 const HERO = 'Trusted Data. Better Decisions.'
 // The Services section is named by its h2, the approved intro heading.
 const SERVICES = servicesIntro.heading
@@ -269,9 +270,13 @@ describe('App', () => {
     render(<App />)
     const contact = screen.getByRole('region', { name: CONTACT })
     const nav = navigationCta
+    // The closing call to action shares the hero button's name but opens
+    // an email, so the hero's is found inside the hero.
     const targets = [
       within(screen.getByRole('banner')).getByRole('link', { name: 'Discuss a project' }),
-      screen.getByRole('link', { name: 'Discuss your data needs' }),
+      within(screen.getByRole('region', { name: HERO })).getByRole('link', {
+        name: 'Discuss your data needs',
+      }),
     ]
 
     expect(contact.tagName).toBe('SECTION')
@@ -323,6 +328,19 @@ describe('App', () => {
     expect(document.querySelectorAll('a[href*="mailto" i]')).toHaveLength(3)
   })
 
+  it('has two tel: links, in the closing call to action and the footer, to the one number', () => {
+    render(<App />)
+    const links = [...document.querySelectorAll('a[href^="tel:"]')]
+
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+      'tel:+256752008822',
+      'tel:+256752008822',
+    ])
+    expect(links.map((link) => link.textContent)).toEqual(['+256 752 008822', '+256 752 008822'])
+    expect(screen.getByRole('region', { name: CONTACT })).toContainElement(links[0] as HTMLElement)
+    expect(screen.getByRole('contentinfo')).toContainElement(links[1] as HTMLElement)
+  })
+
   it('has no form, iframe or Turnstile script', () => {
     render(<App />)
 
@@ -362,7 +380,7 @@ describe('App', () => {
     expect(document.querySelector('a[href*="future-ready"]')).toBeNull()
   })
 
-  it('has two dark sections, the hero and future-ready, and the inset Managed panel', () => {
+  it('has two dark sections, the hero and future-ready, the inset Managed panel and the dark footer', () => {
     render(<App />)
     const dark = [...document.querySelectorAll('.surface-dark')]
     const managed = screen.getByRole('region', { name: MANAGED })
@@ -376,8 +394,10 @@ describe('App', () => {
       screen.getByRole('region', { name: HERO }),
       screen.getByRole('region', { name: FUTURE_READY }),
     ])
-    // The Managed panel is inside its section's container, on paper.
-    expect(dark).toHaveLength(3)
+    // The Managed panel is inside its section's container, on paper, and
+    // the footer (#60) is the last dark surface, outside main.
+    expect(dark).toHaveLength(4)
+    expect(dark[3]).toBe(screen.getByRole('contentinfo'))
     expect(dark[1].parentElement).toHaveClass('container')
     expect(dark[1].parentElement!.parentElement).toBe(managed)
     expect(managed).not.toHaveClass('surface-dark')

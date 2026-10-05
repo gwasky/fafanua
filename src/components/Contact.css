@@ -1,20 +1,32 @@
 /*
- * Contact: heading, supporting copy and the two email links on a graphite
- * 100 background (.surface-alt, which also makes --color-link teal 800
- * there), so it reads as separate from About on paper above it. Below
- * 768px the button sits above the address; from 768px they share a row,
+ * The closing call to action (plan V2 §16): heading, supporting copy, the
+ * primary button and the address and phone links on a graphite 100
+ * background (.surface-alt, which also makes --color-link teal 800
+ * there), so it reads as separate from About on paper above it and the
+ * dark footer below. The heading is at the display scale, as the other
+ * section headings. Below 768px the button sits above the address and
+ * phone, which share a row, wrapping; from 768px all three share a row,
  * wrapping as .hero__actions does (literal breakpoint; see the note in
  * tokens.css). No reordering, so the visual order matches the DOM order.
  */
 
 .contact {
-  padding-block: var(--space-16);
+  padding-block: var(--space-section);
+}
+
+/* Weight 300 from the global heading styles. Four lines at 1440px. */
+.contact__heading {
+  max-width: var(--measure-display);
+  font-size: var(--text-section);
+  line-height: var(--leading-display);
+  overflow-wrap: break-word;
 }
 
 .contact__text {
   max-width: var(--measure);
   margin-block: 0 var(--space-8);
   color: var(--color-text);
+  font-size: var(--text-body-lg);
   /* Break a word only if it cannot fit on a line of its own, rather than
      anywhere as .container allows. */
   overflow-wrap: break-word;
@@ -28,9 +40,24 @@
   gap: var(--space-3);
 }
 
-/* The global link colours and underline apply. The box is at least 48px
-   tall, like the button beside it, and the address never breaks. */
-.contact__email {
+/* Break a word in the button's label only if it cannot fit on a line of
+   its own, rather than anywhere as .container allows: at 320px with 200%
+   text the arrow beside the label otherwise splits "Discuss". */
+.contact__actions .button {
+  overflow-wrap: break-word;
+}
+
+/* The address, then the phone number: one row, wrapping. */
+.contact__direct {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-6);
+}
+
+/* The global link colours and underline apply. Each box is at least 48px
+   tall, like the button, and neither the address nor the number breaks. */
+.contact__email,
+.contact__phone {
   display: inline-flex;
   align-items: center;
   min-height: var(--space-12);
@@ -39,10 +66,6 @@
 }
 
 @media (min-width: 48em) {
-  .contact {
-    padding-block: var(--space-20);
-  }
-
   .contact__actions {
     flex-direction: row;
     flex-wrap: wrap;

@@ -1,18 +1,24 @@
-// Checks contact.ts against _docs/plan.md, so the Contact wording on the
-// site cannot drift from the plan: the heading and supporting copy against
-// the two Section 11 suggested lines. The ?raw import resolves relative to
-// this file and is never part of the production bundle.
+// Checks contact.ts against the plans, so the closing call to action's
+// wording on the site cannot drift from them: the heading and the button
+// label against plan V2 §16, and the supporting copy against the second
+// Section 11 suggested line in _docs/plan.md, which plan V2 §16 repeats.
+// The ?raw imports resolve relative to this file and are never part of
+// the production bundle.
 import { describe, expect, it } from 'vitest'
 import plan from '../../_docs/plan.md?raw'
+import planV2 from '../../_docs/fafanua-v2-visual-upgrade-plan.md?raw'
 import contactSource from './contact.ts?raw'
 import {
   contactButtonLabel,
   contactHeading,
   contactText,
   email,
+  phone,
+  phoneHref,
 } from './contact.ts'
 
 const markdown = plan.replace(/\r\n/g, '\n')
+const markdownV2 = planV2.replace(/\r\n/g, '\n')
 
 // The text of a `## ` section, from its heading up to the next one.
 function section(heading: string): string {
@@ -27,34 +33,57 @@ const planQuotes = [
   ...section('11. Contact Experience').matchAll(/^> (.+)$/gm),
 ].map((match) => match[1])
 
+// Every `> ` blockquote line in plan V2 §16, without its bold markers:
+// the heading, the supporting copy, then the call to action.
+const v2Start = markdownV2.indexOf('\n# 16. Closing CTA\n')
+const v2End = markdownV2.indexOf('\n# ', v2Start + 1)
+const v2Quotes = [
+  ...markdownV2.slice(v2Start, v2End).matchAll(/^> (.+)$/gm),
+].map((match) => match[1].replace(/^\*\*(.+)\*\*$/, '$1'))
+
 describe('plan parser', () => {
   it('finds exactly two one-line blockquotes in Section 11', () => {
     expect(planQuotes).toHaveLength(2)
     expect(planQuotes.every((quote) => quote !== '')).toBe(true)
   })
+
+  it('finds exactly three one-line blockquotes in plan V2 §16', () => {
+    expect(v2Start).toBeGreaterThan(-1)
+    expect(v2Quotes).toHaveLength(3)
+    expect(v2Quotes.every((quote) => quote !== '' && !quote.includes('*'))).toBe(true)
+  })
 })
 
 describe('contact wording', () => {
-  it('uses the first Section 11 suggestion as the heading', () => {
-    expect(contactHeading).toBe(planQuotes[0])
+  it('uses the plan V2 §16 heading', () => {
+    expect(contactHeading).toBe(v2Quotes[0])
   })
 
-  it('uses the second Section 11 suggestion as the supporting copy', () => {
+  it('uses the second Section 11 suggestion as the supporting copy, as plan V2 §16 does', () => {
     expect(contactText).toBe(planQuotes[1])
+    expect(contactText).toBe(v2Quotes[1])
   })
 
-  it('keeps the full stop and the Oxford comma in straight characters', () => {
-    expect(contactHeading.endsWith('.')).toBe(true)
+  it('labels the button with the plan V2 §16 call to action, without its arrow', () => {
+    expect(v2Quotes[2]).toBe(`${contactButtonLabel} →`)
+    expect(contactButtonLabel).toBe('Discuss your data needs')
+  })
+
+  it('keeps the heading\'s typographic apostrophe and full stop, and the Oxford comma', () => {
+    expect(contactHeading).toBe('Let\u2019s build a data foundation your organisation can trust.')
+    expect(contactHeading).not.toContain("'")
     expect(contactText).toContain('reporting challenges, or data')
-    expect(contactHeading + contactText).toMatch(/^[\x20-\x7e]+$/)
-  })
-
-  it('labels the button "Email us"', () => {
-    expect(contactButtonLabel).toBe('Email us')
+    expect(contactText + contactButtonLabel).toMatch(/^[\x20-\x7e]+$/)
   })
 
   it('exports the plain, lowercase address', () => {
     expect(email).toBe('info@fafanua.tech')
+  })
+
+  it('exports the owner\'s phone number and its tel: link', () => {
+    expect(phone).toBe('+256 752 008822')
+    expect(phoneHref).toBe('tel:+256752008822')
+    expect(phoneHref).toBe(`tel:${phone.replace(/ /g, '')}`)
   })
 })
 
@@ -100,6 +129,8 @@ describe('other source files', () => {
 
   it.each([
     ['the email address', email],
+    ['the phone number', phone],
+    ['the tel: link', phoneHref],
     ['the heading', contactHeading],
     ['the supporting copy', contactText],
   ])('do not repeat %s', (_name, text) => {
