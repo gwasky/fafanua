@@ -40,7 +40,9 @@
 
 /*
  * The graphic: four labels, each with a small teal marker, on a thin rail
- * that runs down to one end mark in the Intelligence colour. Markers, rail
+ * that runs down to one end mark in the Intelligence colour, labelled
+ * "advanced analytics & AI" (refinement plan §9, #63). The end mark is a
+ * larger ring rather than a dot, so it differs without colour. Markers, rail
  * and end mark are all borders, so forced-colours mode keeps drawing them
  * (it removes background colours). Every centre sits on the same vertical
  * line, half the end mark's width from the start edge.
@@ -54,7 +56,10 @@
 .future-ready__graphic::before {
   content: '';
   position: absolute;
-  inset-block: calc(var(--leading-snug) * 1em / 2) var(--space-3);
+  /* From the first marker's centre to the top of the end ring, which is
+     centred on the last line. */
+  inset-block: calc(var(--leading-snug) * 1em / 2)
+    calc(var(--leading-snug) * 1em / 2 + var(--space-3) / 2);
   inset-inline-start: calc(var(--space-3) / 2 - var(--border-width) / 2);
   border-inline-start: var(--border-width) solid var(--color-border);
 }
@@ -67,7 +72,8 @@
   list-style: none;
 }
 
-.future-ready__item {
+.future-ready__item,
+.future-ready__end {
   position: relative;
   padding-inline-start: var(--space-8);
   color: var(--color-text);
@@ -83,12 +89,20 @@
   border-radius: var(--radius-full);
 }
 
-/* A 12px ring, the only use of the Intelligence colour on the page. */
+/* The destination: its label like the four above it, after a 12px ring,
+   the only use of the Intelligence colour on the page. */
 .future-ready__end {
   display: block;
+  margin-block-start: var(--space-6);
+}
+
+.future-ready__end::before {
+  content: '';
+  position: absolute;
+  inset-block-start: calc((var(--leading-snug) * 1em - var(--space-3)) / 2);
+  inset-inline-start: 0;
   width: var(--space-3);
   height: var(--space-3);
-  margin-block-start: var(--space-6);
   border: calc(var(--border-width) * 2) solid var(--service-intelligence);
   border-radius: var(--radius-full);
 }

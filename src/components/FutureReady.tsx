@@ -16,10 +16,15 @@ const futureReadyLabels = [
   'provenance',
 ] as const
 
+// The destination the four foundations lead to: the refinement plan §9's
+// preferred label (#63), a readiness outcome, not a product.
+const futureReadyDestination = 'advanced analytics & AI'
+
 // One of the page's two full-bleed dark sections, with the hero (plan V2
 // §14): a statement of direction, not a product.
-// The graphic repeats words already in the paragraph, so it is hidden
-// from screen readers. It has no links or other tab stops. The technical
+// The graphic repeats what the paragraph already says (its four labels
+// and, as its end, the paragraph's "advanced analytics and AI"), so it is
+// hidden from screen readers. It has no links or other tab stops. The technical
 // grid sits behind the content.
 function FutureReady() {
   return (
@@ -45,7 +50,7 @@ function FutureReady() {
               </li>
             ))}
           </ul>
-          <span className="future-ready__end" />
+          <span className="future-ready__end">{futureReadyDestination}</span>
         </div>
       </div>
     </section>

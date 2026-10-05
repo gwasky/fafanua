@@ -14,6 +14,8 @@ const LABELS = [
   'quality signals',
   'provenance',
 ]
+// The final node's label, the refinement plan §9's preferred option (#63).
+const DESTINATION = 'advanced analytics & AI'
 
 // Words and phrases that would present Fafanua Intelligence, or any AI or
 // SaaS feature, as something that exists today.
@@ -56,10 +58,12 @@ const FORBIDDEN = [
   'LLM',
 ]
 
-// The only places "AI" may appear: the readiness framing from plan Section 9.
+// The only places "AI" may appear: the readiness framing from plan Section
+// 9, and the final node's one label, a readiness destination (#63).
 const ALLOWED_AI_PHRASES = [
   'analytics and AI systems',
   'analytics and AI capabilities',
+  'advanced analytics & AI',
 ]
 
 function renderFutureReady() {
@@ -107,10 +111,10 @@ describe('FutureReady', () => {
     expect(section.innerHTML).not.toContain('&nbsp;')
   })
 
-  it('contains only the heading, the paragraph and the four labels, nothing else', () => {
+  it('contains only the heading, the paragraph, the four labels and the destination, nothing else', () => {
     const { section } = renderFutureReady()
 
-    expect(section.textContent).toBe(HEADING + STATEMENT + LABELS.join(''))
+    expect(section.textContent).toBe(HEADING + STATEMENT + LABELS.join('') + DESTINATION)
   })
 
   it('contains no links, buttons, form controls or other tab stops', () => {
@@ -138,7 +142,25 @@ describe('FutureReady', () => {
     expect(
       [...graphic.querySelectorAll('li')].map((item) => item.textContent),
     ).toEqual(LABELS)
-    expect(graphic.textContent).toBe(LABELS.join(''))
+    expect(graphic.textContent).toBe(LABELS.join('') + DESTINATION)
+  })
+
+  it('labels the final node "advanced analytics & AI", after the four foundations, not as a fifth', () => {
+    const { graphic } = renderFutureReady()
+    const end = graphic.lastElementChild!
+
+    expect(end).toHaveClass('future-ready__end')
+    expect(end.textContent).toBe(DESTINATION)
+    expect(end.tagName).not.toBe('LI')
+    expect(end.previousElementSibling!.tagName).toBe('UL')
+    // No empty, unlabelled node is left.
+    for (const element of graphic.querySelectorAll('*')) {
+      if (element.children.length === 0) expect(element.textContent).not.toBe('')
+    }
+  })
+
+  it('says "advanced analytics" in the paragraph that the destination repeats', () => {
+    expect(STATEMENT).toContain('advanced analytics and AI capabilities')
   })
 
   it('has exactly one technical grid, first, behind the content', () => {
