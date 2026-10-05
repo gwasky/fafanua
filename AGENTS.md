@@ -9,6 +9,7 @@ A single-page marketing website for **Fafanua Technologies Limited**, presenting
 - **Primary Plan:** `_docs/plan.md` is the source of truth for content, brand, colours, accessibility and acceptance criteria. Read the relevant section before starting a task.
 - **Service Positioning:** `_docs/plan-fafanua-services-positioning.md` is the source of truth for Services, service copy, lifecycle labels, Managed Data & Analytics Services, Reverse ETL, Solutions and related commercial positioning, and wins where it conflicts with `_docs/plan.md`. `_docs/plan.md` stays authoritative for brand, design system, accessibility, architecture, deployment, How We Work and general site rules.
 - **Visual Upgrade Plan:** `_docs/fafanua-v2-visual-upgrade-plan.md` is the source of truth for the Version 2 visual and interaction upgrade. It governs layout, hierarchy, section composition, motion, and visual treatment while preserving the approved content and positioning documents.
+- **V2 Refinement Plan:** `_docs/fafanua-v2-refinement-plan.md` is the source of truth for the post-V2 homepage refinements. It governs the hero supporting copy, problem/response positioning section, system/data-flow visual, How We Work density and outputs, future-ready visual treatment, About section composition, and protection of the core phrase “Build a data foundation you can trust.” Where it explicitly conflicts with `_docs/fafanua-v2-visual-upgrade-plan.md` on those areas, the refinement plan takes precedence. It does not replace the services-positioning plan, design system, deployment rules, or SEO plan.
 - **Backlog:** work is tracked as GitHub issues at https://github.com/gwasky/fafanua/issues. Follow `_docs/process.md` for how to pick up, work on and close an issue.
 
 ## Stack
@@ -64,6 +65,7 @@ Follow `_docs/design-system.md` for colours, typography, logo use, layout, compo
 - Do not present Fafanua Intelligence as an existing product or claim unsupported SaaS or AI products/features. References to integrating third-party SaaS systems are permitted. Future analytics and AI positioning must be framed as readiness enabled by trusted data foundations, not as currently available product functionality unless explicitly approved.
 - No stock photos, generic AI imagery, heavy gradients, glassmorphism or excessive animation.
 - **Protected positioning:** the hero `h1` **Trusted Data. Better Decisions.** and, directly beneath it, the core brand promise **Build a data foundation you can trust.** must stay visible in the hero. Do not remove or reword either without explicit owner approval (`_docs/plan.md` Section 5, `_docs/fafanua-v2-visual-upgrade-plan.md` §5). Their copy lives in `src/data/hero.ts`.
+- **Protected brand proposition:** “Build a data foundation you can trust.” must remain visibly present on the homepage near the hero. Do not remove or replace it during visual, SEO, service-page, or copy-refinement work unless explicitly approved by the owner.
 
 ## Code style
 
