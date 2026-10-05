@@ -262,11 +262,16 @@
   /* The warehouse layer has no label: in a row its name keeps the label
      column empty, so it lines up with the others. The margin is the
      label column and gap from --flow-row up, and 0 below it, switching
-     at the same width as --flow-stack. */
+     at the same layout unit as --flow-stack. The extra --space-24 absorbs
+     the float error of the factor (at 150% text and 1034px the box is
+     exactly --flow-row wide and the margin came out 2px short without
+     it), and is far less than one layout unit (1/64px) times 100000, so
+     one unit narrower the margin is still 0. */
   .system-flow__layer--unlabelled .system-flow__name {
     margin-inline-start: clamp(
       0px,
-      (100% - var(--flow-row)) * 100000 + var(--flow-label) + var(--flow-column-gap),
+      (100% - var(--flow-row)) * 100000 + var(--space-24) + var(--flow-label) +
+        var(--flow-column-gap),
       var(--flow-label) + var(--flow-column-gap)
     );
   }
