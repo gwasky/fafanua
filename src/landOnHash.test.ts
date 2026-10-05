@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { hashIds, hashTarget } from './landOnHash.ts'
 
 describe('hashIds', () => {
@@ -93,5 +93,153 @@ describe('hashTarget', () => {
     expect(hashTarget(document, '#panel')).toBeNull()
     expect(hashTarget(document, '#inside')).toBeNull()
     expect(hashTarget(document, '#shown')).not.toBeNull()
+  })
+})
+
+describe('landOnHash', () => {
+  let frames: FrameRequestCallback[]
+  let fontsLoaded: () => void
+  let scrolls: { id: string; options: unknown }[]
+  let top: number
+
+  /** Runs the queued animation frames, once each. */
+  function frame(count = 1) {
+    for (let i = 0; i < count; i++) {
+      const queued = frames
+      frames = []
+      for (const callback of queued) callback(0)
+    }
+  }
+
+  /** A fresh copy of the module, since it lands only once per page. */
+  async function load(hash: string, type = 'navigate') {
+    vi.resetModules()
+    history.replaceState(null, '', `/${hash}`)
+    vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
+      { type } as unknown as PerformanceEntry,
+    ])
+    return import('./landOnHash.ts')
+  }
+
+  beforeEach(() => {
+    frames = []
+    scrolls = []
+    top = 500
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => frames.push(callback))
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      value: { ready: new Promise<void>((resolve) => (fontsLoaded = resolve)) },
+    })
+    vi.spyOn(Element.prototype, 'getClientRects').mockReturnValue([
+      new DOMRect(0, 0, 10, 10),
+    ] as unknown as DOMRectList)
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(
+      () => new DOMRect(0, top, 10, 10),
+    )
+    Element.prototype.scrollIntoView = function (this: Element, options?: unknown) {
+      scrolls.push({ id: this.id, options })
+    }
+    const contact = document.createElement('section')
+    contact.id = 'contact'
+    document.body.append(contact)
+  })
+
+  afterEach(() => {
+    document.body.replaceChildren()
+    history.replaceState(null, '', '/')
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+    delete (document as { fonts?: unknown }).fonts
+    delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView
+  })
+
+  const instant = { id: 'contact', options: { behavior: 'instant' } }
+
+  it('scrolls instantly to the target on a fresh load, before the fonts load', async () => {
+    const { landOnHash } = await load('#contact')
+    landOnHash()
+
+    expect(scrolls).toEqual([instant])
+  })
+
+  it('scrolls once more after the fonts load and the target stays put for STABLE_FRAMES frames', async () => {
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    landOnHash()
+    frame(5)
+    expect(scrolls).toHaveLength(1)
+
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES)
+    expect(scrolls, 'still settling').toHaveLength(1)
+    frame()
+    expect(scrolls).toEqual([instant, instant])
+    frame(5)
+    expect(frames, 'stops checking').toEqual([])
+    expect(scrolls).toHaveLength(2)
+  })
+
+  it('waits while the target is still moving after the fonts load', async () => {
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    landOnHash()
+    fontsLoaded()
+    await Promise.resolve()
+
+    frame(2)
+    top = 466
+    frame(STABLE_FRAMES)
+    expect(scrolls).toHaveLength(1)
+    frame()
+    expect(scrolls).toEqual([instant, instant])
+  })
+
+  it.each(['wheel', 'touchstart', 'keydown', 'pointerdown'])(
+    'does not scroll again after %s input since landing',
+    async (type) => {
+      const { landOnHash, STABLE_FRAMES } = await load('#contact')
+      landOnHash()
+      window.dispatchEvent(new Event(type))
+      fontsLoaded()
+      await Promise.resolve()
+      frame(STABLE_FRAMES + 5)
+
+      expect(scrolls).toEqual([instant])
+      expect(frames).toEqual([])
+    },
+  )
+
+  it('does not scroll again after input while the target is settling', async () => {
+    const { landOnHash } = await load('#contact')
+    landOnHash()
+    fontsLoaded()
+    await Promise.resolve()
+    frame(2)
+    document.body.dispatchEvent(new Event('wheel', { bubbles: true }))
+    frame(10)
+
+    expect(scrolls).toEqual([instant])
+  })
+
+  it.each(['reload', 'back_forward'])('leaves a %s to the browser', async (type) => {
+    const { landOnHash } = await load('#contact', type)
+    landOnHash()
+    fontsLoaded()
+    await Promise.resolve()
+    frame(10)
+
+    expect(scrolls).toEqual([])
+  })
+
+  it('does nothing for a hash that names nothing, and runs only once', async () => {
+    let { landOnHash } = await load('#nope')
+    landOnHash()
+    expect(scrolls).toEqual([])
+    ;({ landOnHash } = await load('#contact'))
+    landOnHash()
+    landOnHash()
+    fontsLoaded()
+    await Promise.resolve()
+    frame(10)
+    expect(scrolls).toEqual([instant, instant])
   })
 })

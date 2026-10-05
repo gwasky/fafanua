@@ -33,6 +33,18 @@ export function hashTarget(doc: Document, hash: string): Element | null {
 
 let done = false
 
+/** Input that means the visitor has started moving around the page. */
+const INPUT = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const
+
+/**
+ * How many animation frames in a row the target must stay at the same
+ * place in the page, after the fonts have loaded, before the one
+ * correction. WebKit re-balances a heading's lines (text-wrap: balance)
+ * two frames after document.fonts.ready, which moved every target below
+ * the Services heading up by 34px at 360px (measured for #62).
+ */
+export const STABLE_FRAMES = 3
+
 /**
  * Scrolls instantly to the element the URL's hash names, once, after the
  * first render of a fresh load. main.tsx renders before DOMContentLoaded,
@@ -41,6 +53,14 @@ let done = false
  * the CSS scroll-behavior, and with the target already in place it
  * doesn't move. A reload or a history traversal is left to the browser,
  * which restores the visitor's scroll position.
+ *
+ * The stylesheet has always applied by now: the built page holds the
+ * module script until it has (vite.config.ts, #62). The web font may not
+ * have, and when it swaps in, text above the target can rewrap. WebKit
+ * has no scroll anchoring to keep the target in place, so once the fonts
+ * have loaded and the target has stopped moving, this scrolls to it once
+ * more, unless the visitor has scrolled, touched, clicked or pressed a
+ * key since landing (#38, #62).
  */
 export function landOnHash() {
   if (done) return
@@ -48,5 +68,34 @@ export function landOnHash() {
 
   const [entry] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
   if (entry && entry.type !== 'navigate') return
-  hashTarget(document, location.hash)?.scrollIntoView({ behavior: 'instant' })
+  const target = hashTarget(document, location.hash)
+  if (!target) return
+  target.scrollIntoView({ behavior: 'instant' })
+
+  let moved = false
+  const onInput = () => {
+    moved = true
+  }
+  for (const type of INPUT) window.addEventListener(type, onInput, { capture: true, passive: true })
+  const stop = () => {
+    for (const type of INPUT) window.removeEventListener(type, onInput, { capture: true })
+  }
+
+  void document.fonts.ready.then(() => {
+    let place = NaN
+    let stable = 0
+    const check = () => {
+      if (moved || !target.isConnected) return stop()
+      const now = target.getBoundingClientRect().top + window.scrollY
+      stable = now === place ? stable + 1 : 0
+      place = now
+      if (stable < STABLE_FRAMES) {
+        requestAnimationFrame(check)
+        return
+      }
+      stop()
+      target.scrollIntoView({ behavior: 'instant' })
+    }
+    requestAnimationFrame(check)
+  })
 }
