@@ -7,6 +7,7 @@ import {
   linkName,
   test,
   waitForFonts,
+  waitForLanding,
   waitForScrollSettle,
 } from './fixtures.ts'
 import { expectFlow, flowList, flowProblems, measureFlow } from './systemFlow.ts'
@@ -1306,29 +1307,14 @@ for (const width of WIDTHS) {
     })
 
     // A fresh load of /#managed-services lands the section's top on the
-    // header's bottom edge (expectLanded).
-    //
-    // In WebKit a fresh load of any section's hash sometimes lands off
-    // target in these projects, which is #45 (open; it owns the root
-    // cause): measured in #58, /#managed-services missed 10 of 15 runs
-    // (top 21.7 to 338px against the header's 81px), and /#solutions and
-    // /#about missed too, at 360 and 1440px, with the font already
-    // cached. So in WebKit this checks the part #58 owns: the load
-    // scrolls to the section, and the section lands below the header
-    // when scrolled to it once the page has settled.
-    test(`/#managed-services lands below the header on a fresh load at ${width}px`, async ({ page, browserName }, testInfo) => {
+    // header's bottom edge (expectLanded), in Chromium and WebKit. This
+    // checks the cold-load landing itself: it only waits for the landing
+    // to settle and never scrolls to the section again (#62).
+    test(`/#managed-services lands below the header on a fresh load at ${width}px`, async ({ page }, testInfo) => {
       expect(testInfo.project.use.viewport?.width, 'project width').toBe(width)
       await page.goto('/#managed-services')
-      await waitForFonts(page)
+      await waitForLanding(page, '#managed-services')
       expect(await currentHash(page)).toBe('#managed-services')
-
-      if (browserName === 'webkit') {
-        await waitForScrollSettle(page)
-        expect(await page.evaluate(() => window.scrollY), 'scrolled from the top').toBeGreaterThan(0)
-        await page.evaluate(() =>
-          document.getElementById('managed-services')!.scrollIntoView({ behavior: 'instant' }),
-        )
-      }
       await expectLanded(page, '#managed-services')
     })
 

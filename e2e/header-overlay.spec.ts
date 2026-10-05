@@ -101,101 +101,187 @@ test.describe('transparent over the hero at the top of the page', () => {
 })
 
 // The header's state from the very first frame of a load with normal
-// motion (#55 QA): it must start transparent over the hero, never paint
-// the solid paper state and fade from it. An init script records the
-// header's computed fill, border and class on every animation frame from
-// navigation start, and every transition that starts in the header.
+// motion (#55 QA, #62): it must start transparent over the hero, with its
+// links, Menu and border in their final colours, never in the browser's
+// defaults or the solid paper state, and never fade from either. An init
+// script records, on every animation frame from navigation start, the
+// header's fill, border and class and the colours of every link and
+// button shown in it, and every transition that starts in the header.
 //
-// WebKit can run the page's module script before the stylesheet has been
-// applied when it is loading several pages at once (measured: no style
-// sheet in document.styleSheets when the header is inserted). The header
-// is then first styled with the browser defaults, and its colours (and
-// those of the links and buttons in it) transition from those defaults
-// when the sheet arrives: a black bottom border fading out, never the
-// paper fill. That race is in the script and stylesheet order of
-// index.html, not the header, so in that case the test checks only that
-// the solid state never shows, and notes the race in the report.
+// Until #62, Vite put the module script before the stylesheet, and WebKit
+// could run it before any CSS applied: the header was first styled with
+// the browser defaults (link blue, a near-black border) and faded from
+// them. The built page now holds the script until the stylesheet has
+// loaded (vite.config.ts), so these fail if it ever starts unstyled. The
+// CSS is delayed to make the race likely: by 150, 400 and 1000 ms on a
+// single load, and not at all with 20 loads at once.
+
+type Look = { background: string; border: string; className: string; controls: string[] }
+type Frame = Look & { t: number; y: number }
+type Log = { __frames: Frame[]; __transitions: string[]; __styledAtInsert: boolean | null }
+
+/** Delays every stylesheet response by a number of milliseconds. */
+async function delayCss(page: Page, delay: number) {
+  if (delay === 0) return
+  await page.route(/\.css$/, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, delay))
+    await route.continue()
+  })
+}
+
+/**
+ * Records the header's look on every frame until `until` ms after
+ * navigation start, and every transition that starts in it. Call before
+ * page.goto.
+ */
+async function recordHeader(page: Page, until: number) {
+  await page.addInitScript((until) => {
+    const w = window as unknown as Log
+    w.__frames = []
+    w.__transitions = []
+    w.__styledAtInsert = null
+    new MutationObserver((_, observer) => {
+      if (!document.querySelector('header')) return
+      w.__styledAtInsert = document.styleSheets.length > 0
+      observer.disconnect()
+    }).observe(document, { childList: true, subtree: true })
+    document.addEventListener(
+      'transitionrun',
+      (event) => {
+        const target = event.target as Element
+        if (target.closest?.('header')) {
+          w.__transitions.push(`${target.tagName}.${target.className} ${event.propertyName}`)
+        }
+      },
+      true,
+    )
+    const tick = () => {
+      const header = document.querySelector('header')
+      if (header) {
+        const style = getComputedStyle(header)
+        w.__frames.push({
+          t: Math.round(performance.now()),
+          y: window.scrollY,
+          background: style.backgroundColor,
+          border: style.borderBottomColor,
+          className: header.className,
+          // Every link and button shown: its name, text colour and border.
+          controls: [...header.querySelectorAll('a, button')]
+            .filter((element) => element.getClientRects().length > 0)
+            .map((element) => {
+              const s = getComputedStyle(element)
+              return `${element.textContent?.trim() || element.getAttribute('aria-label')}: ${s.color} / ${s.backgroundColor} / ${s.borderTopColor}`
+            }),
+        })
+      }
+      if (performance.now() < until) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  }, until)
+}
+
+async function headerLog(page: Page, until: number) {
+  await page.waitForFunction((until) => performance.now() >= until, until)
+  return page.evaluate(() => {
+    const w = window as unknown as Log
+    return { frames: w.__frames, transitions: w.__transitions, styled: w.__styledAtInsert }
+  })
+}
+
+/**
+ * Expects every recorded frame at scroll 0 to show the header exactly as
+ * it settles, transparent over the hero, with nothing transitioning: no
+ * frame shows a browser default or the solid state, even part way through
+ * a fade.
+ */
+async function expectStyledFromTheStart(page: Page, width: number, log: Awaited<ReturnType<typeof headerLog>>) {
+  const [paper, solidBorder] = await Promise.all([token(page, '--paper'), token(page, '--color-border')])
+  expect(log.styled, 'a stylesheet had applied when the header was inserted').toBe(true)
+  expect(log.transitions, 'transitions in the header').toEqual([])
+
+  const atTop = log.frames.filter((frame) => frame.y < 8)
+  expect(atTop.length, 'frames recorded at scroll 0').toBeGreaterThan(0)
+  const settled = atTop.at(-1)!
+  expect(settled.className).toBe('site-header on-dark')
+  expect(settled.background).toBe('rgba(0, 0, 0, 0)')
+  expect(settled.border).toBe('rgba(0, 0, 0, 0)')
+  expect(settled.border).not.toBe(solidBorder)
+  // The nav links (from 1024px) or the Menu text (below) are paper.
+  const shown = settled.controls.find((control) => control.startsWith(width >= 1024 ? 'Services:' : 'Menu:'))
+  expect(shown, JSON.stringify(settled.controls)).toMatch(new RegExp(`: ${paper.replace(/[()]/g, '\\$&')} /`))
+
+  for (const frame of atTop) {
+    const { t, y, ...look } = frame
+    expect(look, `frame at ${t}ms (scroll ${y})`).toEqual({
+      background: settled.background,
+      border: settled.border,
+      className: settled.className,
+      controls: settled.controls,
+    } satisfies Look)
+  }
+}
+
 test.describe('first frames of a load', () => {
   test.use({ reducedMotion: 'no-preference' })
 
-  type Frame = { t: number; y: number; background: string; border: string; className: string }
-  type Log = { __frames: Frame[]; __transitions: string[]; __styledAtInsert: boolean | null }
+  for (const delay of [0, 150, 400, 1000]) {
+    for (const [width, height] of [
+      [1440, 900],
+      [360, 800],
+    ]) {
+      test(`styled and transparent from the first frame, with the CSS ${delay ? `delayed ${delay}ms` : 'not delayed'}, at ${width} x ${height}`, async ({
+        page,
+      }) => {
+        const until = delay + 1500
+        await delayCss(page, delay)
+        await recordHeader(page, until)
+        await page.setViewportSize({ width, height })
+        await page.goto('/')
+        const log = await headerLog(page, until)
+        await expectStyledFromTheStart(page, width, log)
+      })
+    }
+  }
 
-  /** The r, g and b channels of a computed colour, without alpha. */
-  const rgb = (colour: string) => colour.match(/[\d.]+/g)!.slice(0, 3).join(',')
-
+  // 20 pages loading at once made WebKit run the script first in 15 to 19
+  // of 20 loads before #62.
   for (const [width, height] of [
     [1440, 900],
     [360, 800],
   ]) {
-    test(`never solid at scroll 0, and no transition on load, at ${width} x ${height}`, async ({ page }, testInfo) => {
-      await page.addInitScript(() => {
-        const w = window as unknown as Log
-        w.__frames = []
-        w.__transitions = []
-        w.__styledAtInsert = null
-        new MutationObserver((_, observer) => {
-          if (!document.querySelector('header')) return
-          w.__styledAtInsert = document.styleSheets.length > 0
-          observer.disconnect()
-        }).observe(document, { childList: true, subtree: true })
-        document.addEventListener(
-          'transitionrun',
-          (event) => {
-            const target = event.target as Element
-            if (target.closest?.('header')) {
-              w.__transitions.push(`${target.tagName}.${target.className} ${event.propertyName}`)
-            }
-          },
-          true,
-        )
-        const tick = () => {
-          const header = document.querySelector('header')
-          if (header) {
-            const style = getComputedStyle(header)
-            w.__frames.push({
-              t: Math.round(performance.now()),
-              y: window.scrollY,
-              background: style.backgroundColor,
-              border: style.borderBottomColor,
-              className: header.className,
+    test(`styled from the first frame in each of 20 loads at once at ${width} x ${height}`, async ({
+      browser,
+      baseURL,
+    }) => {
+      test.setTimeout(60_000)
+      const until = 1500
+      const contexts = await Promise.all(
+        Array.from({ length: 20 }, () =>
+          browser.newContext({ baseURL, viewport: { width, height }, reducedMotion: 'no-preference' }),
+        ),
+      )
+      try {
+        const results = await Promise.all(
+          contexts.map(async (context, index) => {
+            const page = await context.newPage()
+            const errors: string[] = []
+            page.on('pageerror', (error) => errors.push(error.message))
+            page.on('console', (message) => {
+              if (message.type() === 'error') errors.push(message.text())
             })
-          }
-          if (performance.now() < 1500) requestAnimationFrame(tick)
+            await recordHeader(page, until)
+            await page.goto('/')
+            return { index, page, errors, log: await headerLog(page, until) }
+          }),
+        )
+        for (const { index, page, errors, log } of results) {
+          await test.step(`load ${index + 1}`, async () => {
+            expect(errors).toEqual([])
+            await expectStyledFromTheStart(page, width, log)
+          })
         }
-        requestAnimationFrame(tick)
-      })
-      await page.setViewportSize({ width, height })
-      await page.goto('/')
-      await page.waitForFunction(() => performance.now() >= 1500)
-      const log = await page.evaluate(() => {
-        const w = window as unknown as Log
-        return { frames: w.__frames, transitions: w.__transitions, styled: w.__styledAtInsert }
-      })
-      const solidBorder = await token(page, '--color-border')
-
-      const atTop = log.frames.filter((frame) => frame.y < 8)
-      expect(atTop.length, 'frames recorded at scroll 0').toBeGreaterThan(0)
-      const detail = `first frame ${JSON.stringify(atTop[0])}`
-      // Never the solid state, in any frame: the class, the paper fill or
-      // the solid border colour, even part way through a fade.
-      for (const frame of atTop) {
-        expect(frame.className, detail).toBe('site-header on-dark')
-        expect(frame.background, `${detail}, at ${frame.t}ms`).toBe('rgba(0, 0, 0, 0)')
-        expect(rgb(frame.border), `${detail}, at ${frame.t}ms`).not.toBe(rgb(solidBorder))
-      }
-
-      if (log.styled) {
-        // Styled from the start: transparent from the first frame, with
-        // nothing to animate from.
-        for (const frame of atTop) expect(frame.border, `${detail}, at ${frame.t}ms`).toBe('rgba(0, 0, 0, 0)')
-        expect(log.transitions).toEqual([])
-      } else {
-        testInfo.annotations.push({
-          type: 'stylesheet race',
-          description: `module script ran before the stylesheet applied; transitions from browser defaults: ${log.transitions.join('; ')}`,
-        })
-        expect(log.transitions.filter((name) => /^HEADER\.\S* background-color$/.test(name))).toEqual([])
+      } finally {
+        await Promise.all(contexts.map((context) => context.close()))
       }
     })
   }

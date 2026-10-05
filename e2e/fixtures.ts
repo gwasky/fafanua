@@ -188,6 +188,33 @@ export async function waitForScrollSettle(page: Page) {
 }
 
 /**
+ * Waits for a fresh load with a hash to finish landing, without scrolling:
+ * the web font has loaded, and window.scrollY and the target's top have
+ * stayed the same for 10 animation frames in a row. landOnHash corrects
+ * the landing once, after the fonts have loaded and the target has been
+ * still for 4 frames (#62), so a shorter wait could measure the page
+ * before that correction.
+ */
+export async function waitForLanding(page: Page, hash: string) {
+  await waitForFonts(page)
+  await page.waitForFunction(
+    (id) => {
+      const w = window as { __landing?: { key: string; frames: number } }
+      const target = document.getElementById(id)
+      const key = `${window.scrollY} ${target?.getBoundingClientRect().top}`
+      if (!w.__landing || w.__landing.key !== key) {
+        w.__landing = { key, frames: 0 }
+        return false
+      }
+      w.__landing.frames += 1
+      return w.__landing.frames >= 10
+    },
+    hash.slice(1),
+    { polling: 'raf' },
+  )
+}
+
+/**
  * Asserts that an in-page link has landed, once scrolling has settled.
  * For #top the page is at the very top. So it is for #main: its first
  * child, the dark hero, is pulled up under the header (#55), so main

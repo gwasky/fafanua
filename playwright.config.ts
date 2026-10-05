@@ -24,7 +24,8 @@ const BASE_URL = process.env.BASE_URL || LOCAL_URL
 // show up in Safari are caught too. The webkit project now runs the
 // keyboard and Menu toggle specs as well (#46), so Tab order, focus rings
 // and the Menu toggle are checked in Safari's engine, and the header over
-// an overlay section (header-overlay.spec.ts, #54). They use the Desktop
+// an overlay section (header-overlay.spec.ts, #54), and a cold load of
+// every section's hash (hash-landing.spec.ts, #62). They use the Desktop
 // Safari preset with its deviceScaleFactor of 2: assertions are in CSS
 // pixels, so only the screenshot size changes. The a11y, italics, fonts
 // and hash specs run in chromium only.
@@ -58,7 +59,13 @@ export default defineConfig({
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
-      testMatch: ['links.spec.ts', 'keyboard.spec.ts', 'menu-toggle.spec.ts', 'header-overlay.spec.ts'],
+      testMatch: [
+        'links.spec.ts',
+        'keyboard.spec.ts',
+        'menu-toggle.spec.ts',
+        'header-overlay.spec.ts',
+        'hash-landing.spec.ts',
+      ],
     },
     ...WIDTHS.map((width) => ({
       name: `webkit-width-${width}`,
