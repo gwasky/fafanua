@@ -1850,6 +1850,13 @@ for (const width of WIDTHS) {
             logoWidth: footer.querySelector('img')!.getBoundingClientRect().width,
             grids: footer.querySelectorAll('.technical-grid').length,
           },
+          // The footer's items, as laid out (#61): the logo, the nav, the
+          // contact links and the copyright, and the row gap.
+          footerLayout: {
+            items: ['.site-footer__logo', '.site-footer__nav', '.site-footer__contact', '.site-footer__copyright'].map(box),
+            rowGap: parseFloat(style('.site-footer__inner').rowGap),
+            sources: [...document.querySelectorAll('picture > source')].map((source) => getComputedStyle(source).display),
+          },
           darkBackground: getComputedStyle(document.querySelector('#future-ready')!).backgroundColor,
           broken,
         }
@@ -1900,6 +1907,27 @@ for (const width of WIDTHS) {
         logoWidth: 160,
         grids: 0,
       })
+      // The logo picture's <source> takes no box, in the header or the
+      // footer (#61).
+      expect(m.footerLayout.sources, detail).toEqual(['none', 'none'])
+      const [logo, nav, contact, copyright] = m.footerLayout.items
+      if (width >= 1024) {
+        // Two rows: the logo at the start with the nav at the end, then
+        // the contact links at the start with the copyright at the end.
+        expect(nav.left, detail).toBeGreaterThan(logo.right)
+        expect(Math.abs(nav.right - copyright.right), detail).toBeLessThanOrEqual(1)
+        expect(Math.abs(logo.left - contact.left), detail).toBeLessThanOrEqual(1)
+        expect(nav.top, detail).toBeLessThan(contact.top)
+        expect(copyright.left, detail).toBeGreaterThan(contact.right)
+        expect(contact.top, detail).toBeGreaterThanOrEqual(Math.max(logo.bottom, nav.bottom))
+      } else {
+        // Stacked in DOM order, one row gap apart, the logo first.
+        const items = [logo, nav, contact, copyright]
+        for (let i = 1; i < items.length; i++) {
+          expect(items[i].top - items[i - 1].bottom, `gap ${i}: ${detail}`).toBeCloseTo(m.footerLayout.rowGap, 0)
+        }
+        for (const item of items) expect(Math.abs(item.left - logo.left), detail).toBeLessThanOrEqual(1)
+      }
       if (width <= 360) expect(m.broken, detail).toEqual([])
       await expectNoHorizontalScroll(page)
     })

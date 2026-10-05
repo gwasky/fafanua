@@ -25,9 +25,17 @@
 
 /* The <picture> that swaps in the positive logo under a light forced-
    colours theme (Footer.tsx) generates no box, so the image stays the
-   flex item and the layout is the same as a bare <img>. */
+   flex or grid item and the layout is the same as a bare <img>. Its
+   <source> is display: block by default, so it would become an item of
+   its own, an empty first cell that pushed the logo into the second
+   column from 1024px (#61): it takes no box. Choosing the image does not
+   depend on it being rendered. */
 .site-footer__inner > picture {
   display: contents;
+}
+
+.site-footer__inner > picture > source {
+  display: none;
 }
 
 /* 160px wide, as in the header: above the 120px minimum. The height

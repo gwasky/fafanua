@@ -119,6 +119,12 @@ main:focus {
   display: contents;
 }
 
+/* Its <source> is display: block by default, which would make it an empty
+   flex item of the link's own (#61). */
+.site-header__logo picture > source {
+  display: none;
+}
+
 /* 160px wide at every width at the default text size: above the 120px
    minimum and small enough not to dominate. The global max-width: 100%
    lets it shrink with its link; the narrowest case, 320px at 200% text,
