@@ -15,7 +15,7 @@ All design values live as CSS variables in `src/styles/tokens.css`: colours, typ
 - Never hard-code a hex value, font size or spacing value outside `tokens.css`. The lint step fails on hex colours elsewhere.
 - Structure tokens so a dark theme could be added later, but do not build dark mode in this release.
 
-V2 tokens (#54). They are defined now and applied section by section in #55 to #60; `scripts/tokens.test.ts` checks the values and the plan's ranges.
+V2 tokens (#54), applied section by section in #55 to #60, with the motion aliases added in #61; `scripts/tokens.test.ts` checks the values and the plan's ranges.
 
 | Token | Value | Use |
 |---|---|---|
@@ -34,6 +34,11 @@ V2 tokens (#54). They are defined now and applied section by section in #55 to #
 | `--duration-header` | `var(--duration-base)` | Header solid and transparent switch |
 | `--duration-cta-arrow`, `--cta-arrow-shift` | `var(--duration-fast)`, `var(--space-1)` | Call-to-action arrow movement |
 | `--duration-card-hover` | `var(--duration-base)` | Service-card hover lift (#56) |
+| `--reveal-shift` | `var(--space-4)` | How far revealed content rises (16px): the hero reveal and the section reveals (#61) |
+| `--duration-reveal` | `var(--duration-slow)` | Hero reveal and section reveals (#61) |
+| `--duration-reveal-stagger` | `var(--duration-fast)` | Delay of the hero's CTA row after its copy (#61) |
+| `--duration-grid-fade` | `var(--duration-slow)` | The hero grid's fade-in on load (#61) |
+| `--duration-rail-draw`, `--ease-linear` | `calc(var(--duration-slow) * 2)`, `linear` | The lifecycle rail's line drawing in, at an even pace (#61) |
 | `--header-height` | Measured | The sticky header's height, kept current by `Header.tsx` (see Header) |
 
 ## Colour
@@ -252,6 +257,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 - Markers match the cards' (border-drawn dots, so they stay visible in forced-colours mode; amber has a graphite 200 outline). A graphite 200 (`--color-border`) connector, drawn with a pseudo-element, joins the stages. No teal.
 - From `48em`: one row of six, the connector filling the space between each label and the next marker, never shorter than `--space-2`. Below `48em`: a vertical list with a vertical connector. Never a scroll container (no `overflow-x`) and never a wrapped row.
 - The row also needs the rail's own box (`.lifecycle-rail-frame`, a size container) to be at least `42.5rem` (680px) wide; the six stages with 8px connectors need 671.6px (`41.98rem`). A media query in `em` follows the browser's text size but not page text (`html { font-size }`), and `rem` in a container query follows both, so with enlarged page text the rail stays the vertical list. At the default text size the box at a 768px viewport is 704px, or 687px beside an always-visible 17px scrollbar, so the row starts at `48em` either way.
+- The line draws in once (#61, see Motion): the frame is marked `data-reveal="line"`; while it is held hidden each connector is scaled to nothing along its length (`--rail-undrawn`, from `--rail-draw-from`), and they draw one after another when the rail is half in view.
 
 **Service cards**
 
@@ -288,7 +294,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 - Not card-like: no fill, shadow, radius or per-row border box, only a graphite 200 hairline above each row and one below the last.
 - Independent rows: each has its own React state, so any number can be open at once, and all five start collapsed. A row opens and closes only on a click, a tap, or Enter or Space on its focused button: focus alone opens nothing (owner decision on #59) and hover never opens or reveals anything. Opening a row does not move focus. A row never opens from a URL hash (see #44).
 - The button spans the row's full width at every breakpoint and is at least `--space-12` (48px) tall, so the number, the title and the space up to the chevron all toggle it; a mouse click on the summary does not. A tap on the summary may toggle that row, where WebKit's touch adjustment sends it to the button, but never any other row (owner decision on #59). Open state: `aria-expanded`, the chevron turned 180° and the visible panel, never colour alone.
-- Hover (`@media (hover: hover)`): the title is underlined and, with motion allowed, the chevron moves `--cta-arrow-shift` in the direction it points (down while closed, up while open). The chevron turns over `--duration-fast` only under `prefers-reduced-motion: no-preference`; under reduced motion nothing moves or transitions.
+- Hover (`@media (hover: hover)`): the title is underlined and, with motion allowed, the chevron moves `--cta-arrow-shift` in the direction it points (down while closed, up while open), over `--duration-card-hover` with `--ease-standard`, as the service-card hover (#61). The chevron turns over `--duration-fast` only under `prefers-reduced-motion: no-preference`; under reduced motion nothing moves or transitions.
 - Layout: below `48em` the number, title and chevron share the first line, with the summary beneath them and the open panel beneath the summary, inside the row; the themes are one column. From `48em` the number column is `--space-10` wide and the summary, panel and themes line up with the title; the themes flow into two columns, top to bottom. From `64em` the number (`tabular-nums`), title, summary and chevron sit on one line in four columns, the same in every row (on the row and repeated on its button), so the titles and summaries line up; the summary is placed over the button's empty third column, as wide as its text, and the open panel sits beneath the row in the title and summary columns. With all five collapsed the list is no taller than 5 × (title line height + `--space-12`) at 1440px.
 - Type: titles `--text-service` at weight 300 in `--color-heading`; numbers (weight 500) and the summary `--text-sm` in `--color-text-muted`; themes `--text-base` in `--color-text`.
 
@@ -301,8 +307,32 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 ## Motion
 
-- Subtle and purposeful only, with durations from the motion tokens. Component CSS uses tokens or their aliases (`--duration-header`, `--duration-cta-arrow`), never a raw `ms` or `s` value.
-- Wrap all non-essential animation in `@media (prefers-reduced-motion: no-preference)`, or disable it under `prefers-reduced-motion: reduce`.
+- Subtle and purposeful only (plan V2 §18). Every duration and easing comes from the motion tokens or their aliases (`--duration-header`, `--duration-cta-arrow`, `--duration-card-hover`, `--duration-reveal` and the rest in the table above): no CSS file under `src/` but `tokens.css` holds a raw `ms` or `s` value or a raw easing function, and `scripts/tokens.test.ts` checks every one. The one literal is `global.css`'s reduced-motion override (`0.01ms`), which stays exactly as it is.
+- Wrap all non-essential animation in `@media (prefers-reduced-motion: no-preference)`, or disable it under `prefers-reduced-motion: reduce`. Only `opacity` and `transform` (or `translate`) animate, so nothing is laid out again and there is no layout shift.
+
+Every motion on the page, and when it does not run (none runs under reduced motion):
+
+| What moves | How | Tokens | When it does not run |
+|---|---|---|---|
+| Hero reveal (#61) | The supporting copy, then the CTA row, rise `--reveal-shift` (16px) and fade in from opacity 0, once on load. The `h1` never animates, so it is painted in the first frame. CSS `@keyframes` (`Hero.css`), fill backwards only, so it leaves no transform behind | `--duration-reveal` (400ms), the CTA row `--duration-reveal-stagger` (150ms) later, `--ease-standard` | Reduced motion and print. Never replays on scrolling or hash navigation |
+| Hero grid fade (#61) | The hero's `TechnicalGrid` fades from opacity 0 to its normal look once on load; the lines' colour and contrast at rest are unchanged | `--duration-grid-fade` (400ms) | Reduced motion and print. The future-ready grid fades only as part of that section's reveal |
+| Lifecycle rail line (#61) | The first time the rail is at least half in view, its five connectors draw one after another, from the first stage to the last: `scaleX` from the inline start in the row, `scaleY` from the top in the vertical list. The markers, numbers and labels never move or fade | `--duration-rail-draw` (800ms in all, a fifth per connector), `--ease-linear` | Reduced motion and print; already drawn if the rail is in view on load |
+| Section reveals (#61) | Services, Managed Services, Solutions, How We Work, future-ready, About and Contact: the section's children rise `--reveal-shift` and fade in once, the first time the section scrolls into view. The section itself, its background and a technical grid's position never move | `--duration-reveal` (400ms), `--ease-standard` | Reduced motion and print; sections in view on load; on a reload or a history traversal; without JavaScript or `IntersectionObserver` |
+| CTA arrows | The header's **Discuss a project →** and the hero's and closing **Discuss your data needs →** arrows move `--cta-arrow-shift` (4px) towards the inline end on hover and `:focus-visible` | `--duration-cta-arrow` (150ms) | Reduced motion |
+| Service-card hover (#56) | The card lifts `--space-2` (8px), with a border and shadow change, only under `(hover: hover)`; focus moves nothing | `--duration-card-hover` (250ms), `--ease-standard` | Reduced motion: no movement and no transition; the border and shadow still change |
+| Solutions rows (#59) | The chevron turns 180° on open; on hover it nudges `--cta-arrow-shift` the way it points | Turn `--duration-fast`; nudge `--duration-card-hover` with `--ease-standard`, as the card hover (#61) | Reduced motion |
+| Header (#54) | The solid ↔ transparent switch over the hero animates only `background-color` and `border-color`. No `backdrop-filter` and no translucency | `--duration-header` (250ms) | Reduced motion |
+
+The header and footer never reveal, and nor does the hero beyond its own reveal and grid fade.
+
+**Reveal safety rules** (`src/useReveal.ts`, #61):
+
+- **One observer.** One `IntersectionObserver` for the whole page, created once in `useReveal()` (called by `App.tsx`), with thresholds 0 and 0.5. It unobserves each element once it has revealed, and is disconnected on unmount, which also shows anything still hidden. No scroll listener: the header's passive one stays the only one. No animation library and no dependency.
+- **Opt-in markup.** A section is marked `data-reveal="section"` and the rail's frame `data-reveal="line"`. Content is hidden only while the script has set `data-reveal-state="hidden"` on it, and the CSS that hides it (`components.css`, `LifecycleRail.css`) applies only under `@media screen and (prefers-reduced-motion: no-preference)`. So without JavaScript, without `IntersectionObserver`, under reduced motion (the script also does nothing then) and in print, everything is shown in its final state.
+- **In view on load.** The observer's first report decides: an element already in view is never hidden and never animates, on a cold load and on a hash landing. One out of view is hidden, then revealed (`data-reveal-state="in"`, which transitions) the first time it comes into view, and never hides again. A reload or a history traversal hides nothing, because the browser restores the scroll position after the first report.
+- **Hash landing.** Only a section's children move, never the section, which is the anchor target, so landing and `landOnHash.ts`'s guard measure an untransformed target.
+- **Focus.** When keyboard focus enters a section that is hidden or still revealing, the script drops its state during the focus event, so the section is shown at once at full opacity with no transform before the browser scrolls the focused element into view, and the focus ring is never under the header.
+- **Tests.** `src/useReveal.test.tsx` (the observer mocked) and `e2e/motion.spec.ts` (Chromium and WebKit) check these rules; `e2e/fixtures.ts` has `waitForMotion` and `scrollThrough`, and `expectNoAxeViolations` waits for motion to end, so axe never measures partly faded text.
 
 ## Accessibility
 

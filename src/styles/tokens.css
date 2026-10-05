@@ -153,7 +153,7 @@
   --text-4xl: clamp(2.125rem, 1.6rem + 2.4vw, 3.5rem);
 
   /* V2 display scale (plan V2 §7). Defined in #54 and applied to the
-     sections by #55-#60. Approximate sizes at 360 / 1024 / 1440px:
+     sections in #55-#60. Approximate sizes at 360 / 1024 / 1440px:
      hero 44 / 79 / 96, section 32 / 52 / 56, service 22 / 26 / 28,
      body-lg 17 / 19 / 20; scripts/tokens.test.ts checks the plan's
      ranges at 1024 and 1440. */
@@ -192,7 +192,7 @@
   --space-20: 5rem;
   --space-24: 6rem;
 
-  /* Vertical section padding (plan V2 §23). Defined in #54 and applied by
+  /* Vertical section padding (plan V2 §23). Defined in #54 and applied in
      #55-#60. */
   --space-section: clamp(4rem, 2.5rem + 6vw, 8rem);
   --space-section-dark: clamp(5rem, 3rem + 8vw, 10rem);
