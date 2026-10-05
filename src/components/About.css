@@ -1,15 +1,28 @@
 /*
- * About (plan V2 §15): one heading and one paragraph on the page
- * background, set explicitly as Hero and Services do. Simpler than the
- * commercial sections: one column at every width, with no eyebrow, card,
- * border or shadow. The change from the dark section above to paper is
- * the only separator. The heading is at the display scale, as the other
- * section headings.
+ * About (refinement plan §10, #63): on the page background, set
+ * explicitly as Hero and Services do, with no eyebrow, card, border or
+ * shadow. The change from the dark section above to paper is the only
+ * separator. The h2 is at the display scale, as the other section
+ * headings; the supporting statement beneath it is the Positioning
+ * statement's style (--text-3xl, weight 300, graphite 900 on paper,
+ * 14.9:1), and the description is --text-body-lg.
+ *
+ * Stacked by default: heading, statement, description. From 64em
+ * (1024px; literal breakpoint, see the note in tokens.css) two
+ * top-aligned columns, the heading and statement at the start and the
+ * description at the end, so the visual order is the DOM order.
  */
 
 .about {
   padding-block: var(--space-section);
   background-color: var(--color-bg);
+}
+
+.about__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-8);
+  align-items: start;
 }
 
 /* Weight 300 from the global heading styles. */
@@ -20,13 +33,30 @@
   overflow-wrap: break-word;
 }
 
+/* Both paragraphs break a word only if it cannot fit on a line of its
+   own, rather than anywhere as .container allows. */
+.about__statement {
+  margin-block: var(--space-6) 0;
+  color: var(--color-heading);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-light);
+  line-height: var(--leading-tight);
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+
 .about__text {
   max-width: var(--measure);
   margin-block: 0;
   color: var(--color-text);
   font-size: var(--text-body-lg);
-  /* Break a word only if it cannot fit on a line of its own, rather than
-     anywhere as .container allows. */
   overflow-wrap: break-word;
   text-wrap: pretty;
+}
+
+@media (min-width: 64em) {
+  .about__layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-16);
+  }
 }

@@ -3,10 +3,11 @@ import { describe, expect, it } from 'vitest'
 import { navigation } from '../data/navigation.ts'
 import About from './About.tsx'
 
-// Plan Section 6 item 7 and Section 10, character for character.
+// The refinement plan §10 (#63), character for character.
 const HEADING = 'About Fafanua'
+const STATEMENT = 'Data foundations built for how organisations actually operate.'
 const PARAGRAPH =
-  'Fafanua Technologies Limited helps African organisations build dependable data platforms and analytical systems. We combine data engineering, business modelling, governance, and reporting expertise to turn fragmented organisational data into trusted assets for decision-making.'
+  'Fafanua Technologies Limited helps African organisations build and strengthen dependable data platforms and analytical systems. We combine data engineering, business modelling, governance and reporting expertise to turn fragmented organisational data into trusted assets for decision-making.'
 
 // Claims the section must not make: an existing Intelligence product, SaaS
 // or AI features, or a founder-led company.
@@ -45,12 +46,13 @@ describe('About', () => {
     expect(section.querySelectorAll('h1, h2, h3, h4, h5, h6')).toHaveLength(1)
   })
 
-  it('has exactly one paragraph with the plan wording', () => {
+  it('has exactly two paragraphs, the statement then the description, with the plan wording', () => {
     const section = renderAbout()
     const paragraphs = section.querySelectorAll('p')
 
-    expect(paragraphs).toHaveLength(1)
-    expect(paragraphs[0].textContent).toBe(PARAGRAPH)
+    expect(paragraphs).toHaveLength(2)
+    expect(paragraphs[0].textContent).toBe(STATEMENT)
+    expect(paragraphs[1].textContent).toBe(PARAGRAPH)
   })
 
   it('keeps "African organisations" rather than "East African"', () => {
@@ -60,19 +62,33 @@ describe('About', () => {
     expect(section.textContent).not.toContain('East African')
   })
 
-  it('contains only the heading and the paragraph, nothing else', () => {
+  it('contains only the heading, the statement and the description, nothing else', () => {
     const section = renderAbout()
 
-    expect(section.textContent).toBe(HEADING + PARAGRAPH)
+    expect(section.textContent).toBe(HEADING + STATEMENT + PARAGRAPH)
   })
 
-  it('has no eyebrow, number or second column: one heading and one paragraph in the container (#60)', () => {
+  it('has two columns: the heading with the statement beneath it, then the description (#63)', () => {
     const section = renderAbout()
     const container = section.querySelector('.container')!
+    const [start, end, ...rest] = [...container.children]
 
     expect(section.querySelector('.section-eyebrow')).toBeNull()
     expect(section.children).toHaveLength(1)
-    expect([...container.children].map((child) => child.tagName)).toEqual(['H2', 'P'])
+    expect(rest).toHaveLength(0)
+    expect(start.tagName).toBe('DIV')
+    expect([...start.children].map((child) => [child.tagName, child.textContent])).toEqual([
+      ['H2', HEADING],
+      ['P', STATEMENT],
+    ])
+    expect([end.tagName, end.textContent]).toEqual(['P', PARAGRAPH])
+  })
+
+  it('makes the statement a paragraph, not a heading, so the section has one heading', () => {
+    const section = renderAbout()
+
+    expect(within(section).getByText(STATEMENT).tagName).toBe('P')
+    expect(within(section).queryByRole('heading', { name: STATEMENT })).toBeNull()
   })
 
   it('uses plain ASCII text with no manual line breaks or non-breaking spaces', () => {

@@ -1,51 +1,60 @@
-// Checks about.ts against _docs/plan.md, so the About wording on the site
-// cannot drift from the plan: the heading against Section 6 (page sequence
-// item 7) and the paragraph against the Section 10 suggested copy. The
-// ?raw import resolves relative to this file and is never part of the
+// Checks about.ts against the V2 refinement plan §10, so the About
+// wording on the site cannot drift from it (#63): the heading and the
+// supporting statement from its "### Left" column, and the description
+// from its "### Right" column. The optional themes are not used. The ?raw
+// import resolves relative to this file and is never part of the
 // production bundle.
 import { describe, expect, it } from 'vitest'
-import plan from '../../_docs/plan.md?raw'
+import refinement from '../../_docs/fafanua-v2-refinement-plan.md?raw'
 import aboutSource from './about.ts?raw'
-import { aboutHeading, aboutParagraph } from './about.ts'
+import { aboutHeading, aboutParagraph, aboutStatement } from './about.ts'
 
-const markdown = plan.replace(/\r\n/g, '\n')
+const doc = refinement.replace(/\r\n/g, '\n')
 
-// The text of a `## ` section, from its heading up to the next one.
-function section(heading: string): string {
-  const start = markdown.indexOf(`\n## ${heading}\n`)
-  if (start === -1) throw new Error(`"${heading}" not found in plan.md`)
-  const end = markdown.indexOf('\n## ', start + 1)
-  return end === -1 ? markdown.slice(start) : markdown.slice(start, end)
+// §10, from its `# 10. ` heading up to the next `# ` heading.
+const start = doc.indexOf('\n# 10. About Section\n')
+const s10 = doc.slice(start, doc.indexOf('\n# ', start + 1))
+
+// The bold `> **…**` quotes under a `### ` heading, up to the next `#`
+// heading of any level.
+function quotes(heading: string): string[] {
+  const at = s10.indexOf(`\n### ${heading}\n`)
+  if (at === -1) throw new Error(`"### ${heading}" not found`)
+  const end = s10.indexOf('\n#', at + 1)
+  const text = end === -1 ? s10.slice(at) : s10.slice(at, end)
+  return [...text.matchAll(/^> \*\*(.+)\*\*$/gm)].map((match) => match[1])
 }
 
-// Item 7 of the numbered page sequence.
-const planHeading = [
-  ...section('6. Information Architecture').matchAll(/^(\d+)\. (.+)$/gm),
-].find((match) => match[1] === '7')?.[2]
+const left = quotes('Left')
+const right = quotes('Right')
 
-// Every `> ` blockquote line in Section 10.
-const planQuotes = [
-  ...section('10. About Section').matchAll(/^> (.+)$/gm),
-].map((match) => match[1])
-
-describe('plan parsers', () => {
-  it('find page sequence item 7 in Section 6', () => {
-    expect(planHeading).toBeDefined()
-  })
-
-  it('find exactly one one-line blockquote in Section 10', () => {
-    expect(planQuotes).toHaveLength(1)
-    expect(planQuotes[0]).not.toBe('')
+describe('refinement plan §10 parser', () => {
+  it('finds the heading and the statement on the left, and one description on the right', () => {
+    expect(start).toBeGreaterThan(-1)
+    expect(left).toHaveLength(2)
+    expect(right).toHaveLength(1)
+    expect(s10).toMatch(/Heading:\n\n> \*\*/)
+    expect(s10).toMatch(/Supporting statement:\n\n> \*\*/)
   })
 })
 
 describe('about wording', () => {
-  it('uses page sequence item 7 as the heading', () => {
-    expect(aboutHeading).toBe(planHeading)
+  it('uses the left column\'s heading', () => {
+    expect(aboutHeading).toBe(left[0])
   })
 
-  it('uses the Section 10 suggested copy as the paragraph', () => {
-    expect(aboutParagraph).toBe(planQuotes[0])
+  it('uses the left column\'s supporting statement, character for character', () => {
+    expect(aboutStatement).toBe(left[1])
+  })
+
+  it('uses the right column\'s description, character for character', () => {
+    expect(aboutParagraph).toBe(right[0])
+  })
+
+  it('does not use the optional themes', () => {
+    for (const text of [aboutHeading, aboutStatement, aboutParagraph]) {
+      expect(text).not.toMatch(/Reliable data infrastructure|shared definitions|real organisational decisions/)
+    }
   })
 
   it('keeps "African organisations" as the plan writes it', () => {
@@ -85,9 +94,10 @@ describe('other source files', () => {
     expect(files).not.toContain('/src/data/about.ts')
   })
 
-  it('do not repeat the paragraph', () => {
+  it('do not repeat the paragraph or the statement', () => {
     for (const [file, source] of sources) {
       expect(source.includes(aboutParagraph), `${file} repeats the About paragraph`).toBe(false)
+      expect(source.includes(aboutStatement), `${file} repeats the About statement`).toBe(false)
     }
   })
 })

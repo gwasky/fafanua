@@ -1964,6 +1964,84 @@ for (const width of WIDTHS) {
       await expectNoHorizontalScroll(page)
     })
 
+    // The future-ready graphic's final node (#63): labelled "advanced
+    // analytics & AI" like the four labels above it, a larger ring than
+    // their dots, with the rail reaching it from provenance. About (#63):
+    // the heading with the statement beneath it, then the description,
+    // side by side from 1024px and stacked below it.
+    test(`future-ready destination and the About columns at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      const m = await page.evaluate(() => {
+        const box = (element: Element) => {
+          const { left, right, top, bottom } = element.getBoundingClientRect()
+          return { left, right, top, bottom }
+        }
+        const graphic = document.querySelector('.future-ready__graphic')!
+        const items = [...graphic.querySelectorAll('li')]
+        const end = graphic.querySelector('.future-ready__end')!
+        const ring = getComputedStyle(end, '::before')
+        const dot = getComputedStyle(items[0], '::before')
+        const rail = getComputedStyle(graphic, '::before')
+        const graphicBox = graphic.getBoundingClientRect()
+        const endBox = end.getBoundingClientRect()
+        const ringTop = endBox.top + parseFloat(ring.top)
+        const railBottom = graphicBox.top + parseFloat(rail.top) + parseFloat(rail.height)
+        const text = (element: Element) => {
+          const s = getComputedStyle(element)
+          return `${s.fontSize} ${s.fontWeight} ${s.color}`
+        }
+        const about = document.querySelector('#about .container')!
+        const [heading, statement, description] = ['h2', '.about__statement', '.about__text'].map((selector) => box(about.querySelector(selector)!))
+        return {
+          endText: end.textContent,
+          endStyle: text(end),
+          itemStyle: text(items[3]),
+          ring: { width: parseFloat(ring.width), border: parseFloat(ring.borderTopWidth), style: ring.borderTopStyle },
+          // Border-box sizes (global box-sizing).
+          dot: { width: parseFloat(dot.width) },
+          railToRing: ringTop - railBottom,
+          railStyle: `${rail.borderLeftWidth} ${rail.borderLeftStyle}`,
+          endBelowItems: endBox.top >= items[3].getBoundingClientRect().bottom,
+          ringBesideLabel: endBox.left + parseFloat(ring.left) + parseFloat(ring.width) <= endBox.left + parseFloat(getComputedStyle(end).paddingLeft),
+          about: { heading, statement, description },
+          statementStyle: (({ fontSize, fontWeight }) => `${fontSize} ${fontWeight}`)(getComputedStyle(about.querySelector('.about__statement')!)),
+          text3xl: (() => {
+            const probe = document.createElement('p')
+            probe.style.fontSize = 'var(--text-3xl)'
+            document.body.append(probe)
+            const value = getComputedStyle(probe).fontSize
+            probe.remove()
+            return value
+          })(),
+        }
+      })
+      const detail = JSON.stringify(m)
+
+      expect(m.endText).toBe('advanced analytics & AI')
+      expect(m.endStyle, detail).toBe(m.itemStyle)
+      expect(m.endBelowItems, detail).toBe(true)
+      expect(m.ringBesideLabel, detail).toBe(true)
+      // A ring (its border less than half its width), larger than the dots.
+      expect(m.ring.style, detail).toBe('solid')
+      expect(m.ring.border * 2, detail).toBeLessThan(m.ring.width)
+      expect(m.ring.width, detail).toBeGreaterThan(m.dot.width)
+      // The rail runs down to the ring's top edge.
+      expect(m.railStyle, detail).toBe('1px solid')
+      expect(Math.abs(m.railToRing), detail).toBeLessThanOrEqual(1)
+
+      const { heading, statement, description } = m.about
+      expect(statement.top, detail).toBeGreaterThanOrEqual(heading.bottom)
+      expect(Math.abs(statement.left - heading.left), detail).toBeLessThanOrEqual(1)
+      expect(m.statementStyle, detail).toBe(`${m.text3xl} 300`)
+      if (width >= 1024) {
+        expect(description.left, detail).toBeGreaterThan(Math.max(heading.right, statement.right))
+        expect(Math.abs(description.top - heading.top), detail).toBeLessThanOrEqual(1)
+      } else {
+        expect(description.top, detail).toBeGreaterThanOrEqual(statement.bottom)
+        expect(Math.abs(description.left - heading.left), detail).toBeLessThanOrEqual(1)
+      }
+    })
+
     if (width === 320) {
       test(`future-ready, About, Contact and the footer fit with 200% page text at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
