@@ -10,6 +10,7 @@ import { openPage, pressTab, test, waitForFonts, waitForScrollSettle } from './f
 // header-overlay.spec.ts.
 
 const HEADING = 'Trusted Data. Better Decisions.'
+const PROMISE = 'Build a data foundation you can trust.'
 const hero = (page: Page) => page.getByRole('region', { name: HEADING })
 const primary = (page: Page) => hero(page).getByRole('link', { name: 'Discuss your data needs' })
 const secondary = (page: Page) => hero(page).getByRole('link', { name: 'Explore our capabilities' })
@@ -153,6 +154,37 @@ test.describe('the h1 starts below the header at scroll 0', () => {
   }
 })
 
+// Protected positioning (owner decision on #61, AGENTS.md): the core
+// brand promise is rendered, exactly, directly after the h1 and before
+// the supporting copy, and is visible once the hero has revealed.
+test.describe('brand promise', () => {
+  for (const width of [360, 1440]) {
+    test(`directly after the h1, exactly and visible, at ${width}px`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'no-preference' })
+      await openAt(page, width, 800)
+      const promise = hero(page).getByText(PROMISE, { exact: true })
+      await expect(promise).toBeVisible()
+      await expect(promise).toBeInViewport({ ratio: 1 })
+      const order = await hero(page).evaluate((section) => {
+        const h1 = section.querySelector('h1')!
+        const next = h1.nextElementSibling!
+        return {
+          next: [next.tagName, next.textContent],
+          after: next.nextElementSibling?.className,
+          headings: section.querySelectorAll('h1, h2, h3, h4, h5, h6').length,
+          opacity: getComputedStyle(next).opacity,
+        }
+      })
+      expect(order).toEqual({
+        next: ['P', PROMISE],
+        after: 'hero__lead',
+        headings: 1,
+        opacity: '1',
+      })
+    })
+  }
+})
+
 test.describe('type', () => {
   // The computed styles of the h1 and the supporting copy, with the same
   // properties of a probe set from the tokens inside the hero.
@@ -179,9 +211,13 @@ test.describe('type', () => {
       }
       return {
         heading: read(section.querySelector('h1')!),
-        lead: read(section.querySelector('p')!),
+        promise: read(section.querySelector('.hero__promise')!),
+        lead: read(section.querySelector('.hero__lead')!),
         headingTokens: probe(
           'font-size: var(--text-hero); font-weight: var(--weight-light); line-height: var(--leading-display); max-width: var(--measure-display); color: var(--color-heading)',
+        ),
+        promiseTokens: probe(
+          'font-size: var(--text-3xl); font-weight: var(--weight-light); line-height: var(--leading-snug); max-width: var(--measure); color: var(--color-heading)',
         ),
         leadTokens: probe(
           'font-size: var(--text-body-lg); font-weight: var(--weight-regular); line-height: var(--leading-normal); max-width: var(--measure); color: var(--color-text)',
@@ -201,7 +237,14 @@ test.describe('type', () => {
       const t = await typeStyles(page)
 
       expect(t.heading).toEqual(t.headingTokens)
+      expect(t.promise).toEqual(t.promiseTokens)
       expect(t.lead).toEqual(t.leadTokens)
+      // The brand promise is smaller than the h1 and larger than the
+      // supporting copy, light, and in the heading's paper.
+      expect(parseFloat(t.promise.fontSize)).toBeLessThan(parseFloat(t.heading.fontSize))
+      expect(parseFloat(t.promise.fontSize)).toBeGreaterThan(parseFloat(t.lead.fontSize))
+      expect(t.promise.fontWeight).toBe('300')
+      expect(t.promise.color).toBe(t.paper)
       expect(Math.abs(parseFloat(t.heading.fontSize) - size)).toBeLessThanOrEqual(1)
       expect(t.heading.fontWeight).toBe('300')
       // Paper heading and graphite 300 copy, from .surface-dark.
@@ -226,13 +269,14 @@ test.describe('type', () => {
 })
 
 test.describe('wrapping', () => {
-  // Whether any word of the h1 or the supporting copy is split across
-  // lines, and how many lines each headline sentence takes.
+  // Whether any word of the h1, the brand promise or the supporting copy
+  // is split across lines, and how many lines each headline sentence
+  // takes.
   const wrapping = (page: Page) =>
     page.evaluate(() => {
       const section = document.querySelector('main > [data-header-overlay]')!
       const broken: string[] = []
-      for (const element of [section.querySelector('h1')!, section.querySelector('p')!]) {
+      for (const element of [section.querySelector('h1')!, ...section.querySelectorAll('p')]) {
         const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
         for (let node = walker.nextNode(); node; node = walker.nextNode()) {
           const text = node.textContent ?? ''

@@ -149,7 +149,7 @@ const tokenTime = (page: Page, token: string) =>
 test.describe('hero reveal and grid fade, no-preference', () => {
   test.use({ reducedMotion: 'no-preference', viewport: { width: 1440, height: 900 } })
 
-  test('the copy and CTA row rise, the h1 never fades, and the grid fades in', async ({ page }) => {
+  test('the brand promise, copy and CTA row rise, the h1 never fades, and the grid fades in', async ({ page }) => {
     await page.goto('/')
     // The h1 is painted at full opacity from the first frame.
     const first = await page.evaluate(() => {
@@ -164,6 +164,7 @@ test.describe('hero reveal and grid fade, no-preference', () => {
       }
       return {
         h1: style('.hero__heading'),
+        promise: style('.hero__promise'),
         lead: style('.hero__lead'),
         actions: style('.hero__actions'),
         grid: style('.hero > .technical-grid'),
@@ -171,22 +172,25 @@ test.describe('hero reveal and grid fade, no-preference', () => {
       }
     })
     expect(first.h1).toEqual({ name: 'none', duration: 0, delay: 0, opacity: '1' })
+    expect(first.promise.name).toBe('hero-reveal')
     expect(first.lead.name).toBe('hero-reveal')
     expect(first.actions.name).toBe('hero-reveal')
     expect(first.grid.name).toBe('hero-grid-fade')
     expect(first.futureGrid.name).toBe('none')
     const slow = await tokenTime(page, '--duration-slow')
     const fast = await tokenTime(page, '--duration-fast')
+    expect(first.promise.duration).toBeLessThanOrEqual(slow)
     expect(first.lead.duration).toBeLessThanOrEqual(slow)
     expect(first.actions.duration).toBeLessThanOrEqual(slow)
     expect(first.grid.duration).toBe(slow)
+    expect(first.promise.delay).toBe(0)
     expect(first.lead.delay).toBe(0)
     expect(first.actions.delay).toBeLessThanOrEqual(fast)
 
     // The start of each reveal: opacity 0 and at most --space-4 (16px)
     // lower; the grid starts at opacity 0.
     const start = await page.evaluate(() =>
-      ['.hero__lead', '.hero__actions', '.hero > .technical-grid'].map((selector) => {
+      ['.hero__promise', '.hero__lead', '.hero__actions', '.hero > .technical-grid'].map((selector) => {
         const element = document.querySelector(selector)!
         const [animation] = element.getAnimations()
         animation.pause()
@@ -200,12 +204,13 @@ test.describe('hero reveal and grid fade, no-preference', () => {
     expect(start).toEqual([
       { opacity: '0', transform: 'matrix(1, 0, 0, 1, 0, 16)' },
       { opacity: '0', transform: 'matrix(1, 0, 0, 1, 0, 16)' },
+      { opacity: '0', transform: 'matrix(1, 0, 0, 1, 0, 16)' },
       { opacity: '0', transform: 'none' },
     ])
 
     await waitForMotion(page)
     const end = await page.evaluate(() =>
-      ['.hero__heading', '.hero__lead', '.hero__actions', '.hero > .technical-grid'].map((selector) => {
+      ['.hero__heading', '.hero__promise', '.hero__lead', '.hero__actions', '.hero > .technical-grid'].map((selector) => {
         const style = getComputedStyle(document.querySelector(selector)!)
         return { opacity: style.opacity, transform: style.transform }
       }),
@@ -227,6 +232,7 @@ test.describe('hero reveal and grid fade, no-preference', () => {
       'hero-grid-fade',
       'hero-reveal',
       'hero-reveal',
+      'hero-reveal',
     ])
   })
 })
@@ -240,7 +246,7 @@ test.describe('reduced motion: everything in its final state from the first pain
       await page.setViewportSize({ width, height: 800 })
       await page.goto('/')
       const hero = await page.evaluate(() =>
-        ['.hero__heading', '.hero__lead', '.hero__actions', '.hero > .technical-grid'].map((selector) => {
+        ['.hero__heading', '.hero__promise', '.hero__lead', '.hero__actions', '.hero > .technical-grid'].map((selector) => {
           const style = getComputedStyle(document.querySelector(selector)!)
           return { name: style.animationName, opacity: style.opacity, transform: style.transform }
         }),
@@ -437,6 +443,92 @@ test.describe('section reveals and the rail line, no-preference', () => {
     })
   }
 
+  // The stage labels and markers are fully shown and at rest for the
+  // whole of the draw: from the frame the rail switches to "in" until
+  // every connector is drawn, each label's and marker's opacity, times
+  // every ancestor's, is 1 and no ancestor is transformed (owner decision
+  // on #61). The draw waits for the Services section's own reveal to end.
+  for (const width of [360, 1440]) {
+    for (const how of ['header link', 'scroll into view', 'wheel'] as const) {
+      test(`the rail labels and markers are fully shown throughout the draw, ${how}, at ${width}px`, async ({
+        page,
+      }) => {
+        await openPage(page, width)
+        expect((await rail(page)).state).toBe('hidden')
+        // Sample from the state change on, every frame, until the line is
+        // drawn.
+        await page.evaluate(() => {
+          const frame = document.querySelector('.lifecycle-rail-frame')!
+          const stages = [...frame.querySelectorAll('.lifecycle-rail__stage')]
+          const items = stages.flatMap((stage) => [
+            stage.querySelector('.lifecycle-rail__label')!,
+            stage.querySelector('.lifecycle-rail__marker')!,
+          ])
+          const samples: { opacity: number; transformed: number; undrawn: number }[] = []
+          ;(window as unknown as { __rail: typeof samples }).__rail = samples
+          const sample = () => {
+            let opacity = 1
+            let transformed = 0
+            for (const item of items) {
+              let own = 1
+              for (let element: Element | null = item; element; element = element.parentElement) {
+                const style = getComputedStyle(element)
+                own *= Number(style.opacity)
+                if (style.transform !== 'none') transformed++
+              }
+              opacity = Math.min(opacity, own)
+            }
+            const undrawn = stages
+              .slice(0, -1)
+              .filter((stage) => getComputedStyle(stage, '::after').transform !== 'none').length
+            samples.push({ opacity, transformed, undrawn })
+            return undrawn
+          }
+          const tick = () => {
+            if (sample() > 0) requestAnimationFrame(tick)
+          }
+          new MutationObserver((_records, observer) => {
+            if (frame.getAttribute('data-reveal-state') !== 'in') return
+            observer.disconnect()
+            tick()
+          }).observe(frame, { attributes: true, attributeFilter: ['data-reveal-state'] })
+        })
+
+        if (how === 'header link') {
+          const toggle = page.getByRole('button', { name: 'Menu' })
+          if (await toggle.isVisible()) await toggle.click()
+          await page.getByRole('banner').getByRole('link', { name: 'Services', exact: true }).click()
+        } else if (how === 'scroll into view') {
+          await page.locator('.lifecycle-rail').scrollIntoViewIfNeeded()
+        } else {
+          // 150px a step, as a mouse wheel scrolls, until the line starts.
+          await page.mouse.move(width / 2, 400)
+          for (let step = 0; step < 60 && (await rail(page)).state !== 'in'; step++) {
+            await page.mouse.wheel(0, 150)
+            await page.evaluate(
+              () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+            )
+          }
+        }
+
+        await expect
+          .poll(() => page.evaluate(() => (window as unknown as { __rail: unknown[] }).__rail.length))
+          .toBeGreaterThan(0)
+        await waitForMotion(page)
+        const samples = await page.evaluate(
+          () => (window as unknown as { __rail: { opacity: number; transformed: number; undrawn: number }[] }).__rail,
+        )
+        // The first sample is the frame the draw starts in, with the line
+        // still undrawn; the last, the line drawn.
+        expect(samples[0].undrawn, JSON.stringify(samples)).toBeGreaterThan(0)
+        expect(samples.at(-1)!.undrawn, JSON.stringify(samples)).toBe(0)
+        for (const { opacity, transformed } of samples) {
+          expect({ opacity, transformed }, JSON.stringify(samples)).toEqual({ opacity: 1, transformed: 0 })
+        }
+      })
+    }
+  }
+
   test('print shows every section, with nothing scrolled into view', async ({ page }) => {
     await openPage(page, 1440)
     expect((await sectionStates(page)).filter((section) => section.state === 'hidden')).not.toHaveLength(0)
@@ -444,6 +536,34 @@ test.describe('section reveals and the rail line, no-preference', () => {
     for (const section of await sectionStates(page)) expectShown(section, 'in print')
     for (const transform of (await rail(page)).lines) expect(transform).toBe('none')
   })
+})
+
+// A hash typed into the address bar (or set by script) for an element
+// inside a section that is still hidden lands it clear of the header:
+// useReveal.ts shows that section in its final state and scrolls to the
+// target again, so it is not left --reveal-shift under the header (#61).
+test.describe('a typed hash to an element inside a hidden section (no-preference)', () => {
+  test.use({ reducedMotion: 'no-preference' })
+
+  for (const width of [360, 1440]) {
+    for (const hash of ['#solutions-heading', '#about-heading']) {
+      test(`${hash} lands below the header, at ${width}px`, async ({ page }) => {
+        await openPage(page, width)
+        const section = hash === '#about-heading' ? 'about' : 'solutions'
+        expect(await page.evaluate((id) => document.getElementById(id)!.getAttribute('data-reveal-state'), section)).toBe(
+          'hidden',
+        )
+        await page.evaluate((value) => {
+          location.hash = value
+        }, hash)
+        await waitForLanding(page, hash)
+        await waitForMotion(page)
+        await expectLanded(page, hash)
+        const shown = (await sectionStates(page)).find((state) => state.id === section)!
+        expectShown(shown, 'after the hash change')
+      })
+    }
+  }
 })
 
 test.describe('focus never lands on hidden content (no-preference)', () => {
