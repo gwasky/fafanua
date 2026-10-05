@@ -154,6 +154,23 @@ describe('Header', () => {
     expect(img).toHaveAttribute('height', '42')
   })
 
+  // A light forced-colours theme paints the hero white, where the reversed
+  // wordmark would vanish (#60): only there, the positive logo, whether
+  // the header is transparent or solid.
+  it('offers the positive logo only under a light forced-colours theme', () => {
+    const { banner } = renderPage()
+    const img = within(banner).getByRole('img', { name: 'Fafanua Technologies' })
+    const sources = banner.querySelectorAll('source')
+
+    expect(img.parentElement?.tagName).toBe('PICTURE')
+    expect(sources).toHaveLength(1)
+    expect(sources[0]).toHaveAttribute(
+      'media',
+      '(forced-colors: active) and (prefers-color-scheme: light)',
+    )
+    expect(sources[0]).toHaveAttribute('srcset', '/fafanua-logo.svg')
+  })
+
   it('starts with a skip link to main', () => {
     renderPage()
     const skip = screen.getByRole('link', { name: 'Skip to content' })

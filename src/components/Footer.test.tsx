@@ -54,6 +54,22 @@ describe('Footer', () => {
     expect(footer.querySelectorAll('img, svg')).toHaveLength(1)
   })
 
+  // A light forced-colours theme paints the footer white, where the
+  // reversed wordmark would vanish (#60): only there, the positive logo.
+  it('offers the positive logo only under a light forced-colours theme', () => {
+    const footer = renderFooter()
+    const logo = within(footer).getByRole('img', { name: 'Fafanua Technologies' })
+    const sources = footer.querySelectorAll('source')
+
+    expect(logo.parentElement?.tagName).toBe('PICTURE')
+    expect(sources).toHaveLength(1)
+    expect(sources[0]).toHaveAttribute(
+      'media',
+      '(forced-colors: active) and (prefers-color-scheme: light)',
+    )
+    expect(sources[0]).toHaveAttribute('srcset', '/fafanua-logo.svg')
+  })
+
   it('has a nav named "Footer" with five plain links: the four sections, then Contact', () => {
     const footer = renderFooter()
     const nav = within(footer).getByRole('navigation', { name: 'Footer' })

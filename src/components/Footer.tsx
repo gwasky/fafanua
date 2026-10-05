@@ -2,6 +2,10 @@ import { email, phone, phoneHref } from '../data/contact.ts'
 import { footerNavigation } from '../data/navigation.ts'
 import './Footer.css'
 
+// A forced-colours theme with a light background (Windows contrast themes).
+// Header.tsx holds the same query.
+const FORCED_LIGHT = '(forced-colors: active) and (prefers-color-scheme: light)'
+
 // The page footer, outside main, dark and minimal (plan V2 §17): the
 // reversed logo (an image, not a link), the five footer links
 // (footerNavigation in src/data/navigation.ts), the email and phone links
@@ -14,13 +18,20 @@ function Footer() {
   return (
     <footer className="site-footer surface-dark">
       <div className="container site-footer__inner">
-        <img
-          className="site-footer__logo"
-          src="/fafanua-logo-reversed.svg"
-          alt="Fafanua Technologies"
-          width="296"
-          height="42"
-        />
+        {/* A light forced-colours theme paints the footer white, where the
+            reversed logo's paper wordmark disappears, so it takes the
+            positive logo there (#60). The source matches only then, so the
+            normal colours and a dark forced theme are unchanged. */}
+        <picture>
+          <source media={FORCED_LIGHT} srcSet="/fafanua-logo.svg" />
+          <img
+            className="site-footer__logo"
+            src="/fafanua-logo-reversed.svg"
+            alt="Fafanua Technologies"
+            width="296"
+            height="42"
+          />
+        </picture>
         <nav className="site-footer__nav" aria-label="Footer">
           <ul className="site-footer__list">
             {footerNavigation.map((item) => (

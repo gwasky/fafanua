@@ -54,6 +54,10 @@ const STATIC_CLASS = 'header-static'
 const LOGO = '/fafanua-logo.svg'
 const LOGO_REVERSED = '/fafanua-logo-reversed.svg'
 
+// A forced-colours theme with a light background (Windows contrast themes,
+// #60). Footer.tsx holds the same query.
+const FORCED_LIGHT = '(forced-colors: active) and (prefers-color-scheme: light)'
+
 // The sticky site header. Solid (paper, with a bottom border) by default.
 // When `overlay` is set (App.tsx renders the dark hero, a
 // [data-header-overlay] section, under it), the page is at the top and
@@ -147,12 +151,19 @@ function Header({ overlay = false }: { overlay?: boolean }) {
       </a>
       <div className="container site-header__inner">
         <a className="site-header__logo" href="#top">
-          <img
-            src={transparent ? LOGO_REVERSED : LOGO}
-            alt="Fafanua Technologies"
-            width="296"
-            height="42"
-          />
+          {/* A light forced-colours theme paints the hero white, where the
+              reversed logo's paper wordmark disappears, so it takes the
+              positive logo there. The source matches only then, so the
+              normal colours and a dark forced theme are unchanged. */}
+          <picture>
+            <source media={FORCED_LIGHT} srcSet={LOGO} />
+            <img
+              src={transparent ? LOGO_REVERSED : LOGO}
+              alt="Fafanua Technologies"
+              width="296"
+              height="42"
+            />
+          </picture>
         </a>
         <button
           ref={toggleRef}

@@ -117,6 +117,13 @@ main:focus {
    lets it shrink with its link; the narrowest case, 320px at 200% text,
    still leaves it 256px wide. The height follows from the width and
    height attributes, so the space is reserved before the SVG loads. */
+/* The <picture> that swaps in the positive logo under a light forced-
+   colours theme (Header.tsx) generates no box, so the image stays the
+   link's flex item and the layout is the same as a bare <img>. */
+.site-header__logo picture {
+  display: contents;
+}
+
 .site-header__logo img {
   width: calc(var(--space-20) * 2);
   height: auto;
