@@ -2,8 +2,8 @@ import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { expectLanded, expectNoAxeViolations, openPage } from './fixtures.ts'
 import { SEQUENCE, walkFocus } from './focus.ts'
-import { formatViolations } from '../src/test/axe.ts'
-import { servicesIntro } from '../src/data/services.ts'
+import { AXE_TAGS, formatViolations } from '../src/test/axe.ts'
+import { managedServices, servicesIntro } from '../src/data/services.ts'
 
 // Axe on the production preview in a real browser, where contrast,
 // target size and reflow can be measured. Each state is its own test, so
@@ -80,6 +80,71 @@ test.describe('axe, a service card hovered', () => {
         .toContain('8px')
 
       await expectNoAxeViolations(page, testInfo)
+    })
+  }
+})
+
+test.describe('axe, Managed Services panel in view', () => {
+  // The dark panel (#58) scrolled into view under the solid header.
+  const showPanel = async (page: Page) => {
+    const panel = page
+      .getByRole('region', { name: managedServices.sectionHeading })
+      .locator('.surface-dark')
+    await panel.scrollIntoViewIfNeeded()
+    await expect(panel).toBeInViewport()
+    await expect(page.getByRole('banner')).not.toHaveClass(/\bon-dark\b/)
+    return panel
+  }
+
+  for (const width of [360, 1024, 1440]) {
+    test(`panel in view at ${width}px`, async ({ page }, testInfo) => {
+      await openPage(page, width)
+      await showPanel(page)
+
+      await expectNoAxeViolations(page, testInfo)
+    })
+
+    // Forced colours: every rule but color-contrast. In Chromium's
+    // emulation the forced text colour is in `color` but
+    // -webkit-text-fill-color keeps the authored one, which axe reads, and
+    // axe then pairs it with the forced background: measured in #58 it
+    // reports graphite 300 on white for the panel's text, and
+    // the solid header's call to action fails the same way, while the page
+    // paints black on white (`color` rgb(0, 0, 0) on rgb(255, 255, 255),
+    // checked here and in the screenshot). So the painted contrast is
+    // checked directly instead.
+    test(`panel in view, forced colours, at ${width}px`, async ({ page }, testInfo) => {
+      await page.emulateMedia({ forcedColors: 'active' })
+      await openPage(page, width)
+      const panel = await showPanel(page)
+
+      const results = await new AxeBuilder({ page })
+        .withTags(AXE_TAGS)
+        .disableRules(['color-contrast'])
+        .analyze()
+      expect(
+        results.violations,
+        `axe violations in "${testInfo.title}":\n${formatViolations(results.violations)}`,
+      ).toEqual([])
+
+      const painted = await panel.evaluate((root) => {
+        const background = getComputedStyle(root).backgroundColor
+        return [...root.querySelectorAll('p, h2, h3, li')].map((element) => ({
+          text: element.textContent?.slice(0, 30),
+          colour: getComputedStyle(element).color,
+          background,
+        }))
+      })
+      for (const { text, colour, background } of painted) {
+        expect({ text, colour, background }).toEqual({
+          text,
+          colour: 'rgb(0, 0, 0)',
+          background: 'rgb(255, 255, 255)',
+        })
+      }
+      await panel.screenshot({
+        path: `${testInfo.project.outputDir}/screenshots/managed-forced-colours-${width}.png`,
+      })
     })
   }
 })
