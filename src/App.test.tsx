@@ -205,6 +205,21 @@ describe('App', () => {
     }
   })
 
+  it('names the Solutions and How We Work regions by their h2s, after their eyebrows', () => {
+    render(<App />)
+    const solutionsRegion = screen.getByRole('region', { name: 'Solutions' })
+    const process = screen.getByRole('region', { name: 'How We Work' })
+
+    expect(solutionsRegion.querySelector('.section-eyebrow')?.textContent).toBe(
+      '03 — Solutions',
+    )
+    expect(process.querySelector('.section-eyebrow')?.textContent).toBe(
+      '04 — How We Work',
+    )
+    // The eyebrows are paragraphs, so they add nothing to the outline.
+    expect(screen.queryByRole('heading', { name: /03 — |04 — / })).toBeNull()
+  })
+
   it('shows the four stages inside the How We Work section', () => {
     render(<App />)
     const process = screen.getByRole('region', { name: 'How We Work' })
@@ -414,10 +429,18 @@ describe('App', () => {
     expect(headings[9].textContent).toBe(MANAGED)
     expect(headings[10].textContent).toBe(managedServices.heading)
     expect(headings[11].textContent).toBe('Solutions')
-    expect(headings.slice(12, 17).map((heading) => heading.textContent)).toEqual(
-      solutions.map((solution) => solution.title),
-    )
+    // Each sector h3 holds its row's button (the accordion header
+    // pattern), and is named by the title alone: the number is aria-hidden.
+    headings.slice(12, 17).forEach((heading, index) => {
+      expect(heading).toHaveAccessibleName(solutions[index].title)
+      expect(within(heading).getByRole('button')).toHaveAccessibleName(
+        solutions[index].title,
+      )
+    })
     expect(headings[17].textContent).toBe('How We Work')
+    expect(headings.slice(18, 22).map((heading) => heading.textContent)).toEqual(
+      processStages.map((stage) => stage.name),
+    )
     expect(headings[22].textContent).toBe(FUTURE_READY)
     expect(headings[23].textContent).toBe('About Fafanua')
     expect(headings[24].textContent).toBe(CONTACT)

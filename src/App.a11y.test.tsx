@@ -4,6 +4,7 @@ import App from './App.tsx'
 import { email } from './data/contact.ts'
 import { footerNavigation, navigation, navigationCta } from './data/navigation.ts'
 import { services } from './data/services.ts'
+import { solutions } from './data/solutions.ts'
 import { accessibleNames, expectNoAxeViolations } from './test/axe.ts'
 
 // jsdom has no matchMedia, which the header uses for its breakpoint.
@@ -45,6 +46,19 @@ describe('App accessibility (axe)', () => {
     for (const button of buttons) fireEvent.click(button)
 
     expect(buttons).toHaveLength(6)
+    for (const button of buttons) {
+      expect(button).toHaveAttribute('aria-expanded', 'true')
+    }
+    await expectNoAxeViolations(container)
+  })
+
+  it('has no axe violations with all five Solutions rows open', async () => {
+    const { container } = render(<App />)
+    const region = screen.getByRole('region', { name: 'Solutions' })
+    const buttons = within(region).getAllByRole('button')
+    for (const button of buttons) fireEvent.click(button)
+
+    expect(buttons).toHaveLength(5)
     for (const button of buttons) {
       expect(button).toHaveAttribute('aria-expanded', 'true')
     }
@@ -145,12 +159,23 @@ describe('App links and buttons', () => {
     for (const { href } of links) expect(href).toBe(`mailto:${email}`)
   })
 
+  it('has three kinds of button: the Menu toggle, six disclosures and five Solutions rows', () => {
+    render(<App />)
+    const buttons = controls().filter(({ element }) => element.tagName === 'BUTTON')
+
+    expect(buttons.map(({ name }) => name)).toEqual([
+      'Menu',
+      ...services.map((service) => disclosureName(service.name)),
+      ...solutions.map((solution) => solution.title),
+    ])
+  })
+
   it('names the six disclosures Typical engagements for each service, starting with the visible label', () => {
     render(<App />)
-    // Every disclosure button: the Menu toggle is the only other button.
+    // The service cards' disclosure buttons.
     const disclosures = controls().filter(
       ({ element }) =>
-        element.tagName === 'BUTTON' && element.textContent !== 'Menu',
+        element.tagName === 'BUTTON' && element.closest('.service-card') !== null,
     )
     const names = disclosures.map(({ name }) => name)
 
