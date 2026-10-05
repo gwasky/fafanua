@@ -1591,11 +1591,12 @@ for (const width of WIDTHS) {
         await page.touchscreen.tap(box.x + box.width - 16 - 4, box.y + box.height / 2)
         await expect(button).toHaveAttribute('aria-expanded', 'true')
 
-        // A mouse click on the summary toggles nothing. A tap there is not
-        // checked: in WebKit, touch adjustment sends a tap that close to
-        // the button to the button, as Safari on iOS does (measured for
-        // #59: a tap on "Inventory" at 360px opened Retail & Distribution
-        // in WebKit, and did nothing in Chromium).
+        // A mouse click on the summary toggles nothing. A tap there may
+        // toggle the row: in WebKit, touch adjustment sends a tap on or
+        // near the summary to the button, as Safari on iOS does, and
+        // Chromium does not (owner decision on #59: the summary criterion
+        // applies to mouse clicks only). The test below checks that such a
+        // tap changes no other row.
         await sectorButtons(page).nth(1).locator('xpath=../../ul[1]/li[1]').click()
         await expect(button).toHaveAttribute('aria-expanded', 'true')
         await button.locator('.solution-row__title').tap()
@@ -1605,6 +1606,55 @@ for (const width of WIDTHS) {
         }
       })
     })
+
+    // A tap on a row's summary (owner decision on #59) opens or closes
+    // that row, or leaves it as it was, and changes no other row. WebKit's
+    // touch adjustment may send the tap to the row's button; Chromium's
+    // does not. Two other rows are open first, so a tap that reached them
+    // would show.
+    if (width === 360 || width === 1440) {
+      test.describe('touch on the summary', () => {
+        test.use({ hasTouch: true })
+
+        test(`a tap on a Solutions summary changes only that row at ${width}px`, async ({ page }, testInfo) => {
+          await open(page, testInfo, width)
+          const buttons = sectorButtons(page)
+          for (const index of [0, 3]) {
+            await buttons.nth(index).locator('.solution-row__title').tap()
+            await expect(buttons.nth(index)).toHaveAttribute('aria-expanded', 'true')
+          }
+          const others = { 0: 'true', 1: 'false', 3: 'true', 4: 'false' } as const
+          const target = buttons.nth(2)
+          const panel = page.locator(`[id="${await target.getAttribute('aria-controls')}"]`)
+          const items = target.locator('xpath=../../ul[1]/li')
+          await expect(items).toHaveCount(4)
+
+          // Each summary item with the row closed, then with it open.
+          for (const start of ['false', 'true'] as const) {
+            for (let i = 0; i < 4; i++) {
+              if ((await target.getAttribute('aria-expanded')) !== start) {
+                await target.locator('.solution-row__title').tap()
+                await expect(target).toHaveAttribute('aria-expanded', start)
+              }
+              await items.nth(i).scrollIntoViewIfNeeded()
+              await items.nth(i).tap()
+              // A toggle is applied in the tap's event handler; two frames
+              // let any re-render land before the states are read.
+              await page.evaluate(
+                () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+              )
+              const expanded = await target.getAttribute('aria-expanded')
+              expect(['true', 'false'], `summary item ${i + 1}, row ${start === 'true' ? 'open' : 'closed'}`).toContain(expanded)
+              if (expanded === 'true') await expect(panel).toBeVisible()
+              else await expect(panel).toBeHidden()
+              for (const [other, state] of Object.entries(others)) {
+                await expect(buttons.nth(Number(other)), `row ${Number(other) + 1} after summary item ${i + 1}`).toHaveAttribute('aria-expanded', state)
+              }
+            }
+          }
+        })
+      })
+    }
 
     if (width === 320) {
       test(`solutions rows fit with 200% page text, collapsed and open, at ${width}px`, async ({ page }, testInfo) => {

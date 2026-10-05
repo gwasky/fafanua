@@ -4,7 +4,9 @@
  * border box, only a graphite 200 hairline between rows, above the first
  * and below the last. Each row's button spans the row's full width at
  * every breakpoint and is at least 48px tall; the summary sits outside it
- * and does not toggle it.
+ * and a mouse click on it does not toggle the row. A tap on it may, where
+ * WebKit's touch adjustment sends the tap to the button (owner decision
+ * on #59).
  *
  * Below 48em the number, title and chevron share the first line, with the
  * summary beneath them and the open panel beneath the summary, all inside

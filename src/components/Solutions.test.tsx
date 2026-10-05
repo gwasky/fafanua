@@ -234,7 +234,7 @@ describe('Solutions', () => {
     }
   })
 
-  it('does not toggle a row from its summary', () => {
+  it('does not toggle a row from a click on its summary', () => {
     const { rows } = renderSolutions()
     const { button, summary } = parts(rows[0])
 
