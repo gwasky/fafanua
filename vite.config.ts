@@ -49,6 +49,99 @@ export function preloadFont(): Plugin {
   }
 }
 
+// A module <script src> tag, and a stylesheet <link> tag, as Vite writes
+// them into the built head.
+const MODULE_SCRIPT = /<script\b[^>]*\btype="module"[^>]*\bsrc="[^"]*"[^>]*><\/script>/gi
+const STYLESHEET = /<link\b[^>]*\brel="stylesheet"[^>]*>/gi
+
+/**
+ * Moves the module script Vite injects so that it comes after the
+ * stylesheet links in the built head (#62). Vite writes the script first,
+ * and WebKit can then run it before any CSS applies: the header paints in
+ * the browser's default colours, and a hash landing scrolls in an
+ * unstyled layout. Each script keeps its attributes; only the order
+ * changes. The dev server is left alone.
+ */
+export function stylesheetFirst(): Plugin {
+  return {
+    name: 'fafanua:stylesheet-first',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html) {
+        const head = /<head\b[^>]*>[\s\S]*?<\/head>/i.exec(html)
+        if (!head) throw new Error('index.html has no <head> to order')
+        const stylesheets = [...head[0].matchAll(STYLESHEET)]
+        if (stylesheets.length === 0) return html
+        const scripts = head[0].match(MODULE_SCRIPT) ?? []
+        if (scripts.length === 0) return html
+
+        // Take the scripts out, with the indentation before each, then put
+        // them back straight after the last stylesheet.
+        let body = head[0]
+        for (const script of scripts) {
+          body = body.replace(new RegExp(`\\n?[ \\t]*${escape(script)}`), '')
+        }
+        const last = [...body.matchAll(STYLESHEET)].at(-1)!
+        const end = last.index + last[0].length
+        const indent = /[ \t]*$/.exec(body.slice(0, last.index))![0]
+        body = body.slice(0, end) + scripts.map((script) => `\n${indent}${script}`).join('') + body.slice(end)
+        return html.slice(0, head.index) + body + html.slice(head.index + head[0].length)
+      },
+    },
+  }
+}
+
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * Checks that the built head links at least one stylesheet and loads at
+ * least one module script, and that every stylesheet comes before the
+ * first module script (#62). Throws when it does not.
+ */
+export function checkStylesheetOrder(html: string) {
+  const head = /<head\b[^>]*>([\s\S]*?)<\/head>/i.exec(html)?.[1]
+  if (head === undefined) {
+    throw new Error('index.html order check failed: no <head> element')
+  }
+  const stylesheets = [...head.matchAll(STYLESHEET)].map((match) => match.index)
+  const scripts = [...head.matchAll(MODULE_SCRIPT)].map((match) => match.index)
+  if (stylesheets.length === 0) {
+    throw new Error('index.html order check failed: no stylesheet <link> in <head>')
+  }
+  if (scripts.length === 0) {
+    throw new Error('index.html order check failed: no module <script> in <head>')
+  }
+  if (Math.max(...stylesheets) > Math.min(...scripts)) {
+    throw new Error(
+      'index.html order check failed: a module <script> comes before a stylesheet <link>, so WebKit can run the page before its CSS applies (#62)',
+    )
+  }
+}
+
+/**
+ * Fails the build if the client's index.html loads its module script
+ * before its stylesheet, by running checkStylesheetOrder() on the file as
+ * written to disk.
+ */
+export function checkOrder(): Plugin {
+  return {
+    name: 'fafanua:check-order',
+    apply: 'build',
+    applyToEnvironment: (environment) => environment.name === 'client',
+    async writeBundle(options) {
+      const file = path.join(options.dir ?? '', 'index.html')
+      let html: string
+      try {
+        html = await readFile(file, 'utf8')
+      } catch {
+        throw new Error(`index.html order check failed: ${file} is missing`)
+      }
+      checkStylesheetOrder(html)
+    },
+  }
+}
+
 // The production URL. Every absolute URL in the page's metadata, robots.txt
 // and sitemap.xml starts with it.
 export const SITE_URL = 'https://fafanua.tech/'
@@ -275,7 +368,9 @@ export default defineConfig({
     react(),
     preloadFont(),
     structuredData(),
+    stylesheetFirst(),
     checkSeo(),
+    checkOrder(),
     ...(process.env.VITEST ? [] : [cloudflare()]),
   ],
   test: {
