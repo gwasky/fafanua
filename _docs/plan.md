@@ -177,6 +177,8 @@ Primary proposition:
 
 > Build a data foundation you can trust.
 
+**Protected positioning (owner decision, #61).** This is the core brand promise. In the Version 2 hero it is a prominent paragraph directly beneath the primary visual proposition, the `h1` **Trusted Data. Better Decisions.**, and above the supporting copy. Both lines must stay visible in the hero, and neither may be removed or reworded without explicit owner approval. The closing call to action keeps **Let’s build a data foundation your organisation can trust.**
+
 Supporting message:
 
 > Fafanua helps organisations design, build and strengthen the data foundations required for reliable reporting, better decisions and responsible AI.

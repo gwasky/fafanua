@@ -144,6 +144,12 @@ Preferred direction:
 > **Trusted Data.**  
 > **Better Decisions.**
 
+Core brand promise, directly beneath the headline:
+
+> Build a data foundation you can trust.
+
+The hierarchy is: the headline (the `h1`, the primary visual proposition); then the core brand promise, a prominent paragraph, not a heading, so the heading outline is unchanged, smaller than the `h1` and larger than the supporting copy; then the supporting copy. The headline and the brand promise are protected positioning (owner decision, #61): both must stay visible in the hero and must not be removed or reworded without explicit owner approval.
+
 Supporting copy:
 
 > Fafanua designs and operates the data foundations that connect business systems, establish trust, and turn organisational data into intelligence.

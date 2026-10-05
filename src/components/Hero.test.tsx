@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import Hero from './Hero.tsx'
 
 const HEADING = 'Trusted Data. Better Decisions.'
+const PROMISE = 'Build a data foundation you can trust.'
 const SUPPORTING =
   'Fafanua designs and operates the data foundations that connect business systems, establish trust, and turn organisational data into intelligence.'
 
@@ -33,6 +34,21 @@ describe('Hero', () => {
       'Trusted Data.',
       'Better Decisions.',
     ])
+  })
+
+  // Protected positioning (owner decision on #61, AGENTS.md): the core
+  // brand promise, exactly, as a paragraph directly after the h1 and
+  // before the supporting copy.
+  it('shows the brand promise exactly, as a paragraph directly after the h1', () => {
+    const hero = renderHero()
+    const heading = within(hero).getByRole('heading', { level: 1 })
+    const promise = within(hero).getByText(PROMISE)
+
+    expect(promise.textContent).toBe(PROMISE)
+    expect(promise.tagName).toBe('P')
+    expect(promise).toHaveClass('hero__promise')
+    expect(heading.nextElementSibling).toBe(promise)
+    expect(promise.nextElementSibling).toBe(within(hero).getByText(SUPPORTING))
   })
 
   it('shows the supporting copy exactly', () => {
@@ -73,10 +89,11 @@ describe('Hero', () => {
     expect(secondary.querySelector('.button__arrow')).toBeNull()
   })
 
-  it('keeps the order heading, supporting copy, calls to action', () => {
+  it('keeps the order heading, brand promise, supporting copy, calls to action', () => {
     const hero = renderHero()
     const order = [
       within(hero).getByRole('heading', { level: 1 }),
+      within(hero).getByText(PROMISE),
       within(hero).getByText(SUPPORTING),
       ...within(hero).getAllByRole('link'),
     ]
@@ -103,14 +120,14 @@ describe('Hero', () => {
     expect(hero.children).toHaveLength(2)
   })
 
-  it('has only the heading, the supporting copy and the two links', () => {
+  it('has only the heading, the brand promise, the supporting copy and the two links', () => {
     const hero = renderHero()
     const container = hero.querySelector('.container')!
 
-    expect([...container.children].map((child) => child.tagName)).toEqual(['H1', 'P', 'DIV'])
-    expect(hero.querySelectorAll('p')).toHaveLength(1)
+    expect([...container.children].map((child) => child.tagName)).toEqual(['H1', 'P', 'P', 'DIV'])
+    expect(hero.querySelectorAll('p')).toHaveLength(2)
     expect(hero.textContent).toBe(
-      `${HEADING}${SUPPORTING}Discuss your data needs→Explore our capabilities`,
+      `${HEADING}${PROMISE}${SUPPORTING}Discuss your data needs→Explore our capabilities`,
     )
   })
 
@@ -128,8 +145,8 @@ describe('Hero', () => {
     const hero = renderHero()
 
     expect(hero.textContent).not.toMatch(/Fafanua Intelligence/)
+    // The brand promise is back (#61); the rest of the V1 hero is not.
     for (const old of [
-      'Build a data foundation you can trust.',
       'responsible AI',
       'Contact our team',
       'See our services',

@@ -39,6 +39,23 @@
   display: block;
 }
 
+/*
+ * The core brand promise (owner decision on #61): directly beneath the
+ * h1, smaller than it and larger than the supporting copy, light like
+ * the other large type, in the heading colour (paper on graphite 900, a
+ * verified pairing).
+ */
+.hero__promise {
+  max-width: var(--measure);
+  margin-block: 0 var(--space-6);
+  color: var(--color-heading);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-light);
+  line-height: var(--leading-snug);
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+
 .hero__lead {
   max-width: var(--measure);
   margin-block: 0 var(--space-8);
@@ -71,7 +88,8 @@
 
 /*
  * The hero reveal (#61), once on load and only with motion allowed: the
- * supporting copy, then --duration-reveal-stagger later the CTA row,
+ * brand promise and the supporting copy, then --duration-reveal-stagger
+ * later the CTA row,
  * rise --reveal-shift and fade in over --duration-reveal, and the grid
  * fades in over --duration-grid-fade. The h1 never animates, so it is
  * painted in the first frame. The fill is backwards only: the CTA row is
@@ -93,6 +111,7 @@
 }
 
 @media screen and (prefers-reduced-motion: no-preference) {
+  .hero__promise,
   .hero__lead,
   .hero__actions {
     animation: hero-reveal var(--duration-reveal) var(--ease-standard) backwards;

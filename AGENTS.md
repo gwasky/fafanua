@@ -63,6 +63,7 @@ Follow `_docs/design-system.md` for colours, typography, logo use, layout, compo
 - Copy the wording rather than rewriting it: service copy from `_docs/plan-fafanua-services-positioning.md`, and process stages and statements from `_docs/plan.md`.
 - Do not present Fafanua Intelligence as an existing product or claim unsupported SaaS or AI products/features. References to integrating third-party SaaS systems are permitted. Future analytics and AI positioning must be framed as readiness enabled by trusted data foundations, not as currently available product functionality unless explicitly approved.
 - No stock photos, generic AI imagery, heavy gradients, glassmorphism or excessive animation.
+- **Protected positioning:** the hero `h1` **Trusted Data. Better Decisions.** and, directly beneath it, the core brand promise **Build a data foundation you can trust.** must stay visible in the hero. Do not remove or reword either without explicit owner approval (`_docs/plan.md` Section 5, `_docs/fafanua-v2-visual-upgrade-plan.md` §5). Their copy lives in `src/data/hero.ts`.
 
 ## Code style
 
