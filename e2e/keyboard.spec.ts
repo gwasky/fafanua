@@ -25,12 +25,14 @@ async function expectRing(page: Page, name: string) {
 }
 
 test.describe('Tab order', () => {
-  test('1440 has 28 stops', () => {
-    expect(SEQUENCE[1440]).toHaveLength(28)
+  // 28 and 24 after #59; the two phone links (owner decision on #60) add
+  // one stop each.
+  test('1440 has 30 stops', () => {
+    expect(SEQUENCE[1440]).toHaveLength(30)
   })
 
-  test('360 with the menu closed has 24 stops', () => {
-    expect(SEQUENCE[360]).toHaveLength(24)
+  test('360 with the menu closed has 26 stops', () => {
+    expect(SEQUENCE[360]).toHaveLength(26)
   })
 
   for (const width of [1440, 360]) {
@@ -95,11 +97,11 @@ test.describe('focus after in-page links', () => {
   const cases = [
     { from: 'header', link: 'Services', hash: '#services', next: firstDisclosure },
     { from: 'header', link: 'Solutions', hash: '#solutions', next: firstSector },
-    { from: 'header', link: 'How We Work', hash: '#how-we-work', next: 'Email us' },
-    { from: 'header', link: 'About', hash: '#about', next: 'Email us' },
-    { from: 'header', link: 'Discuss a project', hash: '#contact', next: 'Email us' },
-    { from: 'main', link: 'Explore our capabilities', hash: '#services', next: firstDisclosure },
-    { from: 'main', link: 'Discuss your data needs', hash: '#contact', next: 'Email us' },
+    { from: 'header', link: 'How We Work', hash: '#how-we-work', next: 'Discuss your data needs' },
+    { from: 'header', link: 'About', hash: '#about', next: 'Discuss your data needs' },
+    { from: 'header', link: 'Discuss a project', hash: '#contact', next: 'Discuss your data needs' },
+    { from: 'hero', link: 'Explore our capabilities', hash: '#services', next: firstDisclosure },
+    { from: 'hero', link: 'Discuss your data needs', hash: '#contact', next: 'Discuss your data needs' },
     { from: 'footer', link: 'Services', hash: '#services', next: firstDisclosure },
     { from: 'footer', link: 'Solutions', hash: '#solutions', next: firstSector },
   ] as const
@@ -107,11 +109,15 @@ test.describe('focus after in-page links', () => {
   for (const { from, link, hash, next } of cases) {
     test(`${from} "${link}" then Tab goes to "${next}" at 1440px`, async ({ page }) => {
       await openPage(page, 1440)
-      const landmark = { header: 'banner', main: 'main', footer: 'contentinfo' } as const
-      await page
-        .getByRole(landmark[from])
-        .getByRole('link', { name: link, exact: true })
-        .focus()
+      // The hero's calls to action are found inside the hero, as the
+      // closing call to action shares "Discuss your data needs" (#60).
+      const scope =
+        from === 'header'
+          ? page.getByRole('banner')
+          : from === 'footer'
+            ? page.getByRole('contentinfo')
+            : page.getByRole('region', { name: 'Trusted Data. Better Decisions.' })
+      await scope.getByRole('link', { name: link, exact: true }).focus()
       await page.keyboard.press('Enter')
       await expect(page).toHaveURL(new RegExp(`${hash}$`))
 
@@ -252,8 +258,9 @@ test.describe('Solutions rows', () => {
         await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute('aria-expanded', 'true')
       }
 
-      // The theme lists add no tab stop: the next stop is Email us.
-      await tabTo(page, 'Email us')
+      // The theme lists add no tab stop: the next stop is the closing call
+      // to action.
+      await tabTo(page, 'Discuss your data needs')
       for (const name of [...sectors].reverse()) {
         await tabTo(page, name, { shift: true })
         await expectRing(page, name)
@@ -267,7 +274,9 @@ test.describe('Solutions rows', () => {
 test.describe('mouse focus', () => {
   test('a click on Discuss your data needs or a disclosure shows no focus ring', async ({ page, browserName }) => {
     await openPage(page, 1440)
-    const cta = page.getByRole('link', { name: 'Discuss your data needs' })
+    const cta = page
+      .getByRole('region', { name: 'Trusted Data. Better Decisions.' })
+      .getByRole('link', { name: 'Discuss your data needs' })
     await cta.click()
     await expect(page).toHaveURL(/#contact$/)
     expect(await cta.evaluate((element) => element.matches(':focus-visible'))).toBe(false)

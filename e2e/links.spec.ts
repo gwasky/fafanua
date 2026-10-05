@@ -114,6 +114,37 @@ test.describe('email links', () => {
       expect(await link.getAttribute('href')).toBe('mailto:info@fafanua.tech')
     }
   })
+
+  // Enter on the closing call to action (#60) starts the mailto:
+  // navigation. Chromium reports it as a request for the mailto: URL,
+  // which fails as no mail client is registered; WebKit reports nothing,
+  // so it runs in Chromium only.
+  test('Enter on "Discuss your data needs" in the closing call to action requests the mailto:', async ({ page, browserName }) => {
+    test.skip(browserName !== 'chromium', 'WebKit reports no request for a mailto: navigation')
+    await openPage(page, 1440)
+    const requested = page.waitForRequest((request) => request.url().startsWith('mailto:'))
+    await page.locator('#contact').getByRole('link', { name: 'Discuss your data needs' }).focus()
+    await page.keyboard.press('Enter')
+    expect((await requested).url()).toBe('mailto:info@fafanua.tech')
+  })
+})
+
+// The owner's phone number (#60), in the closing call to action and the
+// footer.
+test.describe('phone links', () => {
+  test('both are exactly tel:+256752008822, showing +256 752 008822', async ({ page }) => {
+    await openPage(page, 1440)
+    const links = page.locator('a[href^="tel:"]')
+    await expect(links).toHaveCount(2)
+
+    // Read, never clicked: a click would open a phone app.
+    for (const link of await links.all()) {
+      expect(await link.getAttribute('href')).toBe('tel:+256752008822')
+      await expect(link).toHaveText('+256 752 008822')
+    }
+    await expect(page.locator('#contact a[href^="tel:"]')).toHaveCount(1)
+    await expect(page.getByRole('contentinfo').locator('a[href^="tel:"]')).toHaveCount(1)
+  })
 })
 
 test.describe('internal links and assets', () => {
@@ -158,7 +189,7 @@ test.describe('internal links and assets', () => {
       }
       for (const link of document.querySelectorAll('a[href]')) {
         const href = link.getAttribute('href') ?? ''
-        if (href.startsWith('#') || href.startsWith('mailto:')) continue
+        if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) continue
         urls.push((link as HTMLAnchorElement).href)
       }
       return urls

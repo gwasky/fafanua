@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { services } from '../src/data/services.ts'
+import { email, phone } from '../src/data/contact.ts'
 import { solutions } from '../src/data/solutions.ts'
 import { focusAndHeaderBoxes, focusedName, pressTab, waitForScrollSettle } from './fixtures.ts'
 
@@ -20,10 +21,14 @@ const fromHero = [
   'Explore our capabilities',
   ...disclosures,
   ...sectors,
-  'Email us',
-  'info@fafanua.tech',
+  // The closing call to action (#60): the button, which shares the hero
+  // button's name, then the address and the phone number.
+  'Discuss your data needs',
+  email,
+  phone,
   ...footerNav,
-  'info@fafanua.tech',
+  email,
+  phone,
 ]
 
 /** Every Tab stop, with the inline nav and with the Menu toggle. */

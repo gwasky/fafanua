@@ -281,6 +281,12 @@ function cardRows(cards: CardBox[]) {
 
 const spread = (values: number[]) => Math.max(...values) - Math.min(...values)
 
+// The hero, named by its h1. The closing call to action shares the hero
+// button's name "Discuss your data needs" (#60), so hero links are found
+// inside it.
+const heroRegion = (page: Page) =>
+  page.getByRole('region', { name: 'Trusted Data. Better Decisions.' })
+
 // The Solutions section's five row buttons (#59), in order.
 const sectorButtons = (page: Page) =>
   page.getByRole('region', { name: 'Solutions' }).getByRole('button')
@@ -630,7 +636,7 @@ for (const width of WIDTHS) {
       expect(m.primaryBottom, detail).toBeLessThanOrEqual(m.viewport)
       expect(m.secondaryBottom, detail).toBeLessThanOrEqual(m.viewport)
       for (const name of ['Discuss your data needs', 'Explore our capabilities']) {
-        await expect(page.getByRole('main').getByRole('link', { name, exact: true })).toBeInViewport({ ratio: 1 })
+        await expect(heroRegion(page).getByRole('link', { name, exact: true })).toBeInViewport({ ratio: 1 })
       }
     })
 
@@ -1777,6 +1783,147 @@ for (const width of WIDTHS) {
       await expectNoHorizontalScroll(page)
     })
 
+    // Future-ready, About, the closing call to action and the footer
+    // (#60): the V2 section padding and display type, the closing
+    // actions' layout and target sizes, the dark footer, and no word
+    // broken mid-word at default text size.
+    test(`future-ready, About, Contact and the footer: padding, type, actions and the dark footer at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      const m = await page.evaluate(() => {
+        // A token's computed length, read from a probe element.
+        const token = (name: string, property: 'paddingTop' | 'fontSize' = 'paddingTop') => {
+          const probe = document.createElement('div')
+          probe.style[property] = `var(${name})`
+          document.body.append(probe)
+          const value = parseFloat(getComputedStyle(probe)[property])
+          probe.remove()
+          return value
+        }
+        const style = (selector: string) => getComputedStyle(document.querySelector(selector)!)
+        const box = (selector: string) => {
+          const { left, right, top, bottom, width, height } = document.querySelector(selector)!.getBoundingClientRect()
+          return { left, right, top, bottom, width, height }
+        }
+        const padding = (selector: string) => [parseFloat(style(selector).paddingTop), parseFloat(style(selector).paddingBottom)]
+        const type = (selector: string) => ({
+          size: parseFloat(style(selector).fontSize),
+          weight: style(selector).fontWeight,
+          lineHeight: parseFloat(style(selector).lineHeight) / parseFloat(style(selector).fontSize),
+        })
+        // Words split across two lines, not counting breaks at a hyphen.
+        const broken: string[] = []
+        for (const selector of ['#future-ready', '#about', '#contact', 'footer']) {
+          const walker = document.createTreeWalker(document.querySelector(selector)!, NodeFilter.SHOW_TEXT)
+          for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+            for (const match of node.textContent!.matchAll(/[^\s-]+/g)) {
+              const range = document.createRange()
+              range.setStart(node, match.index)
+              range.setEnd(node, match.index + match[0].length)
+              const tops = new Set([...range.getClientRects()].filter((r) => r.width > 0).map((r) => Math.round(r.top)))
+              if (tops.size > 1) broken.push(`${selector}: ${match[0]}`)
+            }
+          }
+        }
+        const footer = document.querySelector('footer')!
+        return {
+          section: token('--space-section'),
+          dark: token('--space-section-dark'),
+          textSection: token('--text-section', 'fontSize'),
+          bodyLg: token('--text-body-lg', 'fontSize'),
+          futureReady: padding('#future-ready'),
+          about: padding('#about'),
+          contact: padding('#contact'),
+          headings: ['#future-ready-heading', '#about-heading', '#contact-heading'].map(type),
+          paragraphs: ['.future-ready__statement', '.about__text', '.contact__text'].map((selector) => parseFloat(style(selector).fontSize)),
+          contactLines: box('#contact-heading').height / parseFloat(style('#contact-heading').lineHeight),
+          button: box('#contact .button'),
+          email: box('.contact__email'),
+          phone: box('.contact__phone'),
+          footerTargets: [...footer.querySelectorAll('a')].map((link) => {
+            const { width, height } = link.getBoundingClientRect()
+            return { name: link.textContent, width, height }
+          }),
+          footer: {
+            background: getComputedStyle(footer).backgroundColor,
+            border: getComputedStyle(footer).borderTopWidth,
+            logo: footer.querySelector('img')!.getAttribute('src'),
+            logoWidth: footer.querySelector('img')!.getBoundingClientRect().width,
+            grids: footer.querySelectorAll('.technical-grid').length,
+          },
+          darkBackground: getComputedStyle(document.querySelector('#future-ready')!).backgroundColor,
+          broken,
+        }
+      })
+      const detail = JSON.stringify(m)
+
+      for (const value of m.futureReady) expect(value, `future-ready padding: ${detail}`).toBeCloseTo(m.dark, 1)
+      for (const value of [...m.about, ...m.contact]) expect(value, `About and Contact padding: ${detail}`).toBeCloseTo(m.section, 1)
+      for (const heading of m.headings) {
+        expect(heading.size, detail).toBeCloseTo(m.textSection, 1)
+        expect(heading.weight, detail).toBe('300')
+        expect(heading.lineHeight, detail).toBeCloseTo(1.05, 2)
+      }
+      for (const size of m.paragraphs) expect(size, detail).toBeCloseTo(m.bodyLg, 1)
+      if (width === 1440) expect(Math.round(m.contactLines), `closing heading lines: ${detail}`).toBeLessThanOrEqual(4)
+
+      // Every closing action and footer link is at least 44 x 44px.
+      for (const target of [m.button, m.email, m.phone, ...m.footerTargets]) {
+        expect(target.width, detail).toBeGreaterThanOrEqual(44)
+        expect(target.height, detail).toBeGreaterThanOrEqual(44)
+      }
+      expect(m.footerTargets.map((target) => target.name)).toEqual([
+        ...FOOTER_NAV,
+        'info@fafanua.tech',
+        '+256 752 008822',
+      ])
+      // The button above the address below 768px, beside it from 768px.
+      // The phone number follows the address, on its row where both fit.
+      const centre = (b: { top: number; bottom: number }) => (b.top + b.bottom) / 2
+      if (width < 768) expect(m.email.top, detail).toBeGreaterThanOrEqual(m.button.bottom)
+      else {
+        expect(Math.abs(centre(m.email) - centre(m.button)), detail).toBeLessThanOrEqual(1)
+        expect(m.email.left, detail).toBeGreaterThan(m.button.right)
+      }
+      if (width >= 360) {
+        expect(Math.abs(centre(m.phone) - centre(m.email)), detail).toBeLessThanOrEqual(1)
+        expect(m.phone.left, detail).toBeGreaterThan(m.email.right)
+      } else {
+        expect(m.phone.left > m.email.right || m.phone.top >= m.email.bottom, detail).toBe(true)
+      }
+
+      // The dark footer: the future-ready background, no top border, no
+      // grid, and the reversed logo at 160px.
+      expect(m.footer, detail).toEqual({
+        background: m.darkBackground,
+        border: '0px',
+        logo: '/fafanua-logo-reversed.svg',
+        logoWidth: 160,
+        grids: 0,
+      })
+      if (width <= 360) expect(m.broken, detail).toEqual([])
+      await expectNoHorizontalScroll(page)
+    })
+
+    if (width === 320) {
+      test(`future-ready, About, Contact and the footer fit with 200% page text at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        await page.addStyleTag({ content: 'html { font-size: 200%; }' })
+        await waitForFonts(page)
+        const outside = await page.evaluate(() =>
+          ['#future-ready', '#about', '#contact', 'footer'].flatMap((selector) =>
+            [...document.querySelector(selector)!.querySelectorAll('*')]
+              .filter((element) => {
+                const { left, right, width } = element.getBoundingClientRect()
+                return width > 0 && (left < 0 || right > window.innerWidth)
+              })
+              .map((element) => `${selector}: ${element.tagName} ${element.textContent?.slice(0, 30)}`),
+          ),
+        )
+        expect(outside).toEqual([])
+        await expectNoHorizontalScroll(page)
+      })
+    }
+
     test(`header logo at least 120px wide at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       const logo = page
@@ -1846,7 +1993,7 @@ for (const width of WIDTHS) {
       test(`hero "${name}" lands on ${hash} at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
 
-        await page.getByRole('main').getByRole('link', { name, exact: true }).click()
+        await heroRegion(page).getByRole('link', { name, exact: true }).click()
 
         expect(await currentHash(page)).toBe(hash)
         await expectLanded(page, hash)

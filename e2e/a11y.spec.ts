@@ -173,6 +173,76 @@ test.describe('axe, Managed Services panel in view', () => {
   }
 })
 
+test.describe('axe, future-ready and the dark footer in view (#60)', () => {
+  const show = async (page: Page, target: 'future-ready' | 'footer') => {
+    const element = target === 'footer' ? page.getByRole('contentinfo') : page.locator('#future-ready')
+    await element.scrollIntoViewIfNeeded()
+    await expect(element).toBeInViewport()
+    // The header is solid over both: only the hero is an overlay section.
+    await expect(page.getByRole('banner')).not.toHaveClass(/\bon-dark\b/)
+    return element
+  }
+
+  for (const width of [360, 1024, 1440]) {
+    for (const target of ['future-ready', 'footer'] as const) {
+      test(`${target} in view at ${width}px`, async ({ page }, testInfo) => {
+        await openPage(page, width)
+        await show(page, target)
+
+        await expectNoAxeViolations(page, testInfo)
+      })
+    }
+
+    // Forced colours, with color-contrast off for the reason given for the
+    // Managed panel above (Chromium's emulation leaves the authored
+    // -webkit-text-fill-color, which axe pairs with the forced
+    // background). The footer's links, logo and focus ring are checked as
+    // painted instead: the links take the forced link colour on the forced
+    // background, the logo is shown at its full size, and a focused link
+    // draws a solid ring.
+    test(`footer in view, forced colours, at ${width}px`, async ({ page }, testInfo) => {
+      await page.emulateMedia({ forcedColors: 'active' })
+      await openPage(page, width)
+      const footer = await show(page, 'footer')
+
+      const results = await new AxeBuilder({ page })
+        .withTags(AXE_TAGS)
+        .disableRules(['color-contrast'])
+        .analyze()
+      expect(
+        results.violations,
+        `axe violations in "${testInfo.title}":\n${formatViolations(results.violations)}`,
+      ).toEqual([])
+
+      const painted = await footer.evaluate((root) => ({
+        background: getComputedStyle(root).backgroundColor,
+        links: [...root.querySelectorAll('a')].map((link) => getComputedStyle(link).color),
+        logo: (() => {
+          const box = root.querySelector('img')!.getBoundingClientRect()
+          return { width: box.width, height: box.height }
+        })(),
+      }))
+      for (const colour of painted.links) expect(colour).not.toBe(painted.background)
+      expect(painted.logo.width).toBeGreaterThanOrEqual(120)
+      expect(painted.logo.height).toBeGreaterThan(0)
+
+      const phone = footer.getByRole('link', { name: '+256 752 008822' })
+      await phone.focus()
+      await page.keyboard.press('Shift+Tab')
+      await page.keyboard.press('Tab')
+      await expect(phone).toBeFocused()
+      const ring = await phone.evaluate((link) => {
+        const style = getComputedStyle(link)
+        return { visible: link.matches(':focus-visible'), style: style.outlineStyle, width: style.outlineWidth }
+      })
+      expect(ring).toEqual({ visible: true, style: 'solid', width: '2px' })
+      await footer.screenshot({
+        path: `${testInfo.project.outputDir}/screenshots/footer-forced-colours-${width}.png`,
+      })
+    })
+  }
+})
+
 test.describe('axe, skip link focused', () => {
   for (const width of [360, 1440]) {
     test(`skip link visible after the first Tab at ${width}px`, async ({ page }, testInfo) => {
@@ -254,7 +324,9 @@ test.describe('reduced motion', () => {
   // visible at 1440px.
   const buttonDurations = async (page: Page) => {
     const links = {
-      'Discuss your data needs': page.getByRole('link', { name: 'Discuss your data needs' }),
+      'Discuss your data needs': page
+        .getByRole('region', { name: 'Trusted Data. Better Decisions.' })
+        .getByRole('link', { name: 'Discuss your data needs' }),
       'Explore our capabilities': page.getByRole('link', { name: 'Explore our capabilities' }),
     }
     const results: { name: string; duration: number }[] = []
@@ -388,6 +460,35 @@ test.describe('reduced motion', () => {
     await expect(cta(page)).toBeFocused()
     await expect.poll(async () => (await arrowAndHeader(page)).arrowTranslate).toBe('4px')
   })
+})
+
+// The closing call to action's arrow (#60): it moves --cta-arrow-shift
+// on hover and on keyboard focus, and not at all under reduced motion.
+test.describe('closing call to action arrow', () => {
+  for (const motion of ['reduce', 'no-preference'] as const) {
+    test(`moves ${motion === 'reduce' ? 'not at all' : '4px'} on hover and focus, ${motion}`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: motion })
+      await openPage(page, 1440)
+      const contact = page.locator('#contact')
+      const button = contact.getByRole('link', { name: 'Discuss your data needs' })
+      const shift = () => button.evaluate((link) => getComputedStyle(link.querySelector('.button__arrow')!).translate)
+      const expected = motion === 'reduce' ? 'none' : '4px'
+      await button.scrollIntoViewIfNeeded()
+      await page.waitForTimeout(motion === 'reduce' ? 0 : 1000)
+
+      expect(await shift()).toBe('none')
+      await button.hover()
+      await expect.poll(shift, { message: 'arrow on hover' }).toBe(expected)
+      await page.mouse.move(0, 0)
+      await expect.poll(shift).toBe('none')
+      // Shift+Tab back from the address, so the focus is a keyboard one.
+      await contact.getByRole('link', { name: 'info@fafanua.tech' }).focus()
+      await page.keyboard.press('Shift+Tab')
+      await expect(button).toBeFocused()
+      expect(await button.evaluate((link) => link.matches(':focus-visible'))).toBe(true)
+      await expect.poll(shift, { message: 'arrow on focus' }).toBe(expected)
+    })
+  }
 })
 
 test.describe('320px at 200% text size', () => {
