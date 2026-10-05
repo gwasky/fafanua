@@ -138,6 +138,8 @@ Use only these text and background combinations (WCAG 2.x ratios).
 
 Ratios are computed from the token hex values; `scripts/contrast.test.ts` checks every text and background pairing implied by the semantic tokens.
 
+The Managed Services panel (#58) adds no pairing: it uses the dark ones on graphite 900 through `.surface-dark` (paper headings and rail 14.9:1, graphite 300 body and capability text 8.9:1, graphite 400 eyebrows and journey arrows 5.9:1), with graphite 700 dividers and teal 400 only on the rail's separator dots and the focus ring.
+
 The sticky header (#54) adds no pairing: when solid it uses the light pairings on paper, and when transparent over a dark section it uses the dark pairings on graphite 900 (paper text 14.9:1, primary button graphite 900 on teal 400 7.5:1, the Menu toggle as the secondary button on dark).
 
 Never use:
@@ -152,7 +154,7 @@ Never use:
 - Font: Inter, self-hosted with `@fontsource-variable/inter` (Latin subset), preloaded from `index.html`. No Google Fonts requests.
 - Fallback stack: `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`.
 - Weights: 300 for large headings, 400 for body text, 500 only for small labels and buttons. Never bold headings. Nothing on the page computes to a weight above 500 (checked end to end).
-- V2 display scale: hero and section headings use `--text-hero` and `--text-section` at weight 300 with `--leading-display` and `--measure-display`; eyebrows and buttons use weight 500. The hero `h1` uses `--text-hero` (#55), with its supporting copy at `--text-body-lg`. Services (#56) uses `--text-section` for its `h2` (with `--leading-display` and `--measure-display`) and `--text-body-lg` for its intro paragraphs, and `--text-service` with `--leading-snug` for the card titles. Until #57 to #60 apply the rest, other headings keep the `--text-*` tokens they use today.
+- V2 display scale: hero and section headings use `--text-hero` and `--text-section` at weight 300 with `--leading-display` and `--measure-display`; eyebrows and buttons use weight 500. The hero `h1` uses `--text-hero` (#55), with its supporting copy at `--text-body-lg`. Services (#56) uses `--text-section` for its `h2` (with `--leading-display` and `--measure-display`) and `--text-body-lg` for its intro paragraphs, and `--text-service` with `--leading-snug` for the card titles. Managed Services (#58) uses `--text-section` for its `h2` (weight 300, `--leading-display`, `--measure-display`), `--text-service` for the approved `h3`, `--text-body-lg` for the description and `--text-xl` at weight 400 for the capability rail. Until #59 and #60 apply the rest, other headings keep the `--text-*` tokens they use today.
 - The heavy logo wordmark contrasts deliberately with the light site type. Do not match headings to the logo's weight.
 - Headings must wrap naturally at every width; do not rely on fixed line breaks.
 
@@ -176,7 +178,8 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 ## Layout and sections
 
 - Page background is paper; cards and raised surfaces are white with subtle graphite 200 borders.
-- V2: the hero is dark (delivered in #55). It is a `.surface-dark` section marked `data-header-overlay`, so it is pulled up under the transparent header, with the `TechnicalGrid` as its first child. From `64em` it is at least `85svh` (`85vh` where `svh` is unsupported), a minimum and never a fixed height, with its content centred below the header and `calc(var(--header-height) + var(--space-12))` / `var(--space-12)` block padding; below `64em` it has its natural height, with `--space-section-dark` above (after the header's height) and below. The hero and the future-ready section are dark sections (`.surface-dark`); #58 decides whether the Managed Services callout is dark.
+- V2: the hero is dark (delivered in #55). It is a `.surface-dark` section marked `data-header-overlay`, so it is pulled up under the transparent header, with the `TechnicalGrid` as its first child. From `64em` it is at least `85svh` (`85vh` where `svh` is unsupported), a minimum and never a fixed height, with its content centred below the header and `calc(var(--header-height) + var(--space-12))` / `var(--space-12)` block padding; below `64em` it has its natural height, with `--space-section-dark` above (after the header's height) and below. The hero and the future-ready section are the only full-bleed dark sections (`.surface-dark`).
+- Managed Services (#58) is its own section, on paper, directly after Services, holding one dark panel (`.surface-dark`, graphite 900) inset within the container: paper shows on both sides and above and below it, so it is a strong contrast point but not a third dark band. It is not `data-header-overlay`; the header stays solid over it.
 - The positioning section (plan V2 §8, #56) sits directly after the hero, on paper (`Positioning.tsx`): a plain `div`, not a card, with no heading, link or tab stop. It holds two paragraphs: a large statement (the core message from the services-positioning doc, Section 1) at `--text-3xl`, weight 300, `--leading-tight`, in `--color-heading`, and supporting copy (the East African statement) at `--text-body-lg` in `--color-text-muted`, no wider than `--measure`. From `64em` they sit in two top-aligned columns, the statement in the wider start column; below it they stack. It has `--space-section` padding top and bottom, and Services drops its own top padding after it (`.positioning + .services`), so the gap between them is not doubled.
 - The footer is light today (paper with a graphite 200 top border); #60 decides whether it becomes dark or graphite, as plan V2 §17 suggests.
 - In the future-ready section, the Intelligence colour may appear only as a restrained accent alongside teal.
@@ -222,7 +225,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 **SectionEyebrow**
 
-- `src/components/SectionEyebrow.tsx`: a `<p>` (not a heading) shown as `01 — Capabilities`, with the number optional. `--text-eyebrow`, `--weight-medium`, `--tracking-eyebrow`, uppercase, in `--color-text-muted`, which passes AA on paper, white, `.surface-alt` and `.surface-dark`. Placed on the page by #56 (**01 — Capabilities** in Services), #58 and #59.
+- `src/components/SectionEyebrow.tsx`: a `<p>` (not a heading) shown as `01 — Capabilities`, with the number optional. `--text-eyebrow`, `--weight-medium`, `--tracking-eyebrow`, uppercase, in `--color-text-muted`, which passes AA on paper, white, `.surface-alt` and `.surface-dark`. Placed on the page by #56 (**01 — Capabilities** in Services), #58 (**02 — Managed Services**, inside the dark panel, where it is graphite 400) and #59.
 
 **Links**
 
@@ -235,7 +238,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 **Services introduction**
 
-- In order: `SectionEyebrow` **01 — Capabilities**, the approved intro heading as the section's only `h2` (so the region is named by it; the nav's "Services" links still land on `#services`), the two intro paragraphs, the lifecycle rail, the cards, the system diagram (SystemFlow), then the managed-services block. The intro is plain text, with no card, border or fill. The section has `--space-section` padding top and bottom.
+- In order: `SectionEyebrow` **01 — Capabilities**, the approved intro heading as the section's only `h2` (so the region is named by it; the nav's "Services" links still land on `#services`), the two intro paragraphs, the lifecycle rail, the cards, then the system diagram (SystemFlow), last. The Managed Services section follows it as its own section. The intro is plain text, with no card, border or fill. The section has `--space-section` padding top and bottom.
 
 **LifecycleRail**
 
@@ -254,7 +257,7 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 **SystemFlow**
 
-- `src/components/SystemFlow.tsx`: the system and data-flow diagram (plan V2 §11, #57). It sits inside Services, directly after the card list and before the managed-services block, so the services connect into one system that ends at activation, where managed operation picks up. Light, on the section's paper background; no image, SVG, canvas or library.
+- `src/components/SystemFlow.tsx`: the system and data-flow diagram (plan V2 §11, #57). It sits inside Services, directly after the card list and last in the section, so the services connect into one system that ends at activation, where the Managed Services section that follows picks up. Light, on the section's paper background; no image, SVG, canvas or library.
 - Copy: `src/data/systemFlow.ts`, copied from plan V2 §11 and checked against it by `systemFlow.plan.test.ts`. The heading is the section's stated goal, sentence-cased; the integration layer's name is read from `services.ts`. The labels are stored in sentence case and uppercased in CSS, so screen readers read them as words. The warehouse layer has no label, and there is no before/after framing.
 - Structure: a plain `div` (no landmark) holding an `h3`, **How the services connect into one operating data system**, and an `<ol role="list">` labelled by it (`aria-labelledby`), with six `li` layers in flow order. Each layer is its label (a `p`, if any), its name (a `p`) and its terms (a `<ul role="list">`, if any), in that order, so it reads top to bottom without CSS. No visible numbers, links, buttons, tab stops, titles or scroll containers, and no motion.
 - Look: labels at `--text-eyebrow`, `--weight-medium`, `--tracking-eyebrow`, uppercase, `--color-text-muted`; names at `--text-xl`, weight 400, `--color-heading`; terms at `--text-sm`, `--color-text-muted`; the `h3` at the global `--text-2xl`. Graphite 900 and 600 on paper only, no teal, no shadow or fill.
@@ -264,7 +267,13 @@ Files in `public/`: `fafanua-logo.svg` (positive), `fafanua-logo-reversed.svg`, 
 
 **Managed Data & Analytics Services block**
 
-- Sits after the six cards and the system diagram on `.surface-alt` (graphite 100), spans the full container width, and is not a card: no stage label, colour marker or disclosure.
+- `src/components/ManagedServices.tsx`: its own section, `<section id="managed-services" aria-labelledby="managed-services-heading">`, in `main` directly after Services and before Solutions (plan V2 §10, #58). The section is on paper with `--space-section` padding top and bottom; inside its `.container` is one `.surface-dark` panel spanning the container's content width, with `--radius-lg` and no shadow, border, technical grid or image. It is not a card: no stage label, service-line marker, tags or disclosure, and it is not in the card grid.
+- Copy: all from `managedServices` in `services.ts`. The approved eyebrow, heading, description, 13 capabilities (including Reverse ETL and operational data activation) and journey are from the services-positioning doc §12 and §13, checked by `services.plan.test.ts`. The section's eyebrow label, its heading **Your data capability, continuously operated.** and the rail **Monitor · Maintain · Improve · Activate** are from plan V2 §10 (the label from the §9 numbering), checked by `services.managed.plan.test.ts`. No call to action.
+- Order: `SectionEyebrow` **02 — Managed Services** and the V2 heading as the section's `h2` (`--text-section`), then a group of the approved eyebrow (a small weight-500 `p`), the approved heading as an `h3` (`--text-service`) and the description (`--text-body-lg`, no wider than `--measure`), then the rail, the capabilities and the journey. From `64em` the eyebrow and `h2` are one column and the approved group a second beside it, top-aligned, with the rest spanning the panel below; below `64em` everything stacks in DOM order.
+- Panel padding: `--space-6` below `48em` (a 240px text box at 320px), `--space-10` from `48em` and `--space-16` from `64em`.
+- Capability rail: a `<ul role="list">` of the four words, `--text-xl` at weight 400 in `--color-heading` (paper). Each word but the last is followed by an empty `aria-hidden` span drawn as a small teal 400 (`--color-accent`) dot with a border, so it has no text and stays drawn in forced-colours mode. Not numbered and no service-line colour, so it does not read as the lifecycle rail or the process timeline. The items wrap when the row does not fit (one row from `48em` at the default text size).
+- Capabilities: one column below `48em`, two from `48em` and three from `64em`, top to bottom in data order, each above a graphite 700 (`--color-border`) divider. Journey: an `<ol role="list">`, stacked with down arrows below `48em` and one row with right arrows from `48em`; the arrows are border-drawn in `--color-text-muted` and never announced. The rail and the journey use `overflow-wrap: anywhere`, so a word wider than the panel (at 320px with 200% page text) breaks instead of overflowing.
+- Colours: every colour inside the panel comes from the `.surface-dark` reassignment; `ManagedServices.css` names no `-on-dark` token or colour value. Teal appears only on the rail's dots and the focus ring; no text is teal. No links, buttons or tab stops, and no motion.
 
 ## Motion
 

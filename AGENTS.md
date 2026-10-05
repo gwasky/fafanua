@@ -43,7 +43,7 @@ Before considering a change done, run `lint`, `typecheck`, `test` and `build`, a
 - **Contact:** email link only, to `mailto:info@fafanua.tech`. Do not build a contact form, Turnstile integration or form endpoint in this release.
 - **Domain:** the production domain is `https://fafanua.tech/` (without `www`). Use it in the canonical URL, Open Graph tags, structured data, `robots.txt` and `sitemap.xml`.
 - **Font:** Inter, self-hosted with `@fontsource-variable/inter` (Latin subset). Use weight 300 for large headings, 400 for body text and 500 only for small labels and buttons. No Google Fonts requests.
-- **Hero:** dark (graphite 900 with the technical grid, delivered in #55). The hero and the future-ready section are dark sections; #58 and #60 decide whether the Managed Services callout and the footer are dark.
+- **Hero:** dark (graphite 900 with the technical grid, delivered in #55). The hero and the future-ready section are dark sections; #58 made Managed Services a dark graphite 900 panel inset within the container, on paper, not a full-bleed dark section; #60 decides whether the footer is dark.
 - **Branch:** `master`.
 
 ## Rules
