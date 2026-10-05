@@ -1,28 +1,32 @@
 /*
- * About: one heading and one paragraph on the page background, set
- * explicitly as Hero and Services do. The change from the dark section
- * above to paper is the only separator, so there is no border or shadow.
- * One column at every width, with the same vertical rhythm as How We Work
- * and future-ready.
+ * About (plan V2 §15): one heading and one paragraph on the page
+ * background, set explicitly as Hero and Services do. Simpler than the
+ * commercial sections: one column at every width, with no eyebrow, card,
+ * border or shadow. The change from the dark section above to paper is
+ * the only separator. The heading is at the display scale, as the other
+ * section headings.
  */
 
 .about {
-  padding-block: var(--space-16);
+  padding-block: var(--space-section);
   background-color: var(--color-bg);
+}
+
+/* Weight 300 from the global heading styles. */
+.about__heading {
+  max-width: var(--measure-display);
+  font-size: var(--text-section);
+  line-height: var(--leading-display);
+  overflow-wrap: break-word;
 }
 
 .about__text {
   max-width: var(--measure);
   margin-block: 0;
   color: var(--color-text);
+  font-size: var(--text-body-lg);
   /* Break a word only if it cannot fit on a line of its own, rather than
      anywhere as .container allows. */
   overflow-wrap: break-word;
   text-wrap: pretty;
-}
-
-@media (min-width: 48em) {
-  .about {
-    padding-block: var(--space-20);
-  }
 }

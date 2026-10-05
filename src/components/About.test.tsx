@@ -66,6 +66,15 @@ describe('About', () => {
     expect(section.textContent).toBe(HEADING + PARAGRAPH)
   })
 
+  it('has no eyebrow, number or second column: one heading and one paragraph in the container (#60)', () => {
+    const section = renderAbout()
+    const container = section.querySelector('.container')!
+
+    expect(section.querySelector('.section-eyebrow')).toBeNull()
+    expect(section.children).toHaveLength(1)
+    expect([...container.children].map((child) => child.tagName)).toEqual(['H2', 'P'])
+  })
+
   it('uses plain ASCII text with no manual line breaks or non-breaking spaces', () => {
     const section = renderAbout()
 

@@ -1,8 +1,8 @@
 import TechnicalGrid from './TechnicalGrid.tsx'
 import './FutureReady.css'
 
-// The heading is the owner's wording from decision 5 on #52. The paragraph
-// is _docs/plan.md Section 9, verbatim. Not service copy, so it lives here
+// The heading is the owner's amended wording on #52, which plan V2 §14
+// gives exactly. The paragraph is _docs/plan.md Section 9, verbatim. Not service copy, so it lives here
 // rather than in src/data/services.ts.
 const futureReadyHeading = 'Trusted foundations for what comes next'
 const futureReadyStatement =
@@ -16,8 +16,8 @@ const futureReadyLabels = [
   'provenance',
 ] as const
 
-// One of the page's two dark sections, with the hero: a statement of
-// direction, not a product.
+// One of the page's two full-bleed dark sections, with the hero (plan V2
+// §14): a statement of direction, not a product.
 // The graphic repeats words already in the paragraph, so it is hidden
 // from screen readers. It has no links or other tab stops. The technical
 // grid sits behind the content.
@@ -31,7 +31,9 @@ function FutureReady() {
       <TechnicalGrid />
       <div className="container future-ready__layout">
         <div className="future-ready__text">
-          <h2 id="future-ready-heading">{futureReadyHeading}</h2>
+          <h2 id="future-ready-heading" className="future-ready__heading">
+            {futureReadyHeading}
+          </h2>
           <p className="future-ready__statement">{futureReadyStatement}</p>
         </div>
         <div className="future-ready__graphic" aria-hidden="true">

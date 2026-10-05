@@ -2,8 +2,9 @@ import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import FutureReady from './FutureReady.tsx'
 
-// The heading is the owner's wording from decision 5 on #52. The paragraph
-// is _docs/plan.md Section 9, verbatim, character for character.
+// The heading is the owner's amended wording on #52, which plan V2 §14
+// gives exactly. The paragraph is _docs/plan.md Section 9, verbatim,
+// character for character.
 const HEADING = 'Trusted foundations for what comes next'
 const STATEMENT =
   'The strongest analytics and AI systems begin with trusted data. Fafanua designs data foundations that preserve business definitions, access controls, quality signals, and provenance as organisations introduce more advanced analytics and AI capabilities.'

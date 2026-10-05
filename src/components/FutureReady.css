@@ -1,13 +1,24 @@
 /*
- * Future-ready: a dark section, like the hero. .surface-dark (global.css)
- * supplies the graphite 900 background and the dark text, heading, link
- * and accent colours, so nothing here is dark-specific. One column by
- * default; from 1024px (literal breakpoint; see the note in tokens.css)
- * the text and graphic sit side by side, in DOM order.
+ * Future-ready (plan V2 §14): the second full-bleed dark section, after
+ * the hero, with the dark sections' generous padding and the heading at
+ * the display scale. .surface-dark (global.css) supplies the graphite 900
+ * background and the dark text, heading, link and accent colours, so
+ * nothing here is dark-specific: the heading is paper (14.9:1), the
+ * paragraph graphite 300 (8.9:1). One column by default; from 1024px
+ * (literal breakpoint; see the note in tokens.css) the text and graphic
+ * sit side by side, in DOM order.
  */
 
 .future-ready {
-  padding-block: var(--space-16);
+  padding-block: var(--space-section-dark);
+}
+
+/* Weight 300 from the global heading styles. */
+.future-ready__heading {
+  max-width: var(--measure-display);
+  font-size: var(--text-section);
+  line-height: var(--leading-display);
+  overflow-wrap: break-word;
 }
 
 .future-ready__layout {
@@ -20,6 +31,7 @@
   max-width: var(--measure);
   margin-block: 0;
   color: var(--color-text);
+  font-size: var(--text-body-lg);
   /* Break a word only if it cannot fit on a line of its own, rather than
      anywhere as .container allows. */
   overflow-wrap: break-word;
@@ -79,12 +91,6 @@
   margin-block-start: var(--space-6);
   border: calc(var(--border-width) * 2) solid var(--service-intelligence);
   border-radius: var(--radius-full);
-}
-
-@media (min-width: 48em) {
-  .future-ready {
-    padding-block: var(--space-20);
-  }
 }
 
 @media (min-width: 64em) {
