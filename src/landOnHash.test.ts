@@ -102,6 +102,9 @@ describe('landOnHash', () => {
   let scrolls: { id: string; options: unknown }[]
   let top: number
   let scrollY: number
+  // The heights of boxes given their own, such as those above the
+  // target; every element is at `top`, 10px high unless given one.
+  let heights: Map<Element, number>
 
   /** Runs the queued animation frames, once each. */
   function frame(count = 1) {
@@ -127,6 +130,7 @@ describe('landOnHash', () => {
     scrolls = []
     top = 500
     scrollY = 0
+    heights = new Map()
     Object.defineProperty(window, 'scrollY', { configurable: true, get: () => scrollY })
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => frames.push(callback))
     Object.defineProperty(document, 'fonts', {
@@ -136,9 +140,9 @@ describe('landOnHash', () => {
     vi.spyOn(Element.prototype, 'getClientRects').mockReturnValue([
       new DOMRect(0, 0, 10, 10),
     ] as unknown as DOMRectList)
-    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(
-      () => new DOMRect(0, top, 10, 10),
-    )
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      return new DOMRect(0, top, 10, heights.get(this) ?? 10)
+    })
     Element.prototype.scrollIntoView = function (this: Element, options?: unknown) {
       scrolls.push({ id: this.id, options })
     }
@@ -426,6 +430,93 @@ describe('landOnHash', () => {
     landOnHash()
     top = 466
     scrollBy(1500)
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 5)
+
+    expect(scrolls).toEqual([instant])
+  })
+
+  /** A box before the target, of a height of its own. */
+  function boxAbove(height: number) {
+    const box = document.createElement('div')
+    document.body.prepend(box)
+    heights.set(box, height)
+    return box
+  }
+
+  it('still scrolls again after two shifts in one frame, when the browser follows only one, away from the target', async () => {
+    // Measured in WebKit at 1440px for #solutions (#63): in one frame the
+    // font swap grows the positioning statement 41px, the Services heading
+    // re-balances 60px shorter below it, and WebKit scrolls 42px to follow
+    // the first, so the target ends 61px above where it landed.
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    const positioning = boxAbove(460)
+    const services = boxAbove(2391)
+    landOnHash()
+    frame()
+    heights.set(positioning, 501)
+    heights.set(services, 2331)
+    top -= 61
+    scrollY += 42
+    frame()
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 1)
+
+    expect(scrolls).toEqual([instant, instant])
+  })
+
+  it('still scrolls again when the browser follows a shift above, away from the target, frames later', async () => {
+    // Also measured in WebKit at 1440px for #solutions (#63): the same
+    // two shifts with no scroll, then two frames later WebKit scrolls 60px
+    // up, so the target ends 41px below where it landed.
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    const positioning = boxAbove(460)
+    const services = boxAbove(2391)
+    landOnHash()
+    frame()
+    heights.set(positioning, 501)
+    heights.set(services, 2331)
+    top -= 19
+    frame(2)
+    top += 60
+    scrollY -= 60
+    frame()
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 1)
+
+    expect(scrolls).toEqual([instant, instant])
+  })
+
+  it('does not scroll again after a scroll away further than the boxes above changed in the same frame', async () => {
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    const positioning = boxAbove(460)
+    const services = boxAbove(2391)
+    landOnHash()
+    frame()
+    // The boxes above change 101px in all, but the page scrolls 400px.
+    heights.set(positioning, 501)
+    heights.set(services, 2331)
+    top -= 19 + 400
+    scrollY += 400
+    frame()
+    fontsLoaded()
+    await Promise.resolve()
+    frame(STABLE_FRAMES + 5)
+
+    expect(scrolls).toEqual([instant])
+  })
+
+  it('does not excuse a scroll away by boxes above that keep their size', async () => {
+    const { landOnHash, STABLE_FRAMES } = await load('#contact')
+    boxAbove(460)
+    boxAbove(2391)
+    landOnHash()
+    frame()
+    scrollBy(400)
+    frame()
     fontsLoaded()
     await Promise.resolve()
     frame(STABLE_FRAMES + 5)

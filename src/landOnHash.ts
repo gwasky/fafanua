@@ -81,7 +81,13 @@ export const DRIFT_TOLERANCE = 1
  * DRIFT_TOLERANCE, the page has moved away, however slowly. A font swap
  * moves the target in the page (and WebKit has no scroll anchoring to
  * follow it), and scroll anchoring or WebKit's own fragment scroll moves
- * the viewport back towards the target, so none of those add drift.
+ * the viewport back towards the target, so none of those add drift. Nor
+ * does a scroll after boxes above the target grew or shrank, up to how
+ * much they did in all, since the browser can follow one shift and not
+ * another, which moves the viewport away from the target: in WebKit at
+ * 1440px a font swap grows the positioning statement 41px and the
+ * Services heading re-balances 60px shorter in one frame, and WebKit then
+ * scrolls 42px or 60px, in that frame or a later one (#63).
  */
 export function landOnHash() {
   if (done) return
@@ -102,10 +108,26 @@ export function landOnHash() {
     for (const type of INPUT) window.removeEventListener(type, onInput, { capture: true })
   }
 
+  // The boxes before the target, at its level and each ancestor's, that
+  // are in the flow: a layout shift above the target is one of them
+  // growing or shrinking.
+  const above: Element[] = []
+  for (let node: Element | null = target; node && node !== document.body; node = node.parentElement) {
+    for (let box = node.previousElementSibling; box; box = box.previousElementSibling) {
+      if (!['fixed', 'absolute'].includes(getComputedStyle(box).position)) above.push(box)
+    }
+  }
+  const sizesAbove = () => above.map((box) => box.getBoundingClientRect().height)
+
   const landedTop = target.getBoundingClientRect().top
   // The target's place in the page and its distance from where landing
-  // left it in the viewport, at the last frame, and the drift so far.
+  // left it in the viewport, the scroll position and the sizes of the
+  // boxes above it, at the last frame; how far the browser may still
+  // scroll to follow their changes; and the drift so far.
   let lastPlace = landedTop + window.scrollY
+  let lastScroll = window.scrollY
+  let lastAbove = sizesAbove()
+  let followable = 0
   let lastDistance = 0
   let drift = 0
   let fontsReady = false
@@ -117,9 +139,18 @@ export function landOnHash() {
     const { top } = target.getBoundingClientRect()
     const now = top + window.scrollY
     const distance = Math.abs(top - landedTop)
-    drift += Math.max(0, distance - lastDistance - Math.abs(now - lastPlace))
+    // The browser may scroll as far as the boxes above the target have
+    // grown and shrunk in all (scroll anchoring, or WebKit following its
+    // fragment), in this frame or a later one, even away from the target.
+    const nowAbove = sizesAbove()
+    followable += nowAbove.reduce((sum, size, i) => sum + Math.abs(size - lastAbove[i]), 0)
+    const followed = Math.min(Math.abs(window.scrollY - lastScroll), followable)
+    followable -= followed
+    drift += Math.max(0, distance - lastDistance - Math.abs(now - lastPlace) - followed)
     if (drift > DRIFT_TOLERANCE) return stop()
     lastPlace = now
+    lastScroll = window.scrollY
+    lastAbove = nowAbove
     lastDistance = distance
 
     if (!fontsReady) {
