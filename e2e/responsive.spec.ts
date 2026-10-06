@@ -11,7 +11,7 @@ import {
   waitForLanding,
   waitForScrollSettle,
 } from './fixtures.ts'
-import { expectFlow, flowList, flowProblems, measureFlow } from './systemFlow.ts'
+import { expectFlow, flowDiagram, flowList, flowProblems, flowShapeAt, measureFlow } from './systemFlow.ts'
 
 // The page at each width project in playwright.config.ts, in Chromium
 // (width-*) and WebKit (webkit-width-*): no horizontal scrolling, the
@@ -845,7 +845,8 @@ for (const width of WIDTHS) {
         // Test-only text in the browser; services.ts is unchanged.
         const title = serviceList(page).getByRole('heading', { level: 3 }).nth(1)
         await title.evaluate((heading) => {
-          heading.textContent = 'Data Warehousing, Lakehouse & Analytics Modelling'
+          // Long enough to wrap to three lines at the 17px titles (#66).
+          heading.textContent = 'Data Warehousing, Lakehouse, Semantic Layer & Analytics Modelling Services'
         })
         await waitForStableLayout(page)
         const cards = await measureCards(page)
@@ -1206,21 +1207,21 @@ for (const width of WIDTHS) {
       })
     }
 
-    // The system and data-flow diagram (#57, #63): after the card grid
-    // and before the managed-services block, one framed stack of bands,
-    // one row of three columns per layer from 768px with the names lined
-    // up, stacked below it, with no overflow, no word broken across lines,
-    // a chevron on every divider, and the return loop from the activation
-    // layer back into the first.
-    test(`system diagram is ${width < 768 ? 'stacked' : 'rows with the names lined up'}, after the cards, at ${width}px`, async ({ page, browserName }, testInfo) => {
+    // The connected data operating system diagram (#57, #63, #66): after
+    // the card grid and before the managed-services block, stacked below
+    // 768px, two columns from 768px and three from 1024px, every layer the
+    // same shape with the cards lined up, no overflow, no word broken
+    // across lines, a chevron in every gap, and the return loop from the
+    // activation layer back into the first, with the return statement.
+    test(`system diagram is ${flowShapeAt(width)}, after the cards, at ${width}px`, async ({ page, browserName }, testInfo) => {
       await open(page, testInfo, width)
       const flow = flowList(page)
       await expect(flow.locator(':scope > li')).toHaveCount(6)
 
-      expectFlow(await measureFlow(page), `${width}px`, { row: width >= 768 })
+      expectFlow(await measureFlow(page), `${width}px`, { shape: flowShapeAt(width) })
 
       const gridBox = await serviceList(page).boundingBox()
-      const flowBox = await flow.boundingBox()
+      const flowBox = await flowDiagram(page).boundingBox()
       const managedBox = await page.locator('#managed-services').boundingBox()
       if (!gridBox || !flowBox || !managedBox) throw new Error('The grid, diagram or block has no box')
       expect(flowBox.y, 'below the cards').toBeGreaterThan(gridBox.y + gridBox.height)
@@ -1230,20 +1231,21 @@ for (const width of WIDTHS) {
       expect(Math.abs(flowBox.width - gridBox.width), 'width').toBeLessThanOrEqual(1)
       await expectNoHorizontalScroll(page)
 
-      await flow.locator('..').screenshot({
+      await flowDiagram(page).screenshot({
         path: `${testInfo.project.outputDir}/screenshots/${browserName}-system-flow-${width}.png`,
       })
     })
 
     // Every width from 320 to 1440px, one pixel at a time, at the default
     // text size and with 200% and 150% page text (enlarged page text does
-    // not move the 48em media query): one shape for every layer, rows from
-    // 768px at the default size, names lined up, nothing overflowing, no
-    // word broken across lines, every chevron on its divider and the loop
-    // joined from the last layer to the first. Run from the 768px
-    // projects, in Chromium and WebKit. With enlarged page text only the
-    // diagram is checked for overflow, not the page: the header's inline
-    // nav overflows at 1024px with 200% page text, outside #57.
+    // not move the 48em and 64em media queries; the diagram's rem container
+    // queries keep it in a narrower layout): one shape for every layer, the
+    // expected one at the default size, cards lined up, nothing
+    // overflowing, no word broken across lines, every chevron in its gap
+    // and the loop joined from the last layer to the first. Run from the
+    // 768px projects, in Chromium and WebKit. With enlarged page text only
+    // the diagram is checked for overflow, not the page: the header's
+    // inline nav overflows at 1024px with 200% page text (#65).
     if (width === 768) {
       for (const text of ['100%', '200%', '150%'] as const) {
         test(`the system diagram holds its shape from 320 to 1440px with ${text} page text, at ${width}px`, async ({ page }, testInfo) => {
@@ -1258,7 +1260,7 @@ for (const width of WIDTHS) {
             // the measure waits two frames first, in the same call.
             const problems = flowProblems(
               await measureFlow(page, { settle: true }),
-              text === '100%' ? { row: w >= 768 } : { page: false },
+              text === '100%' ? { shape: flowShapeAt(w) } : { page: false },
             )
             for (const problem of problems) failures.push(`${w}px: ${problem}`)
           }

@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test'
 import { openPage, test } from './fixtures.ts'
 import { servicesIntro } from '../src/data/services.ts'
-import { expectFlow, measureFlow } from './systemFlow.ts'
+import { expectFlow, flowShapeAt, measureFlow } from './systemFlow.ts'
 
 // The lifecycle rail beside an always-visible scrollbar, as on Windows
 // (#56 QA). Playwright's Chromium hides scrollbars by default, so this
@@ -9,8 +9,9 @@ import { expectFlow, measureFlow } from './systemFlow.ts'
 // classic scrollbar, which takes 17px from the layout width. The rail's
 // container query must still let it be one joined row wherever the
 // (min-width: 48em) layout applies: with a 44rem threshold its 687px box
-// was vertical from 768 to 784px. The system diagram's layers (#57) must
-// likewise be rows with their names lined up. Runs in the chromium
+// was vertical from 768 to 784px. The system diagram's layers (#57, #66)
+// must likewise keep their 48em and 64em layouts, whose container
+// queries have room beside the scrollbar. Runs in the chromium
 // project only; WebKit has no equivalent switch.
 
 test.use({ launchOptions: { ignoreDefaultArgs: ['--hide-scrollbars'] } })
@@ -101,11 +102,11 @@ for (const width of [768, 785]) {
 }
 
 for (const width of [768, 785, 1024]) {
-  test(`with a visible ${SCROLLBAR}px scrollbar the system diagram's layers are rows with the names lined up at ${width}px`, async ({ page }) => {
+  test(`with a visible ${SCROLLBAR}px scrollbar the system diagram keeps its ${flowShapeAt(width)}-column layout at ${width}px`, async ({ page }) => {
     await openWithScrollbar(page, width)
     expect(await page.evaluate(() => window.innerWidth - document.documentElement.clientWidth)).toBe(SCROLLBAR)
     const m = await measureFlow(page)
     // The page must fit beside the scrollbar.
-    expectFlow({ ...m, innerWidth: m.innerWidth - SCROLLBAR }, `${width}px with a scrollbar`, { row: true })
+    expectFlow({ ...m, innerWidth: m.innerWidth - SCROLLBAR }, `${width}px with a scrollbar`, { shape: flowShapeAt(width) })
   })
 }

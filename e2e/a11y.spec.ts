@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { expectLanded, expectNoAxeViolations, openPage, scrollThrough, waitForMotion } from './fixtures.ts'
+import { expectLanded, expectNoAxeViolations, openPage, scrollThrough, waitForMotion, waitForScrollSettle } from './fixtures.ts'
 import { SEQUENCE, walkFocus } from './focus.ts'
 import { AXE_TAGS, formatViolations } from '../src/test/axe.ts'
 import { managedServices, servicesIntro } from '../src/data/services.ts'
@@ -108,6 +108,10 @@ test.describe('axe, all five Solutions rows open', () => {
     test(`five rows open at ${width}px`, async ({ page }, testInfo) => {
       await openPage(page, width)
       await openAllSectors(page)
+      // Focusing the first row smooth-scrolls past Services, which is tall
+      // at 320px (#66): let the scroll end, so any section it reveals has
+      // started its reveal before axe waits for motion and measures.
+      await waitForScrollSettle(page)
 
       await expectNoAxeViolations(page, testInfo)
     })
@@ -124,9 +128,11 @@ test.describe('axe, a service card hovered', () => {
         .filter({ has: page.getByRole('heading', { level: 3 }) })
         .nth(1)
       await card.hover()
+      // The active card's accent ring and glow (#66), once the transition
+      // has finished.
       await expect
         .poll(() => card.evaluate((item) => getComputedStyle(item.firstElementChild!).boxShadow))
-        .toContain('8px')
+        .toMatch(/0px 0px 0px 1px, .* 0px 4px 24px 0px$/)
 
       await expectNoAxeViolations(page, testInfo)
     })

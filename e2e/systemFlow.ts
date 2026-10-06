@@ -1,52 +1,59 @@
 import { expect, type Page } from '@playwright/test'
 import { systemFlow } from '../src/data/systemFlow.ts'
 
-// Measures and checks the system and data-flow diagram (#57, its banded
-// stack and return loop from #63), shared by responsive.spec.ts and
-// system-flow.spec.ts.
+// Measures and checks the connected data operating system diagram (#57,
+// its return loop from #63, upgraded in #66), shared by responsive.spec.ts,
+// rail-scrollbar.spec.ts and system-flow.spec.ts.
 
 /** The diagram's ordered list of layers, named by its h3. */
 export const flowList = (page: Page) =>
   page.getByRole('list', { name: systemFlow.heading })
 
+/** The diagram as a whole: heading, lead, stack and return statement. */
+export const flowDiagram = (page: Page) => page.locator('.system-flow')
+
+export type FlowShape = 'stacked' | 'two' | 'three'
 export type FlowMeasure = Awaited<ReturnType<typeof measureFlow>>
 
 /**
- * Each layer's shape (one row of label, name and terms, or stacked), where
- * its name's text starts, any text that overflows its layer or breaks a
- * word across lines, the chevron on the divider below it, and the return
- * loop (#63): the one SVG, in the gutter at the stack's inline end.
- * With `settle`, used by the sweeps after each resize, it waits two
- * rendered frames first, in the same call, but only where the 48em media
- * query has changed since the last call or the styles do not match it yet
- * (the frame has side borders from 48em): Chromium has reported the
- * previous media query's styles and layout until the next frame after a
- * resize across it. Waiting two frames at every width made each sweep
- * about a minute.
+ * Each layer's shape (stacked; two columns, the card and its details
+ * beside the stage; or three columns, stage, card and detail panel), where
+ * its card and panel start, any text that overflows or breaks a word
+ * across lines, the chevron below it, the return statement and the return
+ * loop: the one SVG, at the stack's inline end. With `settle`, used by the
+ * sweeps after each resize, it waits two rendered frames first, in the
+ * same call, but only where the 48em or 64em media query, or the
+ * diagram's 40rem or 56rem container query, has changed since the last
+ * call: Chromium has reported the previous query's styles and layout until
+ * the next frame after a resize across one.
  */
 export function measureFlow(page: Page, { settle = false } = {}) {
   return flowList(page).evaluate(async (list, settle) => {
-    const wide = matchMedia('(min-width: 48em)').matches
-    const state = window as unknown as { flowWide?: boolean }
-    if (
-      settle &&
-      (state.flowWide !== wide ||
-        wide !== (getComputedStyle(list, '::before').borderLeftStyle === 'solid'))
-    ) {
-      // Two frames, or 100ms if frames stall (a frame wait inside this
-      // call once hung a sweep until its timeout).
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
+    const box = list.closest('.system-flow')!.getBoundingClientRect().width / rem
+    const queries = [
+      matchMedia('(min-width: 48em)').matches,
+      matchMedia('(min-width: 64em)').matches,
+      box >= 40,
+      box >= 56,
+    ].join(' ')
+    const state = window as unknown as { flowQueries?: string }
+    if (settle && state.flowQueries !== queries) {
+      // Two frames, or 100ms if frames stall.
       await new Promise((resolve) => {
         requestAnimationFrame(() => requestAnimationFrame(resolve))
         setTimeout(resolve, 100)
       })
     }
-    state.flowWide = wide
+    state.flowQueries = queries
     const px = (value: string) => parseFloat(value) || 0
-    const layers = [...list.children] as HTMLElement[]
     const rect = (element: Element) => {
       const { left, right, top, bottom, width, height } = element.getBoundingClientRect()
       return { left, right, top, bottom, width, height }
     }
+    const stack = list.parentElement!
+    const diagram = list.closest('.system-flow')!
+    const layers = [...list.children] as HTMLElement[]
 
     // Words split across lines: a word's range has client rects on more
     // than one line.
@@ -66,106 +73,100 @@ export function measureFlow(page: Page, { settle = false } = {}) {
       }
       return broken
     }
-
-    const measured = layers.map((layer, i) => {
-      const style = getComputedStyle(layer)
-      const box = layer.getBoundingClientRect()
-      const contentLeft = box.left + px(style.borderLeftWidth) + px(style.paddingLeft)
-      const contentWidth = layer.clientWidth - px(style.paddingLeft) - px(style.paddingRight)
-      // The label, name and terms: the return label has a line of its own
-      // and the loop is drawn outside the layer.
-      const parts = [...layer.children]
-        .filter((part) => !part.matches('.system-flow__return, svg'))
-        .map((part) => part.getBoundingClientRect())
-      const row = parts.every((part, j) => j === 0 || part.left >= parts[j - 1].right - 1)
-      const stacked = parts.every(
-        (part, j) =>
-          j === 0 ||
-          (part.top >= parts[j - 1].bottom - 1 && Math.abs(part.left - parts[0].left) <= 1),
-      )
-      const nameText = layer.querySelector('.system-flow__name-text')!.getBoundingClientRect()
-      const overflowing = [layer, ...layer.querySelectorAll('*')]
+    // Elements whose content is wider than they are, or that reach outside
+    // a box.
+    const overflowing = (root: Element, box: DOMRect) =>
+      [root, ...root.querySelectorAll('*')]
         .filter((element) => !element.closest('svg'))
         .filter((element) => {
           const b = element.getBoundingClientRect()
-          return (
-            element.scrollWidth > element.clientWidth + 1 ||
-            b.right > box.right + 1 ||
-            b.left < box.left - 1
-          )
+          return element.scrollWidth > element.clientWidth + 1 || b.right > box.right + 1 || b.left < box.left - 1
         })
         .map((element) => `${element.className}: ${element.textContent?.slice(0, 30)}`)
 
-      // The chevron on the divider below this layer: a turned square
-      // centred on the divider (this layer's bottom edge) and on the layer.
+    const measured = layers.map((layer, i) => {
+      const box = layer.getBoundingClientRect()
+      const [stage, core, details] = [...layer.children].map((part) => part.getBoundingClientRect())
+      const near = (a: number, b: number) => Math.abs(a - b) <= 1
+      const shape =
+        near(stage.top, core.top) && near(core.top, details.top) && stage.right <= core.left && core.right <= details.left
+          ? 'three'
+          : core.left >= stage.right && near(details.left, core.left) && details.top >= core.bottom - 1
+            ? 'two'
+            : near(stage.left, core.left) && near(core.left, details.left) && core.top >= stage.bottom - 1 && details.top >= core.bottom - 1
+              ? 'stacked'
+              : 'mixed'
+
+      // The chevron in the gap below this layer: a turned square centred
+      // in the gap and on the card.
       let chevron = null
       const after = getComputedStyle(layer, '::after')
       if (i < layers.length - 1) {
         const size = px(after.width)
-        const top = box.top + px(style.borderTopWidth) + px(after.top)
-        const left = box.left + px(style.borderLeftWidth) + px(after.left)
+        const next = layers[i + 1].getBoundingClientRect()
         chevron = {
           look: `${after.content} ${after.position} ${after.borderBottomWidth} ${after.borderBottomStyle} ${after.borderRightStyle} ${after.borderTopWidth}`,
           transform: after.transform,
           color: after.borderBottomColor,
-          // Its centre, from the divider's centre and the layer's centre.
-          dy: top + size / 2 - (box.bottom + 0.5),
-          dx: left + size / 2 - (box.left + box.width / 2),
+          dy: box.top + px(after.top) + size / 2 - (box.bottom + next.top) / 2,
+          dx: box.left + px(after.left) + size / 2 - (core.left + core.width / 2),
+          gap: next.top - box.bottom,
         }
       }
-      const nameOffset =
-        layer.querySelector('.system-flow__name')!.getBoundingClientRect().left - contentLeft
-      // The warehouse layer is its name alone: it is in a row when its
-      // name keeps the label column empty.
       return {
-        row: parts.length > 1 ? row : nameOffset > 1,
-        stacked: parts.length > 1 ? stacked : nameOffset <= 1,
-        parts: parts.length,
+        shape,
         top: box.top,
         bottom: box.bottom,
         left: box.left,
         right: box.right,
-        nameLeft: nameText.left,
-        // Where the name column starts, from the layer's content edge.
-        nameOffset,
-        contentWidth,
-        columnGap: px(style.columnGap),
-        overflowing,
+        core: rect(layer.children[1]),
+        details: rect(layer.children[2]),
+        overflowing: overflowing(layer, box),
         broken: brokenWords(layer),
         chevron,
         lastPseudo: i === layers.length - 1 ? after.content : null,
       }
     })
 
-    // The loop: the SVG's box, the arrowhead and top curve's path, the
-    // bottom curve's path, and the return label it starts beside.
-    const svgs = [...list.querySelectorAll('svg')]
+    // The return statement.
+    const statement = diagram.querySelector('.system-flow__return')!
+    const statementBox = statement.getBoundingClientRect()
+
+    // The loop: the SVG's box, the arrowhead, and each corner's curve and
+    // its horizontal and vertical runs.
+    const svgs = [...diagram.querySelectorAll('svg')]
     const svg = svgs[0]
-    const [startPath, startLine] = [...svg.querySelectorAll('.system-flow__loop-start > *')]
-    const [endPath, endLine] = [...svg.querySelectorAll('.system-flow__loop-end > *')]
+    const [arrow] = [...svg.querySelectorAll('.system-flow__loop-arrow > *')]
+    const [topCurve, topRun, topLine] = [...svg.querySelectorAll('.system-flow__loop-top > *')]
+    const [bottomCurve, bottomRun, bottomLine] = [...svg.querySelectorAll('.system-flow__loop-bottom > *')]
     const svgStyle = getComputedStyle(svg)
-    const label = list.querySelector('.system-flow__return')!
-    const labelStyle = getComputedStyle(label)
-    const labelBox = rect(label)
-    const labelLine = px(labelStyle.lineHeight)
     const listBox = list.getBoundingClientRect()
-    const frame = getComputedStyle(list, '::before')
     return {
       layers: measured,
-      left: listBox.left,
-      width: listBox.width,
+      left: diagram.getBoundingClientRect().left,
+      width: diagram.getBoundingClientRect().width,
+      list: rect(list),
+      stack: rect(stack),
+      statement: {
+        box: rect(statement),
+        overflowing: overflowing(statement, statementBox),
+        broken: brokenWords(statement),
+        zIndex: getComputedStyle(statement).zIndex,
+        background: getComputedStyle(statement).backgroundColor,
+      },
       loop: {
         count: svgs.length,
-        inLast: svg.parentElement === layers.at(-1),
+        inStack: svg.parentElement === stack,
         hidden: svg.getAttribute('aria-hidden'),
         svg: rect(svg),
-        list: rect(list),
-        // The frame's inline-end edge, where the bands end.
-        frameRight: listBox.right - px(frame.right),
-        start: rect(startPath),
-        startLine: rect(startLine),
-        end: rect(endPath),
-        endLine: rect(endLine),
+        listRight: listBox.right,
+        arrow: rect(arrow),
+        topCurve: rect(topCurve),
+        topRun: rect(topRun),
+        topLine: rect(topLine),
+        bottomCurve: rect(bottomCurve),
+        bottomRun: rect(bottomRun),
+        bottomLine: rect(bottomLine),
         stroke: svgStyle.stroke,
         strokeWidth: svgStyle.strokeWidth,
         fill: svgStyle.fill,
@@ -177,20 +178,8 @@ export function measureFlow(page: Page, { settle = false } = {}) {
           [svg, ...svg.querySelectorAll('*')].filter(
             (element) => getComputedStyle(element).animationName !== 'none',
           ).length + svg.querySelectorAll('animate, animateTransform, animateMotion, set').length,
-        label: labelBox,
-        // The centre of the return label's last line.
-        labelLineY: labelBox.bottom - labelLine / 2,
-        labelText: label.textContent,
-        labelColor: labelStyle.color,
-        // Where the return label's text ends: it is set to the end.
-        labelTextRight: (() => {
-          const range = document.createRange()
-          range.selectNodeContents(label)
-          const rects = [...range.getClientRects()]
-          return rects.at(-1)!.right
-        })(),
       },
-      textColor: getComputedStyle(list.querySelector('.system-flow__label')!).color,
+      labelColor: getComputedStyle(list.querySelector('.system-flow__description')!).color,
       scrollWidth: document.documentElement.scrollWidth,
       innerWidth: window.innerWidth,
     }
@@ -198,46 +187,39 @@ export function measureFlow(page: Page, { settle = false } = {}) {
 }
 
 /**
- * The ways the diagram is wrong, if any: every layer must be one row
- * (`row: true`), or every layer stacked (`row: false`), or either but all
- * the same (no `row`); the names lined up within 1px, in a row at the
- * label column's share of the row; no overflow and no word broken across
- * lines; a chevron on every divider; the return loop running from the
- * return label in the last layer to an arrowhead into the first; the
- * diagram inside the viewport; and, unless `page` is false, no horizontal
- * scroll. Plain checks rather than one expect each, so a sweep over
- * hundreds of widths stays fast.
+ * The ways the diagram is wrong, if any: every layer the same shape (the
+ * given one, if any); the cards, and in three columns the panels, lined
+ * up; no overflow and no word broken across lines; a chevron in every gap,
+ * centred on the card; the return loop from the last layer back into the
+ * first with an arrowhead, its runs joined; the return statement in the
+ * loop's column, over its vertical run, in three columns, and below the
+ * stack otherwise; the diagram inside the viewport; and, unless `page` is
+ * false, no horizontal scroll. Plain checks rather than one expect each,
+ * so a sweep over hundreds of widths stays fast.
  */
 export function flowProblems(
   m: FlowMeasure,
-  { row, page = true }: { row?: boolean; page?: boolean } = {},
+  { shape, page = true }: { shape?: FlowShape; page?: boolean } = {},
 ): string[] {
   const problems: string[] = []
   const check = (ok: boolean, message: string) => {
     if (!ok) problems.push(message)
   }
-  const shapes = m.layers.map((layer) => (layer.row ? 'row' : layer.stacked ? 'stacked' : 'mixed'))
+  const shapes = m.layers.map((layer) => layer.shape)
   check(new Set(shapes).size === 1 && !shapes.includes('mixed'), `layer shapes ${shapes}`)
-  if (row !== undefined) check(shapes[0] === (row ? 'row' : 'stacked'), `shape ${shapes[0]}, want ${row ? 'row' : 'stacked'}`)
+  if (shape !== undefined) check(shapes[0] === shape, `shape ${shapes[0]}, want ${shape}`)
 
-  // In a row, the names' text lines up. Stacked, each name starts at its
-  // layer's content edge; its text follows the markers on the same line,
-  // or starts the next line when its first word does not fit beside them.
-  const lefts = m.layers.map((layer) => (shapes[0] === 'row' ? layer.nameLeft : layer.nameOffset))
-  check(Math.max(...lefts) - Math.min(...lefts) <= 1, `name lefts ${lefts}`)
-  if (shapes[0] === 'row') {
-    for (const [i, layer] of m.layers.entries()) {
-      // The label column is a quarter of the row less its two gaps.
-      const want = (layer.contentWidth - 2 * layer.columnGap) * 0.25 + layer.columnGap
-      check(Math.abs(layer.nameOffset - want) <= 1, `layer ${i + 1} name column at ${layer.nameOffset}, want ${want}`)
-    }
+  const spread = (values: number[]) => Math.max(...values) - Math.min(...values)
+  const cardLefts = m.layers.map((layer) => layer.core.left)
+  check(spread(cardLefts) <= 1, `card lefts ${cardLefts}`)
+  if (shapes[0] === 'three') {
+    const panelLefts = m.layers.map((layer) => layer.details.left)
+    check(spread(panelLefts) <= 1, `panel lefts ${panelLefts}`)
   }
   for (const [i, layer] of m.layers.entries()) {
     const at = `layer ${i + 1}`
     check(layer.overflowing.length === 0, `${at} overflows: ${layer.overflowing}`)
     check(layer.broken.length === 0, `${at} breaks words across lines: ${layer.broken}`)
-    // The bands touch: one stack.
-    if (i > 0) check(Math.abs(layer.top - m.layers[i - 1].bottom) <= 0.5, `${at} not directly below layer ${i}`)
     if (!layer.chevron) {
       check(layer.lastPseudo === 'none', `${at} has a chevron: ${layer.lastPseudo}`)
       continue
@@ -246,43 +228,59 @@ export function flowProblems(
     const chevron = `${at} chevron ${JSON.stringify(c)}`
     check(c.look === '"" absolute 1px solid solid 0px', `${chevron}: look`)
     check(c.transform !== 'none', `${chevron}: not turned`)
-    check(Math.abs(c.dy) <= 1 && Math.abs(c.dx) <= 1, `${chevron}: not centred on the divider`)
+    check(Math.abs(c.dy) <= 1 && Math.abs(c.dx) <= 1, `${chevron}: not centred in the gap, on the card`)
+    check(c.gap >= 8, `${chevron}: gap too small`)
   }
+
+  // The return statement.
+  const s = m.statement
+  check(s.overflowing.length === 0, `return statement overflows: ${s.overflowing}`)
+  check(s.broken.length === 0, `return statement breaks words across lines: ${s.broken}`)
 
   // The return loop.
   const l = m.loop
   const first = m.layers[0]
   const last = m.layers.at(-1)!
   const loop = `loop ${JSON.stringify(l)}`
-  check(l.count === 1 && l.inLast && l.hidden === 'true', `${loop}: one aria-hidden SVG in the last layer`)
-  // In the gutter: from the frame's edge to the list's, the list's height.
-  check(Math.abs(l.svg.left - l.frameRight) <= 1 && Math.abs(l.svg.right - l.list.right) <= 1, `${loop}: not in the gutter`)
-  check(Math.abs(l.svg.top - l.list.top) <= 1 && Math.abs(l.svg.bottom - l.list.bottom) <= 1, `${loop}: not the list's height`)
-  check(Math.abs(first.right - l.frameRight) <= 1, `${loop}: bands do not end at the frame`)
-  // The arrowhead points into the first layer: its tip at the frame's
-  // edge, level with the first layer, above the top curve.
-  check(Math.abs(l.start.left - l.frameRight) <= 1.5, `${loop}: arrowhead not at the frame`)
-  check(l.start.top > first.top && l.start.top < first.bottom, `${loop}: arrowhead not beside the first layer`)
-  // The bottom curve starts at the frame level with the return label's
-  // last line, inside the last layer.
-  check(Math.abs(l.end.left - l.frameRight) <= 1.5, `${loop}: bottom curve not at the frame`)
-  check(Math.abs(l.end.bottom - l.labelLineY) <= 1.5, `${loop}: not level with the return label`)
-  check(l.end.bottom > last.top && l.end.bottom < last.bottom, `${loop}: bottom curve not beside the last layer`)
-  check(l.label.right <= l.frameRight + 1 && Math.abs(l.labelTextRight - l.label.right) <= 1, `${loop}: return label not set to the end, by the loop`)
-  // The two halves of the vertical line meet: one line from the top curve
-  // to the bottom one.
-  check(Math.abs(l.startLine.left - l.endLine.left) <= 0.5, `${loop}: halves not in line`)
-  check(l.startLine.bottom >= l.endLine.top - 0.5, `${loop}: halves do not meet`)
-  check(l.startLine.top <= l.start.bottom + 0.5 && l.endLine.bottom >= l.end.top - 0.5, `${loop}: line not joined to the curves`)
+  check(l.count === 1 && l.inStack && l.hidden === 'true', `${loop}: one aria-hidden SVG in the stack`)
+  // In its column: from the list's edge to the stack's, the stack's height.
+  check(Math.abs(l.svg.left - l.listRight) <= 1 && Math.abs(l.svg.right - m.stack.right) <= 1, `${loop}: not in its column`)
+  check(Math.abs(l.svg.top - m.stack.top) <= 1 && Math.abs(l.svg.bottom - m.stack.bottom) <= 1, `${loop}: not the stack's height`)
+  // The arrowhead points into the first layer: its tip at the list's
+  // edge, level with the first layer, with the top run reaching it.
+  check(Math.abs(l.arrow.left - l.listRight) <= 1.5, `${loop}: arrowhead not at the list's edge`)
+  const arrowY = (l.arrow.top + l.arrow.bottom) / 2
+  check(arrowY > first.top && arrowY < first.bottom, `${loop}: arrowhead not beside the first layer`)
+  check(Math.abs(l.topRun.left - l.listRight) <= 1.5 && Math.abs(l.topRun.top - arrowY) <= 1, `${loop}: top run not from the arrowhead`)
+  // The bottom run leaves the last layer from the list's edge.
+  check(Math.abs(l.bottomRun.left - l.listRight) <= 1.5, `${loop}: bottom run not from the list's edge`)
+  check(l.bottomRun.top > last.top && l.bottomRun.top < last.bottom, `${loop}: bottom run not beside the last layer`)
+  // Each run joins its curve, and the curves the vertical runs, which are
+  // in line and meet: one loop.
+  check(Math.abs(l.topRun.right - l.topCurve.left) <= 1 && Math.abs(l.bottomRun.right - l.bottomCurve.left) <= 1, `${loop}: runs not joined to the curves`)
+  check(Math.abs(l.topLine.left - l.bottomLine.left) <= 0.5, `${loop}: vertical runs not in line`)
+  check(Math.abs(l.topLine.left - (l.svg.left + l.svg.width / 2)) <= 1, `${loop}: vertical run not centred in its column`)
+  check(l.topLine.bottom >= l.bottomLine.top - 0.5, `${loop}: vertical runs do not meet`)
+  check(l.topLine.top <= l.topCurve.bottom + 0.5 && l.bottomLine.bottom >= l.bottomCurve.top - 0.5, `${loop}: vertical runs not joined to the curves`)
   // Drawn, unfilled, in a colour other than the page's, with no motion.
   check(l.stroke !== 'none' && l.stroke !== 'rgba(0, 0, 0, 0)' && l.stroke !== l.background, `${loop}: stroke ${l.stroke}`)
-  check(l.stroke === l.color && l.color === l.labelColor, `${loop}: stroke not currentColor, the return label's colour`)
+  check(l.stroke === l.color && l.color === m.labelColor, `${loop}: stroke not currentColor, the lifecycle lines' colour`)
   check(l.strokeWidth === '1px' && l.fill === 'none', `${loop}: stroke width or fill`)
   check(l.animated === 0, `${loop}: animated`)
 
+  if (shapes[0] === 'three') {
+    // In the loop's column, between the corners, over the vertical run.
+    check(s.box.left >= l.listRight - 1 && s.box.right <= m.stack.right + 1, `return statement ${JSON.stringify(s.box)} not in the loop's column`)
+    check(s.box.top > l.topCurve.bottom && s.box.bottom < l.bottomCurve.top, `return statement ${JSON.stringify(s.box)} not between the loop's corners`)
+    check(s.box.left < l.topLine.left && s.box.right > l.topLine.left, `return statement not over the vertical run`)
+    check(s.zIndex === '1' && s.background !== 'rgba(0, 0, 0, 0)', `return statement does not hide the run: ${s.zIndex} ${s.background}`)
+  } else {
+    check(s.box.top >= m.stack.bottom, `return statement ${JSON.stringify(s.box)} not below the stack`)
+  }
+
   // The diagram stays inside the viewport. With `page: false` the page as a
   // whole is not checked: with 200% page text the header's inline nav
-  // overflows at 1024px, which is outside #57.
+  // overflows at 1024px (#65), which is outside this diagram.
   check(m.left >= -1 && m.left + m.width <= m.innerWidth + 1, `diagram from ${m.left} to ${m.left + m.width}`)
   if (page) check(m.scrollWidth <= m.innerWidth, `scrollWidth ${m.scrollWidth}, innerWidth ${m.innerWidth}`)
   return problems
@@ -292,7 +290,11 @@ export function flowProblems(
 export function expectFlow(
   m: FlowMeasure,
   context: string,
-  options: { row?: boolean; page?: boolean } = {},
+  options: { shape?: FlowShape; page?: boolean } = {},
 ) {
   expect.soft(flowProblems(m, options), context).toEqual([])
 }
+
+/** The layout the diagram takes at a width, at the default text size. */
+export const flowShapeAt = (width: number): FlowShape =>
+  width >= 1024 ? 'three' : width >= 768 ? 'two' : 'stacked'

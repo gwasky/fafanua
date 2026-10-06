@@ -221,6 +221,11 @@
      wide, so its gutter is in px: in rem it would double with 200% page
      text and squeeze the layers' names at 320px. */
   --flow-loop-width: 24px;
+  /* The stacked diagram's card inset (#66), in px and vw for the same
+     reason: in rem it doubles with 200% page text and leaves a layer's
+     terms too little room at 320px. 8.8px at 320px, 12px at 400px and
+     16px from 500px. */
+  --flow-card-inset: clamp(8px, 4vw - 4px, 16px);
 
   /* Layout */
   --container-max: 72rem;
