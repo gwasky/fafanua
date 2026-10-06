@@ -1159,8 +1159,10 @@ for (const width of WIDTHS) {
       expect(parseFloat(m.blockPadding), detail).toBeCloseTo(m.section, 0)
       const gap = m.eyebrowTop - Math.max(m.statement.bottom, m.support.bottom)
       expect(gap, detail).toBeGreaterThanOrEqual(m.section - 1)
+      // Not doubled, measured from the taller column (the problem
+      // statement since #63).
       if (width === 1440) {
-        expect(m.eyebrowTop - m.support.bottom, detail).toBeLessThanOrEqual(1.25 * m.section)
+        expect(gap, detail).toBeLessThanOrEqual(1.25 * m.section)
       }
     })
 
