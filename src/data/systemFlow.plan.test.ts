@@ -3,10 +3,13 @@
 // diagram's wording, so the site cannot drift from it: the names are the
 // "Preferred conceptual flow", the labels the "Technical layer labels",
 // and the terms the flow's source line and the "Possible supporting
-// terms". The ?raw import resolves relative to this file and is never part
-// of the production bundle.
+// terms". The V2 refinement plan §5 keeps them (#63): its "Core flow to
+// preserve" and "Labels to retain" are checked too, and the return label
+// against its wording. The ?raw imports resolve relative to this file and
+// are never part of the production bundle.
 import { describe, expect, it } from 'vitest'
 import plan from '../../_docs/fafanua-v2-visual-upgrade-plan.md?raw'
+import refinement from '../../_docs/fafanua-v2-refinement-plan.md?raw'
 import systemFlowSource from './systemFlow.ts?raw'
 import { services } from './services.ts'
 import { systemFlow } from './systemFlow.ts'
@@ -56,6 +59,16 @@ const docTerms = new Map(
 
 const layers = systemFlow.layers
 
+// The refinement plan §5: the bold names in the "Core flow to preserve"
+// blockquote, and the "Labels to retain" list.
+const r5 = section(refinement.replace(/\r\n/g, '\n'), 5)
+const refinementNames = [
+  ...subsection(r5, 'Core flow to preserve').matchAll(/^> \*\*(.+)\*\*\s*$/gm),
+].map((match) => match[1])
+const refinementLabels = [
+  ...subsection(r5, 'Labels to retain').matchAll(/^- (.+)$/gm),
+].map((match) => match[1].trim())
+
 describe('plan V2 §11 parser', () => {
   it('finds the six names of the conceptual flow, and the source terms', () => {
     expect(docNames).toHaveLength(6)
@@ -82,6 +95,30 @@ describe('plan V2 §11 parser', () => {
 
   it('finds the stated goal', () => {
     expect(s11).toContain('> **how the services connect into one operating data system**')
+  })
+})
+
+describe('refinement plan §5', () => {
+  it('finds the six names of the core flow and the five labels', () => {
+    expect(refinementNames).toHaveLength(6)
+    expect(refinementLabels).toHaveLength(5)
+  })
+
+  it('keeps the six names, in order', () => {
+    expect(layers.map((layer) => layer.name)).toEqual(refinementNames)
+  })
+
+  it('keeps the five labels, in order, on every layer but the warehouse', () => {
+    expect(layers.filter((layer) => layer.label).map((layer) => layer.label!.toUpperCase())).toEqual(
+      refinementLabels,
+    )
+    expect(layers[2].label).toBeUndefined()
+  })
+
+  it('words the return label from "connect back to operational systems"', () => {
+    expect(r5).toContain('The final activation stage should visually connect back to operational systems.')
+    expect(systemFlow.returnLabel).toBe('Back to operational systems')
+    expect(r5).toContain(`connect ${systemFlow.returnLabel.toLowerCase()}`)
   })
 })
 

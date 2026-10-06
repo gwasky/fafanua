@@ -1,16 +1,18 @@
 /*
- * The system and data-flow diagram (plan V2 §11): six layers stacked as a
- * layered architecture on the Services section's paper background, with
- * a down arrow between each pair. A graphite 200 hairline is the only
- * border: a rule above each layer below 48em, a box around it from 48em;
- * no fill or shadow. Text is graphite 900 (names) and graphite 600
- * (labels and terms) on paper, 14.9:1 and 6.0:1; no teal.
+ * The system and data-flow diagram (plan V2 §11, refinement plan §5): the
+ * six layers as bands of one stack on the Services section's paper
+ * background, closed by a return loop from activation back to operational
+ * systems. A graphite 200 hairline frames the stack (rules above and
+ * below it below 48em, a box from 48em) and divides the bands; no fill or
+ * shadow. Text is graphite 900 (names) and graphite 600 (labels, terms and
+ * the return label) on paper, 14.9:1 and 6.0:1; no teal.
  *
- * Each layer is its label, its name and its terms. Below 48em they stack.
- * From 48em (768px; literal breakpoint, see the note in tokens.css) each
- * layer is one row of three columns, label, name and terms, whose widths
- * are fixed shares of the row, the same in every row, so the names line
- * up; the diagram spans the container.
+ * Each layer is its label, its name and its terms; the last also has the
+ * return label. Below 48em they stack. From 48em (768px; literal
+ * breakpoint, see the note in tokens.css) each layer is one row of three
+ * columns, label, name and terms, whose widths are fixed shares of the
+ * row, the same in every row, so the names line up; the return label
+ * takes a line of its own, at the end.
  *
  * Enlarged page text (html { font-size: 200% }) does not move a 48em media
  * query, and six rows of three columns at twice the size do not fit at
@@ -22,18 +24,23 @@
  * The factor of 100000 makes the switch happen within one layout unit of
  * --flow-row. Below it, the layer stacks as it does below 48em.
  *
- * The arrows are two pseudo-elements per gap, a shaft and a chevron head,
- * drawn with borders: they have no text, so nothing is announced, and
- * they stay drawn in forced-colours mode. The term separators are dots
- * drawn the same way. The markers are border-drawn dots in the
- * service-line colours of the stages each layer maps to (systemFlow.ts),
- * as in the lifecycle rail; a layer with no stage has a neutral graphite
- * 200 dot.
+ * The flow down the stack is a chevron on each divider, and the
+ * separators between terms are dots, all drawn with borders: no text, so
+ * nothing is announced, and still drawn in forced-colours mode. The
+ * return loop is the one inline SVG (SystemFlow.tsx), in --flow-loop, a
+ * gutter at the stack's inline end, stroked in currentColor (graphite
+ * 600, and the forced text colour in forced-colours mode). It leaves the
+ * last band level with the return label and enters the first band level
+ * with its name. The markers are border-drawn dots in the service-line
+ * colours of the stages each layer maps to (systemFlow.ts), as in the
+ * lifecycle rail; a layer with no stage has a neutral graphite 200 dot.
+ * Nothing here moves.
  */
 
 .system-flow {
-  /* The space between layers, where the arrows are drawn. */
-  --flow-gap: var(--space-10);
+  /* The bands' block padding, and the loop's gutter. */
+  --flow-pad: var(--space-4);
+  --flow-loop: var(--flow-loop-width);
   /* The gap between the three columns of a row. */
   --flow-column-gap: var(--space-6);
   /* The narrowest content box that holds a layer as one row. */
@@ -52,62 +59,62 @@
 }
 
 .system-flow__layers {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  row-gap: var(--flow-gap);
   margin: 0;
-  padding: 0;
+  padding: 0 var(--flow-loop) 0 0;
   list-style: none;
 }
 
+/* The stack's frame, beside the loop's gutter. */
+.system-flow__layers::before {
+  content: '';
+  position: absolute;
+  inset: 0 var(--flow-loop) 0 0;
+  border-block: var(--border-width) solid var(--color-border);
+  pointer-events: none;
+}
+
 .system-flow__layer {
-  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
-  padding-block: var(--space-4);
+  padding-block: var(--flow-pad);
+}
+
+.system-flow__layer + .system-flow__layer {
   border-block-start: var(--border-width) solid var(--color-border);
 }
 
-/* Narrow: each layer is a hairline rule with its text below it, using the
-   full width, so the names have as much room as possible (at 320px with
-   200% text a boxed layer broke most of them mid-word). The last layer is
-   closed with a rule too. */
-.system-flow__layer:last-child {
-  border-block-end: var(--border-width) solid var(--color-border);
+/* The chevron on the divider below each band but the last: a square
+   turned 45 degrees, centred on the divider, showing its lower corner.
+   Its paper fill hides the divider behind it. The last band is not
+   positioned, so the loop inside it is placed against the list. */
+.system-flow__layer:not(:last-child) {
+  position: relative;
 }
 
-/* The arrow to the next layer, centred in the gap: a shaft from just
-   below this layer's border to just above the next one's, and a chevron
-   whose point is the shaft's end. */
-.system-flow__layer:not(:last-child)::before,
+/* The return label and the loop take the last band's graphite 600. The
+   SVG's own colour is not forced in forced-colours mode
+   (preserve-parent-color), so it is set here, where it is, and the loop
+   inherits the forced text colour. */
+.system-flow__layer:last-child {
+  color: var(--color-text-muted);
+}
+
 .system-flow__layer:not(:last-child)::after {
   content: '';
   position: absolute;
-  inset-block-start: calc(100% + var(--border-width) + var(--space-2));
-}
-
-.system-flow__layer:not(:last-child)::before {
-  inset-inline-start: calc(50% - var(--border-width) / 2);
-  height: calc(var(--flow-gap) - 2 * var(--space-2));
-  border-inline-start: var(--border-width) solid var(--color-text-muted);
-}
-
-/* A square turned 45 degrees: its bottom corner, half a diagonal
-   (0.7071 of a side) below its centre, is the arrow's point. */
-.system-flow__layer:not(:last-child)::after {
-  --head: var(--space-2);
-
-  inset-block-start: calc(
-    100% + var(--border-width) + var(--flow-gap) - var(--space-2) -
-      var(--head) * 1.2071
-  );
-  inset-inline-start: calc(50% - var(--head) / 2);
-  width: var(--head);
-  height: var(--head);
-  border-block-end: var(--border-width) solid var(--color-text-muted);
-  border-inline-end: var(--border-width) solid var(--color-text-muted);
+  z-index: 1;
+  inset-block-end: calc(var(--space-2) / -2 - var(--border-width) / 2);
+  inset-inline-start: calc(50% - var(--space-2) / 2);
+  width: var(--space-2);
+  height: var(--space-2);
+  border: solid var(--color-text-muted);
+  border-width: 0 var(--border-width) var(--border-width) 0;
+  background-color: var(--color-bg);
   transform: rotate(45deg);
 }
 
@@ -170,12 +177,10 @@
   --marker: var(--service-govern);
 }
 
-.system-flow__marker--decide {
-  --marker: var(--service-insights);
-}
-
 /* Amber is 2.2:1 on light surfaces, so it gets a graphite 200 outline. */
 .system-flow__marker--decide {
+  --marker: var(--service-insights);
+
   outline: var(--border-width) solid var(--color-border);
 }
 
@@ -209,7 +214,50 @@
   border-radius: var(--radius-full);
 }
 
+/* graphite 600 on paper (6.0:1), from the last band, at the end, beside
+   the loop's start. */
+.system-flow__return {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  text-align: end;
+}
+
+/* The return loop: as tall as the list, in its gutter. Each half's
+   horizontal run is drawn at its origin, so the top half moves down to the
+   centre of the first name's line, and the bottom half to the centre of
+   the return label's line; the arrowhead overhangs the top edge. */
+.system-flow__loop {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  width: var(--flow-loop);
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+}
+
+.system-flow__loop-start {
+  transform: translateY(calc(var(--flow-pad) + var(--text-xl) * var(--leading-snug) / 2));
+}
+
+.system-flow__loop-end {
+  transform: translateY(calc(100% - var(--flow-pad) - var(--text-sm) * var(--leading-snug) / 2));
+}
+
 @media (min-width: 48em) {
+  .system-flow {
+    --flow-pad: var(--space-5);
+  }
+
+  .system-flow__layers::before {
+    border-inline: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
   .system-flow__layer {
     /* 0 when the content box is at least --flow-row wide, else the whole
        box; 100% is the layer's content width wherever this is used (a
@@ -223,9 +271,7 @@
     flex-wrap: wrap;
     align-items: baseline;
     column-gap: var(--flow-column-gap);
-    padding: var(--space-5) var(--space-6);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-md);
+    padding-inline: var(--space-6);
   }
 
   /* In a row the markers hang beside the name: their box is one line
@@ -233,8 +279,10 @@
      starts at the same place and a name that wraps stays aligned. */
   .system-flow__name {
     display: flex;
+    flex: 0 0 max(var(--flow-name), var(--flow-stack));
     align-items: flex-start;
     gap: var(--space-3);
+    min-width: 0;
   }
 
   .system-flow__markers {
@@ -251,11 +299,6 @@
 
   .system-flow__label {
     flex: 0 0 max(var(--flow-label), var(--flow-stack));
-    min-width: 0;
-  }
-
-  .system-flow__name {
-    flex: 0 0 max(var(--flow-name), var(--flow-stack));
     min-width: 0;
   }
 

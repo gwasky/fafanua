@@ -15,6 +15,12 @@
 // Each layer's markers are the stages of the services it maps to, so the
 // colours come from the same stage-to-token mapping as the lifecycle rail
 // and the cards; a layer with none shows a neutral marker.
+//
+// The activation layer returns data to operational systems, closing the
+// loop (V2 refinement plan §5, _docs/fafanua-v2-refinement-plan.md, #63).
+// The diagram draws that return as a decorative line, so `returnLabel`
+// states it as text, worded from §5's "connect back to operational
+// systems"; systemFlow.plan.test.ts checks it against that section.
 import { services, type Stage } from './services.ts'
 
 export type SystemFlowLayer = {
@@ -39,8 +45,11 @@ function serviceName(id: string): string {
 export const systemFlow: {
   heading: string
   layers: readonly SystemFlowLayer[]
+  /** Shown at the end of the activation layer, beside the return loop. */
+  returnLabel: string
 } = {
   heading: 'How the services connect into one operating data system',
+  returnLabel: 'Back to operational systems',
   layers: [
     {
       id: 'sources',

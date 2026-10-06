@@ -88,6 +88,29 @@ describe('App', () => {
     expect(positioning!.nextElementSibling).toBe(services)
   })
 
+  // The one inline SVG illustration the design system allows is the
+  // system diagram's return loop (owner decision on #63); the only other
+  // inline SVGs are the disclosure chevron icons of the service cards and
+  // the Solutions rows. No canvas anywhere, and the only images are the
+  // two logos.
+  it('has no inline SVG but the disclosure chevrons and the diagram\'s loop, and no canvas', () => {
+    render(<App />)
+    const svgs = [...document.querySelectorAll('svg')]
+    const count = (name: string) => svgs.filter((svg) => svg.getAttribute('class') === name).length
+
+    expect(count('system-flow__loop')).toBe(1)
+    expect(document.querySelector('.system-flow svg')).toHaveClass('system-flow__loop')
+    expect(count('service-card__chevron')).toBe(services.length)
+    expect(count('solution-row__chevron')).toBe(solutions.length)
+    expect(svgs).toHaveLength(1 + services.length + solutions.length)
+    for (const svg of svgs) expect(svg).toHaveAttribute('aria-hidden', 'true')
+    expect(document.querySelectorAll('canvas')).toHaveLength(0)
+    expect([...document.querySelectorAll('img')].map((img) => img.closest('header, footer')?.tagName)).toEqual([
+      'HEADER',
+      'FOOTER',
+    ])
+  })
+
   it('shows neither paragraph the refinement replaced anywhere on the page (#63)', () => {
     render(<App />)
     const text = document.body.textContent!

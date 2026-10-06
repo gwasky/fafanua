@@ -1204,11 +1204,12 @@ for (const width of WIDTHS) {
       })
     }
 
-    // The system and data-flow diagram (#57): after the card grid and
-    // before the managed-services block, one row of three columns per
-    // layer from 768px with the names lined up, stacked below it, with no
-    // overflow, no word broken across lines and every arrow joining two
-    // layers.
+    // The system and data-flow diagram (#57, #63): after the card grid
+    // and before the managed-services block, one framed stack of bands,
+    // one row of three columns per layer from 768px with the names lined
+    // up, stacked below it, with no overflow, no word broken across lines,
+    // a chevron on every divider, and the return loop from the activation
+    // layer back into the first.
     test(`system diagram is ${width < 768 ? 'stacked' : 'rows with the names lined up'}, after the cards, at ${width}px`, async ({ page, browserName }, testInfo) => {
       await open(page, testInfo, width)
       const flow = flowList(page)
@@ -1236,7 +1237,8 @@ for (const width of WIDTHS) {
     // text size and with 200% and 150% page text (enlarged page text does
     // not move the 48em media query): one shape for every layer, rows from
     // 768px at the default size, names lined up, nothing overflowing, no
-    // word broken across lines, and every arrow joined. Run from the 768px
+    // word broken across lines, every chevron on its divider and the loop
+    // joined from the last layer to the first. Run from the 768px
     // projects, in Chromium and WebKit. With enlarged page text only the
     // diagram is checked for overflow, not the page: the header's inline
     // nav overflows at 1024px with 200% page text, outside #57.
@@ -1251,15 +1253,9 @@ for (const width of WIDTHS) {
             await page.setViewportSize({ width: w, height: 800 })
             // Chromium can report the previous media query's styles until
             // the next rendered frame after a resize (as for the rail), so
-            // wait two frames before measuring.
-            await page.evaluate(
-              () =>
-                new Promise((resolve) =>
-                  requestAnimationFrame(() => requestAnimationFrame(resolve)),
-                ),
-            )
+            // the measure waits two frames first, in the same call.
             const problems = flowProblems(
-              await measureFlow(page),
+              await measureFlow(page, { settle: true }),
               text === '100%' ? { row: w >= 768 } : { page: false },
             )
             for (const problem of problems) failures.push(`${w}px: ${problem}`)

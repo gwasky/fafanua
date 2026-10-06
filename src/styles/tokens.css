@@ -210,6 +210,11 @@
   /* Borders */
   --border-width: 1px;
 
+  /* The system diagram's return loop (#63) is a fixed-size drawing, 21px
+     wide, so its gutter is in px: in rem it would double with 200% page
+     text and squeeze the layers' names at 320px. */
+  --flow-loop-width: 24px;
+
   /* Layout */
   --container-max: 72rem;
   --container-narrow: 45rem;

@@ -21,12 +21,18 @@ function spokenText(element: Element) {
   return copy.textContent
 }
 
-// A layer's parts, in order: its label (if any), its name and its terms.
+// A layer's parts, in order: its label (if any), its name and its terms
+// (if any); the last layer also has the return label and the loop.
 function parts(layer: HTMLElement) {
-  const [first, ...rest] = [...layer.children] as HTMLElement[]
-  const hasLabel = first.classList.contains('system-flow__label')
-  const [name, terms] = hasLabel ? rest : [first, ...rest]
-  return { label: hasLabel ? first : null, name, terms: terms ?? null }
+  const children = [...layer.children] as HTMLElement[]
+  const find = (name: string) => children.find((child) => child.classList.contains(name)) ?? null
+  return {
+    label: find('system-flow__label'),
+    name: find('system-flow__name')!,
+    terms: (children.find((child) => child.tagName === 'UL') as HTMLElement | undefined) ?? null,
+    returnLabel: find('system-flow__return'),
+    loop: (children.find((child) => child.tagName.toLowerCase() === 'svg') as HTMLElement | undefined) ?? null,
+  }
 }
 
 // The integration layer's name is a service name, which may only be
@@ -125,13 +131,49 @@ describe('SystemFlow', () => {
     })
   })
 
-  it('orders each layer as label, name, then terms, with nothing else', () => {
+  it('orders each layer as label, name, then terms, and ends the last with the return label and the loop', () => {
     const { layers } = renderFlow()
 
-    for (const layer of layers) {
-      const { label, name, terms } = parts(layer)
-      const expected = [label, name, terms].filter(Boolean)
+    for (const [index, layer] of layers.entries()) {
+      const { label, name, terms, returnLabel, loop } = parts(layer)
+      const expected = [label, name, terms, returnLabel, loop].filter(Boolean)
       expect([...layer.children]).toEqual(expected)
+      if (index < 5) expect([returnLabel, loop]).toEqual([null, null])
+    }
+  })
+
+  it('says, as visible text in the activation layer, that it returns to operational systems', () => {
+    const { layers } = renderFlow()
+    const { returnLabel, terms } = parts(layers[5])
+
+    expect(returnLabel!.tagName).toBe('P')
+    expect(returnLabel!.textContent).toBe('Back to operational systems')
+    expect(returnLabel!.textContent).toBe(systemFlow.returnLabel)
+    expect(terms!.nextElementSibling).toBe(returnLabel)
+    expect(spokenText(layers[5])).toContain(systemFlow.returnLabel)
+  })
+
+  it('draws the return loop as the one decorative SVG: hidden, unfocusable, textless, unanimated', () => {
+    const { wrapper, layers } = renderFlow()
+    const { loop } = parts(layers[5])
+    const svgs = wrapper.querySelectorAll('svg')
+
+    expect(svgs).toHaveLength(1)
+    expect(svgs[0]).toBe(loop)
+    expect(loop).toHaveAttribute('aria-hidden', 'true')
+    expect(loop).toHaveAttribute('focusable', 'false')
+    expect(loop).toHaveClass('system-flow__loop')
+    expect(loop!.textContent).toBe('')
+    expect(loop).not.toHaveAttribute('role')
+    // Only shapes and groups: no text, title, image, link or animation.
+    expect(
+      [...loop!.querySelectorAll('*')].map((element) => element.tagName.toLowerCase()).sort(),
+    ).toEqual(['g', 'g', 'line', 'line', 'path', 'path'])
+    // Colour from CSS (currentColor), none set on the shapes.
+    for (const element of loop!.querySelectorAll('*')) {
+      expect(element.getAttribute('stroke')).toBeNull()
+      expect(element.getAttribute('fill')).toBeNull()
+      expect(element.getAttribute('style')).toBeNull()
     }
   })
 
@@ -143,24 +185,28 @@ describe('SystemFlow', () => {
     expect(within(parts(last).terms!).getByText('Reverse ETL')).toBeInTheDocument()
   })
 
-  it('has no link, button, image, tab stop, title or scroll container', () => {
+  it('has no link, button, image, tab stop, title or scroll container, and no graphic but the loop', () => {
     const { wrapper } = renderFlow()
 
     expect(within(wrapper).queryAllByRole('link')).toHaveLength(0)
     expect(within(wrapper).queryAllByRole('button')).toHaveLength(0)
     expect(within(wrapper).queryAllByRole('img')).toHaveLength(0)
     expect(
-      wrapper.querySelector('a, button, img, svg, canvas, picture, [tabindex], [title], section, [role="region"]'),
+      wrapper.querySelector('a, button, img, canvas, picture, [tabindex], [title], section, [role="region"]'),
     ).toBeNull()
+    expect([...wrapper.querySelectorAll('svg')].map((svg) => svg.getAttribute('class'))).toEqual([
+      'system-flow__loop',
+    ])
   })
 
-  it('hides only the empty markers from screen readers', () => {
+  it('hides only the empty markers and the loop from screen readers', () => {
     const { layers } = renderFlow()
     const counts = [1, 1, 1, 2, 1, 1]
 
     layers.forEach((layer, index) => {
       const hidden = [...layer.querySelectorAll('[aria-hidden="true"]')]
-      expect(hidden, `layer ${index + 1}`).toHaveLength(1)
+      expect(hidden, `layer ${index + 1}`).toHaveLength(index === 5 ? 2 : 1)
+      if (index === 5) expect(hidden[1]).toBe(parts(layer).loop)
       expect(hidden[0]).toHaveClass('system-flow__markers')
       expect(hidden[0].textContent).toBe('')
       expect(hidden[0].querySelectorAll('.system-flow__marker')).toHaveLength(counts[index])
@@ -195,7 +241,7 @@ describe('SystemFlow', () => {
     expect(text).not.toMatch(/Snowflake|dbt|Power BI|before|after/i)
   })
 
-  it('contains no words beyond the h3, the labels, names and terms', () => {
+  it('contains no words beyond the h3, the labels, names and terms, and the return label', () => {
     const { wrapper } = renderFlow()
     const allowed = [
       systemFlow.heading,
@@ -204,6 +250,7 @@ describe('SystemFlow', () => {
         layer.name,
         ...(layer.terms ?? []),
       ]),
+      systemFlow.returnLabel,
     ].join('')
 
     expect(wrapper.textContent).toBe(allowed)
