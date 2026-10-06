@@ -1,87 +1,99 @@
 import { systemFlow } from '../data/systemFlow.ts'
 import './SystemFlow.css'
 
-// The system and data-flow diagram (plan V2 §11, refinement plan §5),
-// placed in Services after the card list: an h3, then an ordered list of
-// the six layers, from operational sources to activation, named by the h3.
-// Each layer is its label (if any), its name and its terms (if any), in
-// that order, and the activation layer ends with the return label, all
-// real text, so the diagram reads top to bottom without CSS and needs no
-// image alternative. The layers are bands of one framed stack; the
-// chevrons on the dividers and the separators between terms are drawn in
+// The connected data operating system diagram (plan V2 §11, refinement
+// plan §5, V2 visual enhancement plan §3-§7, #66), placed in Services
+// after the card list: an h3 and its lead, then an ordered list of the
+// six layers, from operational systems to operational activation, named
+// by the h3, then the return statement. Each layer is its lifecycle label
+// and line, its central part or parts (name, then supporting line or
+// terms) and its detail panel, in that order, all real text, so the
+// diagram reads top to bottom without CSS and needs no image alternative.
+// The arrows between layers and the separators between terms are drawn in
 // CSS with no text (SystemFlow.css). All copy comes from systemFlow.ts.
 //
 // The return loop, from activation back to operational systems, is the one
 // inline SVG the design system allows (owner decision on #63): decorative
-// and aria-hidden, as the return label already says it, stroked in
+// and aria-hidden, as the return statement already says it, stroked in
 // currentColor so forced-colours mode keeps it, and with no motion. It is
-// placed in the last layer but positioned against the list, in a gutter
-// at the stack's inline end. Its top half (the arrowhead into operational
-// systems, a curve and a line down to the middle) is drawn from the SVG's
-// top edge and its bottom half (from activation, a curve and a line up to
-// the middle) from its bottom edge, each moved in CSS to the line it
-// joins, so the curves and the arrowhead keep their shape however tall
-// the stack is.
+// positioned against the stack, in the column (or, narrower, the gutter)
+// at its inline end. Each corner is a group moved in CSS: the top one to
+// the first layer and the bottom one to the last, and both to the
+// column's centre, so the curves and the arrowhead keep their shape
+// however tall or wide the stack is. The horizontal runs reach back to
+// the SVG's start edge, where the arrowhead points into the first layer.
 //
 // It is a plain div, not a landmark, with no link, button or tab stop.
 function SystemFlow() {
-  const last = systemFlow.layers.length - 1
   return (
     <div className="system-flow">
       <h3 id="system-flow-heading" className="system-flow__heading">
         {systemFlow.heading}
       </h3>
-      <ol
-        className="system-flow__layers"
-        role="list"
-        aria-labelledby="system-flow-heading"
-      >
-        {systemFlow.layers.map((layer, index) => (
-          <li
-            key={layer.id}
-            className={`system-flow__layer${layer.label ? '' : ' system-flow__layer--unlabelled'}`}
+      <p className="system-flow__lead">{systemFlow.lead}</p>
+      <div className="system-flow__frame">
+        <div className="system-flow__stack">
+          <ol
+            className="system-flow__layers"
+            role="list"
+            aria-labelledby="system-flow-heading"
           >
-            {layer.label && <p className="system-flow__label">{layer.label}</p>}
-            <p className="system-flow__name">
-              <span className="system-flow__markers" aria-hidden="true">
-                {layer.stages.length === 0 ? (
-                  <span className="system-flow__marker" />
-                ) : (
-                  layer.stages.map((stage) => (
-                    <span
-                      key={stage}
-                      className={`system-flow__marker system-flow__marker--${stage}`}
-                    />
-                  ))
-                )}
-              </span>
-              <span className="system-flow__name-text">{layer.name}</span>
-            </p>
-            {layer.terms && (
-              <ul className="system-flow__terms" role="list">
-                {layer.terms.map((term) => (
-                  <li key={term}>{term}</li>
-                ))}
-              </ul>
-            )}
-            {index === last && (
-              <>
-                <p className="system-flow__return">{systemFlow.returnLabel}</p>
-                <svg className="system-flow__loop" aria-hidden="true" focusable="false">
-                  <g className="system-flow__loop-start">
-                    <path d="M6.5 -5L1 0.5L6.5 6M1 0.5H10.5A10 10 0 0 1 20.5 10.5" />
-                    <line x1="20.5" y1="10.5" x2="20.5" y2="50%" />
-                  </g>
-                  <g className="system-flow__loop-end">
-                    <path d="M1 -0.5H10.5A10 10 0 0 0 20.5 -10.5" />
-                    <line x1="20.5" y1="-10.5" x2="20.5" y2="-50%" />
-                  </g>
-                </svg>
-              </>
-            )}
-          </li>
-        ))}
-      </ol>
+            {systemFlow.layers.map((layer) => (
+              <li
+                key={layer.id}
+                className={`system-flow__layer system-flow__layer--${layer.id}`}
+              >
+                <div className="system-flow__stage">
+                  <p className="system-flow__label">{layer.label}</p>
+                  <p className="system-flow__description">{layer.description}</p>
+                </div>
+                <div className="system-flow__core">
+                  {layer.parts.map((part) => (
+                    <div
+                      key={part.name}
+                      className={`system-flow__part system-flow__part--${part.stage ?? 'neutral'}`}
+                    >
+                      <p className="system-flow__name">{part.name}</p>
+                      {part.summary && <p className="system-flow__summary">{part.summary}</p>}
+                      {part.terms && (
+                        <ul className="system-flow__terms" role="list">
+                          {part.terms.map((term) => (
+                            <li key={term}>{term}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <ul className="system-flow__details" role="list">
+                  {layer.details.map((detail) => (
+                    <li key={detail}>{detail}</li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ol>
+          <svg className="system-flow__loop" aria-hidden="true" focusable="false">
+            <g className="system-flow__loop-arrow">
+              <path d="M6.5 -5.5L1 0L6.5 5.5" />
+            </g>
+            <g className="system-flow__loop-top">
+              <path d="M-10 0A10 10 0 0 1 0 10" />
+              <line x1="-10" y1="0" x2="-50%" y2="0" />
+              <line x1="0" y1="10" x2="0" y2="50%" />
+            </g>
+            <g className="system-flow__loop-bottom">
+              <path d="M-10 0A10 10 0 0 0 0 -10" />
+              <line x1="-10" y1="0" x2="-50%" y2="0" />
+              <line x1="0" y1="-10" x2="0" y2="-50%" />
+            </g>
+          </svg>
+        </div>
+        <div className="system-flow__return">
+          <p className="system-flow__return-title">{systemFlow.returnTitle}</p>
+          <p className="system-flow__return-text">{systemFlow.returnText}</p>
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,37 +1,47 @@
-// The system and data-flow diagram in the Services section (#57): six
-// layers, from operational sources to Reverse ETL and operational
-// activation. The wording is copied from plan V2 §11
-// (_docs/fafanua-v2-visual-upgrade-plan.md, "System / Data Flow Visual"):
-// each name from its "Preferred conceptual flow", each label from its
-// "Technical layer labels", and the terms from the flow's source line and
-// its "Possible supporting terms". systemFlow.plan.test.ts checks them
-// against that section. The heading is the section's stated goal,
-// sentence-cased. SystemFlow.tsx reads its copy from here and holds none.
+// The connected data operating system diagram in the Services section
+// (#57, looped in #63, upgraded in #66). The wording is copied from the V2
+// visual enhancement plan
+// (_docs/fafanua-v2-visual-enhancements-services-and-operating-system.md):
+// the heading and lead from §4.1, each layer's lifecycle label and its
+// line from §4.3, its central layer (name, and supporting line or terms)
+// from §4.4, its detail panel from §5 and the return statement from §6.
+// systemFlow.plan.test.ts checks them against those sections.
+// SystemFlow.tsx reads its copy from here and holds none.
 //
-// The labels are stored in sentence case and uppercased in CSS, so screen
-// readers read them as words rather than spelling them out. The
-// warehouse layer has no label, as the plan gives none.
+// The lifecycle labels are stored in sentence case and uppercased in CSS,
+// so screen readers read them as words rather than spelling them out.
 //
-// Each layer's markers are the stages of the services it maps to, so the
-// colours come from the same stage-to-token mapping as the lifecycle rail
-// and the cards; a layer with none shows a neutral marker.
+// The plan's supporting lines are " · "-separated terms, stored as lists
+// and shown with drawn separators; Operational Systems' line is a
+// sentence, stored as `summary`. The trust layer keeps Data Quality and
+// Governance distinct (§4.4), so it has two parts; every other layer has
+// one.
 //
-// The activation layer returns data to operational systems, closing the
-// loop (V2 refinement plan §5, _docs/fafanua-v2-refinement-plan.md, #63).
-// The diagram draws that return as a decorative line, so `returnLabel`
-// states it as text, worded from §5's "connect back to operational
-// systems"; systemFlow.plan.test.ts checks it against that section.
+// Each part's stage gives its accent the same stage-to-token mapping as
+// the lifecycle rail and the cards; Operational Systems maps to no stage
+// and has a neutral accent.
 import { services, type Stage } from './services.ts'
+
+export type SystemFlowPart = {
+  name: string
+  /** A sentence under the name; only Operational Systems has one. */
+  summary?: string
+  /** Shown as a list under the name. */
+  terms?: readonly string[]
+  /** The stage whose service-line colour the part's accent uses. */
+  stage: Stage | null
+}
 
 export type SystemFlowLayer = {
   id: string
-  /** The small uppercase label; the warehouse layer has none. */
-  label?: string
-  name: string
-  /** Shown as a list after the name; absent where the plan gives none. */
-  terms?: readonly string[]
-  /** The stages whose service-line markers the layer shows, in order. */
-  stages: readonly Stage[]
+  /** The lifecycle label beside the layer. */
+  label: string
+  /** The label's supporting line. */
+  description: string
+  /** The central layer: one part, or two for Data Quality and Governance. */
+  parts: readonly SystemFlowPart[]
+  /** The secondary detail panel. */
+  details: readonly string[]
 }
 
 // Where a layer's name is also a service's name, it is read from
@@ -44,51 +54,114 @@ function serviceName(id: string): string {
 
 export const systemFlow: {
   heading: string
+  lead: string
   layers: readonly SystemFlowLayer[]
-  /** Shown at the end of the activation layer, beside the return loop. */
-  returnLabel: string
+  /** The return loop, from activation back to operational systems, as text. */
+  returnTitle: string
+  returnText: string
 } = {
-  heading: 'How the services connect into one operating data system',
-  returnLabel: 'Back to operational systems',
+  heading: 'One connected data operating system',
+  lead: 'From operational systems to trusted reporting — and back into the tools your teams use every day.',
+  returnTitle: 'Trusted data flows back into your operational systems',
+  returnText: 'to drive better decisions and action, every day.',
   layers: [
     {
       id: 'sources',
       label: 'Data sources',
-      name: 'Operational Systems',
-      terms: ['CRM', 'ERP', 'Payments', 'LMS', 'Files', 'APIs'],
-      stages: [],
+      description: 'Bring data from across your organisation.',
+      parts: [
+        {
+          name: 'Operational Systems',
+          summary: 'Your business systems that generate data',
+          stage: null,
+        },
+      ],
+      details: ['CRM', 'ERP', 'Payments', 'LMS', 'Files', 'APIs'],
     },
     {
       id: 'integration',
-      label: 'Integration layer',
-      name: serviceName('data-engineering-and-integration'),
-      stages: ['connect'],
+      label: 'Integration',
+      description: 'Connect and move data reliably.',
+      parts: [
+        {
+          name: serviceName('data-engineering-and-integration'),
+          terms: ['Ingestion', 'CDC', 'APIs', 'Batch & Streaming'],
+          stage: 'connect',
+        },
+      ],
+      details: [
+        'Change Data Capture',
+        'API & SaaS connectors',
+        'Batch processing',
+        'Data orchestration',
+      ],
     },
     {
-      id: 'warehouse',
-      name: 'Data Warehouse & Semantic Models',
-      stages: ['model'],
+      id: 'modelling',
+      label: 'Modelling',
+      description: 'Clean, unify and model your data for the business.',
+      parts: [
+        {
+          name: 'Data Warehouse & Semantic Layer',
+          terms: ['Clean', 'Conformed', 'Business-ready'],
+          stage: 'model',
+        },
+      ],
+      details: ['Data warehouse', 'Conformed models', 'Semantic layer', 'Business definitions'],
     },
     {
       id: 'trust',
-      label: 'Trust layer',
-      name: 'Quality + Governance',
-      terms: ['Quality', 'Reconciliation', 'Governance', 'Lineage'],
-      stages: ['trust', 'govern'],
+      label: 'Trust',
+      description: 'Ensure data is accurate, traceable and governed.',
+      parts: [
+        {
+          name: 'Data Quality',
+          terms: ['Testing', 'Reconciliation', 'Monitoring', 'Alerts'],
+          stage: 'trust',
+        },
+        {
+          name: 'Governance',
+          terms: ['Metadata', 'Lineage', 'Access', 'Ownership'],
+          stage: 'govern',
+        },
+      ],
+      details: [
+        'Data quality checks',
+        'Reconciliation',
+        'Metadata & lineage',
+        'Policies & access control',
+      ],
     },
     {
-      id: 'decision',
-      label: 'Decision layer',
-      name: 'Analytics & Reporting',
-      terms: ['Dashboards', 'KPIs', 'Forecasting'],
-      stages: ['decide'],
+      id: 'understand',
+      label: 'Understand',
+      description: 'Turn trusted data into insights.',
+      parts: [
+        {
+          name: 'Analytics & Reporting',
+          terms: ['Dashboards', 'KPIs', 'Forecasting', 'Ad-hoc analysis'],
+          stage: 'decide',
+        },
+      ],
+      details: ['Dashboards', 'KPIs & metrics', 'Forecasting', 'Self-service analytics'],
     },
     {
-      id: 'activation',
-      label: 'Activation layer',
-      name: 'Reverse ETL / Operational Activation',
-      terms: ['Reverse ETL', 'Operational Systems'],
-      stages: ['connect'],
+      id: 'act',
+      label: 'Act',
+      description: 'Put trusted data to work in your operational tools.',
+      parts: [
+        {
+          name: 'Operational Activation',
+          terms: ['Reverse ETL', 'CRM', 'Marketing', 'Operations'],
+          stage: 'connect',
+        },
+      ],
+      details: [
+        'Sync to operational systems',
+        'Trigger workflows',
+        'Segment audiences',
+        'Personalise experiences',
+      ],
     },
   ],
 }

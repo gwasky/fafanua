@@ -161,6 +161,11 @@
   --text-section: clamp(2rem, 1.2rem + 3.2vw, 3.5rem);
   --text-service: clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem);
   --text-body-lg: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  /* Service titles in the three-column card grid, from 64em (V2 visual
+     enhancement plan §10, #66): 17px at weight 500 with --tracking-tight,
+     so all six names fit on one line once the container reaches its full
+     width (about 1216px); between 1024 and 1216px the longest wrap. */
+  --text-service-compact: 1.0625rem;
   --text-eyebrow: 0.8125rem;
 
   --leading-display: 1.05;
@@ -177,6 +182,8 @@
 
   /* Eyebrows (SectionEyebrow): uppercase, slightly spaced. */
   --tracking-eyebrow: 0.08em;
+  /* Slightly tightened medium-weight titles (--text-service-compact). */
+  --tracking-tight: -0.025em;
 
   /* Spacing (4px steps) */
   --space-1: 0.25rem;

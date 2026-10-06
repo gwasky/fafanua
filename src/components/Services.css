@@ -52,6 +52,18 @@
   text-wrap: pretty;
 }
 
+/* From 64em the heading is a restrained section title rather than a
+   display line (V2 visual enhancement plan §9, #66): --text-3xl (35 to
+   36px), one line at full measure, so the cards stay the section's main
+   content. Below 64em it keeps the display scale. */
+@media (min-width: 64em) {
+  .services__heading {
+    max-width: none;
+    font-size: var(--text-3xl);
+    line-height: var(--leading-tight);
+  }
+}
+
 .services__intro-text:last-child {
   margin-block-end: 0;
 }
@@ -95,8 +107,11 @@
 }
 
 @media (min-width: 64em) {
+  /* A --space-4 column gap leaves each title room for one line at full
+     container width (#66); rows stay --space-6 apart. */
   .services__list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: var(--space-4);
   }
 
   /* Three columns: the first row is the first three items. */
@@ -108,28 +123,45 @@
 }
 
 /*
- * Hover, on a pointer that can hover: the card lifts --space-2 (8px; plan
- * V2 §9 asks for about 8-12px), its border darkens to graphite 600 and
- * its shadow rises to --shadow-md. The hover is on the list item, which
- * does not move, so the card cannot slide out from under a resting
- * cursor and flicker. Focus moves nothing. Under reduced motion the card
- * does not move and nothing transitions; the border and shadow still
- * change.
+ * The active card (V2 visual enhancement plan §11, #66): on hover, with a
+ * pointer that can hover, or while anything in it has focus
+ * (:focus-within, so keyboard and touch get the same highlight). Its
+ * border turns its stage's service-line colour (--marker, ServiceCard.css)
+ * and doubles to 2px with a ring, a soft glow of the same colour rises
+ * under it, and its stage marker strengthens (ServiceCard.css). The
+ * border width, glow and marker change, not colour alone, mark it. On
+ * hover the card also lifts --space-2 (8px). The hover is on the list
+ * item, which does not move, so the card cannot slide out from under a
+ * resting cursor and flicker. Focus moves nothing. Under reduced motion
+ * the card does not move and nothing transitions; the border, glow and
+ * marker still change. Forced-colours mode drops the shadows and keeps
+ * the border and the focus ring.
  */
+.services__list > li:focus-within > .service-card {
+  border-color: var(--marker);
+  box-shadow:
+    0 0 0 var(--border-width) var(--marker),
+    0 var(--space-1) var(--space-6) color-mix(in srgb, var(--marker) 20%, transparent);
+}
+
 @media (hover: hover) {
   .services__list > li:hover > .service-card {
-    border-color: var(--color-button-secondary-border-hover);
-    box-shadow: var(--shadow-md);
+    border-color: var(--marker);
+    box-shadow:
+      0 0 0 var(--border-width) var(--marker),
+      0 var(--space-1) var(--space-6) color-mix(in srgb, var(--marker) 20%, transparent);
   }
 }
 
-@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference) {
   .services__list > li > .service-card {
     transition-duration: var(--duration-card-hover);
     transition-property: transform, border-color, box-shadow;
     transition-timing-function: var(--ease-standard);
   }
+}
 
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .services__list > li:hover > .service-card {
     transform: translateY(calc(-1 * var(--space-2)));
   }

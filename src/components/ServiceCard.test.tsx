@@ -59,20 +59,22 @@ describe('ServiceCard', () => {
   })
 
   it.each(services.map((service, index) => [service.stage, service, index]))(
-    'shows the %s stage as visible text after a decorative marker and its hidden number',
+    'shows the %s stage as visible text after its hidden numbered marker',
     (_stage, service, index) => {
       renderCard(service)
       const label = lifecycleLine()
-      const [marker, number] = label.querySelectorAll('[aria-hidden="true"]')
+      const [marker] = label.querySelectorAll('[aria-hidden="true"]')
       const stageNumber = String(index + 1).padStart(2, '0')
 
       expect(label.tagName).toBe('P')
-      // Seen as "01 Design", read as "Design".
+      // Seen as "01 Design", read as "Design" (#66: the number sits in
+      // the marker's ring).
       expect(label.textContent).toBe(`${stageNumber}${stages[service.stage]}`)
       expect(spokenText(label)).toBe(stages[service.stage])
-      expect(marker).toBeEmptyDOMElement()
-      expect(number).toHaveTextContent(stageNumber)
-      expect(label.querySelectorAll('[aria-hidden="true"]')).toHaveLength(2)
+      expect(marker).toHaveClass('service-card__marker')
+      expect(marker.textContent).toBe(stageNumber)
+      expect(label.firstElementChild).toBe(marker)
+      expect(label.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1)
       expect(label.lastChild?.nodeType).toBe(Node.TEXT_NODE)
     },
   )

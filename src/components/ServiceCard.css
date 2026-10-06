@@ -1,11 +1,13 @@
 /*
- * Service card: a white card with a colour marker and the stage number
- * beside its lifecycle label, a row of capability tags and a "Typical
+ * Service card: a white card with a numbered stage marker beside its
+ * lifecycle label, a row of capability tags and a "Typical
  * engagements" disclosure. Each stage maps to one of the four
- * service-line colours, used only for the small marker, never for text,
- * tags or the card's fills. Design, Connect and Model share Build blue;
+ * service-line colours, used only for the marker's ring and the active
+ * card's border and glow (Services.css), never for text, tags or the
+ * card's fills. Design, Connect and Model share Build blue;
  * the visible label tells them apart. Text is graphite 900 and 600 on
- * white. The hover lift is in Services.css, on the card's list item.
+ * white. The hover and focus-within treatment is in Services.css, on the
+ * card's list item.
  */
 
 .service-card {
@@ -56,24 +58,45 @@
   line-height: var(--leading-snug);
 }
 
-/* A dot drawn with a border rather than a fill, so it stays visible in
-   forced-colours mode. */
+/* The stage number in a ring of its stage's colour (V2 visual
+   enhancement plan §12, #66): graphite 900 tabular figures on white
+   (16.4:1), a 2px ring drawn with a border, so it stays drawn in
+   forced-colours mode. 2em of the label's size, so it grows with the
+   text; lighter than the title. Amber is 2.2:1 on white, but the ring
+   always sits beside its label. */
 .service-card__marker {
+  display: inline-flex;
   flex: none;
-  width: var(--space-3);
-  height: var(--space-3);
-  border: calc(var(--space-3) / 2) solid var(--marker);
+  align-items: center;
+  justify-content: center;
+  width: 2em;
+  height: 2em;
+  border: calc(2 * var(--border-width)) solid var(--marker);
   border-radius: var(--radius-full);
-}
-
-/* Amber is 2.2:1 on light surfaces, so it gets a graphite 200 outline. */
-.service-card--decide .service-card__marker {
-  outline: var(--border-width) solid var(--color-border);
-}
-
-/* Styled like the lifecycle rail's numbers (LifecycleRail.css). */
-.service-card__number {
+  color: var(--color-text);
+  font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* On the active card (Services.css) the ring gains a soft halo and the
+   label darkens to graphite 900. */
+.services__list > li:focus-within .service-card__line {
+  color: var(--color-text);
+}
+
+.services__list > li:focus-within .service-card__marker {
+  box-shadow: 0 0 0 var(--space-1) color-mix(in srgb, var(--marker) 20%, transparent);
+}
+
+@media (hover: hover) {
+  .services__list > li:hover .service-card__line {
+    color: var(--color-text);
+  }
+
+  .services__list > li:hover .service-card__marker {
+    box-shadow: 0 0 0 var(--space-1) color-mix(in srgb, var(--marker) 20%, transparent);
+  }
 }
 
 .service-card__summary {
@@ -90,6 +113,9 @@
 .service-card__tags {
   display: flex;
   flex-wrap: wrap;
+  /* Tag rows keep their height when the row's tags track is taller than
+     this card's tags (#66). */
+  align-content: flex-start;
   gap: var(--space-2);
   margin-block: 0 var(--space-6);
   padding: 0;
@@ -181,8 +207,36 @@
   }
 }
 
+/*
+ * The three-column grid, from 64em (V2 visual enhancement plan §10,
+ * #66): titles at --text-service-compact (17px), weight 500 so they stay
+ * distinct from the 16px descriptions and the 12px tags, with
+ * --tracking-tight, and --space-4 inline padding. With the grid's
+ * --space-4 column gap (Services.css) each title has 318px at full
+ * container width, and the longest, Data Warehousing & Analytics
+ * Modelling, needs 313px, so all six fit on one line from about 1216px.
+ * Narrower, the longest wrap to two lines rather than shrink. The 64em
+ * query moves up with the browser's text size, so enlarged text keeps
+ * the larger titles and fewer columns.
+ */
+@media (min-width: 64em) {
+  .service-card {
+    padding-inline: var(--space-4);
+  }
+
+  .service-card__title {
+    font-size: var(--text-service-compact);
+    font-weight: var(--weight-medium);
+    letter-spacing: var(--tracking-tight);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .service-card__chevron {
     transition: transform var(--duration-fast) var(--ease-standard);
+  }
+
+  .service-card__marker {
+    transition: box-shadow var(--duration-card-hover) var(--ease-standard);
   }
 }

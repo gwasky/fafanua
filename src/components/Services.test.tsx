@@ -18,7 +18,8 @@ function renderServices() {
   const [rail, grid] = within(section).getAllByRole('list')
   const cards = [...grid.children] as HTMLElement[]
   const flow = within(section).getByRole('list', { name: systemFlow.heading })
-  const diagram = flow.parentElement!
+  // The list sits in the diagram's stack and frame (SystemFlow.tsx).
+  const diagram = flow.closest('.system-flow') as HTMLElement
   return { section, rail, grid, cards, flow, diagram }
 }
 
@@ -267,9 +268,11 @@ describe('Services', () => {
     expect(grid.nextElementSibling).toBe(diagram)
     expect(diagram.nextElementSibling).toBeNull()
     expect(flow.children).toHaveLength(6)
-    // It ends at activation: Reverse ETL is in its last layer, the last
-    // thing before the Managed Services section.
+    // It ends at activation, with Reverse ETL in its last layer, then
+    // returns to operational systems, the last thing before the Managed
+    // Services section.
     expect(flow.lastElementChild).toHaveTextContent('Reverse ETL')
+    expect(diagram.lastElementChild!.lastElementChild).toHaveTextContent(systemFlow.returnTitle)
   })
 
   it('adds no link, button or tab stop to the section', () => {

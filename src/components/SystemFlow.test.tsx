@@ -21,44 +21,30 @@ function spokenText(element: Element) {
   return copy.textContent
 }
 
-// A layer's parts, in order: its label (if any), its name and its terms
-// (if any); the last layer also has the return label and the loop.
+// A layer's parts, in order: its lifecycle stage, its central card and
+// its detail panel.
 function parts(layer: HTMLElement) {
-  const children = [...layer.children] as HTMLElement[]
-  const find = (name: string) => children.find((child) => child.classList.contains(name)) ?? null
-  return {
-    label: find('system-flow__label'),
-    name: find('system-flow__name')!,
-    terms: (children.find((child) => child.tagName === 'UL') as HTMLElement | undefined) ?? null,
-    returnLabel: find('system-flow__return'),
-    loop: (children.find((child) => child.tagName.toLowerCase() === 'svg') as HTMLElement | undefined) ?? null,
-  }
+  const [stage, core, details] = [...layer.children] as HTMLElement[]
+  return { stage, core, details }
 }
 
 // The integration layer's name is a service name, which may only be
 // written in services.ts.
 const integration = services.find((s) => s.id === 'data-engineering-and-integration')!
 
-const NAMES = [
-  'Operational Systems',
-  integration.name,
-  'Data Warehouse & Semantic Models',
-  'Quality + Governance',
-  'Analytics & Reporting',
-  'Reverse ETL / Operational Activation',
-]
+const LABELS = ['Data sources', 'Integration', 'Modelling', 'Trust', 'Understand', 'Act']
 
-const TERMS = [
-  ['CRM', 'ERP', 'Payments', 'LMS', 'Files', 'APIs'],
-  null,
-  null,
-  ['Quality', 'Reconciliation', 'Governance', 'Lineage'],
-  ['Dashboards', 'KPIs', 'Forecasting'],
-  ['Reverse ETL', 'Operational Systems'],
+const NAMES = [
+  ['Operational Systems'],
+  [integration.name],
+  ['Data Warehouse & Semantic Layer'],
+  ['Data Quality', 'Governance'],
+  ['Analytics & Reporting'],
+  ['Operational Activation'],
 ]
 
 describe('SystemFlow', () => {
-  it('is a plain div with an h3, "How the services connect into one operating data system"', () => {
+  it('is a plain div with an h3, "One connected data operating system", and its lead', () => {
     const { wrapper, heading } = renderFlow()
 
     expect(wrapper.tagName).toBe('DIV')
@@ -66,123 +52,157 @@ describe('SystemFlow', () => {
     expect(wrapper).not.toHaveAttribute('aria-label')
     expect(wrapper).not.toHaveAttribute('aria-labelledby')
     expect(heading.tagName).toBe('H3')
-    expect(heading.textContent).toBe(
-      'How the services connect into one operating data system',
-    )
+    expect(heading.textContent).toBe('One connected data operating system')
     expect(wrapper.firstElementChild).toBe(heading)
+    expect(heading.nextElementSibling!.tagName).toBe('P')
+    expect(heading.nextElementSibling!.textContent).toBe(
+      'From operational systems to trusted reporting — and back into the tools your teams use every day.',
+    )
     expect(screen.getAllByRole('heading')).toHaveLength(1)
   })
 
-  it('is an ordered list of six layers named by the h3', () => {
-    const { heading, list, layers } = renderFlow()
+  it('is an ordered list of six layers named by the h3, then the return statement', () => {
+    const { wrapper, heading, list, layers } = renderFlow()
 
     expect(list.tagName).toBe('OL')
     expect(list).toHaveAttribute('role', 'list')
     expect(list).toHaveAttribute('aria-labelledby', heading.id)
     expect(list).toHaveAccessibleName(heading.textContent!)
-    expect(heading.nextElementSibling).toBe(list)
     expect(layers).toHaveLength(6)
     for (const layer of layers) expect(layer.tagName).toBe('LI')
+    // In reading order: the list, then the return statement, last.
+    const text = spokenText(wrapper)!
+    expect(text.indexOf(systemFlow.returnTitle)).toBeGreaterThan(text.indexOf('Personalise experiences'))
+    expect(text.endsWith(`${systemFlow.returnTitle}${systemFlow.returnText}`)).toBe(true)
   })
 
-  it('shows each layer\'s name, in order', () => {
+  it('orders each layer as lifecycle stage, central card, then detail panel', () => {
     const { layers } = renderFlow()
 
-    expect(layers.map((layer) => spokenText(parts(layer).name))).toEqual(NAMES)
-  })
-
-  it('reads the integration layer\'s name from services.ts', () => {
-    const { layers } = renderFlow()
-
-    expect(spokenText(parts(layers[1]).name)).toBe(integration.name)
-    expect(integration.name).toMatch(/^Data Engineering/)
-  })
-
-  it('labels layers 1, 2, 4, 5 and 6, and not the warehouse layer', () => {
-    const { layers } = renderFlow()
-    const labels = layers.map((layer) => parts(layer).label?.textContent ?? null)
-
-    expect(labels).toEqual([
-      'Data sources',
-      'Integration layer',
-      null,
-      'Trust layer',
-      'Decision layer',
-      'Activation layer',
-    ])
-    expect(layers[2].querySelector('.system-flow__label')).toBeNull()
-  })
-
-  it('lists each layer\'s exact terms, and none where the plan gives none', () => {
-    const { layers } = renderFlow()
-
-    layers.forEach((layer, index) => {
-      const { terms } = parts(layer)
-      if (TERMS[index] === null) {
-        expect(terms, `layer ${index + 1}`).toBeNull()
-        expect(within(layer).queryByRole('list')).toBeNull()
-        return
-      }
-      expect(terms!.tagName).toBe('UL')
-      expect(terms).toHaveAttribute('role', 'list')
-      expect(
-        within(terms!).getAllByRole('listitem').map((item) => item.textContent),
-      ).toEqual(TERMS[index])
-    })
-  })
-
-  it('orders each layer as label, name, then terms, and ends the last with the return label and the loop', () => {
-    const { layers } = renderFlow()
-
-    for (const [index, layer] of layers.entries()) {
-      const { label, name, terms, returnLabel, loop } = parts(layer)
-      const expected = [label, name, terms, returnLabel, loop].filter(Boolean)
-      expect([...layer.children]).toEqual(expected)
-      if (index < 5) expect([returnLabel, loop]).toEqual([null, null])
+    for (const layer of layers) {
+      const { stage, core, details } = parts(layer)
+      expect(layer.children).toHaveLength(3)
+      expect(stage).toHaveClass('system-flow__stage')
+      expect(core).toHaveClass('system-flow__core')
+      expect(details.tagName).toBe('UL')
+      expect(details).toHaveAttribute('role', 'list')
     }
   })
 
-  it('says, as visible text in the activation layer, that it returns to operational systems', () => {
+  it('shows each layer\'s lifecycle label and line', () => {
     const { layers } = renderFlow()
-    const { returnLabel, terms } = parts(layers[5])
 
-    expect(returnLabel!.tagName).toBe('P')
-    expect(returnLabel!.textContent).toBe('Back to operational systems')
-    expect(returnLabel!.textContent).toBe(systemFlow.returnLabel)
-    expect(terms!.nextElementSibling).toBe(returnLabel)
-    expect(spokenText(layers[5])).toContain(systemFlow.returnLabel)
+    expect(layers.map((layer) => parts(layer).stage.firstElementChild!.textContent)).toEqual(LABELS)
+    layers.forEach((layer, i) => {
+      const [label, description] = [...parts(layer).stage.children]
+      expect(label.tagName).toBe('P')
+      expect(description.tagName).toBe('P')
+      expect(description.textContent).toBe(systemFlow.layers[i].description)
+    })
+  })
+
+  it('shows each central part\'s name, in order, with Data Quality and Governance as two parts', () => {
+    const { layers } = renderFlow()
+
+    expect(
+      layers.map((layer) =>
+        [...parts(layer).core.querySelectorAll('.system-flow__name')].map((name) => name.textContent),
+      ),
+    ).toEqual(NAMES)
+    expect(spokenText(parts(layers[1]).core)).toContain(integration.name)
+  })
+
+  it('lists each part\'s terms, or Operational Systems\' supporting sentence', () => {
+    const { layers } = renderFlow()
+
+    layers.forEach((layer, i) => {
+      const elements = [...parts(layer).core.querySelectorAll('.system-flow__part')]
+      expect(elements).toHaveLength(systemFlow.layers[i].parts.length)
+      elements.forEach((element, j) => {
+        const part = systemFlow.layers[i].parts[j]
+        const terms = element.querySelector('ul')
+        if (part.summary) {
+          expect(terms).toBeNull()
+          expect(element.querySelector('.system-flow__summary')!.textContent).toBe(part.summary)
+          return
+        }
+        expect(terms).toHaveAttribute('role', 'list')
+        expect(within(terms!).getAllByRole('listitem').map((item) => item.textContent)).toEqual(part.terms)
+      })
+    })
+    expect(spokenText(layers[0])).toContain('Your business systems that generate data')
+  })
+
+  it('lists each layer\'s detail panel', () => {
+    const { layers } = renderFlow()
+
+    layers.forEach((layer, i) => {
+      expect(
+        within(parts(layer).details).getAllByRole('listitem').map((item) => item.textContent),
+      ).toEqual(systemFlow.layers[i].details)
+    })
+  })
+
+  it('shows "Reverse ETL" as one term of Operational Activation', () => {
+    const { layers } = renderFlow()
+    const { core } = parts(layers[5])
+
+    expect(core.querySelector('.system-flow__name')!.textContent).toBe('Operational Activation')
+    expect(within(core).getByRole('list')).toHaveTextContent('Reverse ETL')
+  })
+
+  it('gives each part an accent class for its stage, and Operational Systems a neutral one', () => {
+    const { wrapper } = renderFlow()
+
+    expect(
+      [...wrapper.querySelectorAll('.system-flow__part')].map((part) =>
+        [...part.classList].find((name) => name.startsWith('system-flow__part--')),
+      ),
+    ).toEqual([
+      'system-flow__part--neutral',
+      'system-flow__part--connect',
+      'system-flow__part--model',
+      'system-flow__part--trust',
+      'system-flow__part--govern',
+      'system-flow__part--decide',
+      'system-flow__part--connect',
+    ])
+  })
+
+  it('says, as visible text after the list, that trusted data flows back to operational systems', () => {
+    const { wrapper } = renderFlow()
+    const statement = wrapper.querySelector('.system-flow__return')!
+    const [title, text] = [...statement.children]
+
+    expect(title.tagName).toBe('P')
+    expect(title.textContent).toBe('Trusted data flows back into your operational systems')
+    expect(text.textContent).toBe('to drive better decisions and action, every day.')
+    expect(statement.closest('ol')).toBeNull()
   })
 
   it('draws the return loop as the one decorative SVG: hidden, unfocusable, textless, unanimated', () => {
-    const { wrapper, layers } = renderFlow()
-    const { loop } = parts(layers[5])
+    const { wrapper, list } = renderFlow()
     const svgs = wrapper.querySelectorAll('svg')
+    const loop = svgs[0]
 
     expect(svgs).toHaveLength(1)
-    expect(svgs[0]).toBe(loop)
+    expect(loop.parentElement).toBe(list.parentElement)
+    expect(loop.previousElementSibling).toBe(list)
     expect(loop).toHaveAttribute('aria-hidden', 'true')
     expect(loop).toHaveAttribute('focusable', 'false')
     expect(loop).toHaveClass('system-flow__loop')
-    expect(loop!.textContent).toBe('')
+    expect(loop.textContent).toBe('')
     expect(loop).not.toHaveAttribute('role')
     // Only shapes and groups: no text, title, image, link or animation.
     expect(
-      [...loop!.querySelectorAll('*')].map((element) => element.tagName.toLowerCase()).sort(),
-    ).toEqual(['g', 'g', 'line', 'line', 'path', 'path'])
+      [...loop.querySelectorAll('*')].map((element) => element.tagName.toLowerCase()).sort(),
+    ).toEqual(['g', 'g', 'g', 'line', 'line', 'line', 'line', 'path', 'path', 'path'])
     // Colour from CSS (currentColor), none set on the shapes.
-    for (const element of loop!.querySelectorAll('*')) {
+    for (const element of loop.querySelectorAll('*')) {
       expect(element.getAttribute('stroke')).toBeNull()
       expect(element.getAttribute('fill')).toBeNull()
       expect(element.getAttribute('style')).toBeNull()
     }
-  })
-
-  it('shows "Reverse ETL" in the last layer, both in its name and its terms', () => {
-    const { layers } = renderFlow()
-    const last = layers[5]
-
-    expect(spokenText(parts(last).name)).toContain('Reverse ETL')
-    expect(within(parts(last).terms!).getByText('Reverse ETL')).toBeInTheDocument()
   })
 
   it('has no link, button, image, tab stop, title or scroll container, and no graphic but the loop', () => {
@@ -199,36 +219,10 @@ describe('SystemFlow', () => {
     ])
   })
 
-  it('hides only the empty markers and the loop from screen readers', () => {
-    const { layers } = renderFlow()
-    const counts = [1, 1, 1, 2, 1, 1]
+  it('hides only the loop from screen readers', () => {
+    const { wrapper } = renderFlow()
 
-    layers.forEach((layer, index) => {
-      const hidden = [...layer.querySelectorAll('[aria-hidden="true"]')]
-      expect(hidden, `layer ${index + 1}`).toHaveLength(index === 5 ? 2 : 1)
-      if (index === 5) expect(hidden[1]).toBe(parts(layer).loop)
-      expect(hidden[0]).toHaveClass('system-flow__markers')
-      expect(hidden[0].textContent).toBe('')
-      expect(hidden[0].querySelectorAll('.system-flow__marker')).toHaveLength(counts[index])
-    })
-  })
-
-  it('maps the markers to service-line stages, with a neutral one for data sources', () => {
-    const { layers } = renderFlow()
-    const markers = layers.map((layer) =>
-      [...layer.querySelectorAll('.system-flow__marker')].map((marker) =>
-        [...marker.classList].find((name) => name.startsWith('system-flow__marker--')) ?? 'neutral',
-      ),
-    )
-
-    expect(markers).toEqual([
-      ['neutral'],
-      ['system-flow__marker--connect'],
-      ['system-flow__marker--model'],
-      ['system-flow__marker--trust', 'system-flow__marker--govern'],
-      ['system-flow__marker--decide'],
-      ['system-flow__marker--connect'],
-    ])
+    expect([...wrapper.querySelectorAll('[aria-hidden="true"]')]).toEqual([wrapper.querySelector('svg')])
   })
 
   it('has no AI wording, product name, numbering or arrow characters in its text', () => {
@@ -236,21 +230,25 @@ describe('SystemFlow', () => {
     const text = wrapper.textContent!
 
     expect(text).not.toMatch(/\bAI\b|\bML\b|\bRAG\b|agents|Fafanua Intelligence/i)
-    expect(text).not.toMatch(/[←-⇿➔-➿·•—]/)
+    // The lead's dash is the plan's; no arrows or separator characters.
+    expect(text).not.toMatch(/[←-⇿➔-➿·•]/)
     expect(text).not.toMatch(/\d/)
-    expect(text).not.toMatch(/Snowflake|dbt|Power BI|before|after/i)
+    expect(text).not.toMatch(/Snowflake|dbt|Power BI/i)
   })
 
-  it('contains no words beyond the h3, the labels, names and terms, and the return label', () => {
+  it('contains no words beyond the h3, lead, layers and return statement', () => {
     const { wrapper } = renderFlow()
     const allowed = [
       systemFlow.heading,
+      systemFlow.lead,
       ...systemFlow.layers.flatMap((layer) => [
-        layer.label ?? '',
-        layer.name,
-        ...(layer.terms ?? []),
+        layer.label,
+        layer.description,
+        ...layer.parts.flatMap((part) => [part.name, part.summary ?? '', ...(part.terms ?? [])]),
+        ...layer.details,
       ]),
-      systemFlow.returnLabel,
+      systemFlow.returnTitle,
+      systemFlow.returnText,
     ].join('')
 
     expect(wrapper.textContent).toBe(allowed)

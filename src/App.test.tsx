@@ -140,7 +140,7 @@ describe('App', () => {
     render(<App />)
     const services = screen.getByRole('region', { name: SERVICES })
     const flow = screen.getByRole('list', { name: systemFlow.heading })
-    const diagram = flow.parentElement!
+    const diagram = flow.closest('.system-flow')!
     const cards = within(services)
       .getAllByRole('list')
       .find((list) => within(list).queryAllByRole('heading', { level: 3 }).length === 6)!
