@@ -1,10 +1,12 @@
 import { cloudflare } from '@cloudflare/vite-plugin'
 import react from '@vitejs/plugin-react'
-import { readFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Plugin } from 'vite'
 import { configDefaults, defineConfig } from 'vitest/config'
+import { createServer, type Connect } from 'vite'
 import { email, phoneHref } from './src/data/contact.ts'
+import { ORGANISATION_ID, SITE_URL } from './src/seo.ts'
 
 // The Inter woff2 imported by src/styles/fonts.css. Its built name is
 // hashed, so a static preload link in index.html cannot point at it.
@@ -156,8 +158,9 @@ export function checkOrder(): Plugin {
 }
 
 // The production URL. Every absolute URL in the page's metadata, robots.txt
-// and sitemap.xml starts with it.
-export const SITE_URL = 'https://fafanua.tech/'
+// and sitemap.xml starts with it. src/seo.ts holds it, with the
+// organisation's @id, for the landing pages too.
+export { ORGANISATION_ID, SITE_URL }
 
 // The metadata index.html must carry: the title and description are the
 // SEO plan's §19 recommendations (_docs/fafanua-seo-keyword-and-
@@ -191,10 +194,6 @@ const NAMES: Record<string, string> = {
   'twitter:image': PROPERTIES['og:image'],
   'twitter:image:alt': PROPERTIES['og:image:alt'],
 }
-
-// The organisation's @id, so the service pages' JSON-LD can name it as
-// their provider without repeating it.
-export const ORGANISATION_ID = `${SITE_URL}#organisation`
 
 /**
  * The schema.org organisation data published as JSON-LD on every page
@@ -389,17 +388,129 @@ export function checkSeo(address = email): Plugin {
   }
 }
 
+// The landing pages' template (#67), the build's second HTML entry. Its
+// title is replaced, and its two placeholders filled, for each page.
+const PAGE_TEMPLATE = 'page.html'
+const PAGE_HEAD = '<!--page-head-->'
+const PAGE_ROOT = '<!--page-root-->'
+
+// What src/render.tsx exports. It is TSX, which this config's TypeScript
+// project does not compile, so its shape is written out here.
+type RenderedPage = { path: string }
+type RenderModule = {
+  pages: readonly RenderedPage[]
+  notFound: RenderedPage
+  fileFor: (page: RenderedPage) => string
+  render: (page: RenderedPage) => { head: string; html: string }
+}
+
+/**
+ * Pre-renders the landing pages (#67). Once the client build is written,
+ * it loads src/render.tsx in Node through a Vite server, and for each page
+ * in src/pages.ts, and the not-found page, writes a copy of the built
+ * page.html, with the page's own head tags in place of its title and the
+ * rendered page in its root, to the file named by the page's path. Then
+ * it deletes page.html. Workers Static Assets serves services/<slug>.html
+ * at /services/<slug>, so each path answers 200 with the whole page in its
+ * HTML; the Worker serves 404.html for anything else.
+ */
+export function prerender(): Plugin {
+  return {
+    name: 'fafanua:prerender',
+    apply: 'build',
+    applyToEnvironment: (environment) => environment.name === 'client',
+    async writeBundle(options) {
+      const dir = options.dir ?? ''
+      const templateFile = path.join(dir, PAGE_TEMPLATE)
+      const template = await readFile(templateFile, 'utf8')
+      if (!template.includes(PAGE_HEAD) || !template.includes(PAGE_ROOT)) {
+        throw new Error(`${PAGE_TEMPLATE} has lost its ${PAGE_HEAD} or ${PAGE_ROOT} placeholder`)
+      }
+      const server = await createServer({
+        configFile: false,
+        root: import.meta.dirname,
+        plugins: [react()],
+        define: DEFINE,
+        appType: 'custom',
+        logLevel: 'error',
+        server: { middlewareMode: true, hmr: false, ws: false },
+      })
+      try {
+        const module = (await server.ssrLoadModule('/src/render.tsx')) as RenderModule
+        for (const page of [...module.pages, module.notFound]) {
+          const { head, html } = module.render(page)
+          const file = path.join(dir, module.fileFor(page))
+          await mkdir(path.dirname(file), { recursive: true })
+          await writeFile(
+            file,
+            template
+              .replace(/[ \t]*<title>[^<]*<\/title>\n/, '')
+              .replace(PAGE_HEAD, head)
+              .replace(PAGE_ROOT, html),
+          )
+        }
+      } finally {
+        await server.close()
+      }
+      await rm(templateFile)
+    },
+  }
+}
+
+/**
+ * Serves the landing pages' template in dev for their paths (#67), which
+ * the build pre-renders, so `npm run dev` shows them; src/page.tsx then
+ * renders the page in the browser. Any other path is left alone.
+ */
+export function devPages(): Plugin {
+  return {
+    name: 'fafanua:dev-pages',
+    apply: 'serve',
+    configureServer(server) {
+      const handler: Connect.NextHandleFunction = (request, _response, next) => {
+        const pathname = (request.url ?? '').split('?')[0]
+        if (/^\/(services|solutions)\/[a-z-]+\/?$/.test(pathname)) {
+          request.url = `/${PAGE_TEMPLATE}`
+        }
+        next()
+      }
+      server.middlewares.use(handler)
+    },
+  }
+}
+
+// Compile-time constants: the build's year, which a pre-rendered footer
+// shows until it hydrates (src/useYear.ts).
+const DEFINE = { __BUILD_YEAR__: JSON.stringify(new Date().getFullYear()) }
+
 // https://vite.dev/config/
 export default defineConfig({
+  define: DEFINE,
+  // The homepage and the landing pages' template (#67), in the client
+  // build only; the Worker's build keeps its own entry.
+  environments: {
+    client: {
+      build: {
+        rollupOptions: {
+          input: {
+            index: path.resolve(import.meta.dirname, 'index.html'),
+            page: path.resolve(import.meta.dirname, PAGE_TEMPLATE),
+          },
+        },
+      },
+    },
+  },
   // The Cloudflare plugin runs on the Workers runtime, which clashes with
   // Vitest's jsdom environment, so it is left out under test.
   plugins: [
+    devPages(),
     react(),
     preloadFont(),
     structuredData(),
     stylesheetFirst(),
     checkSeo(),
     checkOrder(),
+    prerender(),
     ...(process.env.VITEST ? [] : [cloudflare()]),
   ],
   test: {

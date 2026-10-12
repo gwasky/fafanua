@@ -74,7 +74,14 @@ const FORCED_LIGHT = '(forced-colors: active) and (prefers-color-scheme: light)'
 // solid, its layout effect resolved that style, and the switch to .on-dark
 // ran the colour transition from paper on every load (#55 QA). With the
 // prop the first render is already transparent, so nothing animates.
-function Header({ overlay = false }: { overlay?: boolean }) {
+//
+// `home` is the homepage's path on the landing pages (#67), so the logo
+// and the section links lead back to the homepage's sections; on the
+// homepage it is left out and they stay in-page. The call to action always
+// goes to #contact, which every page has.
+type HeaderProps = { overlay?: boolean; home?: string }
+
+function Header({ overlay = false, home }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const toggleRef = useRef<HTMLButtonElement>(null)
@@ -150,7 +157,7 @@ function Header({ overlay = false }: { overlay?: boolean }) {
         Skip to content
       </a>
       <div className="container site-header__inner">
-        <a className="site-header__logo" href="#top">
+        <a className="site-header__logo" href={home ?? '#top'}>
           {/* A light forced-colours theme paints the hero white, where the
               reversed logo's paper wordmark disappears, so it takes the
               positive logo there. The source matches only then, so the
@@ -185,7 +192,7 @@ function Header({ overlay = false }: { overlay?: boolean }) {
               <li key={item.id} className="site-nav__item">
                 <a
                   className="site-nav__link"
-                  href={`#${item.id}`}
+                  href={`${home ?? ''}#${item.id}`}
                   onClick={onLinkClick}
                 >
                   {item.label}

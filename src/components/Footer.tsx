@@ -1,5 +1,6 @@
 import { email, phone, phoneHref } from '../data/contact.ts'
 import { footerNavigation } from '../data/navigation.ts'
+import { useYear } from '../useYear.ts'
 import './Footer.css'
 
 // A forced-colours theme with a light background (Windows contrast themes).
@@ -11,9 +12,11 @@ const FORCED_LIGHT = '(forced-colors: active) and (prefers-color-scheme: light)'
 // (footerNavigation in src/data/navigation.ts), the email and phone links
 // from src/data/contact.ts and the copyright line. The year is read when
 // the component renders, so it is never fixed at build time. It uses no
-// ids, so nothing duplicates the header's.
-function Footer() {
-  const year = new Date().getFullYear()
+// ids, so nothing duplicates the header's. On the landing pages (#67)
+// `home` is the homepage's path, so the section links lead back to it;
+// Contact stays in-page, as every page ends with it.
+function Footer({ home }: { home?: string }) {
+  const year = useYear()
 
   return (
     <footer className="site-footer surface-dark">
@@ -36,7 +39,10 @@ function Footer() {
           <ul className="site-footer__list">
             {footerNavigation.map((item) => (
               <li key={item.id}>
-                <a className="site-footer__link" href={`#${item.id}`}>
+                <a
+                  className="site-footer__link"
+                  href={`${item.id === 'contact' ? '' : (home ?? '')}#${item.id}`}
+                >
                   {item.label}
                 </a>
               </li>

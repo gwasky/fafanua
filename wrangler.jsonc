@@ -14,7 +14,9 @@
     }
   ],
   "assets": {
-    // Unknown paths reach the Worker and return 404; there is no SPA fallback.
-    "not_found_handling": "none"
+    // Unknown paths reach the Worker, which serves the pre-rendered 404
+    // page with a 404 status (#67); there is no SPA fallback.
+    "not_found_handling": "none",
+    "binding": "ASSETS"
   }
 }

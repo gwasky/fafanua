@@ -1,0 +1,41 @@
+/*
+ * Breadcrumbs (#67): one wrapping row of small links, graphite 600 for the
+ * current page (6.0:1 on paper) and teal 700 links (4.7:1). Each separator
+ * is a border-drawn chevron after every item but the last, so it has no
+ * text and stays drawn in forced-colours mode.
+ */
+
+.breadcrumbs__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  list-style: none;
+}
+
+.breadcrumbs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.breadcrumbs__item:not(:last-child)::after {
+  content: '';
+  inline-size: var(--space-1);
+  block-size: var(--space-1);
+  border-block-start: var(--border-width) solid currentColor;
+  border-inline-end: var(--border-width) solid currentColor;
+  rotate: 45deg;
+}
+
+/* At least a 24px target (WCAG 2.5.8) without changing the row's look. */
+.breadcrumbs__item a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--space-6);
+}

@@ -1,0 +1,231 @@
+/*
+ * The landing pages (#67): service, solution and not-found pages. Light
+ * throughout, on paper, in the homepage's type and with its pairings only:
+ * graphite 900 and 600 on paper and white, teal 700 links on paper (4.7:1)
+ * and white (5.2:1). No dark section, technical grid, motion or new
+ * colour; the service-line colours are not used.
+ *
+ * The intro holds the breadcrumbs, the eyebrow, the h1 at the display
+ * scale and the lead. Each section below it is separated by a graphite 200
+ * hairline; from 64em (literal breakpoint, see the note in tokens.css) its
+ * h2 sits in a start column and the content in a wider end column, top
+ * aligned, as About; below it they stack in DOM order.
+ */
+
+.landing-intro {
+  padding-block: var(--space-10) var(--space-12);
+  background-color: var(--color-bg);
+}
+
+.landing-intro .section-eyebrow {
+  margin-block-start: var(--space-8);
+}
+
+/* Weight 300 from the global heading styles. */
+.landing-intro__heading {
+  max-width: var(--measure-heading);
+  margin-block-end: var(--space-6);
+  font-size: var(--text-section);
+  line-height: var(--leading-display);
+  overflow-wrap: break-word;
+}
+
+.landing-intro__lead {
+  max-width: var(--measure);
+  margin-block: 0 var(--space-4);
+  color: var(--color-heading);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-snug);
+  text-wrap: pretty;
+}
+
+.landing-intro__text {
+  max-width: var(--measure);
+  margin-block: 0;
+  color: var(--color-text-muted);
+  text-wrap: pretty;
+}
+
+.landing-section {
+  background-color: var(--color-bg);
+}
+
+.landing-section__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  padding-block: var(--space-12);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+/* Weight 300 from the global heading styles. */
+.landing-section__heading {
+  max-width: var(--measure-heading);
+  margin-block: 0;
+  font-size: var(--text-3xl);
+  overflow-wrap: break-word;
+}
+
+.landing-section__body {
+  min-width: 0;
+}
+
+/* Doubled class, so it outranks the lists' own margin: 0. */
+.landing-section__body.landing-section__body > * + * {
+  margin-block-start: var(--space-6);
+}
+
+.landing-text {
+  max-width: var(--measure);
+  margin-block: 0;
+  text-wrap: pretty;
+}
+
+/* Plain lists: each item above a hairline. */
+.landing-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-list > li {
+  max-width: var(--measure);
+  padding-block: var(--space-3);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.landing-list > li:first-child {
+  padding-block-start: 0;
+}
+
+/* Cards: white with a graphite 200 hairline, as the service cards. */
+.landing-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-card {
+  padding: var(--space-6);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.landing-card__title {
+  margin-block-end: var(--space-2);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-snug);
+}
+
+.landing-card__text {
+  margin-block: 0;
+  color: var(--color-text-muted);
+}
+
+.landing-card__list {
+  margin: var(--space-4) 0 0;
+  padding-inline-start: var(--space-5);
+}
+
+/* Links with a line beneath each: related services and sectors. */
+.landing-links {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-links a {
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+}
+
+.landing-links p {
+  margin-block: var(--space-1) 0;
+  color: var(--color-text-muted);
+}
+
+/* The lifecycle: seven stages, each its label and its service, the
+   current one marked by weight and a graphite 900 rule, not colour. */
+.landing-lifecycle {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-lifecycle__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+  padding-block: var(--space-3);
+  padding-inline-start: var(--space-4);
+  border-inline-start: calc(2 * var(--border-width)) solid var(--color-border);
+}
+
+.landing-lifecycle__item--current {
+  border-inline-start-color: var(--color-text);
+}
+
+.landing-lifecycle__stage {
+  color: var(--color-text-muted);
+  font-size: var(--text-eyebrow);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.landing-lifecycle__item--current .landing-lifecycle__name {
+  color: var(--color-heading);
+  font-weight: var(--weight-medium);
+}
+
+@media (min-width: 48em) {
+  .landing-list--columns {
+    columns: 2;
+    column-gap: var(--space-8);
+  }
+
+  .landing-list--columns > li {
+    break-inside: avoid;
+  }
+
+  .landing-list--columns > li:first-child {
+    padding-block-start: var(--space-3);
+  }
+
+  .landing-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .landing-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-8);
+  }
+
+  .landing-lifecycle__item {
+    grid-template-columns: calc(var(--space-16) * 2) minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--space-4);
+  }
+}
+
+@media (min-width: 64em) {
+  .landing-intro {
+    padding-block: var(--space-12) var(--space-16);
+  }
+
+  .landing-section__inner {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    column-gap: var(--space-16);
+    align-items: start;
+    padding-block: var(--space-16);
+  }
+}
