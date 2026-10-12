@@ -19,7 +19,7 @@ export type Page =
   | { readonly kind: 'solution'; readonly path: string; readonly solution: Solution }
   | { readonly kind: 'not-found'; readonly path: string }
 
-export const servicePath = (key: ServiceKey) =>
+export const servicePath = (key: ServiceKey | string) =>
   `/services/${servicePages.find((page) => page.key === key)!.slug}`
 
 export const solutionPath = (id: string) =>

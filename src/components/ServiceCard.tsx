@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { services, stages, type Service } from '../data/services.ts'
+import { servicePath } from '../pages.ts'
 import './ServiceCard.css'
 
 type ServiceCardProps = {
@@ -27,7 +28,10 @@ function ServiceCard({ service }: ServiceCardProps) {
       className={`service-card service-card--${service.stage}${open ? ' service-card--open' : ''}`}
     >
       <h3 id={headingId} className="service-card__title">
-        {service.name}
+        {/* The service's own page (#67), named by the service. */}
+        <a className="service-card__link" href={servicePath(service.id)}>
+          {service.name}
+        </a>
       </h3>
       <p className="service-card__line">
         <span className="service-card__marker" aria-hidden="true">

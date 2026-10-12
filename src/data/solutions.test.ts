@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { solutions } from './solutions.ts'
 
 describe('solutions', () => {
-  it('has exactly five solutions', () => {
-    expect(solutions).toHaveLength(5)
+  it('has exactly six solutions', () => {
+    expect(solutions).toHaveLength(6)
   })
 
   it('has unique kebab-case ids', () => {
@@ -35,9 +35,9 @@ describe('solutions', () => {
     }
   })
 
-  it('holds only an id, a title, a summary and themes: no client types', () => {
+  it('holds an id, a slug, a title, a summary, themes and its page copy', () => {
     for (const solution of solutions) {
-      expect(Object.keys(solution).sort()).toEqual(['id', 'summary', 'themes', 'title'])
+      expect(Object.keys(solution).sort()).toEqual(['id', 'page', 'slug', 'summary', 'themes', 'title'])
     }
   })
 })

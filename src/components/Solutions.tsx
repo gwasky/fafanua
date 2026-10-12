@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { solutions } from '../data/solutions.ts'
+import { solutionPath } from '../pages.ts'
 import SectionEyebrow from './SectionEyebrow.tsx'
 import './Solutions.css'
 
 // The Solutions section (plan V2 §12): the "03 — Solutions" eyebrow, the
-// h2, then the five sectors as compact, editorial rows numbered 01 to 05,
+// h2, then the six sectors as compact, editorial rows numbered 01 to 06,
 // in data order. The id and h2 match the "Solutions" entry in
 // src/data/navigation.ts.
 //
@@ -16,7 +17,8 @@ import './Solutions.css'
 // on the focused button: focus and hover open nothing (owner decision on
 // #59). Each row has its own open state, so any number can be open at
 // once. The summary's separators are drawn in Solutions.css and never
-// announced. All copy comes from src/data/solutions.ts.
+// announced. Each open panel ends with a link to the sector's page (#67),
+// named by its heading. All copy comes from src/data/solutions.ts.
 function Solutions() {
   const [open, setOpen] = useState<Readonly<Record<string, boolean>>>({})
 
@@ -84,6 +86,9 @@ function Solutions() {
                       <li key={theme}>{theme}</li>
                     ))}
                   </ul>
+                  <p className="solution-row__more">
+                    <a href={solutionPath(solution.id)}>{solution.page.heading}</a>
+                  </p>
                 </div>
               </li>
             )

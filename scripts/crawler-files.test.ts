@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { pages } from '../src/pages.ts'
 
 const PUBLIC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'public')
 const read = (name: string) => readFileSync(path.join(PUBLIC, name), 'utf8')
@@ -34,12 +35,21 @@ describe('sitemap.xml', () => {
     expect(root.namespaceURI).toBe(SITEMAP_NS)
   })
 
-  it('lists exactly one URL, the production home page', () => {
-    const urls = doc.getElementsByTagNameNS(SITEMAP_NS, 'url')
-    expect(urls).toHaveLength(1)
-    const locs = urls[0].getElementsByTagNameNS(SITEMAP_NS, 'loc')
-    expect(locs).toHaveLength(1)
-    expect(locs[0].textContent).toBe(SITE_URL)
+  // SEO plan §26 (#67): the canonical, indexable pages only, which are the
+  // homepage and every landing page in src/pages.ts, in that order; never
+  // the 404 page.
+  it('lists the homepage, then every service and solution page, and nothing else', () => {
+    const urls = [...doc.getElementsByTagNameNS(SITEMAP_NS, 'url')]
+    const locs = urls.map((url) => {
+      const loc = url.getElementsByTagNameNS(SITEMAP_NS, 'loc')
+      expect(loc).toHaveLength(1)
+      return loc[0].textContent
+    })
+    expect(locs).toEqual([SITE_URL, ...pages.map((page) => `${SITE_URL}${page.path.slice(1)}`)])
+    expect(locs).toHaveLength(14)
+    expect(locs.filter((loc) => loc!.includes('/services/'))).toHaveLength(7)
+    expect(locs.filter((loc) => loc!.includes('/solutions/'))).toHaveLength(6)
+    expect(locs.some((loc) => loc!.includes('404'))).toBe(false)
   })
 
   it('has no fragment URLs and no lastmod, changefreq or priority', () => {

@@ -1,4 +1,5 @@
 import { managedServices } from '../data/services.ts'
+import { servicePath } from '../pages.ts'
 import SectionEyebrow from './SectionEyebrow.tsx'
 import './ManagedServices.css'
 
@@ -30,7 +31,14 @@ function ManagedServices() {
             </div>
             <div className="managed-services__proposition">
               <p className="managed-services__eyebrow">{managedServices.eyebrow}</p>
-              <h3 className="managed-services__heading">{managedServices.heading}</h3>
+              <h3 className="managed-services__heading">
+                <a
+                  className="managed-services__link"
+                  href={servicePath('managed-data-and-analytics')}
+                >
+                  {managedServices.heading}
+                </a>
+              </h3>
               <p className="managed-services__description">
                 {managedServices.description}
               </p>

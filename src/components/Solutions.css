@@ -161,6 +161,12 @@
   overflow-wrap: break-word;
 }
 
+/* The link to the sector's page (#67), after the themes: teal 700 on
+   paper (4.7:1), underlined as body links are. */
+.solution-row__more {
+  margin-block: var(--space-4) 0;
+}
+
 @media (hover: hover) {
   .solution-row__toggle:hover .solution-row__title {
     text-decoration-line: underline;

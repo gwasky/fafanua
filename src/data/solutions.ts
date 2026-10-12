@@ -503,7 +503,7 @@ export const solutions: readonly Solution[] = [
 ]
 
 // The sentence above each solution page's activation list, around a link
-// to the Data Engineering & Integration page, which explains Reverse ETL
+// to the data engineering and integration page, which explains Reverse ETL
 // (SEO plan §5: buyer language first, Reverse ETL as the explanation).
 export const activationIntro = {
   before: 'Trusted data does not have to stop at a dashboard. With ',

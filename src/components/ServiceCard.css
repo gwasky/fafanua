@@ -240,3 +240,24 @@
     transition: box-shadow var(--duration-card-hover) var(--ease-standard);
   }
 }
+
+/* The title links to the service's page (#67). It keeps the title's
+   colour, with a hairline underline in the border colour as the hint that
+   it is a link, darkening to the text colour on hover; the visited colour
+   never changes. The card's focus-within highlight and the focus ring
+   show it has focus. */
+.service-card__link,
+.service-card__link:visited,
+.service-card__link:hover {
+  color: inherit;
+}
+
+.service-card__link {
+  text-decoration-color: var(--color-border);
+  text-decoration-thickness: var(--border-width);
+  text-underline-offset: 0.2em;
+}
+
+.service-card__link:hover {
+  text-decoration-color: currentColor;
+}

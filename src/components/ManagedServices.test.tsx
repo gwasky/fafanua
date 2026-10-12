@@ -153,12 +153,15 @@ describe('ManagedServices', () => {
     expect(within(section).getAllByRole('list')).toHaveLength(3)
   })
 
-  it('has no link, button, tab stop, stage label, tag or Fafanua Intelligence', () => {
+  it('has one link, its heading to its landing page, and no button, tab stop, stage label, tag or Fafanua Intelligence', () => {
     const { section } = renderManaged()
 
-    expect(within(section).queryByRole('link')).toBeNull()
+    const link = within(section).getByRole('link')
+    expect(link).toHaveAccessibleName(managedServices.heading)
+    expect(link).toHaveAttribute('href', '/services/managed-data-analytics')
+    expect(link.parentElement?.tagName).toBe('H3')
     expect(within(section).queryByRole('button')).toBeNull()
-    expect(section.querySelector('a, button, input, [tabindex]')).toBeNull()
+    expect(section.querySelector('button, input, [tabindex]')).toBeNull()
     for (const label of Object.values(stages)) {
       expect(within(section).queryByText(label)).toBeNull()
     }

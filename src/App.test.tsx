@@ -455,13 +455,13 @@ describe('App', () => {
     expect(text.replace(/(business|payment) intelligence/gi, '')).not.toMatch(/intelligence/i)
   })
 
-  it('orders headings h1, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its h3, h2 Solutions, five h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
+  it('orders headings h1, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its h3, h2 Solutions, six h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
 
     expect(levels).toEqual([
-      1, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 2, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2,
+      1, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2,
     ])
     expect(levels.filter((level) => level === 1)).toHaveLength(1)
     // No level is skipped.
@@ -478,19 +478,19 @@ describe('App', () => {
     expect(headings[11].textContent).toBe('Solutions')
     // Each sector h3 holds its row's button (the accordion header
     // pattern), and is named by the title alone: the number is aria-hidden.
-    headings.slice(12, 17).forEach((heading, index) => {
+    headings.slice(12, 18).forEach((heading, index) => {
       expect(heading).toHaveAccessibleName(solutions[index].title)
       expect(within(heading).getByRole('button')).toHaveAccessibleName(
         solutions[index].title,
       )
     })
-    expect(headings[17].textContent).toBe('How We Work')
-    expect(headings.slice(18, 22).map((heading) => heading.textContent)).toEqual(
+    expect(headings[18].textContent).toBe('How We Work')
+    expect(headings.slice(19, 23).map((heading) => heading.textContent)).toEqual(
       processStages.map((stage) => stage.name),
     )
-    expect(headings[22].textContent).toBe(FUTURE_READY)
-    expect(headings[23].textContent).toBe('About Fafanua')
-    expect(headings[24].textContent).toBe(CONTACT)
+    expect(headings[23].textContent).toBe(FUTURE_READY)
+    expect(headings[24].textContent).toBe('About Fafanua')
+    expect(headings[25].textContent).toBe(CONTACT)
     expect(
       within(screen.getByRole('contentinfo')).queryAllByRole('heading'),
     ).toHaveLength(0)

@@ -1,3 +1,4 @@
+import { heroPromise } from './data/hero.ts'
 import { serviceName } from './pages.ts'
 import type { Page } from './pages.ts'
 
@@ -14,8 +15,8 @@ export const ORGANISATION_ID = `${SITE_URL}#organisation`
 
 export const OG_IMAGE = `${SITE_URL}og-image.png`
 
-export const OG_IMAGE_ALT =
-  'Fafanua Technologies logo with the words "Build a data foundation you can trust."'
+// The social image shows the brand promise, read from hero.ts.
+export const OG_IMAGE_ALT = `Fafanua Technologies logo with the words "${heroPromise}"`
 
 export type PageMeta = {
   readonly title: string

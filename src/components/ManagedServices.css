@@ -208,3 +208,22 @@
     columns: 3;
   }
 }
+
+/* The approved heading links to the Managed Data & Analytics page (#67),
+   as the service card titles do: paper, with a graphite 700 hairline
+   underline that turns paper on hover. */
+.managed-services__link,
+.managed-services__link:visited,
+.managed-services__link:hover {
+  color: inherit;
+}
+
+.managed-services__link {
+  text-decoration-color: var(--color-border);
+  text-decoration-thickness: var(--border-width);
+  text-underline-offset: 0.2em;
+}
+
+.managed-services__link:hover {
+  text-decoration-color: currentColor;
+}

@@ -7,8 +7,13 @@
 import { describe, expect, it } from 'vitest'
 import planV2 from '../../_docs/fafanua-v2-visual-upgrade-plan.md?raw'
 import positioning from '../../_docs/plan-fafanua-services-positioning.md?raw'
-import solutionsSource from './solutions.ts?raw'
+import seoPlan from '../../_docs/fafanua-seo-keyword-and-implementation-plan.md?raw'
 import { solutions } from './solutions.ts'
+
+// The five sectors the positioning doc and plan V2 cover, in the site's
+// order; Health, the SEO plan's sixth domain (#67), is checked below.
+const planned = solutions.filter((solution) => solution.id !== 'health')
+const health = solutions.find((solution) => solution.id === 'health')!
 
 type DocSolution = {
   number: string
@@ -100,7 +105,7 @@ describe('solutions wording', () => {
     'matches the title and themes in Section %s',
     (_number, index) => {
       const expected = docSolutions[index]
-      const actual = solutions[index]
+      const actual = planned[index]
 
       expect(actual.title).toEqual(expected.title)
       expect(actual.themes).toEqual(expected.themes)
@@ -110,18 +115,57 @@ describe('solutions wording', () => {
   it.each(v2Rows.map((row, index) => [row.number, row.title, index] as const))(
     'matches the summary of row %s, %s, in plan V2 Section 12',
     (_number, _title, index) => {
-      expect(solutions[index].summary).toEqual(v2Rows[index].summary)
+      expect(planned[index].summary).toEqual(v2Rows[index].summary)
     },
   )
 
-  it('has no more solutions than the doc', () => {
-    expect(solutions).toHaveLength(docSolutions.length)
+  it('has the doc\'s solutions and Health, after Development & Impact, and nothing else', () => {
+    expect(planned).toHaveLength(docSolutions.length)
+    expect(solutions.map((solution) => solution.title)).toEqual([
+      'Financial Services',
+      'Retail & Distribution',
+      'Development & Impact',
+      'Health',
+      'Education',
+      'Public Sector',
+    ])
   })
 
-  it('contains no "Potential client types" entry', () => {
-    const code = solutionsSource.replace(/\/\/.*$/gm, '')
-    for (const clientType of docSolutions.flatMap((solution) => solution.clientTypes)) {
-      expect(code.includes(clientType), `solutions.ts has "${clientType}"`).toBe(false)
+  // The doc gives client types for only three sectors, so the rows leave
+  // them out; the landing pages' leads may name who a page is for.
+  it('keeps "Potential client types" out of the rows', () => {
+    const clientTypes = docSolutions.flatMap((solution) => solution.clientTypes)
+    for (const solution of solutions) {
+      for (const text of [solution.title, ...solution.summary, ...solution.themes]) {
+        expect(clientTypes).not.toContain(text)
+      }
     }
+  })
+})
+
+describe('Health (SEO plan §9 and §21, #67)', () => {
+  const plan = seoPlan.replace(/\r\n/g, '\n')
+  const section21 = section(plan, 21)
+
+  it('uses the §21 title, description and h1 verbatim', () => {
+    expect(section21).toContain(`> **${health.page.title}**\n`)
+    expect(section21).toContain(`> **${health.page.description}**\n`)
+    expect(section21).toContain(`> **${health.page.heading}**\n`)
+  })
+
+  it('lives at /solutions/health, as §9 names it', () => {
+    expect(section(plan, 9)).toContain('/solutions/health')
+    expect(health.slug).toBe('health')
+  })
+
+  it('serves both healthcare providers and health programmes', () => {
+    expect(health.page.audiences?.map((audience) => audience.heading)).toEqual([
+      'Healthcare providers',
+      'Public and global-health programmes',
+    ])
+  })
+
+  it('does not position Fafanua as a DHIS2 consultancy', () => {
+    expect(JSON.stringify(health)).not.toMatch(/DHIS/i)
   })
 })

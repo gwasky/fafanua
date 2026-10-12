@@ -52,13 +52,13 @@ describe('App accessibility (axe)', () => {
     await expectNoAxeViolations(container)
   })
 
-  it('has no axe violations with all five Solutions rows open', async () => {
+  it('has no axe violations with all six Solutions rows open', async () => {
     const { container } = render(<App />)
     const region = screen.getByRole('region', { name: 'Solutions' })
     const buttons = within(region).getAllByRole('button')
     for (const button of buttons) fireEvent.click(button)
 
-    expect(buttons).toHaveLength(5)
+    expect(buttons).toHaveLength(6)
     for (const button of buttons) {
       expect(button).toHaveAttribute('aria-expanded', 'true')
     }
@@ -167,7 +167,7 @@ describe('App links and buttons', () => {
     for (const { href } of links) expect(href).toBe(`mailto:${email}`)
   })
 
-  it('has three kinds of button: the Menu toggle, six disclosures and five Solutions rows', () => {
+  it('has three kinds of button: the Menu toggle, six disclosures and six Solutions rows', () => {
     render(<App />)
     const buttons = controls().filter(({ element }) => element.tagName === 'BUTTON')
 

@@ -11,3 +11,12 @@
 
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
+
+# The pre-rendered landing pages (#67), like / above.
+/services/*
+  Cache-Control: public, max-age=0, must-revalidate
+  Content-Type: text/html; charset=utf-8
+
+/solutions/*
+  Cache-Control: public, max-age=0, must-revalidate
+  Content-Type: text/html; charset=utf-8

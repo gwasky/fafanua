@@ -185,7 +185,15 @@ describe('_headers', () => {
     expect(rules.get('/index.html')).toEqual(['Cache-Control: public, max-age=0, must-revalidate'])
   })
 
+  // The pre-rendered landing pages (#67), like /.
+  it.each(['/services/*', '/solutions/*'])('revalidates %s and serves it as UTF-8 HTML', (path) => {
+    expect(rules.get(path)).toEqual([
+      'Cache-Control: public, max-age=0, must-revalidate',
+      'Content-Type: text/html; charset=utf-8',
+    ])
+  })
+
   it('has no other rules', () => {
-    expect([...rules.keys()]).toEqual(['/assets/*', '/', '/index.html'])
+    expect([...rules.keys()]).toEqual(['/assets/*', '/', '/index.html', '/services/*', '/solutions/*'])
   })
 })
