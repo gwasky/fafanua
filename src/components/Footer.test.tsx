@@ -6,7 +6,7 @@ import Footer from './Footer.tsx'
 
 const EMAIL = 'info@fafanua.tech'
 // The owner's decision on #60.
-const PHONE = '+256 752 008822'
+const PHONE = '+256 752 008 822'
 const TEL = 'tel:+256752008822'
 const COPYRIGHT = /^© \d{4} Fafanua Technologies Limited$/
 

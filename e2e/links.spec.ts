@@ -132,7 +132,7 @@ test.describe('email links', () => {
 // The owner's phone number (#60), in the closing call to action and the
 // footer.
 test.describe('phone links', () => {
-  test('both are exactly tel:+256752008822, showing +256 752 008822', async ({ page }) => {
+  test('both are exactly tel:+256752008822, showing +256 752 008 822', async ({ page }) => {
     await openPage(page, 1440)
     const links = page.locator('a[href^="tel:"]')
     await expect(links).toHaveCount(2)
@@ -140,7 +140,7 @@ test.describe('phone links', () => {
     // Read, never clicked: a click would open a phone app.
     for (const link of await links.all()) {
       expect(await link.getAttribute('href')).toBe('tel:+256752008822')
-      await expect(link).toHaveText('+256 752 008822')
+      await expect(link).toHaveText('+256 752 008 822')
     }
     await expect(page.locator('#contact a[href^="tel:"]')).toHaveCount(1)
     await expect(page.getByRole('contentinfo').locator('a[href^="tel:"]')).toHaveCount(1)

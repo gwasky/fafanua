@@ -367,7 +367,7 @@ describe('App', () => {
       'tel:+256752008822',
       'tel:+256752008822',
     ])
-    expect(links.map((link) => link.textContent)).toEqual(['+256 752 008822', '+256 752 008822'])
+    expect(links.map((link) => link.textContent)).toEqual(['+256 752 008 822', '+256 752 008 822'])
     expect(screen.getByRole('region', { name: CONTACT })).toContainElement(links[0] as HTMLElement)
     expect(screen.getByRole('contentinfo')).toContainElement(links[1] as HTMLElement)
   })

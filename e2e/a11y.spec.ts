@@ -260,7 +260,7 @@ test.describe('axe, future-ready and the dark footer in view (#60)', () => {
       expect(painted.logo.width).toBeGreaterThanOrEqual(120)
       expect(painted.logo.height).toBeGreaterThan(0)
 
-      const phone = footer.getByRole('link', { name: '+256 752 008822' })
+      const phone = footer.getByRole('link', { name: '+256 752 008 822' })
       await phone.focus()
       await page.keyboard.press('Shift+Tab')
       await page.keyboard.press('Tab')

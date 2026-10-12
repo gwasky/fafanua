@@ -14,9 +14,9 @@ const SITE_URL = 'https://fafanua.tech/'
 const SITEMAP_NS = 'http://www.sitemaps.org/schemas/sitemap/0.9'
 
 describe('robots.txt', () => {
-  it('allows everything and points at the sitemap, in exactly three lines', () => {
+  it('allows everything and points at the sitemap, exactly as SEO plan §26 writes it', () => {
     expect(read('robots.txt')).toBe(
-      'User-agent: *\nAllow: /\nSitemap: https://fafanua.tech/sitemap.xml\n',
+      'User-agent: *\nAllow: /\n\nSitemap: https://fafanua.tech/sitemap.xml\n',
     )
   })
 })

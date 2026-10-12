@@ -19,6 +19,6 @@ export const email = 'info@fafanua.tech'
 
 // The number as shown, and the tel: link to it, in international form
 // with no spaces.
-export const phone = '+256 752 008822'
+export const phone = '+256 752 008 822'
 
 export const phoneHref = 'tel:+256752008822'

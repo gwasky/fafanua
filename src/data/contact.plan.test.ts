@@ -81,7 +81,7 @@ describe('contact wording', () => {
   })
 
   it('exports the owner\'s phone number and its tel: link', () => {
-    expect(phone).toBe('+256 752 008822')
+    expect(phone).toBe('+256 752 008 822')
     expect(phoneHref).toBe('tel:+256752008822')
     expect(phoneHref).toBe(`tel:${phone.replace(/ /g, '')}`)
   })

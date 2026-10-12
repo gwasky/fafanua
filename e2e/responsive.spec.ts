@@ -1913,7 +1913,7 @@ for (const width of WIDTHS) {
       expect(m.footerTargets.map((target) => target.name)).toEqual([
         ...FOOTER_NAV,
         'info@fafanua.tech',
-        '+256 752 008822',
+        '+256 752 008 822',
       ])
       // The button above the address below 768px, beside it from 768px.
       // The phone number follows the address, on its row where both fit.

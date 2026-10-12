@@ -13,7 +13,7 @@ const PARAGRAPH =
 const LABEL = 'Discuss your data needs'
 const EMAIL = 'info@fafanua.tech'
 const HREF = 'mailto:info@fafanua.tech'
-const PHONE = '+256 752 008822'
+const PHONE = '+256 752 008 822'
 const TEL = 'tel:+256752008822'
 
 // Claims the section must not make: an existing Intelligence product, or

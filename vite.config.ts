@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { Plugin } from 'vite'
 import { configDefaults, defineConfig } from 'vitest/config'
-import { email, phone } from './src/data/contact.ts'
+import { email, phoneHref } from './src/data/contact.ts'
 
 // The Inter woff2 imported by src/styles/fonts.css. Its built name is
 // hashed, so a static preload link in index.html cannot point at it.
@@ -159,11 +159,13 @@ export function checkOrder(): Plugin {
 // and sitemap.xml starts with it.
 export const SITE_URL = 'https://fafanua.tech/'
 
-// The metadata index.html must carry, from _docs/plan.md Section 16 and
-// issue #14. checkHtml() fails the build if the built page differs.
-export const TITLE = 'Fafanua Technologies | Trusted Data Foundations'
+// The metadata index.html must carry: the title and description are the
+// SEO plan's §19 recommendations (_docs/fafanua-seo-keyword-and-
+// implementation-plan.md, #67). checkHtml() fails the build if the built
+// page differs.
+export const TITLE = 'Fafanua Technologies | Data Engineering & Analytics Uganda'
 export const DESCRIPTION =
-  'Fafanua Technologies helps African organisations build trusted data platforms, governance systems, analytics models, and reporting products.'
+  'Fafanua helps organisations in Uganda and East Africa build and strengthen trusted data foundations across data engineering, integration, warehousing, governance, business intelligence and analytics.'
 export const IMAGE_ALT =
   'Fafanua Technologies logo with the words "Build a data foundation you can trust."'
 
@@ -190,19 +192,29 @@ const NAMES: Record<string, string> = {
   'twitter:image:alt': PROPERTIES['og:image:alt'],
 }
 
+// The organisation's @id, so the service pages' JSON-LD can name it as
+// their provider without repeating it.
+export const ORGANISATION_ID = `${SITE_URL}#organisation`
+
 /**
- * The schema.org organisation data published as JSON-LD. The telephone is
- * the phone number as the page shows it (owner decision, 2026-10-05, #61).
+ * The schema.org organisation data published as JSON-LD on every page
+ * (SEO plan §24, #67): real business data only, with no address, opening
+ * hours, reviews or ratings. The telephone is the number the page shows,
+ * in the machine-readable form of its tel: link, and the description is
+ * the homepage's (SEO plan §19).
  */
 export function organisation(address: string) {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    '@id': ORGANISATION_ID,
     name: 'Fafanua Technologies Limited',
     url: SITE_URL,
     logo: `${SITE_URL}apple-touch-icon.png`,
+    description: DESCRIPTION,
     email: address,
-    telephone: phone,
+    telephone: phoneHref.replace(/^tel:/, ''),
+    areaServed: ['Uganda', 'East Africa'],
   }
 }
 
@@ -331,7 +343,7 @@ export function checkHtml(html: string, address = email) {
       problems.push(`JSON-LD is not valid JSON: ${(error as Error).message}`)
     }
     if (data !== undefined) {
-      const expected: Record<string, string> = organisation(address)
+      const expected: Record<string, unknown> = organisation(address)
       const actual = data as Record<string, unknown>
       const keys = Object.keys(actual).sort()
       if (keys.join() !== Object.keys(expected).sort().join()) {
@@ -340,7 +352,7 @@ export function checkHtml(html: string, address = email) {
         )
       }
       for (const [key, value] of Object.entries(expected)) {
-        if (key in actual && actual[key] !== value) {
+        if (key in actual && JSON.stringify(actual[key]) !== JSON.stringify(value)) {
           const source = ['email', 'telephone'].includes(key) ? ' (from src/data/contact.ts)' : ''
           problems.push(
             `JSON-LD ${key} is ${JSON.stringify(actual[key])}, expected ${JSON.stringify(value)}${source}`,

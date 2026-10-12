@@ -21,7 +21,10 @@ import {
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const SOURCE = readFileSync(path.join(ROOT, 'index.html'), 'utf8')
-const PLAN = readFileSync(path.join(ROOT, '_docs', 'plan.md'), 'utf8')
+const SEO_PLAN = readFileSync(
+  path.join(ROOT, '_docs', 'fafanua-seo-keyword-and-implementation-plan.md'),
+  'utf8',
+)
 
 type HtmlPlugin = Plugin & {
   transformIndexHtml: { order: string; handler: (html: string) => string }
@@ -34,13 +37,20 @@ const addJsonLd = (html: string, address?: string) =>
 // index.html as the build writes it, before Vite adds its script tags.
 const BUILT = addJsonLd(SOURCE)
 
+// The title as index.html writes it, with its ampersand escaped.
+const TITLE_HTML = TITLE.replace('&', '&amp;')
+
 const jsonLdOf = (html: string) =>
   /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(html)![1]
 
 describe('copy', () => {
-  it('uses the plan Section 16 title and description verbatim', () => {
-    expect(PLAN).toContain(`> ${TITLE}\n`)
-    expect(PLAN).toContain(`> ${DESCRIPTION}\n`)
+  it('uses the SEO plan §19 recommended title and description verbatim', () => {
+    expect(SEO_PLAN).toContain(`> **${TITLE}**\n`)
+    expect(SEO_PLAN).toContain(`> **${DESCRIPTION}**\n`)
+  })
+
+  it('keeps the protected brand language in the description', () => {
+    expect(DESCRIPTION).toContain('trusted data foundations')
   })
 
   it('uses the production domain without www', () => {
@@ -107,20 +117,29 @@ describe('structuredData', () => {
     expect(JSON.parse(jsonLdOf(BUILT))).toEqual({
       '@context': 'https://schema.org',
       '@type': 'Organization',
+      '@id': 'https://fafanua.tech/#organisation',
       name: 'Fafanua Technologies Limited',
       url: 'https://fafanua.tech/',
       logo: 'https://fafanua.tech/apple-touch-icon.png',
+      description: DESCRIPTION,
       email,
-      telephone: phone,
+      telephone: '+256752008822',
+      areaServed: ['Uganda', 'East Africa'],
     })
     expect(email).not.toMatch(/^mailto:/)
   })
 
-  // The owner's addition on #61 (2026-10-05): the number as the page shows
-  // it, read from src/data/contact.ts, which the CTA and footer also use.
-  it('publishes the telephone +256 752 008822, the number the page links to', () => {
-    expect(JSON.parse(jsonLdOf(BUILT)).telephone).toBe('+256 752 008822')
-    expect(phone).toBe('+256 752 008822')
+  // SEO plan §24 and §25 (#67): the number the page shows and links to,
+  // in its machine-readable tel: form, read from src/data/contact.ts.
+  it('publishes the telephone +256752008822, the number the page links to', () => {
+    expect(JSON.parse(jsonLdOf(BUILT)).telephone).toBe('+256752008822')
+    expect(phone).toBe('+256 752 008 822')
+    expect(phone.replace(/ /g, '')).toBe('+256752008822')
+  })
+
+  it('invents no address, opening hours, reviews or ratings', () => {
+    const json = jsonLdOf(BUILT)
+    expect(json).not.toMatch(/address|openingHours|review|aggregateRating/i)
   })
 
   it('follows the email constant it is given', () => {
@@ -141,7 +160,7 @@ describe('structuredData', () => {
 
 describe('checkHtml', () => {
   it.each([
-    ['a wrong title', [TITLE, 'Fafanua'], '<title> is "Fafanua"'],
+    ['a wrong title', [TITLE_HTML, 'Fafanua'], '<title> is "Fafanua"'],
     [
       'a wrong description',
       [`name="description" content="${DESCRIPTION}"`, 'name="description" content="x"'],
@@ -187,12 +206,12 @@ describe('checkHtml', () => {
     ],
     [
       'a mismatched telephone',
-      [`"telephone":"${phone}"`, '"telephone":"+256 700 000000"'],
-      `JSON-LD telephone is "+256 700 000000", expected "${phone}" (from src/data/contact.ts)`,
+      ['"telephone":"+256752008822"', '"telephone":"+256700000000"'],
+      'JSON-LD telephone is "+256700000000", expected "+256752008822" (from src/data/contact.ts)',
     ],
     [
       'a missing telephone',
-      [`,"telephone":"${phone}"`, ''],
+      [',"telephone":"+256752008822"', ''],
       'JSON-LD has keys',
     ],
     [
@@ -209,7 +228,7 @@ describe('checkHtml', () => {
   })
 
   it('lists every problem in one error', () => {
-    const html = BUILT.replace(TITLE, 'x').replace('lang="en-GB"', 'lang="en"')
+    const html = BUILT.replace(TITLE_HTML, 'x').replace('lang="en-GB"', 'lang="en"')
     expect(() => checkHtml(html)).toThrow(/<html lang>[\s\S]*<title>/)
   })
 
@@ -256,7 +275,7 @@ describe('checkSeo', () => {
   })
 
   it('fails the build if index.html is wrong', async () => {
-    await writeFile(path.join(dir, 'index.html'), BUILT.replace(TITLE, 'x'))
+    await writeFile(path.join(dir, 'index.html'), BUILT.replace(TITLE_HTML, 'x'))
     await expect(plugin.writeBundle({ dir })).rejects.toThrow('<title> is "x"')
   })
 })
