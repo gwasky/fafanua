@@ -1,6 +1,6 @@
 # Fafanua Technologies website
 
-The single-page marketing website for Fafanua Technologies Limited. It presents Fafanua's data-foundation services to businesses, government institutions and development organisations in East Africa.
+The marketing website for Fafanua Technologies Limited: a single-page homepage plus pre-rendered service and solution landing pages. It presents Fafanua's data-foundation services to businesses, government institutions and development organisations in East Africa.
 
 The site is built with React, Vite and TypeScript and runs on Cloudflare Workers with Static Assets. Guidance for contributors and AI coding agents is in [`AGENTS.md`](AGENTS.md).
 
@@ -68,11 +68,19 @@ Before a change is considered done, `npm run lint`, `npm run typecheck`, `npm te
 src/
   components/   One React component per file, with its CSS and tests
   data/         The site's copy
-    services.ts   The only home of service copy; components read from it
+    services.ts   The service cards' and Managed Services' copy
+    servicePages.ts  The service landing pages' copy
+    solutions.ts  The Solutions rows
+    solutionPages.ts The solution landing pages' copy
     process.ts    The process stages
     about.ts      The about section
     contact.ts    The contact email address
     navigation.ts The navigation links
+  pages.ts      The landing pages and their paths (/services/…, /solutions/…)
+  paths.ts      The paths alone, for the homepage's links
+  seo.ts        The landing pages' titles, descriptions, canonicals and JSON-LD
+  render.tsx    The build's pre-render entry, run in Node
+  page.tsx      The landing pages' browser entry (hydrates header and footer)
   styles/       Design tokens and global and component styles
     tokens.css    The only place colours are defined
 public/         Files copied into the build unchanged: logos, icons,
@@ -85,9 +93,15 @@ e2e/            Playwright end-to-end specs
 _docs/          The plan, design system, testing guidelines and process
 ```
 
-Cloudflare serves the static files in `dist/client/` before the Worker runs, so `worker/index.ts` only sees requests that match no static file, and it returns 404 for them. There is no single-page-app fallback: `wrangler.jsonc` sets `not_found_handling: "none"`, so unknown paths get a 404 rather than the home page.
+### Landing pages and routing (#67)
 
-`public/_headers` sets the cache rules. Files under `/assets/*` have hashed names, so they are cached for a year as immutable. The HTML (`/` and `/index.html`) is always revalidated, so a new deployment is picked up straight away.
+There is no router. The homepage is `index.html`, rendered in the browser. The seven service pages and six solution pages (`src/pages.ts`) are built from a second HTML entry, `page.html`: after the client build, the `prerender()` plugin in `vite.config.ts` loads `src/render.tsx` in Node, renders each page to static HTML with its own title, description, canonical, Open Graph tags and JSON-LD (`src/seo.ts`), and writes it to `dist/client/services/<slug>.html` or `dist/client/solutions/<slug>.html`, plus `404.html`; then it deletes `page.html`. In the browser `src/page.tsx` hydrates only the header (Menu toggle, sticky behaviour) and the footer (current year), so the pages' copy is never shipped as JavaScript. In `npm run dev` the `devPages()` plugin serves the template for those paths and the page renders in the browser.
+
+Cloudflare serves the static files in `dist/client/` before the Worker runs. Workers Static Assets serves `services/<slug>.html` at `/services/<slug>` and redirects `/services/<slug>/` and `/services/<slug>.html` to it, so each landing page has one clean URL. `worker/index.ts` only sees requests that match no static file: it answers them with the pre-rendered not-found page (fetched from the `ASSETS` binding at `/404`) and a 404 status. There is no single-page-app fallback: `wrangler.jsonc` sets `not_found_handling: "none"`.
+
+To add a landing page, add its copy to `servicePages.ts` or `solutionPages.ts` (and its slug to `services.ts` or `solutions.ts`), then add its URL to `public/sitemap.xml`; `scripts/crawler-files.test.ts` fails until the sitemap matches `src/pages.ts`.
+
+`public/_headers` sets the cache rules. Files under `/assets/*` have hashed names, so they are cached for a year as immutable. The HTML (`/`, `/index.html`, `/services/*` and `/solutions/*`) is always revalidated, so a new deployment is picked up straight away.
 
 ## Brand assets and the social image
 

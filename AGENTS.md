@@ -4,7 +4,7 @@ Guidance for AI coding agents and contributors working in this repository.
 
 ## Project
 
-A single-page marketing website for **Fafanua Technologies Limited**, presenting its Phase 1 data-foundation services to East African businesses, government institutions and development organisations.
+A marketing website for **Fafanua Technologies Limited** (a single-page homepage plus pre-rendered service and solution landing pages), presenting its Phase 1 data-foundation services to East African businesses, government institutions and development organisations.
 
 - **Primary Plan:** `_docs/plan.md` is the source of truth for content, brand, colours, accessibility and acceptance criteria. Read the relevant section before starting a task.
 - **Service Positioning:** `_docs/plan-fafanua-services-positioning.md` is the source of truth for Services, service copy, lifecycle labels, Managed Data & Analytics Services, Reverse ETL, Solutions and related commercial positioning, and wins where it conflicts with `_docs/plan.md`. `_docs/plan.md` stays authoritative for brand, design system, accessibility, architecture, deployment, How We Work and general site rules.
@@ -22,7 +22,7 @@ A single-page marketing website for **Fafanua Technologies Limited**, presenting
 - Vitest and React Testing Library for unit tests; Playwright for end-to-end tests; axe for accessibility checks. See `_docs/testing-guidelines.md`.
 - Cloudflare Workers with Static Assets, via the Cloudflare Vite plugin. The Worker lives in `worker/index.ts`.
 
-Do not add Next.js, React Router, a CMS, a database, authentication, server rendering or heavy runtime dependencies.
+Do not add Next.js, React Router, a CMS, a database, authentication, request-time server rendering or heavy runtime dependencies. The landing pages are pre-rendered at build time (see the README).
 
 ## Commands
 
@@ -62,7 +62,7 @@ Follow `_docs/design-system.md` for colours, typography, logo use, layout, compo
 
 ### Content
 
-- Service text lives only in `src/data/services.ts`. Components read from it; never repeat service copy inside components.
+- Service text lives only in `src/data/services.ts`, and the service landing pages' copy in `src/data/servicePages.ts` (kept apart so the homepage does not ship it, #67). Components read from them; never repeat service copy inside components.
 - Copy the wording rather than rewriting it: service copy from `_docs/plan-fafanua-services-positioning.md`, and process stages and statements from `_docs/plan.md`.
 - Do not present Fafanua Intelligence as an existing product or claim unsupported SaaS or AI products/features. References to integrating third-party SaaS systems are permitted. Future analytics and AI positioning must be framed as readiness enabled by trusted data foundations, not as currently available product functionality unless explicitly approved.
 - No stock photos, generic AI imagery, heavy gradients, glassmorphism or excessive animation.
