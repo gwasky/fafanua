@@ -495,7 +495,7 @@ export const servicePages: readonly ServicePage[] = [
       'Clear reliability targets for the data that matters most.',
       'Less time spent firefighting, and more on improvement.',
     ],
-    fit: 'Trust is the fourth stage of the lifecycle, and deliberately separate from governance. Quality controls test the pipelines and models built in Connect and Model; governance then records what the data means and who owns it.',
+    fit: 'Trust is the fourth stage of the lifecycle, where a data foundation becomes a trusted data foundation, and it is deliberately separate from governance. Quality controls test the pipelines and models built in Connect and Model; governance then records what the data means and who owns it.',
     solutions: ['financial-services', 'health', 'public-sector', 'development-and-impact'],
     related: [
       {
@@ -564,7 +564,7 @@ export const servicePages: readonly ServicePage[] = [
       'Datasets that are easier to find, understand and trust.',
       'Evidence of where reported figures come from.',
     ],
-    fit: 'Govern is the fifth stage of the lifecycle. It documents, and assigns owners to, what Design, Connect, Model and Trust have built, and gives business intelligence certified datasets to present.',
+    fit: 'Govern is the fifth stage of the lifecycle. It documents, and assigns owners to, what Design, Connect, Model and Trust have built, and gives business intelligence certified datasets to present, so the trusted data foundation stays understandable as it grows.',
     solutions: ['public-sector', 'health', 'financial-services', 'development-and-impact'],
     related: [
       {
