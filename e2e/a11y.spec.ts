@@ -9,10 +9,10 @@ import { managedServices, servicesIntro } from '../src/data/services.ts'
 // target size and reflow can be measured. Each state is its own test, so
 // a failure names the state and width that broke.
 
-/** Opens all five Solutions rows (#59) with the keyboard. */
+/** Opens all six Solutions rows (#59, Health since #67) with the keyboard. */
 async function openAllSectors(page: Page) {
   const buttons = page.getByRole('region', { name: 'Solutions' }).getByRole('button')
-  await expect(buttons).toHaveCount(5)
+  await expect(buttons).toHaveCount(6)
   for (const button of await buttons.all()) {
     await button.focus()
     await page.keyboard.press('Enter')
@@ -103,9 +103,9 @@ test.describe('axe, all Typical engagements disclosures open', () => {
   }
 })
 
-test.describe('axe, all five Solutions rows open', () => {
+test.describe('axe, all six Solutions rows open', () => {
   for (const width of [320, 768, 1440]) {
-    test(`five rows open at ${width}px`, async ({ page }, testInfo) => {
+    test(`six rows open at ${width}px`, async ({ page }, testInfo) => {
       await openPage(page, width)
       await openAllSectors(page)
       // Focusing the first row smooth-scrolls past Services, which is tall
@@ -586,7 +586,7 @@ test.describe('320px at 200% text size', () => {
     await noHorizontalScroll(page)
   })
 
-  test('no horizontal scroll with all five Solutions rows open', async ({ page }) => {
+  test('no horizontal scroll with all six Solutions rows open', async ({ page }) => {
     await openAllSectors(page)
 
     await noHorizontalScroll(page)
@@ -730,7 +730,7 @@ test.describe('browser text size 200%: the header falls back to the Menu', () =>
             summaryTop: item.querySelector('h3 + ul')!.getBoundingClientRect().top,
           })),
         )
-      expect(rows).toHaveLength(5)
+      expect(rows).toHaveLength(6)
       for (const row of rows) {
         expect(row.summaryTop, JSON.stringify(row)).toBeGreaterThanOrEqual(row.titleBottom - 1)
       }

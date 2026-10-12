@@ -454,7 +454,8 @@ test.describe('keyboard focus', () => {
   test.use({ reducedMotion: 'reduce' })
 
   const cases = [
-    { path: '/#services', next: disclosures[0] },
+    // The first card's title link (#67).
+    { path: '/#services', next: services[0].name },
     { path: '/#solutions', next: sectors[0] },
     { path: '/#how-we-work', next: 'Discuss your data needs' },
     { path: '/#future-ready', next: 'Discuss your data needs' },
