@@ -44,7 +44,9 @@ test('reads as the eyebrow, the h2, the approved group, the rail, the capabiliti
       `  - paragraph: 02 — ${managedServices.sectionLabel}`,
       `  - heading "${managedServices.sectionHeading}" [level=2]`,
       `  - paragraph: ${managedServices.eyebrow}`,
-      `  - heading "${managedServices.heading}" [level=3]`,
+      `  - heading "${managedServices.heading}" [level=3]:`,
+      `    - link "${managedServices.heading}":`,
+      '      - /url: /services/managed-data-analytics',
       `  - paragraph: ${managedServices.description}`,
       '  - list:',
       ...managedServices.rail.map((word) => `    - listitem: ${word}`),
@@ -54,10 +56,12 @@ test('reads as the eyebrow, the h2, the approved group, the rail, the capabiliti
       ...managedServices.journey.map((step) => `    - listitem: ${step}`),
     ].join('\n'),
   )
-  expect(snapshot).not.toMatch(/[←-⇿·•]|link|button/)
+  expect(snapshot).not.toMatch(/[←-⇿·•]|button/)
 })
 
-test('adds no tab stop, link, button, title or scroll container', async ({ page }) => {
+// The approved heading links to the Managed Data & Analytics page (#67),
+// the panel's only tab stop.
+test('adds one tab stop, the heading link, and no button, title or scroll container', async ({ page }) => {
   await openPage(page, 1440)
   const m = await region(page).evaluate((root) => ({
     focusable: root.querySelectorAll('a, button, input, [tabindex], [contenteditable]').length,
@@ -67,7 +71,11 @@ test('adds no tab stop, link, button, title or scroll container', async ({ page 
     ).length,
     graphics: root.querySelectorAll('img, svg, canvas, picture').length,
   }))
-  expect(m).toEqual({ focusable: 0, titled: 0, scrollers: 0, graphics: 0 })
+  expect(m).toEqual({ focusable: 1, titled: 0, scrollers: 0, graphics: 0 })
+  await expect(region(page).getByRole('heading', { level: 3 }).getByRole('link')).toHaveAttribute(
+    'href',
+    '/services/managed-data-analytics',
+  )
 })
 
 test('paints only the verified dark pairings inside the panel, on a paper section', async ({ page }) => {

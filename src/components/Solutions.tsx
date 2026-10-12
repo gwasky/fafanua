@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { solutions } from '../data/solutions.ts'
-import { solutionPath } from '../pages.ts'
+import { solutionPath } from '../paths.ts'
 import SectionEyebrow from './SectionEyebrow.tsx'
 import './Solutions.css'
 
@@ -87,7 +87,7 @@ function Solutions() {
                     ))}
                   </ul>
                   <p className="solution-row__more">
-                    <a href={solutionPath(solution.id)}>{solution.page.heading}</a>
+                    <a href={solutionPath(solution.id)}>{solution.heading}</a>
                   </p>
                 </div>
               </li>

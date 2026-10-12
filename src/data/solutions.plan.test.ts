@@ -9,11 +9,13 @@ import planV2 from '../../_docs/fafanua-v2-visual-upgrade-plan.md?raw'
 import positioning from '../../_docs/plan-fafanua-services-positioning.md?raw'
 import seoPlan from '../../_docs/fafanua-seo-keyword-and-implementation-plan.md?raw'
 import { solutions } from './solutions.ts'
+import { solutionPages } from './solutionPages.ts'
 
 // The five sectors the positioning doc and plan V2 cover, in the site's
 // order; Health, the SEO plan's sixth domain (#67), is checked below.
 const planned = solutions.filter((solution) => solution.id !== 'health')
 const health = solutions.find((solution) => solution.id === 'health')!
+const healthPage = solutionPages.health
 
 type DocSolution = {
   number: string
@@ -148,9 +150,9 @@ describe('Health (SEO plan §9 and §21, #67)', () => {
   const section21 = section(plan, 21)
 
   it('uses the §21 title, description and h1 verbatim', () => {
-    expect(section21).toContain(`> **${health.page.title}**\n`)
-    expect(section21).toContain(`> **${health.page.description}**\n`)
-    expect(section21).toContain(`> **${health.page.heading}**\n`)
+    expect(section21).toContain(`> **${healthPage.title}**\n`)
+    expect(section21).toContain(`> **${healthPage.description}**\n`)
+    expect(section21).toContain(`> **${health.heading}**\n`)
   })
 
   it('lives at /solutions/health, as §9 names it', () => {
@@ -159,13 +161,13 @@ describe('Health (SEO plan §9 and §21, #67)', () => {
   })
 
   it('serves both healthcare providers and health programmes', () => {
-    expect(health.page.audiences?.map((audience) => audience.heading)).toEqual([
+    expect(healthPage.audiences?.map((audience) => audience.heading)).toEqual([
       'Healthcare providers',
       'Public and global-health programmes',
     ])
   })
 
   it('does not position Fafanua as a DHIS2 consultancy', () => {
-    expect(JSON.stringify(health)).not.toMatch(/DHIS/i)
+    expect(JSON.stringify([health, healthPage])).not.toMatch(/DHIS/i)
   })
 })

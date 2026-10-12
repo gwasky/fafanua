@@ -4,7 +4,8 @@
 // service, the protected brand language, and links that resolve.
 import { describe, expect, it } from 'vitest'
 import seoPlan from '../../_docs/fafanua-seo-keyword-and-implementation-plan.md?raw'
-import { servicePages, services } from './services.ts'
+import { services } from './services.ts'
+import { servicePages } from './servicePages.ts'
 import { solutions } from './solutions.ts'
 
 const plan = seoPlan.replace(/\r\n/g, '\n')
@@ -46,8 +47,8 @@ describe('service landing pages', () => {
     },
   )
 
-  it('gives every page a unique title, description, h1 and slug', () => {
-    for (const field of ['title', 'description', 'heading', 'slug'] as const) {
+  it('gives every page a unique title, description and h1', () => {
+    for (const field of ['title', 'description', 'heading'] as const) {
       const values = servicePages.map((page) => page[field])
       expect(new Set(values).size, field).toBe(7)
     }
@@ -77,15 +78,15 @@ describe('service landing pages', () => {
 
   it('uses "trusted data foundation" naturally on every page', () => {
     for (const page of servicePages) {
-      expect(copyOf(page) + page.description, page.slug).toMatch(/trusted data foundation/)
+      expect(copyOf(page) + page.description, page.key).toMatch(/trusted data foundation/)
     }
   })
 
   it('names Uganda or East Africa on every page, without stuffing it', () => {
     for (const page of servicePages) {
       const text = [page.title, page.description, copyOf(page)].join(' ')
-      expect(text, page.slug).toMatch(/Uganda|East Africa/)
-      expect((text.match(/Uganda/g) ?? []).length, page.slug).toBeLessThanOrEqual(3)
+      expect(text, page.key).toMatch(/Uganda|East Africa/)
+      expect((text.match(/Uganda/g) ?? []).length, page.key).toBeLessThanOrEqual(3)
     }
   })
 

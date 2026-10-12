@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { services, stages, type Service } from '../data/services.ts'
-import { servicePath } from '../pages.ts'
+import { servicePath } from '../paths.ts'
 import './ServiceCard.css'
 
 type ServiceCardProps = {

@@ -1,0 +1,5 @@
+/* An island's wrapper (PageLayout.tsx, #67) generates no box, so the
+   sticky header's containing block is the page, as on the homepage. */
+.page-island {
+  display: contents;
+}

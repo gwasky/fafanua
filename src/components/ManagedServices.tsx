@@ -1,5 +1,5 @@
 import { managedServices } from '../data/services.ts'
-import { servicePath } from '../pages.ts'
+import { servicePath } from '../paths.ts'
 import SectionEyebrow from './SectionEyebrow.tsx'
 import './ManagedServices.css'
 

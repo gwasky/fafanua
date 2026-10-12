@@ -288,7 +288,7 @@ describe('Solutions', () => {
       const { button, panel } = parts(row)
       fireEvent.click(button)
       const link = within(panel).getByRole('link')
-      expect(link).toHaveAccessibleName(solutions[index].page.heading)
+      expect(link).toHaveAccessibleName(solutions[index].heading)
       expect(link).toHaveAttribute('href', `/solutions/${solutions[index].slug}`)
       expect(panel.lastElementChild).toContainElement(link)
     })

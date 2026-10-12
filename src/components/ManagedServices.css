@@ -219,6 +219,8 @@
 }
 
 .managed-services__link {
+  /* Its colour never changes, so the panel keeps no motion of its own. */
+  transition: none;
   text-decoration-color: var(--color-border);
   text-decoration-thickness: var(--border-width);
   text-underline-offset: 0.2em;

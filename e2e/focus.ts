@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test'
-import { services } from '../src/data/services.ts'
+import { managedServices, services } from '../src/data/services.ts'
 import { email, phone } from '../src/data/contact.ts'
 import { solutions } from '../src/data/solutions.ts'
 import { focusAndHeaderBoxes, focusedName, pressTab, waitForScrollSettle } from './fixtures.ts'
@@ -9,6 +9,9 @@ import { focusAndHeaderBoxes, focusedName, pressTab, waitForScrollSettle } from 
 // covers the focused element.
 
 export const disclosures = services.map((service) => `Typical engagements for ${service.name}`)
+// Each card's title links to the service's page, before its disclosure
+// (#67); the Managed Services heading links to its page.
+export const cards = services.flatMap((service) => [service.name, `Typical engagements for ${service.name}`])
 // The Solutions rows' buttons (#59), each named by its sector title.
 export const sectors = solutions.map((solution) => solution.title)
 // The header's four section links and its call to action, which replaces
@@ -19,7 +22,8 @@ const footerNav = [...sections, 'Contact']
 const fromHero = [
   'Discuss your data needs',
   'Explore our capabilities',
-  ...disclosures,
+  ...cards,
+  managedServices.heading,
   ...sectors,
   // The closing call to action (#60): the button, which shares the hero
   // button's name, then the address and the phone number.

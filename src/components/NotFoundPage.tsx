@@ -1,4 +1,4 @@
-import { servicePages } from '../data/services.ts'
+import { servicePages } from '../data/servicePages.ts'
 import { solutions } from '../data/solutions.ts'
 import { serviceName, servicePath, solutionPath } from '../pages.ts'
 import LandingSection from './LandingSection.tsx'
@@ -37,7 +37,7 @@ function NotFoundPage() {
         <ul className="landing-links" role="list">
           {solutions.map((solution) => (
             <li key={solution.id}>
-              <a href={solutionPath(solution.id)}>{solution.page.heading}</a>
+              <a href={solutionPath(solution.id)}>{solution.heading}</a>
             </li>
           ))}
         </ul>

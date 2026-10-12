@@ -1,12 +1,10 @@
-import {
-  managedServices,
-  servicePages,
-  services,
-  stages,
-  type ServiceKey,
-  type ServicePage,
-} from './data/services.ts'
+import { managedServices, services, stages } from './data/services.ts'
+import { servicePages, type ServiceKey, type ServicePage } from './data/servicePages.ts'
 import { solutions, type Solution } from './data/solutions.ts'
+import { solutionPages, type SolutionPage } from './data/solutionPages.ts'
+import { servicePath, solutionPath } from './paths.ts'
+
+export { servicePath, solutionPath }
 
 // The site's landing pages besides the homepage (SEO plan §16, #67): the
 // seven service pages and the six solution pages, at clean paths with no
@@ -16,14 +14,13 @@ import { solutions, type Solution } from './data/solutions.ts'
 
 export type Page =
   | { readonly kind: 'service'; readonly path: string; readonly service: ServicePage }
-  | { readonly kind: 'solution'; readonly path: string; readonly solution: Solution }
+  | {
+      readonly kind: 'solution'
+      readonly path: string
+      readonly solution: Solution
+      readonly copy: SolutionPage
+    }
   | { readonly kind: 'not-found'; readonly path: string }
-
-export const servicePath = (key: ServiceKey | string) =>
-  `/services/${servicePages.find((page) => page.key === key)!.slug}`
-
-export const solutionPath = (id: string) =>
-  `/solutions/${solutions.find((solution) => solution.id === id)!.slug}`
 
 /** The service's approved name, as its card or the managed panel shows it. */
 export const serviceName = (key: ServiceKey) =>
@@ -45,13 +42,14 @@ export function serviceStage(key: ServiceKey) {
 export const pages: readonly Page[] = [
   ...servicePages.map((service) => ({
     kind: 'service' as const,
-    path: `/services/${service.slug}`,
+    path: servicePath(service.key),
     service,
   })),
   ...solutions.map((solution) => ({
     kind: 'solution' as const,
-    path: `/solutions/${solution.slug}`,
+    path: solutionPath(solution.id),
     solution,
+    copy: solutionPages[solution.id],
   })),
 ]
 

@@ -144,6 +144,7 @@ describe('managedServices', () => {
       managedServices.heading,
     )
     expect(Object.keys(managedServices)).toEqual([
+      'slug',
       'eyebrow',
       'heading',
       'description',

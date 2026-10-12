@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import seoPlan from '../_docs/fafanua-seo-keyword-and-implementation-plan.md?raw'
-import { managedServices, servicePages, services } from './data/services.ts'
+import { managedServices, services } from './data/services.ts'
+import { servicePages } from './data/servicePages.ts'
 import { solutions } from './data/solutions.ts'
 import { notFound, pageFor, pages, serviceName, servicePath, serviceStage, solutionPath } from './pages.ts'
 

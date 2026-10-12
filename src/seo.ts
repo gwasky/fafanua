@@ -41,8 +41,8 @@ export function pageMeta(page: Page): PageMeta {
       }
     case 'solution':
       return {
-        title: page.solution.page.title,
-        description: page.solution.page.description,
+        title: page.copy.title,
+        description: page.copy.description,
         url: absoluteUrl(page.path),
         name: page.solution.title,
       }

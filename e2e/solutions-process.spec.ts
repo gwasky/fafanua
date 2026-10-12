@@ -37,7 +37,7 @@ const tokenPx = (page: Page, token: string) =>
   }, token)
 
 test.describe('Solutions', () => {
-  test('reads as the eyebrow, the h2 and five rows, each a heading button and its summary', async ({ page }) => {
+  test('reads as the eyebrow, the h2 and six rows, each a heading button and its summary', async ({ page }) => {
     await openPage(page, 1440)
 
     const snapshot = await solutionsRegion(page).ariaSnapshot()
@@ -188,7 +188,7 @@ test.describe('Solutions', () => {
       }
     })
 
-    expect(m.lines).toHaveLength(5 + 1 + 15)
+    expect(m.lines).toHaveLength(6 + 1 + 18)
     for (const line of m.lines) {
       expect(line.style).toBe('solid')
       expect(line.width).toBeGreaterThan(0)

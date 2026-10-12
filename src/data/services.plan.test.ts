@@ -252,14 +252,16 @@ describe('services source', () => {
 })
 
 describe('other source files', () => {
-  // Every source file under src/ except the data module itself.
+  // Every source file under src/ except the data module itself and the
+  // service landing pages' copy (#67), whose titles and h1s name the
+  // service for search.
   const sources = Object.entries(
     import.meta.glob<string>('/src/**/*.{ts,tsx,css,html}', {
       query: '?raw',
       import: 'default',
       eager: true,
     }),
-  ).filter(([file]) => file !== '/src/data/services.ts')
+  ).filter(([file]) => !['/src/data/services.ts', '/src/data/servicePages.ts'].includes(file))
 
   it('scans the rest of src/', () => {
     expect(sources.map(([file]) => file)).toContain('/src/App.tsx')

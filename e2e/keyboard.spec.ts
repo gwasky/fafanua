@@ -1,4 +1,6 @@
 import { expect, type Page } from '@playwright/test'
+import { managedServices, services } from '../src/data/services.ts'
+import { solutions } from '../src/data/solutions.ts'
 import { focusedName, focusStyle, openPage, pressTab, test, waitForFonts } from './fixtures.ts'
 import { disclosures, expectUnobscured, nav, sectors, SEQUENCE as FOCUS_ORDER, tabTo, walkFocus } from './focus.ts'
 
@@ -26,13 +28,14 @@ async function expectRing(page: Page, name: string) {
 
 test.describe('Tab order', () => {
   // 28 and 24 after #59; the two phone links (owner decision on #60) add
-  // one stop each.
-  test('1440 has 30 stops', () => {
-    expect(SEQUENCE[1440]).toHaveLength(30)
+  // one stop each; #67 adds the six card title links, the Managed
+  // Services heading link and the Health row.
+  test('1440 has 38 stops', () => {
+    expect(SEQUENCE[1440]).toHaveLength(38)
   })
 
-  test('360 with the menu closed has 26 stops', () => {
-    expect(SEQUENCE[360]).toHaveLength(26)
+  test('360 with the menu closed has 34 stops', () => {
+    expect(SEQUENCE[360]).toHaveLength(34)
   })
 
   for (const width of [1440, 360]) {
@@ -90,7 +93,8 @@ test.describe('skip link', () => {
 })
 
 test.describe('focus after in-page links', () => {
-  const firstDisclosure = disclosures[0]
+  // The first service card's title link (#67), the first stop in Services.
+  const firstDisclosure = services[0].name
   // The first Solutions row's button (#59).
   const firstSector = sectors[0]
 
@@ -125,7 +129,7 @@ test.describe('focus after in-page links', () => {
     })
   }
 
-  test('menu "Services" closes the menu, then Tab goes to the first disclosure at 360px', async ({ page }) => {
+  test('menu "Services" closes the menu, then Tab goes to the first card at 360px', async ({ page }) => {
     await openPage(page, 360)
     const toggle = page.getByRole('button', { name: 'Menu' })
     await toggle.focus()
@@ -225,15 +229,21 @@ test.describe('disclosures', () => {
 // Enter and Space toggle it with focus staying put, the ring stays clear
 // of the header, and Shift+Tab goes back up through them. Rows are
 // independent, so earlier rows stay open.
+// Each open row's link to its sector's page (#67).
+const sectorPages = solutions.map((solution) => solution.heading)
+
 test.describe('Solutions rows', () => {
   for (const width of [360, 1440]) {
     test(`Tab reaches each row closed, Enter and Space toggle it, and Shift+Tab goes back, at ${width}px`, async ({ page }) => {
       await openPage(page, width)
-      await page.getByRole('button', { name: disclosures.at(-1), exact: true }).focus()
+      // The Managed Services heading link (#67), the stop before the rows.
+      await page.getByRole('link', { name: managedServices.heading, exact: true }).focus()
 
-      for (const name of sectors) {
+      for (const [index, name] of sectors.entries()) {
         const button = page.getByRole('button', { name, exact: true })
         const panel = page.locator(`[id="${await button.getAttribute('aria-controls')}"]`)
+        // The open row above ends with its link to the sector's page (#67).
+        if (index > 0) await tabTo(page, sectorPages[index - 1])
         await tabTo(page, name)
         await expectRing(page, name)
         await expectUnobscured(page, name)
@@ -253,20 +263,22 @@ test.describe('Solutions rows', () => {
         await expect(button).toBeFocused()
         await expectUnobscured(page, name)
       }
-      // All five are open at once.
+      // All six are open at once.
       for (const name of sectors) {
         await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute('aria-expanded', 'true')
       }
 
-      // The theme lists add no tab stop: the next stop is the closing call
-      // to action.
+      // The theme lists add no tab stop: after the last row's page link
+      // the next stop is the closing call to action.
+      await tabTo(page, sectorPages.at(-1)!)
       await tabTo(page, 'Discuss your data needs')
-      for (const name of [...sectors].reverse()) {
+      for (const [index, name] of [...sectors.entries()].reverse()) {
+        await tabTo(page, sectorPages[index], { shift: true })
         await tabTo(page, name, { shift: true })
         await expectRing(page, name)
         await expectUnobscured(page, name)
       }
-      await tabTo(page, disclosures.at(-1)!, { shift: true })
+      await tabTo(page, managedServices.heading, { shift: true })
     })
   }
 })

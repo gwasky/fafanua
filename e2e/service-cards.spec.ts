@@ -125,8 +125,13 @@ test.describe('the active card', () => {
     await waitForMotion(page)
     expect(await look(item)).toEqual(resting)
 
-    // Tab from the previous card's toggle to this one's.
+    // Tab from the previous card's toggle through this one's title link
+    // (#67), which highlights it too, to its toggle.
     await items(page).nth(2).getByRole('button').focus()
+    await pressTab(page)
+    expect(await focusedName(page)).toBe(services[3].name)
+    await waitForMotion(page)
+    expect((await look(item)).border).not.toBe(resting.border)
     await pressTab(page)
     expect(await focusedName(page)).toBe(`Typical engagements for ${services[3].name}`)
     await waitForMotion(page)

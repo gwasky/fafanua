@@ -1,4 +1,5 @@
-import { activationIntro, solutions, type Solution } from '../data/solutions.ts'
+import { solutions, type Solution } from '../data/solutions.ts'
+import { activationIntro, type SolutionPage as SolutionPageCopy } from '../data/solutionPages.ts'
 import { servicePath, solutionPath } from '../pages.ts'
 import Breadcrumbs from './Breadcrumbs.tsx'
 import LandingSection from './LandingSection.tsx'
@@ -11,10 +12,8 @@ import './LandingPage.css'
 // each linked, the reporting and analytics use cases (the sector's
 // themes), data quality and governance, operational activation, and the
 // other sectors. PageLayout adds the closing call to action. All copy
-// comes from solutions.ts.
-function SolutionPage({ solution }: { solution: Solution }) {
-  const { page } = solution
-
+// comes from solutions.ts: the row data and the sector's solutionPages copy.
+function SolutionPage({ solution, page }: { solution: Solution; page: SolutionPageCopy }) {
   return (
     <>
       <div className="landing-intro">
@@ -27,7 +26,7 @@ function SolutionPage({ solution }: { solution: Solution }) {
             current={solution.title}
           />
           <SectionEyebrow label="Solutions" />
-          <h1 className="landing-intro__heading">{page.heading}</h1>
+          <h1 className="landing-intro__heading">{solution.heading}</h1>
           <p className="landing-intro__lead">{page.lead}</p>
         </div>
       </div>
@@ -109,7 +108,7 @@ function SolutionPage({ solution }: { solution: Solution }) {
             .filter((other) => other.id !== solution.id)
             .map((other) => (
               <li key={other.id}>
-                <a href={solutionPath(other.id)}>{other.page.heading}</a>
+                <a href={solutionPath(other.id)}>{other.heading}</a>
                 <p>{other.summary.join(', ')}</p>
               </li>
             ))}

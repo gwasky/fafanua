@@ -10,7 +10,7 @@ function LandingPage({ page }: { page: Page }) {
   return (
     <PageLayout>
       {page.kind === 'service' && <ServicePage page={page.service} />}
-      {page.kind === 'solution' && <SolutionPage solution={page.solution} />}
+      {page.kind === 'solution' && <SolutionPage solution={page.solution} page={page.copy} />}
       {page.kind === 'not-found' && <NotFoundPage />}
     </PageLayout>
   )

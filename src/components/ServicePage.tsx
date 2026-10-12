@@ -1,9 +1,5 @@
-import {
-  managedServices,
-  servicePages,
-  services,
-  type ServicePage as ServicePageCopy,
-} from '../data/services.ts'
+import { managedServices, services } from '../data/services.ts'
+import { servicePages, type ServicePage as ServicePageCopy } from '../data/servicePages.ts'
 import { solutions } from '../data/solutions.ts'
 import { serviceName, servicePath, serviceStage, solutionPath } from '../pages.ts'
 import Breadcrumbs from './Breadcrumbs.tsx'
@@ -122,7 +118,7 @@ function ServicePage({ page }: { page: ServicePageCopy }) {
             const solution = solutions.find((item) => item.id === id)!
             return (
               <li key={id}>
-                <a href={solutionPath(id)}>{solution.page.heading}</a>
+                <a href={solutionPath(id)}>{solution.heading}</a>
                 <p>{solution.summary.join(', ')}</p>
               </li>
             )

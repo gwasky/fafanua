@@ -9,7 +9,8 @@ import {
   waitForLanding,
   waitForMotion,
 } from './fixtures.ts'
-import { disclosures, expectUnobscured, sectors } from './focus.ts'
+import { managedServices } from '../src/data/services.ts'
+import { expectUnobscured, sectors } from './focus.ts'
 
 // The motion layer (#61): the hero reveal, the hero grid's fade-in, the
 // lifecycle rail's line and the one-time section reveals (useReveal.ts),
@@ -578,9 +579,10 @@ test.describe('focus never lands on hidden content (no-preference)', () => {
     })
 
   for (const width of [360, 1440]) {
-    test(`Tab from the last disclosure into hidden Solutions shows it at once, at ${width}px`, async ({ page }) => {
+    test(`Tab from the Managed Services link into hidden Solutions shows it at once, at ${width}px`, async ({ page }) => {
       await openPage(page, width)
-      await page.getByRole('button', { name: disclosures.at(-1) }).focus()
+      // The stop before the Solutions rows (#67).
+      await page.getByRole('link', { name: managedServices.heading, exact: true }).focus()
       await waitForMotion(page)
       expect((await solutions(page)).state).toBe('hidden')
 

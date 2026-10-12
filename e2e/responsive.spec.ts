@@ -1497,7 +1497,7 @@ for (const width of WIDTHS) {
     // at most two, top to bottom, from 768px. Nothing overflows.
     test(`solutions rows are ${width >= 1024 ? 'one line each, lined up' : 'title then summary'}, not cards, and open beneath the row, at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
-      await expect(sectorButtons(page)).toHaveCount(5)
+      await expect(sectorButtons(page)).toHaveCount(6)
 
       const closed = await measureSectors(page)
       const detail = (row: SectorBox) => JSON.stringify(row)
@@ -1535,9 +1535,10 @@ for (const width of WIDTHS) {
         expect(spread(closed.rows.map((row) => row.summary.left)), 'summaries lined up').toBeLessThanOrEqual(1)
         expect(spread(closed.rows.map((row) => row.number.left)), 'numbers lined up').toBeLessThanOrEqual(1)
       }
-      // Compact: no taller than 5 x (title line height + --space-12).
+      // Compact: no taller than one title line height + --space-12 per
+      // row (six rows since Health, #67).
       if (width === 1440) {
-        const limit = 5 * (closed.rows[0].titleLineHeight + 48)
+        const limit = 6 * (closed.rows[0].titleLineHeight + 48)
         expect(closed.listHeight, `list height, limit ${limit}`).toBeLessThanOrEqual(limit)
       }
       expect(await sectorOverflow(page), 'overflowing, collapsed').toEqual([])

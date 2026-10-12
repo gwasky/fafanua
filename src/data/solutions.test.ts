@@ -35,9 +35,9 @@ describe('solutions', () => {
     }
   })
 
-  it('holds an id, a slug, a title, a summary, themes and its page copy', () => {
+  it('holds an id, a slug, a title, a heading, a summary and themes', () => {
     for (const solution of solutions) {
-      expect(Object.keys(solution).sort()).toEqual(['id', 'page', 'slug', 'summary', 'themes', 'title'])
+      expect(Object.keys(solution).sort()).toEqual(['heading', 'id', 'slug', 'summary', 'themes', 'title'])
     }
   })
 })
