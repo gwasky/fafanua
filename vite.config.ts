@@ -467,12 +467,20 @@ export function devPages(): Plugin {
     name: 'fafanua:dev-pages',
     apply: 'serve',
     configureServer(server) {
-      const handler: Connect.NextHandleFunction = (request, _response, next) => {
+      // Answered here, before the Cloudflare plugin's middleware, which
+      // would send the path to the Worker or redirect the template's own
+      // URL; the browser keeps the page's path, which page.tsx reads.
+      const handler: Connect.NextHandleFunction = async (request, response, next) => {
         const pathname = (request.url ?? '').split('?')[0]
-        if (/^\/(services|solutions)\/[a-z-]+\/?$/.test(pathname)) {
-          request.url = `/${PAGE_TEMPLATE}`
+        if (!/^\/(services|solutions)\/[a-z-]+\/?$/.test(pathname)) return next()
+        try {
+          const template = await readFile(path.join(server.config.root, PAGE_TEMPLATE), 'utf8')
+          const html = await server.transformIndexHtml(request.url ?? pathname, template)
+          response.setHeader('Content-Type', 'text/html; charset=utf-8')
+          response.end(html)
+        } catch (error) {
+          next(error)
         }
-        next()
       }
       server.middlewares.use(handler)
     },
