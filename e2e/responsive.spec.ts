@@ -55,8 +55,8 @@ const ANCHORS = [
   '#contact',
 ]
 
-// The Services section is named by its h2, the approved intro heading
-// (#56).
+// The Services section is named by its h2, W3's heading in the trust and
+// lineage plan (#56, #70).
 const servicesRegion = (page: Page) =>
   page.getByRole('region', { name: servicesIntro.heading })
 
@@ -1095,21 +1095,36 @@ for (const width of WIDTHS) {
       })
     }
 
-    // The positioning block (#56): two columns from 64em, the statement
-    // first; stacked below it. Its bottom padding is the only gap above
-    // the Services eyebrow, and no word breaks mid-word.
+    // The positioning block (#56): one paragraph, the statement, since #70
+    // removed the response beside it. One column at every width, with no
+    // empty second column, and held to a display measure on wide screens.
+    // It keeps its size, weight and colour. Its bottom padding is the only
+    // gap above the Services eyebrow, and no word breaks mid-word.
     test(`positioning section layout, spacing and wrapping at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       const m = await page.evaluate(() => {
         const block = document.querySelector('main > div:not([id])')!
-        const [statement, support] = [...block.querySelectorAll('p')]
+        const paragraphs = [...block.querySelectorAll('p')]
+        const [statement] = paragraphs
+        const inner = block.firstElementChild!
         const eyebrow = document.querySelector('#services p')!
         const box = (element: Element) => element.getBoundingClientRect()
         const probe = document.createElement('div')
         probe.style.paddingTop = 'var(--space-section)'
+        probe.style.fontSize = 'var(--text-3xl)'
+        probe.style.color = 'var(--color-heading)'
+        probe.style.width = 'var(--container-narrow)'
         document.body.append(probe)
-        const section = parseFloat(getComputedStyle(probe).paddingTop)
+        const probeStyle = getComputedStyle(probe)
+        const section = parseFloat(probeStyle.paddingTop)
+        const tokens = {
+          size: probeStyle.fontSize,
+          color: probeStyle.color,
+          narrow: parseFloat(probeStyle.width),
+        }
         probe.remove()
+        const innerStyle = getComputedStyle(inner)
+        const statementStyle = getComputedStyle(statement)
         // A word broken across lines leaves a line that starts or ends
         // mid-word: compare each line's text with the paragraph's words.
         const brokenWords = (element: Element) => {
@@ -1136,30 +1151,46 @@ for (const width of WIDTHS) {
         }
         return {
           section,
+          tokens,
+          paragraphs: paragraphs.length,
+          children: inner.children.length,
+          columns: innerStyle.display === 'grid' ? innerStyle.gridTemplateColumns.split(' ').length : 1,
+          content: box(inner).width - parseFloat(innerStyle.paddingLeft) - parseFloat(innerStyle.paddingRight),
+          contentLeft: box(inner).left + parseFloat(innerStyle.paddingLeft),
           statement: box(statement),
-          support: box(support),
+          size: statementStyle.fontSize,
+          weight: statementStyle.fontWeight,
+          color: statementStyle.color,
           eyebrowTop: box(eyebrow).top,
           eyebrowText: eyebrow.textContent,
           blockPadding: getComputedStyle(block).paddingBottom,
-          broken: [...brokenWords(statement), ...brokenWords(support)],
+          broken: brokenWords(statement),
         }
       })
       const detail = JSON.stringify(m)
 
       expect(m.eyebrowText, detail).toMatch(/Capabilities$/)
       expect(m.broken, detail).toEqual([])
-      if (width >= 1024) {
-        expect(Math.abs(m.statement.top - m.support.top), detail).toBeLessThanOrEqual(1)
-        expect(m.support.left, detail).toBeGreaterThan(m.statement.right)
-        expect(m.statement.width, detail).toBeGreaterThan(m.support.width)
-      } else {
-        expect(m.support.top, detail).toBeGreaterThanOrEqual(m.statement.bottom)
+      // One paragraph in one column: nothing beside it.
+      expect(m.paragraphs, detail).toBe(1)
+      expect(m.children, detail).toBe(1)
+      expect(m.columns, detail).toBe(1)
+      expect(Math.abs(m.statement.left - m.contentLeft), detail).toBeLessThanOrEqual(1)
+      // Its size, weight and colour are unchanged.
+      expect(m.size, detail).toBe(m.tokens.size)
+      expect(m.weight, detail).toBe('300')
+      expect(m.color, detail).toBe(m.tokens.color)
+      // A display measure, not the full container: at 1440px it stops
+      // well short of the content width, so the line is not over-long.
+      expect(m.statement.width, detail).toBeLessThanOrEqual(m.tokens.narrow + 1)
+      expect(m.statement.width, detail).toBeLessThanOrEqual(m.content + 1)
+      if (width === 1440) {
+        expect(m.statement.width, detail).toBeLessThan(0.75 * m.content)
       }
       expect(parseFloat(m.blockPadding), detail).toBeCloseTo(m.section, 0)
-      const gap = m.eyebrowTop - Math.max(m.statement.bottom, m.support.bottom)
+      const gap = m.eyebrowTop - m.statement.bottom
       expect(gap, detail).toBeGreaterThanOrEqual(m.section - 1)
-      // Not doubled, measured from the taller column (the problem
-      // statement since #63).
+      // Not doubled.
       if (width === 1440) {
         expect(gap, detail).toBeLessThanOrEqual(1.25 * m.section)
       }

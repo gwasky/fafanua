@@ -38,6 +38,24 @@ for (const width of [1216, 1280, 1440, 1920]) {
   })
 }
 
+// W3 in the trust and lineage plan (#70): the Services header is the
+// eyebrow and the h2 alone, with no intro paragraphs, and no h2 on the
+// page says "business intelligence".
+test('the Services header is the eyebrow and the W3 h2, then the rail, and no h2 says business intelligence', async ({ page }) => {
+  await openPage(page, 1440)
+  const h2 = region(page).getByRole('heading', { level: 2 })
+  await expect(h2).toHaveText(servicesIntro.heading)
+  const intro = await h2.evaluate((heading) => ({
+    children: [...heading.parentElement!.children].map((child) => child.tagName),
+    eyebrow: heading.parentElement!.firstElementChild!.textContent,
+    next: heading.parentElement!.nextElementSibling!.querySelector('ol') !== null,
+  }))
+  expect(intro).toEqual({ children: ['P', 'H2'], eyebrow: '01 \u2014 Capabilities', next: true })
+  const h2s = await page.getByRole('heading', { level: 2 }).allTextContents()
+  expect(h2s.length).toBeGreaterThan(1)
+  for (const text of h2s) expect(text).not.toMatch(/business intelligence/i)
+})
+
 test('between 1024 and 1216px the longest names wrap to two lines rather than shrink', async ({ page }) => {
   for (const width of [1024, 1100, 1215]) {
     await openPage(page, width)
