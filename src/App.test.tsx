@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
 import { navigation, navigationCta } from './data/navigation.ts'
-import { positioningProblem, positioningResponse } from './data/positioning.ts'
+import { positioningProblem } from './data/positioning.ts'
 import { processStages } from './data/process.ts'
 import { managedServices, services, servicesIntro } from './data/services.ts'
 import { solutions } from './data/solutions.ts'
@@ -12,13 +12,22 @@ const FUTURE_READY = 'Trusted foundations for what comes next'
 // Plan V2 §16, with its typographic apostrophe (U+2019).
 const CONTACT = 'Let\u2019s build a data foundation your organisation can trust.'
 const HERO = 'Trusted Data. Better Decisions.'
-// The Services section is named by its h2, the approved intro heading.
+// The Services section is named by its h2, W3's heading in the trust and
+// lineage plan (#70; services.plan.test.ts checks it against the plan).
 const SERVICES = servicesIntro.heading
 // The Managed Services section is named by its h2, the plan V2 §10 heading.
 const MANAGED = managedServices.sectionHeading
-// The positioning section's problem and response (refinement plan §3).
+// The positioning section's problem (refinement plan §3), its one
+// paragraph since #70 removed the response.
 const POSITIONING = positioningProblem
-const STATEMENT = positioningResponse
+// The paragraphs W3 in the trust and lineage plan removed because they
+// restated the hero (#70): the positioning section's response and the two
+// Services intro paragraphs.
+const REMOVED = [
+  'Fafanua helps organisations build and strengthen the foundations underneath reporting, analytics and operations',
+  'Fafanua helps organisations design modern data platforms, connect business systems',
+  'Our capabilities span the full data lifecycle',
+]
 
 // jsdom has no matchMedia, which the header uses for its breakpoint.
 beforeEach(() => {
@@ -70,19 +79,17 @@ describe('App', () => {
     render(<App />)
     const hero = screen.getByRole('region', { name: HERO })
     const lead = screen.getByText(POSITIONING)
-    const statement = screen.getByText(STATEMENT)
     const positioning = hero.nextElementSibling
     const services = screen.getByRole('region', { name: SERVICES })
 
     expect(screen.getByRole('main')).toContainElement(services)
-    expect(hero).not.toContainElement(statement)
+    expect(hero).not.toContainElement(lead)
     expect(positioning).not.toBeNull()
     expect(positioning!.tagName).toBe('DIV')
     expect(positioning).toContainElement(lead)
-    expect(positioning).toContainElement(statement)
-    expect(
-      lead.compareDocumentPosition(statement) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
+    // One paragraph, the problem, and nothing focusable (#70).
+    expect([...positioning!.querySelectorAll('p')]).toEqual([lead])
+    expect(positioning!.querySelector('h1, h2, h3, a, button, [tabindex]')).toBeNull()
     expect(positioning).not.toHaveClass('surface-dark')
     expect(positioning).not.toHaveClass('surface-alt')
     expect(positioning!.nextElementSibling).toBe(services)
@@ -117,6 +124,39 @@ describe('App', () => {
 
     expect(text).not.toContain('Fafanua helps organisations build reliable data foundations')
     expect(text).not.toContain('Fafanua helps East African businesses')
+  })
+
+  it('shows none of the paragraphs that restated the hero (#70)', () => {
+    render(<App />)
+    const text = document.body.textContent!
+
+    for (const removed of REMOVED) expect(text).not.toContain(removed)
+    // The hero paragraph is the only text about tracing numbers to their
+    // source: no other paragraph in main repeats it. ("Traceable" and
+    // "traceability" in the process stages and the diagram's terms are
+    // not the hero's claim.)
+    const hero = screen.getByRole('region', { name: HERO })
+    const tracing = [...screen.getByRole('main').querySelectorAll('p')].filter((p) =>
+      /\btrace\b|to the source|back to (its|their) source/i.test(p.textContent!),
+    )
+    expect(tracing).toHaveLength(1)
+    for (const paragraph of tracing) expect(hero).toContainElement(paragraph)
+  })
+
+  it('has the Services h2 W3 names, and no h2 that says "business intelligence" (#70)', () => {
+    render(<App />)
+    const h2s = screen.getAllByRole('heading', { level: 2 })
+
+    expect(SERVICES).toMatch(/^From fragmented data to numbers you can /)
+    expect(screen.getByRole('heading', { level: 2, name: SERVICES })).toHaveAttribute(
+      'id',
+      'services-heading',
+    )
+    for (const h2 of h2s) expect(h2.textContent).not.toMatch(/business intelligence/i)
+    // The card h3 is service copy and stays (read from the data, as service
+    // copy may not be repeated outside services.ts).
+    const bi = services.find((service) => /business intelligence/i.test(service.name))!
+    expect(screen.getByRole('heading', { level: 3, name: bi.name })).toBeInTheDocument()
   })
 
   it('orders main as hero, positioning, Services, Managed, Solutions, How We Work, future-ready, About, Contact', () => {

@@ -41,7 +41,7 @@ function expectInOrder(elements: HTMLElement[]) {
 }
 
 describe('Services', () => {
-  it('is section#services, named by its h2, the approved intro heading', () => {
+  it('is section#services, named by its h2, the W3 heading', () => {
     const { section } = renderServices()
     const heading = within(section).getByRole('heading', { level: 2 })
     const nav = navigation.find((item) => item.label === 'Services')
@@ -73,24 +73,24 @@ describe('Services', () => {
     expect(within(section).queryByRole('heading', { name: 'Services' })).toBeNull()
   })
 
-  it('opens with the eyebrow, the h2, the two intro paragraphs, the rail, then the grid', () => {
+  it('opens with the eyebrow, the h2, then the rail and the grid, with no intro paragraphs (#70)', () => {
     const { section, rail, grid } = renderServices()
     const eyebrow = within(section).getByText('01 — Capabilities')
     const h2 = within(section).getByRole('heading', { level: 2 })
-    const paragraphs = servicesIntro.paragraphs.map((text) =>
-      within(section).getByText(text),
-    )
+    const intro = h2.parentElement!
 
     expect(eyebrow.tagName).toBe('P')
     expect(eyebrow.textContent).toBe('01 \u2014 Capabilities')
-    expectInOrder([eyebrow, h2, ...paragraphs, rail, grid])
-    for (const [index, paragraph] of paragraphs.entries()) {
-      expect(paragraph.tagName).toBe('P')
-      expect(paragraph.textContent).toBe(servicesIntro.paragraphs[index])
-      expect(grid).not.toContainElement(paragraph)
-      expect(rail).not.toContainElement(paragraph)
-    }
-    expect(paragraphs[1].textContent).toContain('\u2014')
+    expect(h2.textContent).toBe(servicesIntro.heading)
+    expectInOrder([eyebrow, h2, rail, grid])
+    // The intro holds the eyebrow and the h2 and nothing else: the two
+    // paragraphs W3 in the trust and lineage plan removed are gone.
+    expect([...intro.children]).toEqual([eyebrow, h2])
+    expect(intro.nextElementSibling).toContainElement(rail)
+    expect(section.querySelector('.services__intro-text')).toBeNull()
+    expect(section.textContent).not.toContain('Fafanua helps organisations')
+    expect(section.textContent).not.toContain('Our capabilities span the full data lifecycle')
+    expect(h2.textContent).not.toMatch(/business intelligence/i)
     // Nothing comes before the eyebrow.
     expect(section.textContent!.startsWith('01 \u2014 Capabilities')).toBe(true)
   })

@@ -32,7 +32,6 @@ const allStrings = [
     ...service.tags,
   ]),
   servicesIntro.heading,
-  ...servicesIntro.paragraphs,
   ...managedStrings,
 ]
 
@@ -96,12 +95,13 @@ describe('services', () => {
     }
   })
 
-  it('has an intro heading and two paragraphs', () => {
-    expect(servicesIntro.heading).not.toBe('')
-    expect(servicesIntro.paragraphs).toHaveLength(2)
+  // W3 in the trust and lineage plan (#70) removed the two paragraphs.
+  it('has an intro heading and no paragraphs', () => {
+    expect(servicesIntro.heading).toMatch(/^From fragmented data to numbers you can /)
+    expect(Object.keys(servicesIntro)).toEqual(['heading'])
   })
 
-  // The em dash in the intro is the one exception to plain ASCII.
+  // The em dash is the one exception to plain ASCII.
   it('uses plain single-line ASCII strings, plus the em dash, without stray whitespace', () => {
     for (const text of allStrings) {
       expect(text).toMatch(/^[\x20-\x7E\u2014]+$/)

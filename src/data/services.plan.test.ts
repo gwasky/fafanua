@@ -1,9 +1,14 @@
 // Checks services.ts against _docs/plan-fafanua-services-positioning.md
 // (Sections 3, 5-12 and 13), which is authoritative for service copy, so the
-// wording on the site cannot drift from it. The ?raw import resolves
-// relative to this file and is never part of the production bundle.
+// wording on the site cannot drift from it. The one exception is the intro:
+// W3 in _docs/fafanua-trust-lineage-positioning-plan.md (#70) replaced the
+// Section 11 heading and removed its two paragraphs, so the heading is
+// checked against W3 and the paragraphs as absent. The ?raw imports
+// resolve relative to this file and are never part of the production
+// bundle.
 import { describe, expect, it } from 'vitest'
 import positioning from '../../_docs/plan-fafanua-services-positioning.md?raw'
+import trustPlan from '../../_docs/fafanua-trust-lineage-positioning-plan.md?raw'
 import servicesSource from './services.ts?raw'
 import { managedServices, services, servicesIntro, stages } from './services.ts'
 
@@ -113,6 +118,16 @@ function parseReverseEtl(markdown: string) {
 const docLabels = parseLabels(doc)
 const docServices = [5, 6, 7, 8, 9, 10].map((n) => parseService(doc, n))
 const docIntro = parseIntro(doc)
+
+// W3 in the trust and lineage plan, up to the next `### ` item: its
+// "Capabilities header" bullet names the Section 11 heading it replaces, in
+// quotes, and the new heading, in bold.
+const trust = trustPlan.replace(/\r\n/g, '\n')
+const w3Start = trust.indexOf('\n### W3. Remove repeated copy\n')
+const w3 = trust.slice(w3Start, trust.indexOf('\n### ', w3Start + 1))
+const w3Header = w3.split('\n').find((line) => line.startsWith('- **Capabilities header:**')) ?? ''
+const w3Match = /change the heading "(.+?)" to \*\*(.+?)\*\*, and delete the two paragraphs beneath it\./.exec(w3Header)
+const w3Intro = { replaces: w3Match?.[1] ?? '', heading: w3Match?.[2] ?? '' }
 const docManaged = parseManaged(doc)
 const docReverseEtl = parseReverseEtl(doc)
 
@@ -140,6 +155,13 @@ describe('positioning doc parser', () => {
   it('finds the intro heading and two paragraphs in Section 11', () => {
     expect(docIntro.heading).not.toBe('')
     expect(docIntro.paragraphs).toHaveLength(2)
+  })
+
+  it('finds the Capabilities header item in W3 of the trust and lineage plan, replacing Section 11\'s heading', () => {
+    expect(w3Start).toBeGreaterThan(-1)
+    expect(w3Intro.heading).not.toBe('')
+    expect(w3Intro.heading).not.toContain('*')
+    expect(w3Intro.replaces).toBe(docIntro.heading)
   })
 
   it('finds the managed-services copy, 13 capabilities and a three-step journey in Section 12', () => {
@@ -176,9 +198,11 @@ describe('services wording', () => {
     },
   )
 
-  it('matches the intro in Section 11', () => {
-    expect(servicesIntro.heading).toEqual(docIntro.heading)
-    expect(servicesIntro.paragraphs).toEqual(docIntro.paragraphs)
+  it('uses W3\'s intro heading, character for character, with no paragraphs (#70)', () => {
+    expect(servicesIntro.heading).toEqual(w3Intro.heading)
+    expect(servicesIntro.heading).not.toEqual(docIntro.heading)
+    expect(servicesIntro.heading).not.toMatch(/business intelligence/i)
+    expect(Object.keys(servicesIntro)).toEqual(['heading'])
   })
 
   it('lists Reverse ETL under Data Engineering & Integration, without the Section 6 examples', () => {
@@ -275,7 +299,6 @@ describe('other source files', () => {
         ...service.engagements,
       ]),
       servicesIntro.heading,
-      ...servicesIntro.paragraphs,
       managedServices.eyebrow,
       managedServices.heading,
       managedServices.description,
@@ -293,6 +316,30 @@ describe('other source files', () => {
       for (const step of steps) {
         expect(step.test(source), `${file} repeats "${step.source}"`).toBe(false)
       }
+    }
+  })
+
+  // The Section 11 heading and paragraphs W3 replaced and removed (#70)
+  // are in no source file, services.ts and the landing pages included.
+  it.each([
+    ['the old intro heading', docIntro.heading],
+    ['the first intro paragraph', docIntro.paragraphs[0]],
+    ['the second intro paragraph', docIntro.paragraphs[1]],
+  ])('no longer hold %s (#70)', (_name, text) => {
+    const all = [
+      ...sources,
+      ['/src/data/services.ts', servicesSource],
+      ...Object.entries(
+        import.meta.glob<string>('/src/data/servicePages.ts', {
+          query: '?raw',
+          import: 'default',
+          eager: true,
+        }),
+      ),
+    ]
+    expect(all.map(([file]) => file)).toContain('/src/data/servicePages.ts')
+    for (const [file, source] of all) {
+      expect(source.includes(text), `${file} holds "${text}"`).toBe(false)
     }
   })
 })

@@ -1,12 +1,14 @@
 // Checks positioning.ts against the V2 refinement plan §3, so the
 // positioning section's wording on the site cannot drift from it: the
-// problem is the left column's quote and the response the right column's
-// (#63). The ?raw imports resolve relative to this file and are never part
-// of the production bundle.
+// problem is the left column's quote (#63). The response, the right
+// column's quote, was removed by W3 in the trust and lineage plan (#70),
+// so it is checked as absent from src/. The ?raw imports resolve relative
+// to this file and are never part of the production bundle.
 import { describe, expect, it } from 'vitest'
 import refinement from '../../_docs/fafanua-v2-refinement-plan.md?raw'
 import positioningSource from './positioning.ts?raw'
-import { positioningProblem, positioningResponse } from './positioning.ts'
+import * as positioning from './positioning.ts'
+import { positioningProblem } from './positioning.ts'
 
 const doc = refinement.replace(/\r\n/g, '\n')
 
@@ -42,9 +44,10 @@ describe('positioning wording', () => {
     expect(positioningProblem).toBe(problem[0])
   })
 
-  it('uses the right column\'s response, character for character, with its em dash', () => {
-    expect(positioningResponse).toBe(response[0])
-    expect(positioningResponse).toContain(' — ')
+  it('no longer exports the right column\'s response, or any copy but the problem (#70)', () => {
+    expect(Object.keys(positioning)).toEqual(['positioningProblem'])
+    expect(positioningSource).not.toContain(response[0])
+    expect(response[0]).toContain(' — ')
   })
 })
 
@@ -58,7 +61,8 @@ describe('positioning source', () => {
 })
 
 describe('other source files', () => {
-  // Every source file under src/ except positioning.ts and test files.
+  // Every source file under src/ except positioning.ts and test files
+  // (positioning.ts is checked above, and no longer holds the response).
   const sources = Object.entries(
     import.meta.glob<string>('/src/**/*.{ts,tsx,css,html}', {
       query: '?raw',
@@ -73,7 +77,8 @@ describe('other source files', () => {
 
   it.each([
     ['the problem', positioningProblem],
-    ['the response', positioningResponse],
+    // Removed by W3 in the trust and lineage plan (#70).
+    ['the response', response[0]],
     // The two paragraphs the refinement replaced.
     ['the old statement', 'Fafanua helps organisations build reliable data foundations'],
     ['the old supporting copy', 'Fafanua helps East African businesses'],

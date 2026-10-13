@@ -1,8 +1,8 @@
 /*
- * Services: the eyebrow and the display heading (plan V2 §9), a short
- * intro, the lifecycle rail (LifecycleRail.css) and a grid of service
- * cards on the page background. The intro is plain text, lighter than the
- * grid: no card, border or fill, and no wider than the reading measure.
+ * Services: the eyebrow and the display heading (plan V2 §9), with no
+ * intro paragraphs since #70, the lifecycle rail (LifecycleRail.css) and a
+ * grid of service cards on the page background. The intro (eyebrow and
+ * heading) is plain text, lighter than the grid: no card, border or fill.
  * The grid is one column by default, two from 768px and three from 1024px
  * (literal breakpoints; see the note in tokens.css).
  *
@@ -31,25 +31,16 @@
 }
 
 /* Graphite 900 on paper (14.9:1), weight 300 from the global heading
-   styles. */
+   styles. The last thing in the intro, so the intro's own margin alone
+   sets the gap to the rail. */
 .services__heading {
   max-width: var(--measure-display);
-  margin-block-end: var(--space-6);
+  margin-block-end: 0;
   font-size: var(--text-section);
   line-height: var(--leading-display);
   /* Break a word only if it cannot fit on a line of its own, rather than
      anywhere as .container allows. */
   overflow-wrap: break-word;
-}
-
-/* Graphite 600 on paper (6.0:1). */
-.services__intro-text {
-  max-width: var(--measure);
-  margin-block: 0 var(--space-4);
-  color: var(--color-text-muted);
-  font-size: var(--text-body-lg);
-  overflow-wrap: break-word;
-  text-wrap: pretty;
 }
 
 /* From 64em the heading is a restrained section title rather than a
@@ -62,10 +53,6 @@
     font-size: var(--text-3xl);
     line-height: var(--leading-tight);
   }
-}
-
-.services__intro-text:last-child {
-  margin-block-end: 0;
 }
 
 .services__list {

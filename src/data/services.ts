@@ -1,8 +1,9 @@
-// The Services section (its intro and the six service cards) and the
+// The Services section (its heading and the six service cards) and the
 // Managed Services section that follows it. The wording is copied
 // verbatim from _docs/plan-fafanua-services-positioning.md (Sections 3,
-// 5-12 and 13), which is authoritative for service copy, and
-// services.plan.test.ts checks it against that document. Each service's
+// 5-10, 12 and 13), which is authoritative for service copy, and
+// services.plan.test.ts checks it against that document (the heading
+// against W3 in the trust and lineage plan). Each service's
 // capability tags are the lists in plan V2 Section 9
 // (_docs/fafanua-v2-visual-upgrade-plan.md), checked by
 // services.tags.plan.test.ts, and the Managed Services section's heading,
@@ -36,13 +37,13 @@ export const stages: Readonly<Record<Stage, string>> = {
   decide: 'Decide',
 }
 
-// Shown under the Services heading, above the cards.
+// The Services section's h2, above the lifecycle rail and the cards. W3
+// in _docs/fafanua-trust-lineage-positioning-plan.md (#70) replaced the
+// services-positioning doc's intro heading with this one and removed the
+// two intro paragraphs beneath it, which restated the hero; the rest of
+// the service copy here still follows the services-positioning doc.
 export const servicesIntro = {
-  heading: 'From fragmented data to trusted business intelligence',
-  paragraphs: [
-    'Fafanua helps organisations design modern data platforms, connect business systems, establish trusted analytical models, improve data quality and governance, and build reporting products that support real decisions.',
-    'Our capabilities span the full data lifecycle — from architecture and engineering to analytics and ongoing platform management.',
-  ],
+  heading: 'From fragmented data to numbers you can trace',
 } as const
 
 export const services = [

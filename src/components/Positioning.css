@@ -1,14 +1,16 @@
 /*
  * Positioning: a light, spacious block between the dark hero and Services
- * (plan V2 §8): the problem as the statement, then Fafanua's response as
- * the supporting copy (refinement plan §3). Not a card: no border, fill, radius or shadow, on the
- * page background. The statement is large and light, in graphite 900 on
- * paper (14.9:1); the supporting copy is graphite 600 on paper (6.0:1).
- *
- * One column by default, the statement above the supporting copy. From
- * 64em (1024px; literal breakpoint, see the note in tokens.css) two
- * columns, top-aligned: the statement in the wider start column and the
- * supporting copy beside it, so the visual order is the DOM order.
+ * (plan V2 §8): the problem as one large statement (refinement plan §3).
+ * Fafanua's response beside it was removed as it restated the hero (W3 in
+ * the trust and lineage plan, #70), so the block is one column at every
+ * width. Not a card: no border, fill, radius or shadow, on the page
+ * background. The statement is large and light, in graphite 900 on paper
+ * (14.9:1). It is capped at --container-narrow (45rem, about the width of
+ * the start column it filled when it shared the block with the response),
+ * a display measure of roughly 35 to 40 characters at --text-3xl, so it
+ * does not stretch to an over-long line on wide screens. --measure-display
+ * (16ch) is sized for the --text-hero and --text-section headings and
+ * would break this statement into ten or more lines.
  *
  * Its --space-section bottom padding is the whole gap above Services:
  * Services.css drops that section's top padding when it follows this
@@ -20,16 +22,10 @@
   background-color: var(--color-bg);
 }
 
-.positioning__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-6);
-  align-items: start;
-}
-
-/* Both paragraphs break a word only if it cannot fit on a line of its
-   own, rather than anywhere as .container allows. */
+/* Breaks a word only if it cannot fit on a line of its own, rather than
+   anywhere as .container allows. */
 .positioning__statement {
+  max-width: var(--container-narrow);
   margin-block: 0;
   color: var(--color-heading);
   font-size: var(--text-3xl);
@@ -37,20 +33,4 @@
   line-height: var(--leading-tight);
   overflow-wrap: break-word;
   text-wrap: balance;
-}
-
-.positioning__support {
-  max-width: var(--measure);
-  margin-block: 0;
-  color: var(--color-text-muted);
-  font-size: var(--text-body-lg);
-  overflow-wrap: break-word;
-  text-wrap: pretty;
-}
-
-@media (min-width: 64em) {
-  .positioning__layout {
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    column-gap: var(--space-16);
-  }
 }
