@@ -1,15 +1,18 @@
 // Checks about.ts against the V2 refinement plan §10, so the About
 // wording on the site cannot drift from it (#63): the heading and the
 // supporting statement from its "### Left" column, and the description
-// from its "### Right" column. The optional themes are not used. The ?raw
+// from its "### Right" column, with W6's "organisations in Africa" (#72).
+// The optional themes are not used. The ?raw
 // import resolves relative to this file and is never part of the
 // production bundle.
 import { describe, expect, it } from 'vitest'
 import refinement from '../../_docs/fafanua-v2-refinement-plan.md?raw'
+import trustPlan from '../../_docs/fafanua-trust-lineage-positioning-plan.md?raw'
 import aboutSource from './about.ts?raw'
 import { aboutHeading, aboutParagraph, aboutStatement } from './about.ts'
 
 const doc = refinement.replace(/\r\n/g, '\n')
+const trustDoc = trustPlan.replace(/\r\n/g, '\n')
 
 // §10, from its `# 10. ` heading up to the next `# ` heading.
 const start = doc.indexOf('\n# 10. About Section\n')
@@ -47,8 +50,11 @@ describe('about wording', () => {
     expect(aboutStatement).toBe(left[1])
   })
 
-  it('uses the right column\'s description, character for character', () => {
-    expect(aboutParagraph).toBe(right[0])
+  it('uses the right column\'s description, character for character, apart from W6\'s one phrase (#72)', () => {
+    expect(right[0]).toContain('helps African organisations')
+    expect(aboutParagraph).toBe(
+      right[0].replace('helps African organisations', 'helps organisations in Africa'),
+    )
   })
 
   it('does not use the optional themes', () => {
@@ -57,9 +63,18 @@ describe('about wording', () => {
     }
   })
 
-  it('keeps "African organisations" as the plan writes it', () => {
-    expect(aboutParagraph).toContain('helps African organisations')
+  it('says "organisations in Africa", not "African organisations" (trust and lineage plan section 6, #72)', () => {
+    expect(trustDoc).toContain('Say "organisations in Africa", not "African organisations"')
+    expect(aboutParagraph).toContain('helps organisations in Africa')
+    expect(aboutParagraph).not.toMatch(/African organisations/i)
     expect(aboutParagraph).not.toMatch(/East African/)
+  })
+
+  it('does not stack "trusted", "reliable" and "dependable" (section 6): no "reliable"', () => {
+    const text = [aboutHeading, aboutStatement, aboutParagraph].join(' ')
+    expect(text).toMatch(/\bdependable\b/)
+    expect(text).toMatch(/\btrusted\b/)
+    expect(text).not.toMatch(/reliab/i)
   })
 })
 

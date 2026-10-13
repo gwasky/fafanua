@@ -570,6 +570,42 @@ describe('App', () => {
     ])
   })
 
+  // The vocabulary rules in section 6 of the trust and lineage plan (W6,
+  // #72): "provenance" and "data operating system" are retired, and
+  // homepage copy says "organisations in Africa" rather than "African
+  // organisations" or a single region's businesses.
+  it('uses none of the retired vocabulary anywhere on the homepage (W6)', () => {
+    render(<App />)
+    const text = document.body.textContent!
+
+    expect(text).not.toMatch(/provenance/i)
+    expect(text).not.toMatch(/data operating system/i)
+    expect(text).not.toMatch(/operating data system/i)
+    expect(text).not.toMatch(/African organisations/i)
+    expect(text).not.toMatch(/East African businesses/i)
+    expect(text).toContain('organisations in Africa')
+    expect(text).toContain(systemFlow.heading)
+  })
+
+  // Section 6 also says not to stack "trusted", "reliable" and
+  // "dependable" in one section. The Services section and the Managed
+  // Services panel are service copy (the services-positioning doc), out of
+  // scope for #72, so they are not checked here.
+  it('stacks "trusted", "reliable" and "dependable" in no section outside service copy (W6)', () => {
+    render(<App />)
+    // Every child of main (the positioning block is not a section).
+    const sections = [...screen.getByRole('main').children].filter(
+      (section) => !['services', 'managed-services'].includes(section.id),
+    )
+
+    expect(sections).toHaveLength(8)
+    for (const section of sections) {
+      const text = section.textContent!
+      const all = [/\btrust/i, /\breliab/i, /\bdependab/i].every((word) => word.test(text))
+      expect(all, `${section.id || section.className} stacks all three`).toBe(false)
+    }
+  })
+
   // "Intelligence" is allowed only as "business intelligence" (the
   // services-positioning doc's services and solutions) and "payment
   // intelligence", never as a Fafanua product name. The hero's supporting

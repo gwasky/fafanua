@@ -3,11 +3,12 @@ import { describe, expect, it } from 'vitest'
 import { navigation } from '../data/navigation.ts'
 import About from './About.tsx'
 
-// The refinement plan §10 (#63), character for character.
+// The refinement plan §10 (#63), character for character, apart from
+// "organisations in Africa" (W6 in the trust and lineage plan, #72).
 const HEADING = 'About Fafanua'
 const STATEMENT = 'Data foundations built for how organisations actually operate.'
 const PARAGRAPH =
-  'Fafanua Technologies Limited helps African organisations build and strengthen dependable data platforms and analytical systems. We combine data engineering, business modelling, governance and reporting expertise to turn fragmented organisational data into trusted assets for decision-making.'
+  'Fafanua Technologies Limited helps organisations in Africa build and strengthen dependable data platforms and analytical systems. We combine data engineering, business modelling, governance and reporting expertise to turn fragmented organisational data into trusted assets for decision-making.'
 
 // Claims the section must not make: an existing Intelligence product, SaaS
 // or AI features, or a founder-led company.
@@ -55,10 +56,11 @@ describe('About', () => {
     expect(paragraphs[1].textContent).toBe(PARAGRAPH)
   })
 
-  it('keeps "African organisations" rather than "East African"', () => {
+  it('says "organisations in Africa", not "African organisations" or "East African" (#72)', () => {
     const section = renderAbout()
 
-    expect(section.textContent).toContain('helps African organisations')
+    expect(section.textContent).toContain('helps organisations in Africa')
+    expect(section.textContent).not.toMatch(/African organisations/i)
     expect(section.textContent).not.toContain('East African')
   })
 
