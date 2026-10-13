@@ -1,8 +1,10 @@
 // Checks hero.ts against the plans, so the hero's wording on the site
 // cannot drift from them: the headline, the core brand promise and the
-// calls to action against plan V2 §5, the brand promise against the
-// primary proposition in _docs/plan.md Section 5, and the supporting copy
-// against the V2 refinement plan §2 (#63), which replaced plan V2's. Both plans and AGENTS.md record the headline and the brand
+// call to action against W1 in the trust and lineage plan (#68), which
+// replaced plan V2 §5's two, the brand promise against the primary
+// proposition in _docs/plan.md Section 5, and the supporting copy against
+// the V2 refinement plan §2 (#63), which replaced plan V2's. Both plans
+// and AGENTS.md record the headline and the brand
 // promise as protected positioning (owner decision on #61). The ?raw
 // imports resolve relative to this file and are never part of the
 // production bundle.
@@ -11,18 +13,25 @@ import agents from '../../AGENTS.md?raw'
 import plan from '../../_docs/plan.md?raw'
 import planV2 from '../../_docs/fafanua-v2-visual-upgrade-plan.md?raw'
 import refinement from '../../_docs/fafanua-v2-refinement-plan.md?raw'
+import trustPlan from '../../_docs/fafanua-trust-lineage-positioning-plan.md?raw'
+import { ctaLabel } from './contact.ts'
 import heroSource from './hero.ts?raw'
 import {
   heroHeadingLines,
   heroPrimaryLabel,
   heroPromise,
-  heroSecondaryLabel,
   heroSupporting,
 } from './hero.ts'
+import * as hero from './hero.ts'
 
 const markdown = plan.replace(/\r\n/g, '\n')
 const markdownV2 = planV2.replace(/\r\n/g, '\n')
 const markdownRefinement = refinement.replace(/\r\n/g, '\n')
+const markdownTrust = trustPlan.replace(/\r\n/g, '\n')
+
+// W1 in the trust and lineage plan, up to the next `### ` item.
+const w1Start = markdownTrust.indexOf('\n### W1. One call to action\n')
+const w1 = markdownTrust.slice(w1Start, markdownTrust.indexOf('\n### ', w1Start + 1))
 
 // The text of _docs/plan.md Section 5, up to the next `## ` section.
 const planStart = markdown.indexOf('\n## 5. Core Positioning\n')
@@ -92,9 +101,17 @@ describe('hero wording', () => {
     expect(refinementSection).toContain(`> **${heroPromise}**`)
   })
 
-  it('labels the calls to action as plan V2 §5 does, the primary without its arrow', () => {
-    expect(v2Quotes[4]).toBe(`${heroPrimaryLabel} →`)
-    expect(heroSecondaryLabel).toBe(v2Quotes[5])
+  it('labels its one call to action with the W1 label, read from contact.ts (#68)', () => {
+    expect(w1Start).toBeGreaterThan(-1)
+    expect(heroPrimaryLabel).toBe(ctaLabel)
+    expect(heroPrimaryLabel).toBe('Book a data trust assessment')
+    expect(w1).toContain(`Use the label **${heroPrimaryLabel}** on the nav button, the hero primary button`)
+  })
+
+  it('has no secondary call to action, which W1 removes (#68)', () => {
+    expect(w1).toContain('Remove the hero secondary button ("Explore our capabilities")')
+    expect(Object.keys(hero)).not.toContain('heroSecondaryLabel')
+    expect(Object.values(hero).flat()).not.toContain('Explore our capabilities')
   })
 })
 
@@ -114,8 +131,10 @@ describe('hero source', () => {
   // The module's code without its comments, which name the plan.
   const code = heroSource.replace(/\/\/.*$/gm, '')
 
-  it('holds its strings as literals and does not read the plan', () => {
-    expect(code).not.toMatch(/\bimport\b|\brequire\(|\bfetch\(|readFile|plan\.md/)
+  it('holds its strings as literals, apart from the call to action label from contact.ts, and does not read the plan', () => {
+    const imports = code.match(/^import .*$/gm) ?? []
+    expect(imports).toEqual(["import { ctaLabel } from './contact.ts'"])
+    expect(code.replace(imports[0] ?? '', '')).not.toMatch(/\bimport\b|\brequire\(|\bfetch\(|readFile|plan\.md/)
   })
 
   it('has no JSX, React, class names, colours or tokens', () => {

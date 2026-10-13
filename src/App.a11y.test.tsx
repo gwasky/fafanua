@@ -125,14 +125,15 @@ describe('App links and buttons', () => {
       hrefs.set(name, (hrefs.get(name) ?? new Set()).add(href))
     }
 
-    // The one accepted exception (#60, WCAG 2.4.4 in context): the hero's
-    // "Discuss your data needs" lands on the closing call to action, whose
-    // button of the same name opens the email. Both start the conversation.
-    expect([...(hrefs.get('Discuss your data needs') ?? [])]).toEqual([
+    // The one accepted exception (#68, as on #60, WCAG 2.4.4 in context):
+    // the header's and the hero's "Book a data trust assessment" land on the
+    // closing call to action, whose button of the same name opens the
+    // email. All of them start the conversation.
+    expect([...(hrefs.get('Book a data trust assessment') ?? [])]).toEqual([
       '#contact',
       `mailto:${email}`,
     ])
-    hrefs.delete('Discuss your data needs')
+    hrefs.delete('Book a data trust assessment')
     for (const [name, set] of hrefs) {
       expect([...set], `links named "${name}"`).toHaveLength(1)
     }

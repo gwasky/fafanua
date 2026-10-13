@@ -111,15 +111,15 @@ describe('Header', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('ends with "Discuss a project →", named without the arrow, to #contact', () => {
+  it('ends with "Book a data trust assessment →", named without the arrow, to #contact', () => {
     const { nav } = renderPage()
-    const cta = within(nav).getByRole('link', { name: 'Discuss a project' })
+    const cta = within(nav).getByRole('link', { name: 'Book a data trust assessment' })
 
-    expect(navigationCta).toEqual({ label: 'Discuss a project', id: 'contact' })
+    expect(navigationCta).toEqual({ label: 'Book a data trust assessment', id: 'contact' })
     expect(cta).toHaveAttribute('href', '#contact')
     expect(cta).toHaveClass('button')
     expect(cta).not.toHaveClass('button--secondary')
-    expect(cta.textContent).toBe('Discuss a project→')
+    expect(cta.textContent).toBe('Book a data trust assessment→')
     const arrow = cta.querySelector('.button__arrow')
     expect(arrow?.textContent).toBe('→')
     expect(arrow).toHaveAttribute('aria-hidden', 'true')
@@ -132,7 +132,7 @@ describe('Header', () => {
 
     expect(items).toHaveLength(navigation.length + 1)
     expect(within(items.at(-1)!).getByRole('link')).toHaveAccessibleName(
-      'Discuss a project',
+      'Book a data trust assessment',
     )
   })
 
@@ -228,7 +228,7 @@ describe('Header', () => {
       .toBeInTheDocument()
   })
 
-  it.each([...navigation.map((item) => item.label), 'Discuss a project'])(
+  it.each([...navigation.map((item) => item.label), 'Book a data trust assessment'])(
     'closes when "%s" is chosen',
     (name) => {
       const { nav, toggle } = renderPage()
@@ -265,7 +265,7 @@ describe('Header', () => {
 
   it('does nothing on Escape while closed', () => {
     const { nav, toggle } = renderPage()
-    const link = within(nav).getByRole('link', { name: 'Discuss a project' })
+    const link = within(nav).getByRole('link', { name: 'Book a data trust assessment' })
     link.focus()
 
     fireEvent.keyDown(link, { key: 'Escape' })

@@ -1,11 +1,14 @@
 // The closing call to action's copy, and the address and phone number it
-// links to. The heading and the button label are plan V2 §16
-// (_docs/fafanua-v2-visual-upgrade-plan.md), the label without its arrow,
-// which Contact.tsx draws; the supporting copy is the second Section 11
-// suggested line in _docs/plan.md, which plan V2 §16 repeats.
-// contact.plan.test.ts checks all three against the plans. The phone
-// number is the owner's decision on #60. Contact.tsx and Footer.tsx read
-// these from here and nowhere else.
+// links to. The heading is plan V2 §16
+// (_docs/fafanua-v2-visual-upgrade-plan.md); the supporting copy is the
+// second Section 11 suggested line in _docs/plan.md, which plan V2 §16
+// repeats. ctaLabel is the site's one call to action (W1 in
+// _docs/fafanua-trust-lineage-positioning-plan.md, #68), without its
+// arrow, which each button draws: the header's button, the hero's button
+// and the closing button all show it, so it is defined here once and
+// navigation.ts and hero.ts read it from here. contact.plan.test.ts checks
+// all three against the plans. The phone number is the owner's decision
+// on #60. Contact.tsx and Footer.tsx read these from here and nowhere else.
 
 export const contactHeading =
   'Let’s build a data foundation your organisation can trust.'
@@ -13,7 +16,7 @@ export const contactHeading =
 export const contactText =
   'Tell us about the systems, reporting challenges, or data priorities your organisation is working through.'
 
-export const contactButtonLabel = 'Discuss your data needs'
+export const ctaLabel = 'Book a data trust assessment'
 
 export const email = 'info@fafanua.tech'
 

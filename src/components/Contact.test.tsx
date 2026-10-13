@@ -4,13 +4,13 @@ import { contactNavItem, footerNavigation, navigationCta } from '../data/navigat
 import Contact from './Contact.tsx'
 
 // Plan V2 §16 and plan Section 11, character for character: the heading
-// with its typographic apostrophe (U+2019), the supporting copy and the
-// button label without its arrow. The phone number is the owner's
-// decision on #60.
+// with its typographic apostrophe (U+2019) and the supporting copy; the
+// button label, without its arrow, is W1 in the trust and lineage plan
+// (#68). The phone number is the owner's decision on #60.
 const HEADING = 'Let\u2019s build a data foundation your organisation can trust.'
 const PARAGRAPH =
   'Tell us about the systems, reporting challenges, or data priorities your organisation is working through.'
-const LABEL = 'Discuss your data needs'
+const LABEL = 'Book a data trust assessment'
 const EMAIL = 'info@fafanua.tech'
 const HREF = 'mailto:info@fafanua.tech'
 const PHONE = '+256 752 008 822'

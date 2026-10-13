@@ -67,8 +67,8 @@
 /*
  * An arrow after a call to action's label:
  * <span class="button__arrow" aria-hidden="true">→</span>. Hidden from
- * assistive technology, so "Discuss a project →" is named "Discuss a
- * project". On hover and keyboard focus it moves --cta-arrow-shift towards
+ * assistive technology, so "Book a data trust assessment →" is named
+ * "Book a data trust assessment". On hover and keyboard focus it moves --cta-arrow-shift towards
  * the inline end; under reduced motion it stays still.
  */
 .button__arrow {

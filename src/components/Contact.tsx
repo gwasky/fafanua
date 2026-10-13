@@ -1,5 +1,5 @@
 import {
-  contactButtonLabel,
+  ctaLabel,
   contactHeading,
   contactText,
   email,
@@ -14,8 +14,9 @@ import './Contact.css'
 // src/data/contact.ts. The button says what the link does, with an arrow
 // hidden from assistive technology, so its name is the label alone; the
 // address and number are shown, so visitors with no mail app or phone can
-// select and copy them. The hero's "Discuss your data needs" shares the
-// button's name and purpose, starting the conversation, but lands here.
+// select and copy them. The header's and the hero's "Book a data trust
+// assessment" share the button's name and purpose, starting the
+// conversation, but land here (#68).
 // The id matches the "Contact" entry in src/data/navigation.ts. There is
 // no form in this release.
 function Contact() {
@@ -35,7 +36,7 @@ function Contact() {
         <p className="contact__text">{contactText}</p>
         <div className="contact__actions">
           <a className="button" href={href}>
-            {contactButtonLabel}
+            {ctaLabel}
             <span className="button__arrow" aria-hidden="true">
               →
             </span>

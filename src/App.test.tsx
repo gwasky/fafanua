@@ -178,19 +178,26 @@ describe('App', () => {
     )
   })
 
-  it('lands the header and hero Services links on the services section', () => {
+  it('lands the header and footer Services links on the services section, the hero having no Services link (#68)', () => {
     render(<App />)
     const services = screen.getByRole('region', { name: SERVICES })
     const targets = [
       within(screen.getByRole('banner')).getByRole('link', {
         name: 'Services',
       }),
-      screen.getByRole('link', { name: 'Explore our capabilities' }),
+      within(screen.getByRole('contentinfo')).getByRole('link', {
+        name: 'Services',
+      }),
     ]
 
     for (const link of targets) {
       expect(link).toHaveAttribute('href', `#${services.id}`)
     }
+    expect(
+      within(screen.getByRole('region', { name: HERO })).queryByRole('link', {
+        name: 'Explore our capabilities',
+      }),
+    ).not.toBeInTheDocument()
   })
 
   it('renders the Solutions section directly after Managed Services', () => {
@@ -301,12 +308,12 @@ describe('App', () => {
     render(<App />)
     const contact = screen.getByRole('region', { name: CONTACT })
     const nav = navigationCta
-    // The closing call to action shares the hero button's name but opens
-    // an email, so the hero's is found inside the hero.
+    // The closing call to action shares the header's and the hero's
+    // name but opens an email, so each is found inside its landmark.
     const targets = [
-      within(screen.getByRole('banner')).getByRole('link', { name: 'Discuss a project' }),
+      within(screen.getByRole('banner')).getByRole('link', { name: 'Book a data trust assessment' }),
       within(screen.getByRole('region', { name: HERO })).getByRole('link', {
-        name: 'Discuss your data needs',
+        name: 'Book a data trust assessment',
       }),
     ]
 
@@ -370,6 +377,35 @@ describe('App', () => {
     expect(links.map((link) => link.textContent)).toEqual(['+256 752 008 822', '+256 752 008 822'])
     expect(screen.getByRole('region', { name: CONTACT })).toContainElement(links[0] as HTMLElement)
     expect(screen.getByRole('contentinfo')).toContainElement(links[1] as HTMLElement)
+  })
+
+  it('gives the header, hero and closing buttons one label, with the retired labels gone (#68)', () => {
+    render(<App />)
+    const buttons = [
+      within(screen.getByRole('banner')).getByRole('link', { name: navigationCta.label }),
+      within(screen.getByRole('region', { name: HERO })).getByRole('link', {
+        name: navigationCta.label,
+      }),
+      within(screen.getByRole('region', { name: CONTACT })).getByRole('link', {
+        name: navigationCta.label,
+      }),
+    ]
+
+    expect(navigationCta.label).toBe('Book a data trust assessment')
+    expect(buttons.map((button) => button.getAttribute('href'))).toEqual([
+      '#contact',
+      '#contact',
+      'mailto:info@fafanua.tech',
+    ])
+    for (const button of buttons) {
+      expect(button).toHaveClass('button')
+      expect(button.textContent).toBe('Book a data trust assessment→')
+      expect(button.lastElementChild).toHaveAttribute('aria-hidden', 'true')
+    }
+    expect(screen.getAllByRole('link', { name: navigationCta.label })).toHaveLength(3)
+    for (const retired of ['Discuss a project', 'Discuss your data needs', 'Explore our capabilities']) {
+      expect(document.body.textContent).not.toContain(retired)
+    }
   })
 
   it('has no form, iframe or Turnstile script', () => {

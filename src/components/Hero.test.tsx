@@ -57,39 +57,41 @@ describe('Hero', () => {
     expect(within(hero).getByText(SUPPORTING).textContent).toBe(SUPPORTING)
   })
 
-  it('links the primary call to action to #contact and the secondary to #services', () => {
+  it('has exactly one link, the primary call to action, to #contact (#68)', () => {
     const hero = renderHero()
     const links = within(hero).getAllByRole('link')
 
-    expect(links).toHaveLength(2)
-    expect(links[0]).toHaveAccessibleName('Discuss your data needs')
+    expect(links).toHaveLength(1)
+    expect(links[0]).toHaveAccessibleName('Book a data trust assessment')
     expect(links[0]).toHaveAttribute('href', '#contact')
     expect(links[0]).toHaveClass('button')
     expect(links[0]).not.toHaveClass('button--secondary')
-    expect(links[1]).toHaveAccessibleName('Explore our capabilities')
-    expect(links[1]).toHaveAttribute('href', '#services')
-    expect(links[1]).toHaveClass('button', 'button--secondary')
-    for (const link of links) {
-      expect(link).not.toHaveAttribute('target')
-      expect(link).not.toHaveAttribute('aria-label')
-    }
+    expect(hero.querySelector('.button--secondary')).toBeNull()
+    expect(links[0]).not.toHaveAttribute('target')
+    expect(links[0]).not.toHaveAttribute('aria-label')
   })
 
-  it('ends only the primary call to action with a hidden arrow', () => {
+  it('ends the call to action with a hidden arrow', () => {
     const hero = renderHero()
-    const [primary, secondary] = within(hero).getAllByRole('link')
+    const [primary] = within(hero).getAllByRole('link')
     const arrow = primary.querySelector('.button__arrow')
 
-    expect(primary.textContent).toBe('Discuss your data needs→')
+    expect(primary.textContent).toBe('Book a data trust assessment→')
     expect(arrow).not.toBeNull()
     expect(arrow).toHaveTextContent('→')
     expect(arrow).toHaveAttribute('aria-hidden', 'true')
     expect(primary.lastElementChild).toBe(arrow)
-    expect(secondary.textContent).toBe('Explore our capabilities')
-    expect(secondary.querySelector('.button__arrow')).toBeNull()
   })
 
-  it('keeps the order heading, brand promise, supporting copy, calls to action', () => {
+  it('shows none of the retired labels (#68)', () => {
+    const hero = renderHero()
+
+    for (const retired of ['Explore our capabilities', 'Discuss your data needs', 'Discuss a project']) {
+      expect(hero.textContent).not.toContain(retired)
+    }
+  })
+
+  it('keeps the order heading, brand promise, supporting copy, call to action', () => {
     const hero = renderHero()
     const order = [
       within(hero).getByRole('heading', { level: 1 }),
@@ -120,14 +122,14 @@ describe('Hero', () => {
     expect(hero.children).toHaveLength(2)
   })
 
-  it('has only the heading, the brand promise, the supporting copy and the two links', () => {
+  it('has only the heading, the brand promise, the supporting copy and the one link', () => {
     const hero = renderHero()
     const container = hero.querySelector('.container')!
 
     expect([...container.children].map((child) => child.tagName)).toEqual(['H1', 'P', 'P', 'DIV'])
     expect(hero.querySelectorAll('p')).toHaveLength(2)
     expect(hero.textContent).toBe(
-      `${HEADING}${PROMISE}${SUPPORTING}Discuss your data needs→Explore our capabilities`,
+      `${HEADING}${PROMISE}${SUPPORTING}Book a data trust assessment→`,
     )
   })
 
