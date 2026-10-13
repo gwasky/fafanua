@@ -3,7 +3,8 @@
 // call to action against W1 in the trust and lineage plan (#68), which
 // replaced plan V2 §5's two, the brand promise against the primary
 // proposition in _docs/plan.md Section 5, and the supporting copy against
-// the V2 refinement plan §2 (#63), which replaced plan V2's. Both plans
+// W2 in the trust and lineage plan (#69), which replaced the V2
+// refinement plan §2's (#63), itself a replacement for plan V2's. Both plans
 // and AGENTS.md record the headline and the brand
 // promise as protected positioning (owner decision on #61). The ?raw
 // imports resolve relative to this file and are never part of the
@@ -33,6 +34,12 @@ const markdownTrust = trustPlan.replace(/\r\n/g, '\n')
 const w1Start = markdownTrust.indexOf('\n### W1. One call to action\n')
 const w1 = markdownTrust.slice(w1Start, markdownTrust.indexOf('\n### ', w1Start + 1))
 
+// W2 in the trust and lineage plan, up to the next `### ` item, and its
+// `> ` blockquote lines: the supporting copy.
+const w2Start = markdownTrust.indexOf('\n### W2. Hero supporting copy\n')
+const w2 = markdownTrust.slice(w2Start, markdownTrust.indexOf('\n### ', w2Start + 1))
+const w2Quotes = [...w2.matchAll(/^> (.+)$/gm)].map((match) => match[1].trimEnd())
+
 // The text of _docs/plan.md Section 5, up to the next `## ` section.
 const planStart = markdown.indexOf('\n## 5. Core Positioning\n')
 const planSection = markdown.slice(planStart, markdown.indexOf('\n## ', planStart + 1))
@@ -59,6 +66,13 @@ const refinementQuotes = [
 ].map((match) => match[1].trimEnd().replace(/^\*\*(.+)\*\*$/, '$1'))
 
 describe('plan parser', () => {
+  it('finds exactly one one-line blockquote in W2 of the trust and lineage plan', () => {
+    expect(w2Start).toBeGreaterThan(-1)
+    expect(w2Quotes).toHaveLength(1)
+    expect(w2Quotes[0]).not.toBe('')
+    expect(w2Quotes[0]).not.toContain('*')
+  })
+
   it('finds plan Section 5, plan V2 §5 and the refinement plan §2', () => {
     expect(planStart).toBeGreaterThan(-1)
     expect(v2Start).toBeGreaterThan(-1)
@@ -90,10 +104,14 @@ describe('hero wording', () => {
     expect(planSection).toContain(`Primary proposition:\n\n> ${heroPromise}\n`)
   })
 
-  it('uses the refinement plan §2 supporting copy, character for character', () => {
-    expect(heroSupporting).toBe(refinementQuotes[0])
-    // An em dash with a space each side, as the plan writes it.
-    expect(heroSupporting).toContain(' \u2014 ')
+  it('uses the W2 supporting copy, character for character (#69)', () => {
+    expect(heroSupporting).toBe(w2Quotes[0])
+    expect(heroSupporting).toBe(
+      'Fafanua helps organisations in Africa trace their key numbers to the source, so reporting, operations and finance can rely on their data, and analytics and AI have something solid to stand on.',
+    )
+    // No em dash, and not the refinement plan §2 copy it replaced.
+    expect(heroSupporting).not.toContain('\u2014')
+    expect(heroSupporting).not.toBe(refinementQuotes[0])
   })
 
   it('keeps the headline and the brand promise the refinement plan §2 retains', () => {
@@ -156,6 +174,13 @@ describe('other source files', () => {
     const files = sources.map(([file]) => file)
     expect(files).toContain('/src/components/Hero.tsx')
     expect(files).not.toContain('/src/data/hero.ts')
+  })
+
+  it('no longer hold the refinement plan §2 supporting copy that W2 replaced (#69)', () => {
+    expect(heroSource).not.toContain(refinementQuotes[0])
+    for (const [file, source] of sources) {
+      expect(source.includes(refinementQuotes[0]), `${file} holds the old supporting copy`).toBe(false)
+    }
   })
 
   it.each([

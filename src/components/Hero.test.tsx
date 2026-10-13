@@ -5,7 +5,7 @@ import Hero from './Hero.tsx'
 const HEADING = 'Trusted Data. Better Decisions.'
 const PROMISE = 'Build a data foundation you can trust.'
 const SUPPORTING =
-  'Fafanua helps organisations build and strengthen the data foundations behind their reporting, analytics and operations — connecting fragmented systems, improving trust in data, and turning organisational information into reliable business intelligence.'
+  'Fafanua helps organisations in Africa trace their key numbers to the source, so reporting, operations and finance can rely on their data, and analytics and AI have something solid to stand on.'
 
 function renderHero() {
   render(<Hero />)
@@ -51,10 +51,17 @@ describe('Hero', () => {
     expect(promise.nextElementSibling).toBe(within(hero).getByText(SUPPORTING))
   })
 
-  it('shows the supporting copy exactly', () => {
+  it('shows the supporting copy exactly, W2 in the trust and lineage plan (#69), in p.hero__lead', () => {
     const hero = renderHero()
+    const lead = within(hero).getByText(SUPPORTING)
 
-    expect(within(hero).getByText(SUPPORTING).textContent).toBe(SUPPORTING)
+    expect(lead.textContent).toBe(SUPPORTING)
+    expect(lead.tagName).toBe('P')
+    expect(lead).toHaveClass('hero__lead')
+    expect(hero.querySelectorAll('.hero__lead')).toHaveLength(1)
+    // The refinement plan §2 paragraph it replaced is gone.
+    expect(hero.textContent).not.toMatch(/build and strengthen the data foundations/)
+    expect(hero.textContent).not.toMatch(/business intelligence/)
   })
 
   it('has exactly one link, the primary call to action, to #contact (#68)', () => {
