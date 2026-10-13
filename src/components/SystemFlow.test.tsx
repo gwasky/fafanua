@@ -44,7 +44,7 @@ const NAMES = [
 ]
 
 describe('SystemFlow', () => {
-  it('is a plain div with an h3, "One connected data operating system", and its lead', () => {
+  it('is a plain div with an h3, "One connected data system" (#72), and its lead', () => {
     const { wrapper, heading } = renderFlow()
 
     expect(wrapper.tagName).toBe('DIV')
@@ -52,7 +52,8 @@ describe('SystemFlow', () => {
     expect(wrapper).not.toHaveAttribute('aria-label')
     expect(wrapper).not.toHaveAttribute('aria-labelledby')
     expect(heading.tagName).toBe('H3')
-    expect(heading.textContent).toBe('One connected data operating system')
+    expect(heading.textContent).toBe('One connected data system')
+    expect(wrapper.textContent).not.toMatch(/data operating system|provenance/i)
     expect(wrapper.firstElementChild).toBe(heading)
     expect(heading.nextElementSibling!.tagName).toBe('P')
     expect(heading.nextElementSibling!.textContent).toBe(

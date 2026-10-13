@@ -1,10 +1,14 @@
-// The connected data operating system diagram in the Services section
+// The connected data system diagram in the Services section
 // (#57, looped in #63, upgraded in #66). The wording is copied from the V2
 // visual enhancement plan
 // (_docs/fafanua-v2-visual-enhancements-services-and-operating-system.md):
-// the heading and lead from §4.1, each layer's lifecycle label and its
+// the lead from §4.1, each layer's lifecycle label and its
 // line from §4.3, its central layer (name, and supporting line or terms)
 // from §4.4, its detail panel from §5 and the return statement from §6.
+// The heading is §4.1's with "operating" removed: W6 in
+// _docs/fafanua-trust-lineage-positioning-plan.md retires "data operating
+// system" (its section 6) and gives no replacement, so the wording is
+// proposed on #72 for the owner to confirm.
 // systemFlow.plan.test.ts checks them against those sections.
 // SystemFlow.tsx reads its copy from here and holds none.
 //
@@ -60,7 +64,7 @@ export const systemFlow: {
   returnTitle: string
   returnText: string
 } = {
-  heading: 'One connected data operating system',
+  heading: 'One connected data system',
   lead: 'From operational systems to trusted reporting — and back into the tools your teams use every day.',
   returnTitle: 'Trusted data flows back into your operational systems',
   returnText: 'to drive better decisions and action, every day.',

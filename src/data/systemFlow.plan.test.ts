@@ -1,17 +1,20 @@
 // Checks systemFlow.ts against the V2 visual enhancement plan
 // (_docs/fafanua-v2-visual-enhancements-services-and-operating-system.md,
 // #66), which is the source of the diagram's wording, so the site cannot
-// drift from it: the heading and lead are §4.1, the flow §4.2, the
+// drift from it: the heading (less "operating", retired by W6 of the
+// trust and lineage plan, #72) and lead are §4.1, the flow §4.2, the
 // lifecycle labels and their lines §4.3, the central layers §4.4, the
 // detail panels §5 and the return statement §6. The ?raw imports resolve
 // relative to this file and are never part of the production bundle.
 import { describe, expect, it } from 'vitest'
 import plan from '../../_docs/fafanua-v2-visual-enhancements-services-and-operating-system.md?raw'
+import trustPlan from '../../_docs/fafanua-trust-lineage-positioning-plan.md?raw'
 import systemFlowSource from './systemFlow.ts?raw'
 import { services } from './services.ts'
 import { systemFlow } from './systemFlow.ts'
 
 const doc = plan.replace(/\r\n/g, '\n')
+const trustDoc = trustPlan.replace(/\r\n/g, '\n')
 
 // The text of top-level section `n`, from its `# n. ` heading up to the
 // next `# ` heading.
@@ -80,14 +83,26 @@ describe('enhancement plan parser', () => {
 })
 
 describe('systemFlow wording', () => {
-  it('uses §4.1\'s heading and supporting copy', () => {
-    // The first quote is the heading it replaces.
+  it('uses §4.1\'s supporting copy, and its heading with "operating" removed (W6, #72)', () => {
+    // The first quote is the heading §4.1 replaces; the second is §4.1's
+    // heading, which W6 retires.
     expect(quotes(s41)).toEqual([
       'How the services connect into one operating data system',
-      systemFlow.heading,
+      'One connected data operating system',
       systemFlow.lead,
     ])
-    expect(systemFlow.heading).toBe('One connected data operating system')
+    expect(systemFlow.heading).toBe('One connected data system')
+    expect(quotes(s41)[1].replace(' operating', '')).toBe(systemFlow.heading)
+  })
+
+  it('uses none of the vocabulary W6 retires (trust and lineage plan section 6)', () => {
+    const s6Start = trustDoc.indexOf('\n## 6. Vocabulary\n')
+    const vocabulary = trustDoc.slice(s6Start, trustDoc.indexOf('\n## ', s6Start + 1))
+    expect(s6Start).toBeGreaterThan(-1)
+    expect(vocabulary).toContain('Retire "provenance" and "data operating system".')
+    const text = JSON.stringify(systemFlow)
+    expect(text).not.toMatch(/data operating system|operating data system|provenance/i)
+    expect(systemFlow.heading).not.toMatch(/operating/i)
   })
 
   it('follows §4.2\'s flow, with Data Quality + Governance as the trust layer\'s two parts', () => {
