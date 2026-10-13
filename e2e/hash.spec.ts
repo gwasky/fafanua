@@ -457,11 +457,11 @@ test.describe('keyboard focus', () => {
     // The first card's title link (#67).
     { path: '/#services', next: services[0].name },
     { path: '/#solutions', next: sectors[0] },
-    { path: '/#how-we-work', next: 'Discuss your data needs' },
-    { path: '/#future-ready', next: 'Discuss your data needs' },
-    { path: '/#about', next: 'Discuss your data needs' },
-    { path: '/#contact', next: 'Discuss your data needs' },
-    { path: '/#main', next: 'Discuss your data needs' },
+    { path: '/#how-we-work', next: 'Book a data trust assessment' },
+    { path: '/#future-ready', next: 'Book a data trust assessment' },
+    { path: '/#about', next: 'Book a data trust assessment' },
+    { path: '/#contact', next: 'Book a data trust assessment' },
+    { path: '/#main', next: 'Book a data trust assessment' },
     { path: '/#top', next: 'Skip to content' },
     { path: '/#nope', next: 'Skip to content' },
     { path: '/', next: 'Skip to content' },
@@ -515,7 +515,7 @@ test.describe('history', () => {
         await openPage(page, 1440)
         await clickNav(page, 'Services')
         await expectLanded(page, '#services')
-        const servicesLeftAt = await clickNav(page, 'Discuss a project')
+        const servicesLeftAt = await clickNav(page, 'Book a data trust assessment')
         await expectLanded(page, '#contact')
 
         await page.goBack()
@@ -563,7 +563,7 @@ test.describe('history', () => {
       }) => {
         await openPath(page, '/#services', 1440)
         await expectLanded(page, '#services')
-        const servicesLeftAt = await clickNav(page, 'Discuss a project')
+        const servicesLeftAt = await clickNav(page, 'Book a data trust assessment')
         // Chromium can take several frames to start a smooth scroll, which
         // waitForScrollSettle (in expectLanded) would read as settled, so
         // wait until the page moves first, as links.spec.ts does (#55). An

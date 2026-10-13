@@ -73,7 +73,7 @@ test.describe('Tab order', () => {
 
 test.describe('skip link', () => {
   for (const width of [360, 1440]) {
-    test(`Enter moves focus to main, then Tab to Discuss your data needs, at ${width}px`, async ({ page }) => {
+    test(`Enter moves focus to main, then Tab to Book a data trust assessment, at ${width}px`, async ({ page }) => {
       await openPage(page, width)
       await tabTo(page, 'Skip to content')
       await page.keyboard.press('Enter')
@@ -87,7 +87,7 @@ test.describe('skip link', () => {
         }
       })
       expect(main).toEqual({ id: 'main', tag: 'MAIN', outline: 'none' })
-      await tabTo(page, 'Discuss your data needs')
+      await tabTo(page, 'Book a data trust assessment')
     })
   }
 })
@@ -101,11 +101,10 @@ test.describe('focus after in-page links', () => {
   const cases = [
     { from: 'header', link: 'Services', hash: '#services', next: firstDisclosure },
     { from: 'header', link: 'Solutions', hash: '#solutions', next: firstSector },
-    { from: 'header', link: 'How We Work', hash: '#how-we-work', next: 'Discuss your data needs' },
-    { from: 'header', link: 'About', hash: '#about', next: 'Discuss your data needs' },
-    { from: 'header', link: 'Discuss a project', hash: '#contact', next: 'Discuss your data needs' },
-    { from: 'hero', link: 'Explore our capabilities', hash: '#services', next: firstDisclosure },
-    { from: 'hero', link: 'Discuss your data needs', hash: '#contact', next: 'Discuss your data needs' },
+    { from: 'header', link: 'How We Work', hash: '#how-we-work', next: 'Book a data trust assessment' },
+    { from: 'header', link: 'About', hash: '#about', next: 'Book a data trust assessment' },
+    { from: 'header', link: 'Book a data trust assessment', hash: '#contact', next: 'Book a data trust assessment' },
+    { from: 'hero', link: 'Book a data trust assessment', hash: '#contact', next: 'Book a data trust assessment' },
     { from: 'footer', link: 'Services', hash: '#services', next: firstDisclosure },
     { from: 'footer', link: 'Solutions', hash: '#solutions', next: firstSector },
   ] as const
@@ -113,8 +112,8 @@ test.describe('focus after in-page links', () => {
   for (const { from, link, hash, next } of cases) {
     test(`${from} "${link}" then Tab goes to "${next}" at 1440px`, async ({ page }) => {
       await openPage(page, 1440)
-      // The hero's calls to action are found inside the hero, as the
-      // closing call to action shares "Discuss your data needs" (#60).
+      // The hero's call to action is found inside the hero, as the header's
+      // and the closing call to action share its name (#60, #68).
       const scope =
         from === 'header'
           ? page.getByRole('banner')
@@ -186,14 +185,14 @@ test.describe('Menu toggle at 360px', () => {
     await expect(toggle).toBeFocused()
   })
 
-  test('Tab goes through the four open menu links and the call to action to Discuss your data needs', async ({ page }) => {
+  test('Tab goes through the four open menu links and the call to action to Book a data trust assessment', async ({ page }) => {
     await openPage(page, 360)
     const toggle = page.getByRole('button', { name: 'Menu' })
     await toggle.focus()
     await page.keyboard.press('Enter')
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
 
-    for (const name of [...nav, 'Discuss your data needs']) {
+    for (const name of [...nav, 'Book a data trust assessment']) {
       await tabTo(page, name)
       await expectRing(page, name)
     }
@@ -271,7 +270,7 @@ test.describe('Solutions rows', () => {
       // The theme lists add no tab stop: after the last row's page link
       // the next stop is the closing call to action.
       await tabTo(page, sectorPages.at(-1)!)
-      await tabTo(page, 'Discuss your data needs')
+      await tabTo(page, 'Book a data trust assessment')
       for (const [index, name] of [...sectors.entries()].reverse()) {
         await tabTo(page, sectorPages[index], { shift: true })
         await tabTo(page, name, { shift: true })
@@ -284,11 +283,11 @@ test.describe('Solutions rows', () => {
 })
 
 test.describe('mouse focus', () => {
-  test('a click on Discuss your data needs or a disclosure shows no focus ring', async ({ page, browserName }) => {
+  test('a click on Book a data trust assessment or a disclosure shows no focus ring', async ({ page, browserName }) => {
     await openPage(page, 1440)
     const cta = page
       .getByRole('region', { name: 'Trusted Data. Better Decisions.' })
-      .getByRole('link', { name: 'Discuss your data needs' })
+      .getByRole('link', { name: 'Book a data trust assessment' })
     await cta.click()
     await expect(page).toHaveURL(/#contact$/)
     expect(await cta.evaluate((element) => element.matches(':focus-visible'))).toBe(false)

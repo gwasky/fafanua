@@ -26,14 +26,14 @@ import { expectFlow, flowDiagram, flowList, flowProblems, flowShapeAt, measureFl
 
 // The header's four section links and its call to action; the footer's
 // four section links and Contact.
-const NAV = ['Services', 'Solutions', 'How We Work', 'About', 'Discuss a project'] as const
+const NAV = ['Services', 'Solutions', 'How We Work', 'About', 'Book a data trust assessment'] as const
 const FOOTER_NAV = ['Services', 'Solutions', 'How We Work', 'About', 'Contact'] as const
 const HASH: Record<(typeof NAV)[number] | (typeof FOOTER_NAV)[number], string> = {
   Services: '#services',
   Solutions: '#solutions',
   'How We Work': '#how-we-work',
   About: '#about',
-  'Discuss a project': '#contact',
+  'Book a data trust assessment': '#contact',
   Contact: '#contact',
 }
 
@@ -47,8 +47,7 @@ const ANCHORS = [
   '#how-we-work',
   '#about',
   '#contact', // header call to action
-  '#contact', // hero "Discuss your data needs"
-  '#services', // hero "Explore our capabilities"
+  '#contact', // hero "Book a data trust assessment", its one call to action (#68)
   '#services', // footer nav
   '#solutions',
   '#how-we-work',
@@ -281,9 +280,9 @@ function cardRows(cards: CardBox[]) {
 
 const spread = (values: number[]) => Math.max(...values) - Math.min(...values)
 
-// The hero, named by its h1. The closing call to action shares the hero
-// button's name "Discuss your data needs" (#60), so hero links are found
-// inside it.
+// The hero, named by its h1. The header's and the closing call to action
+// share the hero button's name "Book a data trust assessment" (#60, #68), so
+// hero links are found inside it.
 const heroRegion = (page: Page) =>
   page.getByRole('region', { name: 'Trusted Data. Better Decisions.' })
 
@@ -606,20 +605,21 @@ for (const width of WIDTHS) {
     })
 
     // The dark hero (#55): from 64em 80-90% of the viewport's height
-    // (85svh); below it, its natural height, with both calls to action on
-    // the first screen (the projects' viewport is 800px tall).
-    test(`hero height and calls to action at scroll 0 at ${width}px`, async ({ page }, testInfo) => {
+    // (85svh); below it, its natural height, with its one call to action
+    // on the first screen (the projects' viewport is 800px tall).
+    test(`hero height and call to action at scroll 0 at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       const m = await page.evaluate(() => {
         const hero = document.querySelector('main > [data-header-overlay]')!
-        const [primary, secondary] = [...hero.querySelectorAll('a')].map((link) => link.getBoundingClientRect())
+        const links = [...hero.querySelectorAll('a')]
+        const [primary] = links.map((link) => link.getBoundingClientRect())
         const { top, height } = hero.getBoundingClientRect()
         return {
           top,
           height,
           minBlockSize: getComputedStyle(hero).minBlockSize,
+          links: links.length,
           primaryBottom: primary.bottom,
-          secondaryBottom: secondary.bottom,
           headerBottom: document.querySelector('header')!.getBoundingClientRect().bottom,
           viewport: window.innerHeight,
         }
@@ -633,11 +633,9 @@ for (const width of WIDTHS) {
       } else {
         expect(m.minBlockSize, detail).toBe('0px')
       }
+      expect(m.links, detail).toBe(1)
       expect(m.primaryBottom, detail).toBeLessThanOrEqual(m.viewport)
-      expect(m.secondaryBottom, detail).toBeLessThanOrEqual(m.viewport)
-      for (const name of ['Discuss your data needs', 'Explore our capabilities']) {
-        await expect(heroRegion(page).getByRole('link', { name, exact: true })).toBeInViewport({ ratio: 1 })
-      }
+      await expect(heroRegion(page).getByRole('link', { name: 'Book a data trust assessment', exact: true })).toBeInViewport({ ratio: 1 })
     })
 
     test(`no text is heavier than weight 500 at ${width}px`, async ({ page }, testInfo) => {
@@ -2126,8 +2124,7 @@ for (const width of WIDTHS) {
     }
 
     for (const [name, hash] of [
-      ['Discuss your data needs', '#contact'],
-      ['Explore our capabilities', '#services'],
+      ['Book a data trust assessment', '#contact'],
     ] as const) {
       test(`hero "${name}" lands on ${hash} at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)

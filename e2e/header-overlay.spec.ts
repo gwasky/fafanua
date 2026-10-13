@@ -86,7 +86,7 @@ test.describe('transparent over the hero at the top of the page', () => {
       ).toBe(0)
       if (width >= 1024) {
         expect(look.link?.text, 'nav link').toBe(paper)
-        expect(look.cta, 'Discuss a project').toEqual({ text: graphite900, background: teal400, border: 'rgba(0, 0, 0, 0)' })
+        expect(look.cta, 'Book a data trust assessment').toEqual({ text: graphite900, background: teal400, border: 'rgba(0, 0, 0, 0)' })
         expect(look.toggle).toBeNull()
       } else {
         // The secondary button on dark.

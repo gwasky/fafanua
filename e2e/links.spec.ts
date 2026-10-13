@@ -7,7 +7,7 @@ import { expectLanded, linkName, openPage, test, waitForScrollSettle } from './f
 // links, and every internal link and asset.
 
 // The header's four section links and its call to action.
-const NAV = ['Services', 'Solutions', 'How We Work', 'About', 'Discuss a project'] as const
+const NAV = ['Services', 'Solutions', 'How We Work', 'About', 'Book a data trust assessment'] as const
 
 /** The Menu button, found whether or not it is currently shown. */
 const menuButton = (page: Page) =>
@@ -67,7 +67,7 @@ test.describe('smooth scrolling', () => {
 
   const cases = [
     { from: 'header', name: 'Services', hash: '#services' },
-    { from: 'header', name: 'Discuss a project', hash: '#contact' },
+    { from: 'header', name: 'Book a data trust assessment', hash: '#contact' },
     { from: 'footer', name: 'Services', hash: '#services' },
   ] as const
 
@@ -119,11 +119,11 @@ test.describe('email links', () => {
   // navigation. Chromium reports it as a request for the mailto: URL,
   // which fails as no mail client is registered; WebKit reports nothing,
   // so it runs in Chromium only.
-  test('Enter on "Discuss your data needs" in the closing call to action requests the mailto:', async ({ page, browserName }) => {
+  test('Enter on "Book a data trust assessment" in the closing call to action requests the mailto:', async ({ page, browserName }) => {
     test.skip(browserName !== 'chromium', 'WebKit reports no request for a mailto: navigation')
     await openPage(page, 1440)
     const requested = page.waitForRequest((request) => request.url().startsWith('mailto:'))
-    await page.locator('#contact').getByRole('link', { name: 'Discuss your data needs' }).focus()
+    await page.locator('#contact').getByRole('link', { name: 'Book a data trust assessment' }).focus()
     await page.keyboard.press('Enter')
     expect((await requested).url()).toBe('mailto:info@fafanua.tech')
   })

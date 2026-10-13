@@ -335,8 +335,8 @@ export function focusAndHeaderBoxes(page: Page) {
 }
 
 // With includeHidden, Playwright counts aria-hidden content in the name,
-// so the call to action's is "Discuss a project →" there; everywhere
-// else it is "Discuss a project". This matches the label exactly, with
+// so the call to action's is "Book a data trust assessment →" there; everywhere
+// else it is "Book a data trust assessment". This matches the label exactly, with
 // or without the arrow.
 export const linkName = (label: string) =>
   new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?: →)?$`)

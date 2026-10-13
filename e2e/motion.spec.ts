@@ -271,7 +271,7 @@ test.describe('reduced motion: everything in its final state from the first pain
       )
       // Nor does the header's call-to-action arrow, where it shows.
       if (width >= 1024) {
-        await page.getByRole('banner').getByRole('link', { name: 'Discuss a project' }).hover()
+        await page.getByRole('banner').getByRole('link', { name: 'Book a data trust assessment' }).hover()
         expect(
           await page.locator('header .button__arrow').evaluate((element) => getComputedStyle(element).translate),
         ).toBe('none')

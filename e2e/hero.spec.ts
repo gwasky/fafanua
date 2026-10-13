@@ -4,7 +4,7 @@ import { openPage, pressTab, test, waitForFonts, waitForScrollSettle } from './f
 // The dark technical hero (#55) on the production preview, in Chromium
 // at the viewports the issue names: its height, its padding below the
 // header, the type, the wrapping of the headline and supporting copy, the
-// calls to action, the grid under the transparent header, and motion.
+// call to action, the grid under the transparent header, and motion.
 // The per-width layout checks, in Chromium and WebKit, are in
 // responsive.spec.ts, and the header over the hero in
 // header-overlay.spec.ts.
@@ -12,8 +12,7 @@ import { openPage, pressTab, test, waitForFonts, waitForScrollSettle } from './f
 const HEADING = 'Trusted Data. Better Decisions.'
 const PROMISE = 'Build a data foundation you can trust.'
 const hero = (page: Page) => page.getByRole('region', { name: HEADING })
-const primary = (page: Page) => hero(page).getByRole('link', { name: 'Discuss your data needs' })
-const secondary = (page: Page) => hero(page).getByRole('link', { name: 'Explore our capabilities' })
+const primary = (page: Page) => hero(page).getByRole('link', { name: 'Book a data trust assessment' })
 
 /** Opens the page, with the root font size set when `text` is not 100%. */
 async function openAt(page: Page, width: number, height: number, text = '100%') {
@@ -25,7 +24,7 @@ async function openAt(page: Page, width: number, height: number, text = '100%') 
   await waitForScrollSettle(page)
 }
 
-/** Boxes of the hero, its h1, its calls to action and the header. */
+/** Boxes of the hero, its h1, its one call to action and the header. */
 function boxes(page: Page) {
   return page.evaluate(() => {
     const box = (element: Element) => {
@@ -38,7 +37,7 @@ function boxes(page: Page) {
       hero: box(section),
       heading: box(section.querySelector('h1')!),
       primary: box(links[0]),
-      secondary: box(links[1]),
+      links: links.length,
       header: box(document.querySelector('header')!),
       viewport: { width: window.innerWidth, height: window.innerHeight },
       scrollY: window.scrollY,
@@ -88,11 +87,11 @@ test.describe('hero height', () => {
   }
 
   // Below 64em the hero has no viewport-height minimum: its height is its
-  // content and padding, and the calls to action are on the first screen.
+  // content and padding, and the call to action is on the first screen.
   for (const { width, height, visible } of [
     { width: 360, height: 640, visible: ['primary'] },
-    { width: 360, height: 800, visible: ['primary', 'secondary'] },
-    { width: 768, height: 1024, visible: ['primary', 'secondary'] },
+    { width: 360, height: 800, visible: ['primary'] },
+    { width: 768, height: 1024, visible: ['primary'] },
   ] as const) {
     test(`natural height, with ${visible.join(' and ')} visible at scroll 0, at ${width} x ${height}`, async ({
       page,
@@ -123,7 +122,7 @@ test.describe('hero height', () => {
 
       expect(m.fits, detail).toBe(true)
       expect(m.heading.top, detail).toBeGreaterThanOrEqual(m.header.bottom)
-      expect(m.secondary.bottom, detail).toBeLessThanOrEqual(m.hero.bottom - parseFloat(m.style.paddingBottom) + 1)
+      expect(m.primary.bottom, detail).toBeLessThanOrEqual(m.hero.bottom - parseFloat(m.style.paddingBottom) + 1)
     })
   }
 })
@@ -264,9 +263,7 @@ test.describe('type', () => {
       })),
     )
     expect(weights.filter(({ weight }) => weight > 500)).toEqual([])
-    for (const link of [primary(page), secondary(page)]) {
-      expect(await link.evaluate((element) => getComputedStyle(element).fontWeight)).toBe('500')
-    }
+    expect(await primary(page).evaluate((element) => getComputedStyle(element).fontWeight)).toBe('500')
   })
 })
 
@@ -341,41 +338,22 @@ test.describe('wrapping', () => {
   })
 })
 
-test.describe('calls to action', () => {
+test.describe('call to action', () => {
   for (const width of [320, 360, 768, 1024, 1440]) {
-    test(`at least 44 x 44px, primary first, at ${width}px`, async ({ page }) => {
+    test(`one link, at least 44 x 44px and inside the viewport, at ${width}px`, async ({ page }) => {
       await openAt(page, width, 800)
       const m = await boxes(page)
+      const detail = JSON.stringify(m)
 
-      for (const name of ['primary', 'secondary'] as const) {
-        expect(m[name].width, name).toBeGreaterThanOrEqual(44)
-        expect(m[name].height, name).toBeGreaterThanOrEqual(44)
-      }
-      // Side by side when they fit, the primary on the left; wrapped, it
-      // is above.
-      if (Math.abs(m.primary.top - m.secondary.top) < 1) {
-        expect(m.primary.right).toBeLessThan(m.secondary.left)
-      } else {
-        expect(m.primary.bottom).toBeLessThanOrEqual(m.secondary.top)
-      }
-      expect(
-        await primary(page).evaluate(
-          (element, other) => !!(element.compareDocumentPosition(other!) & Node.DOCUMENT_POSITION_FOLLOWING),
-          await secondary(page).elementHandle(),
-        ),
-      ).toBe(true)
+      // The hero's only link (#68): the secondary button was removed.
+      expect(m.links, detail).toBe(1)
+      expect(m.primary.width, detail).toBeGreaterThanOrEqual(44)
+      expect(m.primary.height, detail).toBeGreaterThanOrEqual(44)
+      expect(m.primary.left, detail).toBeGreaterThanOrEqual(0)
+      expect(m.primary.right, detail).toBeLessThanOrEqual(m.viewport.width)
+      await expect(primary(page)).toHaveText('Book a data trust assessment→')
     })
   }
-
-  test('side by side at 1440px, wrapped at 360px', async ({ page }) => {
-    await openAt(page, 1440, 900)
-    let m = await boxes(page)
-    expect(Math.abs(m.primary.top - m.secondary.top)).toBeLessThan(1)
-
-    await openAt(page, 360, 800)
-    m = await boxes(page)
-    expect(m.secondary.top).toBeGreaterThan(m.primary.bottom)
-  })
 
   // Teal only on the primary button (its fill) and the focus ring: no
   // text, border or fill in the hero is teal except the primary's fill.
@@ -425,7 +403,7 @@ test.describe('calls to action', () => {
       return value
     })
 
-    await page.getByRole('banner').getByRole('link', { name: 'Discuss a project' }).focus()
+    await page.getByRole('banner').getByRole('link', { name: 'Book a data trust assessment' }).focus()
     await pressTab(page)
     await expect(primary(page)).toBeFocused()
     const ring = await primary(page).evaluate((element) => {
@@ -435,7 +413,7 @@ test.describe('calls to action', () => {
     expect(ring).toEqual({ visible: true, outline: `2px solid ${tealRing}` })
   })
 
-  test('a mouse click on a hero call to action shows no focus ring', async ({ page }) => {
+  test('a mouse click on the hero call to action shows no focus ring', async ({ page }) => {
     await openAt(page, 1440, 900)
     await page.evaluate(() => {
       // Keep the page where it is, so the focus state can be read.
@@ -443,12 +421,11 @@ test.describe('calls to action', () => {
         link.addEventListener('click', (event) => event.preventDefault())
       }
     })
-    for (const link of [primary(page), secondary(page)]) {
-      await link.click()
-      await expect(link).toBeFocused()
-      expect(await link.evaluate((element) => element.matches(':focus-visible'))).toBe(false)
-      expect(await link.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe('none')
-    }
+    const link = primary(page)
+    await link.click()
+    await expect(link).toBeFocused()
+    expect(await link.evaluate((element) => element.matches(':focus-visible'))).toBe(false)
+    expect(await link.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe('none')
   })
 })
 
@@ -474,7 +451,7 @@ test.describe('motion', () => {
     await page.mouse.move(0, 899)
     await expect.poll(() => arrowTranslate(page)).toBe('none')
 
-    await page.getByRole('banner').getByRole('link', { name: 'Discuss a project' }).focus()
+    await page.getByRole('banner').getByRole('link', { name: 'Book a data trust assessment' }).focus()
     await pressTab(page)
     await expect(primary(page)).toBeFocused()
     await expect.poll(() => arrowTranslate(page)).toBe(shift)
@@ -487,7 +464,7 @@ test.describe('motion', () => {
     await primary(page).hover()
     expect(await arrowTranslate(page)).toBe('none')
     await page.mouse.move(0, 899)
-    await page.getByRole('banner').getByRole('link', { name: 'Discuss a project' }).focus()
+    await page.getByRole('banner').getByRole('link', { name: 'Book a data trust assessment' }).focus()
     await pressTab(page)
     await expect(primary(page)).toBeFocused()
     expect(await arrowTranslate(page)).toBe('none')

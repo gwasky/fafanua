@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expectLanded, expectNoAxeViolations, openPage, scrollThrough, waitForMotion, waitForScrollSettle } from './fixtures.ts'
 import { SEQUENCE, walkFocus } from './focus.ts'
 import { AXE_TAGS, formatViolations } from '../src/test/axe.ts'
-import { managedServices, servicesIntro } from '../src/data/services.ts'
+import { managedServices, services, servicesIntro } from '../src/data/services.ts'
 
 // Axe on the production preview in a real browser, where contrast,
 // target size and reflow can be measured. Each state is its own test, so
@@ -310,7 +310,8 @@ test.describe('axe, 200% browser zoom', () => {
     const header = page.getByRole('banner')
     expect(await header.evaluate((element) => getComputedStyle(element).position)).toBe('relative')
 
-    await page.getByRole('link', { name: 'Explore our capabilities' }).click()
+    // The hero has no Services link (#68): the footer's lands the same.
+    await page.getByRole('contentinfo').getByRole('link', { name: 'Services' }).click()
     await expect(page).toHaveURL(/#services$/)
     await expectLanded(page, '#services')
     const { headerBottom, top } = await page.evaluate(() => ({
@@ -360,14 +361,15 @@ test.describe('reduced motion', () => {
   const sectorShift = (page: Page) =>
     sector(page).evaluate((button) => getComputedStyle(button.querySelector('svg')!).translate)
 
-  // The hero's two calls to action, one of each button style, both
-  // visible at 1440px.
+  // One of each button style: the hero's one call to action (#68), the
+  // primary, and the first service card's disclosure, the secondary.
   const buttonDurations = async (page: Page) => {
+    const disclosure = `Typical engagements for ${services[0].name}`
     const links = {
-      'Discuss your data needs': page
+      'Book a data trust assessment': page
         .getByRole('region', { name: 'Trusted Data. Better Decisions.' })
-        .getByRole('link', { name: 'Discuss your data needs' }),
-      'Explore our capabilities': page.getByRole('link', { name: 'Explore our capabilities' }),
+        .getByRole('link', { name: 'Book a data trust assessment' }),
+      [disclosure]: page.getByRole('button', { name: disclosure }),
     }
     const results: { name: string; duration: number }[] = []
     for (const [name, link] of Object.entries(links)) {
@@ -382,7 +384,7 @@ test.describe('reduced motion', () => {
 
   // The header's call to action and its arrow, and the header itself.
   const cta = (page: Page) =>
-    page.getByRole('banner').getByRole('link', { name: 'Discuss a project' })
+    page.getByRole('banner').getByRole('link', { name: 'Book a data trust assessment' })
 
   const arrowAndHeader = (page: Page) =>
     page.evaluate(() => {
@@ -520,7 +522,7 @@ test.describe('closing call to action arrow', () => {
       await page.emulateMedia({ reducedMotion: motion })
       await openPage(page, 1440)
       const contact = page.locator('#contact')
-      const button = contact.getByRole('link', { name: 'Discuss your data needs' })
+      const button = contact.getByRole('link', { name: 'Book a data trust assessment' })
       const shift = () => button.evaluate((link) => getComputedStyle(link.querySelector('.button__arrow')!).translate)
       const expected = motion === 'reduce' ? 'none' : '4px'
       await button.scrollIntoViewIfNeeded()
@@ -620,7 +622,8 @@ test.describe('a header taller than a quarter of the viewport is static', () => 
     }))
     expect(height).toBeGreaterThan(0.25 * viewport)
 
-    await page.getByRole('link', { name: 'Explore our capabilities' }).click()
+    // The hero has no Services link (#68): the footer's lands the same.
+    await page.getByRole('contentinfo').getByRole('link', { name: 'Services' }).click()
     await expect(page).toHaveURL(/#services$/)
     await expectLanded(page, '#services')
     const { headerBottom, top } = await page.evaluate(() => ({
@@ -685,7 +688,7 @@ test.describe('browser text size 200%: the header falls back to the Menu', () =>
 
     await toggle(page).click()
     await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true')
-    for (const name of ['Services', 'Solutions', 'How We Work', 'About', 'Discuss a project']) {
+    for (const name of ['Services', 'Solutions', 'How We Work', 'About', 'Book a data trust assessment']) {
       await expect(
         page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name, exact: true }),
       ).toBeVisible()

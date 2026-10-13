@@ -17,17 +17,18 @@ export const sectors = solutions.map((solution) => solution.title)
 // The header's four section links and its call to action, which replaces
 // a Contact link; the footer keeps Contact.
 const sections = ['Services', 'Solutions', 'How We Work', 'About']
-export const nav = [...sections, 'Discuss a project']
+export const nav = [...sections, 'Book a data trust assessment']
 const footerNav = [...sections, 'Contact']
+// The hero has one stop, its call to action (#68), which shares the
+// header's and the closing button's name.
 const fromHero = [
-  'Discuss your data needs',
-  'Explore our capabilities',
+  'Book a data trust assessment',
   ...cards,
   managedServices.heading,
   ...sectors,
   // The closing call to action (#60): the button, which shares the hero
   // button's name, then the address and the phone number.
-  'Discuss your data needs',
+  'Book a data trust assessment',
   email,
   phone,
   ...footerNav,

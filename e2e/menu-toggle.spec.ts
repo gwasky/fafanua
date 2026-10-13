@@ -168,7 +168,7 @@ test.describe('open menu at 360 x 640', () => {
       }
     })
 
-  const NAMES = ['Services', 'Solutions', 'How We Work', 'About', 'Discuss a project']
+  const NAMES = ['Services', 'Solutions', 'How We Work', 'About', 'Book a data trust assessment']
 
   for (const text of ['100%', '200%']) {
     test(`every item can be reached, and Escape closes it, with ${text} text`, async ({ page }) => {
@@ -235,7 +235,7 @@ test.describe('open menu at 360 x 640', () => {
 
     const list = page.locator('#main-nav-list')
     await list.evaluate((element) => element.scrollTo({ top: element.scrollHeight, behavior: 'instant' }))
-    const cta = page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Discuss a project' })
+    const cta = page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Book a data trust assessment' })
     await expect(cta).toBeInViewport({ ratio: 1 })
     await cta.click()
 

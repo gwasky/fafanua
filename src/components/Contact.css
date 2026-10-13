@@ -42,7 +42,7 @@
 
 /* Break a word in the button's label only if it cannot fit on a line of
    its own, rather than anywhere as .container allows: at 320px with 200%
-   text the arrow beside the label otherwise splits "Discuss". */
+   text the arrow beside the label otherwise splits a word of it. */
 .contact__actions .button {
   overflow-wrap: break-word;
 }

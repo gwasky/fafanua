@@ -1,55 +1,51 @@
 import { expect } from '@playwright/test'
 import { openPage, test, waitForScrollSettle } from './fixtures.ts'
 
-// The hero's calls to action on the first screen below 64em, and its
+// The hero's one call to action (#68) on the first screen below 64em, and its
 // desktop spacing and type unchanged (owner decision on #63, which
 // tightened the hero below 64em only, for the longer refinement-plan
 // supporting copy). Runs in the chromium and webkit projects.
 
 const HEADING = 'Trusted Data. Better Decisions.'
 
-/** The calls to action's boxes, at scroll 0, and the header's bottom. */
+/** The call to action's box, at scroll 0, and the header's bottom. */
 async function ctas(page: import('@playwright/test').Page) {
   const hero = page.getByRole('region', { name: HEADING })
   const links = hero.getByRole('link')
-  await expect(links).toHaveCount(2)
+  await expect(links).toHaveCount(1)
+  await expect(links).toHaveAccessibleName('Book a data trust assessment')
   return page.evaluate(() => {
     const section = document.querySelector('main > [data-header-overlay]')!
-    const [primary, secondary] = [...section.querySelectorAll('a')].map((link) => {
+    const [primary] = [...section.querySelectorAll('a')].map((link) => {
       const { top, bottom, width, height } = link.getBoundingClientRect()
       return { top, bottom, width, height, name: link.textContent }
     })
     return {
       primary,
-      secondary,
       header: document.querySelector('header')!.getBoundingClientRect().bottom,
       scrollY: window.scrollY,
     }
   })
 }
 
-for (const { width, height, both } of [
-  { width: 360, height: 640, both: false },
-  { width: 360, height: 800, both: true },
-  { width: 390, height: 844, both: true },
-  { width: 768, height: 1024, both: true },
+for (const { width, height } of [
+  { width: 360, height: 640 },
+  { width: 360, height: 800 },
+  { width: 390, height: 844 },
+  { width: 768, height: 1024 },
 ]) {
-  test(`the primary CTA${both ? ' and the secondary' : ''} fully visible at scroll 0 at ${width} x ${height}`, async ({ page }) => {
+  test(`the hero's one CTA fully visible at scroll 0 at ${width} x ${height}`, async ({ page }) => {
     await openPage(page, width, height)
     await waitForScrollSettle(page)
     const m = await ctas(page)
     const detail = JSON.stringify(m)
 
     expect(m.scrollY, detail).toBe(0)
-    for (const cta of both ? [m.primary, m.secondary] : [m.primary]) {
-      expect(cta.top, detail).toBeGreaterThanOrEqual(m.header)
-      expect(cta.bottom, detail).toBeLessThanOrEqual(height)
-    }
-    // Touch targets stay at least 44 x 44.
-    for (const cta of [m.primary, m.secondary]) {
-      expect(cta.width, detail).toBeGreaterThanOrEqual(44)
-      expect(cta.height, detail).toBeGreaterThanOrEqual(44)
-    }
+    expect(m.primary.top, detail).toBeGreaterThanOrEqual(m.header)
+    expect(m.primary.bottom, detail).toBeLessThanOrEqual(height)
+    // The touch target stays at least 44 x 44.
+    expect(m.primary.width, detail).toBeGreaterThanOrEqual(44)
+    expect(m.primary.height, detail).toBeGreaterThanOrEqual(44)
   })
 }
 

@@ -91,6 +91,44 @@ test.describe('served HTML', () => {
   }
 })
 
+// The site's one call to action (#68): on every landing page and the
+// not-found page, the header's button goes to #contact and the closing
+// button opens the email, both named "Book a data trust assessment",
+// with the arrow hidden; the retired labels are gone.
+test.describe('one call to action', () => {
+  const CTA = /<a class="button" href="([^"]*)">Book a data trust assessment<span class="button__arrow" aria-hidden="true">→<\/span><\/a>/g
+
+  for (const path of [...PATHS, '/nope']) {
+    test(`${path} has the header and closing buttons, and no retired label`, async ({ page }) => {
+      const html = await (await page.request.get(path, { maxRedirects: 0 })).text()
+
+      expect(all(html, CTA)).toEqual(['#contact', 'mailto:info@fafanua.tech'])
+      expect(html.match(/Book a data trust assessment/g)).toHaveLength(2)
+      for (const retired of ['Discuss a project', 'Discuss your data needs', 'Explore our capabilities']) {
+        expect(html).not.toContain(retired)
+      }
+    })
+  }
+
+  test('the homepage header, hero and closing buttons share the one name', async ({ page }) => {
+    await openPath(page, '/', 1440)
+    const name = 'Book a data trust assessment'
+    const links = page.getByRole('link', { name, exact: true })
+    await expect(links).toHaveCount(3)
+    await expect(page.getByRole('banner').getByRole('link', { name, exact: true })).toHaveAttribute('href', '#contact')
+    await expect(
+      page.getByRole('region', { name: 'Trusted Data. Better Decisions.' }).getByRole('link'),
+    ).toHaveAttribute('href', '#contact')
+    await expect(page.locator('#contact').getByRole('link', { name, exact: true })).toHaveAttribute(
+      'href',
+      'mailto:info@fafanua.tech',
+    )
+    for (const retired of ['Discuss a project', 'Discuss your data needs', 'Explore our capabilities']) {
+      await expect(page.getByText(retired)).toHaveCount(0)
+    }
+  })
+})
+
 test.describe('sitemap and robots.txt', () => {
   test('the sitemap lists the homepage and every page, each answering 200', async ({ page }) => {
     const xml = await (await page.request.get('/sitemap.xml')).text()
@@ -194,9 +232,9 @@ test.describe('in the browser', () => {
     )
   })
 
-  test('Discuss a project lands on the closing call to action of the same page', async ({ page }) => {
+  test('Book a data trust assessment lands on the closing call to action of the same page', async ({ page }) => {
     await openPath(page, '/solutions/education', 1440)
-    await page.getByRole('link', { name: 'Discuss a project' }).click()
+    await page.getByRole('banner').getByRole('link', { name: 'Book a data trust assessment' }).click()
     await expect(page).toHaveURL(/\/solutions\/education#contact$/)
     await expect(
       page.locator('#contact').getByRole('link', { name: '+256 752 008 822' }),
