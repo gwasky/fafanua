@@ -126,9 +126,10 @@ describe('App links and buttons', () => {
     }
 
     // The one accepted exception (#68, as on #60, WCAG 2.4.4 in context):
-    // the header's and the hero's "Book a data trust assessment" land on the
-    // closing call to action, whose button of the same name opens the
-    // email. All of them start the conversation.
+    // the header's, the hero's and the Data Trust Assessment's (#71) "Book
+    // a data trust assessment" land on the closing call to action, whose
+    // button of the same name opens the email. All of them start the
+    // conversation.
     expect([...(hrefs.get('Book a data trust assessment') ?? [])]).toEqual([
       '#contact',
       `mailto:${email}`,

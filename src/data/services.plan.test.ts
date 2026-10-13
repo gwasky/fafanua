@@ -305,10 +305,16 @@ describe('other source files', () => {
       ...managedServices.capabilities,
     ]
     // The journey steps are single words, so they are matched as whole
-    // words: "mockImplementation" does not repeat "Implementation".
+    // words: "mockImplementation" does not repeat "Implementation". The
+    // offer's name "Data Trust Assessment" (W4 in the trust and lineage
+    // plan, #71) is a proper name in its own copy, not the journey's
+    // "Assessment" step, so it does not count as a repeat.
     const steps = managedServices.journey.map(
-      (step) => new RegExp(`(?<![\\w-])${step}(?![\\w-])`),
+      (step) => new RegExp(`(?<![\\w-])(?<!Data Trust )${step}(?![\\w-])`),
     )
+    const assessment = steps[managedServices.journey.indexOf('Assessment')]
+    expect(assessment.test('the Assessment step')).toBe(true)
+    expect(assessment.test('the Data Trust Assessment')).toBe(false)
     for (const [file, source] of sources) {
       for (const text of wording) {
         expect(source.includes(text), `${file} repeats "${text}"`).toBe(false)

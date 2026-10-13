@@ -226,6 +226,11 @@
      terms too little room at 320px. 8.8px at 320px, 12px at 400px and
      16px from 500px. */
   --flow-card-inset: clamp(8px, 4vw - 4px, 16px);
+  /* The Data Trust Assessment example's inline padding (#71), in px and
+     vw for the same reason: in rem it doubles with 200% page text and
+     leaves the steps too little room at 320px. 12.8px at 320px, 14.4px at
+     360px and 24px from 600px. */
+  --example-inset: clamp(12px, 4vw, 24px);
 
   /* Layout */
   --container-max: 72rem;

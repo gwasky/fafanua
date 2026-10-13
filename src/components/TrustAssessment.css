@@ -1,0 +1,205 @@
+/*
+ * The Data Trust Assessment (W4 in the trust and lineage plan, #71): on
+ * the page background, between the problem statement and Services, with
+ * no eyebrow. Every text pairing is a verified light one: graphite 900
+ * and graphite 600 on paper (14.9:1, 6.0:1) in the copy column, and on
+ * white (16.4:1, 6.6:1) in the example; the button is the primary button
+ * on light (white on teal 700, 5.2:1).
+ *
+ * Its padding: the problem statement above ends with --space-section, so
+ * the section adds no top padding of its own after it, and Services drops
+ * its top padding after this section (Services.css). Each gap, problem to
+ * assessment and assessment to Services, is one --space-section.
+ *
+ * Stacked by default: the copy, then the example. From 64em (literal
+ * breakpoint, see the note in tokens.css) two top-aligned columns, the
+ * copy at the start and the example at the end, so the visual order is
+ * the DOM order.
+ *
+ * The example is a white card with a graphite 200 hairline, as the system
+ * diagram's cards: its caption, the sample figure's name, then its five
+ * steps as a vertical list at every width. A ring marks each step at the
+ * inline start, and a line joins each ring to the next, both drawn with
+ * borders on pseudo-elements, so they have no text, are never announced
+ * and stay drawn in forced-colours mode. The last ring is filled, as the
+ * end of the trace. No colour carries meaning: the rating is given in
+ * text, in a hairline outline. Nothing here moves beyond the section
+ * reveal.
+ */
+
+.trust-assessment {
+  padding-block: var(--space-section);
+  background-color: var(--color-bg);
+}
+
+/* The problem statement's --space-section bottom padding is the gap. */
+.positioning + .trust-assessment {
+  padding-block-start: 0;
+}
+
+.trust-assessment__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--space-12);
+  align-items: start;
+  /* Break a word only if it cannot fit on a line of its own, rather than
+     anywhere as .container allows. */
+  overflow-wrap: break-word;
+}
+
+/* Weight 300 from the global heading styles. */
+.trust-assessment__heading {
+  max-width: var(--measure-display);
+  margin-block-end: var(--space-6);
+  font-size: var(--text-section);
+  line-height: var(--leading-display);
+}
+
+.trust-assessment__lead {
+  max-width: var(--measure);
+  margin-block: 0;
+  color: var(--color-text);
+  font-size: var(--text-body-lg);
+  text-wrap: pretty;
+}
+
+/* --text-2xl at weight 300 from the global h3 styles. */
+.trust-assessment__subheading {
+  margin-block: var(--space-10) var(--space-4);
+}
+
+/* Plain items, each above a hairline, and one below the last. */
+.trust-assessment__deliverables {
+  max-width: var(--measure);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.trust-assessment__deliverables > li {
+  padding-block: var(--space-3);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.trust-assessment__after {
+  max-width: var(--measure);
+  margin-block: 0;
+  text-wrap: pretty;
+}
+
+.trust-assessment__actions {
+  margin-block-start: var(--space-8);
+}
+
+.lineage-example {
+  /* The ring and the column it sits in. */
+  --step-ring: var(--space-3);
+  --step-indent: var(--space-6);
+  /* The ring's top, centred on the label's line. */
+  --step-ring-top: calc((var(--text-sm) * var(--leading-snug) - var(--step-ring)) / 2);
+
+  margin: 0;
+  padding-block: var(--space-6);
+  padding-inline: var(--example-inset);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.lineage-example__caption {
+  margin-block-end: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+.lineage-example__figure {
+  margin-block: 0 var(--space-6);
+  color: var(--color-heading);
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+}
+
+.lineage-example__steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lineage-example__step {
+  position: relative;
+  padding-inline-start: var(--step-indent);
+  padding-block-end: var(--space-6);
+}
+
+.lineage-example__step:last-child {
+  padding-block-end: 0;
+}
+
+/* The ring, at the inline start, level with the label. */
+.lineage-example__step::before {
+  position: absolute;
+  inset-block-start: var(--step-ring-top);
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  inline-size: var(--step-ring);
+  block-size: var(--step-ring);
+  border: calc(2 * var(--border-width)) solid var(--color-text-muted);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  content: '';
+}
+
+.lineage-example__step:last-child::before {
+  background-color: var(--color-text-muted);
+}
+
+/* The line from this ring down to the next one's top. */
+.lineage-example__step:not(:last-child)::after {
+  position: absolute;
+  inset-block: calc(var(--step-ring-top) + var(--step-ring)) calc(-1 * var(--step-ring-top));
+  inset-inline-start: calc((var(--step-ring) - var(--border-width)) / 2);
+  border-inline-start: var(--border-width) solid var(--color-text-muted);
+  content: '';
+}
+
+.lineage-example__label {
+  margin-block: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+}
+
+.lineage-example__value {
+  margin-block: var(--space-1) 0;
+  color: var(--color-text);
+}
+
+/* The rating as a small label in a hairline outline, so it stands apart
+   from the values above it without colour. */
+.lineage-example__value--rating {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+}
+
+.lineage-example__reason {
+  margin-block: var(--space-2) 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+@media (min-width: 64em) {
+  .trust-assessment__layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-16);
+  }
+}

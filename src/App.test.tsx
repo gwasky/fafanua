@@ -1,7 +1,13 @@
 import { render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
-import { navigation, navigationCta } from './data/navigation.ts'
+import {
+  assessmentAfterHeading,
+  assessmentDeliverablesHeading,
+  assessmentHeading,
+  assessmentLead,
+} from './data/assessment.ts'
+import { footerNavigation, navigation, navigationCta } from './data/navigation.ts'
 import { positioningProblem } from './data/positioning.ts'
 import { processStages } from './data/process.ts'
 import { managedServices, services, servicesIntro } from './data/services.ts'
@@ -20,6 +26,9 @@ const MANAGED = managedServices.sectionHeading
 // The positioning section's problem (refinement plan §3), its one
 // paragraph since #70 removed the response.
 const POSITIONING = positioningProblem
+// The Data Trust Assessment section is named by its h2 (W4 in the trust
+// and lineage plan, #71; assessment.plan.test.ts checks it).
+const ASSESSMENT = assessmentHeading
 // The paragraphs W3 in the trust and lineage plan removed because they
 // restated the hero (#70): the positioning section's response and the two
 // Services intro paragraphs.
@@ -75,11 +84,15 @@ describe('App', () => {
     expect(hero).toHaveClass('surface-dark')
   })
 
-  it('renders the positioning section after the hero, then Services, inside main', () => {
+  // W4 in the trust and lineage plan (#71) puts the Data Trust Assessment
+  // between the positioning section and Services, which plan V2 and the
+  // refinement plan had as neighbours; W4 wins there (plan §2.6).
+  it('renders the positioning section after the hero, then the Data Trust Assessment, then Services, inside main', () => {
     render(<App />)
     const hero = screen.getByRole('region', { name: HERO })
     const lead = screen.getByText(POSITIONING)
     const positioning = hero.nextElementSibling
+    const assessment = screen.getByRole('region', { name: ASSESSMENT })
     const services = screen.getByRole('region', { name: SERVICES })
 
     expect(screen.getByRole('main')).toContainElement(services)
@@ -92,7 +105,39 @@ describe('App', () => {
     expect(positioning!.querySelector('h1, h2, h3, a, button, [tabindex]')).toBeNull()
     expect(positioning).not.toHaveClass('surface-dark')
     expect(positioning).not.toHaveClass('surface-alt')
-    expect(positioning!.nextElementSibling).toBe(services)
+    expect(positioning!.nextElementSibling).toBe(assessment)
+    expect(assessment.previousElementSibling).toBe(positioning)
+    expect(assessment.nextElementSibling).toBe(services)
+    expect(services.previousElementSibling).toBe(assessment)
+  })
+
+  it('renders the Data Trust Assessment as a light section#data-trust-assessment, out of the navigation (#71)', () => {
+    render(<App />)
+    const assessment = screen.getByRole('region', { name: ASSESSMENT })
+    const main = screen.getByRole('main')
+
+    expect(assessment.tagName).toBe('SECTION')
+    expect(assessment.id).toBe('data-trust-assessment')
+    expect(assessment.parentElement).toBe(main)
+    expect(assessment).toHaveAttribute('data-reveal', 'section')
+    // On paper: neither an alternate nor a dark surface, and holding none.
+    expect(assessment).not.toHaveClass('surface-alt')
+    expect(assessment).not.toHaveClass('surface-dark')
+    expect(assessment.querySelector('.surface-alt, .surface-dark, .technical-grid')).toBeNull()
+    expect(assessment).not.toHaveAttribute('data-header-overlay')
+    // No numbered eyebrow, so 01 to 04 keep their numbers.
+    expect(assessment.querySelector('.section-eyebrow')).toBeNull()
+    expect(
+      [...document.querySelectorAll('.section-eyebrow')].map((eyebrow) => eyebrow.textContent),
+    ).toEqual(['01 — Capabilities', '02 — Managed Services', '03 — Solutions', '04 — How We Work'])
+    // Not in the header or footer navigation, and nothing links to it.
+    for (const item of [...navigation, ...footerNavigation, navigationCta]) {
+      expect(item.id).not.toBe(assessment.id)
+    }
+    expect(document.querySelector(`a[href*="${assessment.id}"]`)).toBeNull()
+    expect(
+      within(screen.getByRole('banner')).getAllByRole('link').map((link) => link.textContent),
+    ).not.toContain(ASSESSMENT)
   })
 
   // The one inline SVG illustration the design system allows is the
@@ -132,15 +177,18 @@ describe('App', () => {
 
     for (const removed of REMOVED) expect(text).not.toContain(removed)
     // The hero paragraph is the only text about tracing numbers to their
-    // source: no other paragraph in main repeats it. ("Traceable" and
-    // "traceability" in the process stages and the diagram's terms are
-    // not the hero's claim.)
+    // source, apart from the Data Trust Assessment's lead, W4's own
+    // description of the offer (#71): no other paragraph in main repeats
+    // it. ("Traceable" and "traceability" in the process stages and the
+    // diagram's terms are not the hero's claim.)
     const hero = screen.getByRole('region', { name: HERO })
     const tracing = [...screen.getByRole('main').querySelectorAll('p')].filter((p) =>
       /\btrace\b|to the source|back to (its|their) source/i.test(p.textContent!),
     )
-    expect(tracing).toHaveLength(1)
-    for (const paragraph of tracing) expect(hero).toContainElement(paragraph)
+    expect(tracing).toHaveLength(2)
+    expect(hero).toContainElement(tracing[0])
+    expect(tracing[1]).toBe(screen.getByText(assessmentLead))
+    expect(screen.getByRole('region', { name: ASSESSMENT })).toContainElement(tracing[1])
   })
 
   it('has the Services h2 W3 names, and no h2 that says "business intelligence" (#70)', () => {
@@ -159,13 +207,14 @@ describe('App', () => {
     expect(screen.getByRole('heading', { level: 3, name: bi.name })).toBeInTheDocument()
   })
 
-  it('orders main as hero, positioning, Services, Managed, Solutions, How We Work, future-ready, About, Contact', () => {
+  it('orders main as hero, positioning, Data Trust Assessment, Services, Managed, Solutions, How We Work, future-ready, About, Contact', () => {
     render(<App />)
     const children = [...screen.getByRole('main').children]
 
     expect(children).toEqual([
       screen.getByRole('region', { name: HERO }),
       screen.getByText(POSITIONING).closest('.positioning'),
+      screen.getByRole('region', { name: ASSESSMENT }),
       screen.getByRole('region', { name: SERVICES }),
       screen.getByRole('region', { name: MANAGED }),
       screen.getByRole('region', { name: 'Solutions' }),
@@ -419,11 +468,14 @@ describe('App', () => {
     expect(screen.getByRole('contentinfo')).toContainElement(links[1] as HTMLElement)
   })
 
-  it('gives the header, hero and closing buttons one label, with the retired labels gone (#68)', () => {
+  it('gives the header, hero, Data Trust Assessment and closing buttons one label, with the retired labels gone (#68, #71)', () => {
     render(<App />)
     const buttons = [
       within(screen.getByRole('banner')).getByRole('link', { name: navigationCta.label }),
       within(screen.getByRole('region', { name: HERO })).getByRole('link', {
+        name: navigationCta.label,
+      }),
+      within(screen.getByRole('region', { name: ASSESSMENT })).getByRole('link', {
         name: navigationCta.label,
       }),
       within(screen.getByRole('region', { name: CONTACT })).getByRole('link', {
@@ -435,6 +487,7 @@ describe('App', () => {
     expect(buttons.map((button) => button.getAttribute('href'))).toEqual([
       '#contact',
       '#contact',
+      '#contact',
       'mailto:info@fafanua.tech',
     ])
     for (const button of buttons) {
@@ -442,7 +495,7 @@ describe('App', () => {
       expect(button.textContent).toBe('Book a data trust assessment→')
       expect(button.lastElementChild).toHaveAttribute('aria-hidden', 'true')
     }
-    expect(screen.getAllByRole('link', { name: navigationCta.label })).toHaveLength(3)
+    expect(screen.getAllByRole('link', { name: navigationCta.label })).toHaveLength(4)
     for (const retired of ['Discuss a project', 'Discuss your data needs', 'Explore our capabilities']) {
       expect(document.body.textContent).not.toContain(retired)
     }
@@ -533,42 +586,47 @@ describe('App', () => {
     expect(text.replace(/(business|payment) intelligence/gi, '')).not.toMatch(/intelligence/i)
   })
 
-  it('orders headings h1, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its h3, h2 Solutions, six h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
+  it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its h3, h2 Solutions, six h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
 
     expect(levels).toEqual([
-      1, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2,
+      1, 2, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2,
     ])
     expect(levels.filter((level) => level === 1)).toHaveLength(1)
     // No level is skipped.
     for (let i = 1; i < levels.length; i++) {
       expect(levels[i], `heading ${i + 1}`).toBeLessThanOrEqual(levels[i - 1] + 1)
     }
-    expect(headings[1].textContent).toBe(servicesIntro.heading)
-    expect(headings.slice(2, 8).map((heading) => heading.textContent)).toEqual(
+    expect(headings.slice(1, 4).map((heading) => heading.textContent)).toEqual([
+      ASSESSMENT,
+      assessmentDeliverablesHeading,
+      assessmentAfterHeading,
+    ])
+    expect(headings[4].textContent).toBe(servicesIntro.heading)
+    expect(headings.slice(5, 11).map((heading) => heading.textContent)).toEqual(
       services.map((service) => service.name),
     )
-    expect(headings[8].textContent).toBe(systemFlow.heading)
-    expect(headings[9].textContent).toBe(MANAGED)
-    expect(headings[10].textContent).toBe(managedServices.heading)
-    expect(headings[11].textContent).toBe('Solutions')
+    expect(headings[11].textContent).toBe(systemFlow.heading)
+    expect(headings[12].textContent).toBe(MANAGED)
+    expect(headings[13].textContent).toBe(managedServices.heading)
+    expect(headings[14].textContent).toBe('Solutions')
     // Each sector h3 holds its row's button (the accordion header
     // pattern), and is named by the title alone: the number is aria-hidden.
-    headings.slice(12, 18).forEach((heading, index) => {
+    headings.slice(15, 21).forEach((heading, index) => {
       expect(heading).toHaveAccessibleName(solutions[index].title)
       expect(within(heading).getByRole('button')).toHaveAccessibleName(
         solutions[index].title,
       )
     })
-    expect(headings[18].textContent).toBe('How We Work')
-    expect(headings.slice(19, 23).map((heading) => heading.textContent)).toEqual(
+    expect(headings[21].textContent).toBe('How We Work')
+    expect(headings.slice(22, 26).map((heading) => heading.textContent)).toEqual(
       processStages.map((stage) => stage.name),
     )
-    expect(headings[23].textContent).toBe(FUTURE_READY)
-    expect(headings[24].textContent).toBe('About Fafanua')
-    expect(headings[25].textContent).toBe(CONTACT)
+    expect(headings[26].textContent).toBe(FUTURE_READY)
+    expect(headings[27].textContent).toBe('About Fafanua')
+    expect(headings[28].textContent).toBe(CONTACT)
     expect(
       within(screen.getByRole('contentinfo')).queryAllByRole('heading'),
     ).toHaveLength(0)

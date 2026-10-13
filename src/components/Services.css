@@ -19,10 +19,12 @@
   background-color: var(--color-bg);
 }
 
-/* The positioning block above (Positioning.css) already ends with
-   --space-section, so the section adds no top padding of its own there
-   and the gap between them is not doubled. */
-.positioning + .services {
+/* The Data Trust Assessment above (TrustAssessment.css, #71) already
+   ends with --space-section, so the section adds no top padding of its
+   own there and the gap between them is not doubled. It used to follow
+   the positioning block directly (.positioning + .services); W4 in the
+   trust and lineage plan put the assessment between them. */
+.trust-assessment + .services {
   padding-block-start: 0;
 }
 

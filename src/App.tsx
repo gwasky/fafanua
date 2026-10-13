@@ -10,6 +10,7 @@ import Positioning from './components/Positioning.tsx'
 import Process from './components/Process.tsx'
 import Services from './components/Services.tsx'
 import Solutions from './components/Solutions.tsx'
+import TrustAssessment from './components/TrustAssessment.tsx'
 import { landOnHash } from './landOnHash.ts'
 import { useReveal } from './useReveal.ts'
 
@@ -29,6 +30,7 @@ function App() {
       <main id="main" tabIndex={-1}>
         <Hero />
         <Positioning />
+        <TrustAssessment />
         <Services />
         <ManagedServices />
         <Solutions />
