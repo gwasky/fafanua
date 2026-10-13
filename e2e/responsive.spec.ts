@@ -2179,7 +2179,7 @@ for (const width of WIDTHS) {
 
     // The future-ready graphic's final node (#63): labelled "advanced
     // analytics & AI" like the four labels above it, a larger ring than
-    // their dots, with the rail reaching it from provenance. About (#63):
+    // their dots, with the rail reaching it from lineage (#72). About (#63):
     // the heading with the statement beneath it, then the description,
     // side by side from 1024px and stacked below it.
     test(`future-ready destination and the About columns at ${width}px`, async ({ page }, testInfo) => {
