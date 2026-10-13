@@ -110,14 +110,18 @@ test.describe('one call to action', () => {
     })
   }
 
-  test('the homepage header, hero and closing buttons share the one name', async ({ page }) => {
+  test('the homepage header, hero, Data Trust Assessment and closing buttons share the one name', async ({ page }) => {
     await openPath(page, '/', 1440)
     const name = 'Book a data trust assessment'
     const links = page.getByRole('link', { name, exact: true })
-    await expect(links).toHaveCount(3)
+    await expect(links).toHaveCount(4)
     await expect(page.getByRole('banner').getByRole('link', { name, exact: true })).toHaveAttribute('href', '#contact')
     await expect(
       page.getByRole('region', { name: 'Trusted Data. Better Decisions.' }).getByRole('link'),
+    ).toHaveAttribute('href', '#contact')
+    // The Data Trust Assessment's one link, its button (#71).
+    await expect(
+      page.getByRole('region', { name: 'Know where every number comes from.' }).getByRole('link'),
     ).toHaveAttribute('href', '#contact')
     await expect(page.locator('#contact').getByRole('link', { name, exact: true })).toHaveAttribute(
       'href',

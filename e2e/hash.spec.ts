@@ -23,8 +23,10 @@ import {
 const WIDTHS = [360, 1440] as const
 const MOTIONS = ['reduce', 'no-preference'] as const
 
-// Managed Services is its own section from #58.
+// Managed Services is its own section from #58; the Data Trust
+// Assessment (#71) is between the problem statement and Services.
 const SECTIONS = [
+  '#data-trust-assessment',
   '#services',
   '#managed-services',
   '#solutions',
@@ -457,6 +459,8 @@ test.describe('keyboard focus', () => {
     // The first card's title link (#67).
     { path: '/#services', next: services[0].name },
     { path: '/#solutions', next: sectors[0] },
+    // The section's one stop, its button (#71).
+    { path: '/#data-trust-assessment', next: 'Book a data trust assessment' },
     { path: '/#how-we-work', next: 'Book a data trust assessment' },
     { path: '/#future-ready', next: 'Book a data trust assessment' },
     { path: '/#about', next: 'Book a data trust assessment' },

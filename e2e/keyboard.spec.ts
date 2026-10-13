@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test'
+import { assessmentHeading } from '../src/data/assessment.ts'
 import { managedServices, services } from '../src/data/services.ts'
 import { solutions } from '../src/data/solutions.ts'
 import { focusedName, focusStyle, openPage, pressTab, test, waitForFonts } from './fixtures.ts'
@@ -30,13 +31,14 @@ test.describe('Tab order', () => {
   // 28 and 24 after #59; the two phone links (owner decision on #60) add
   // one stop each; #67 adds the six card title links, the Managed
   // Services heading link and the Health row; #68 removes the hero's
-  // secondary button, so the hero has one stop.
-  test('1440 has 37 stops', () => {
-    expect(SEQUENCE[1440]).toHaveLength(37)
+  // secondary button, so the hero has one stop; #71 adds the Data Trust
+  // Assessment's button after it.
+  test('1440 has 38 stops', () => {
+    expect(SEQUENCE[1440]).toHaveLength(38)
   })
 
-  test('360 with the menu closed has 33 stops', () => {
-    expect(SEQUENCE[360]).toHaveLength(33)
+  test('360 with the menu closed has 34 stops', () => {
+    expect(SEQUENCE[360]).toHaveLength(34)
   })
 
   for (const width of [1440, 360]) {
@@ -106,6 +108,7 @@ test.describe('focus after in-page links', () => {
     { from: 'header', link: 'About', hash: '#about', next: 'Book a data trust assessment' },
     { from: 'header', link: 'Book a data trust assessment', hash: '#contact', next: 'Book a data trust assessment' },
     { from: 'hero', link: 'Book a data trust assessment', hash: '#contact', next: 'Book a data trust assessment' },
+    { from: 'assessment', link: 'Book a data trust assessment', hash: '#contact', next: 'Book a data trust assessment' },
     { from: 'footer', link: 'Services', hash: '#services', next: firstDisclosure },
     { from: 'footer', link: 'Solutions', hash: '#solutions', next: firstSector },
   ] as const
@@ -113,14 +116,17 @@ test.describe('focus after in-page links', () => {
   for (const { from, link, hash, next } of cases) {
     test(`${from} "${link}" then Tab goes to "${next}" at 1440px`, async ({ page }) => {
       await openPage(page, 1440)
-      // The hero's call to action is found inside the hero, as the header's
-      // and the closing call to action share its name (#60, #68).
+      // The hero's and the Data Trust Assessment's calls to action are
+      // found inside their sections, as the header's and the closing call
+      // to action share their name (#60, #68, #71).
       const scope =
         from === 'header'
           ? page.getByRole('banner')
           : from === 'footer'
             ? page.getByRole('contentinfo')
-            : page.getByRole('region', { name: 'Trusted Data. Better Decisions.' })
+            : from === 'assessment'
+              ? page.getByRole('region', { name: assessmentHeading })
+              : page.getByRole('region', { name: 'Trusted Data. Better Decisions.' })
       await scope.getByRole('link', { name: link, exact: true }).focus()
       await page.keyboard.press('Enter')
       await expect(page).toHaveURL(new RegExp(`${hash}$`))

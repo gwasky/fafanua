@@ -19,6 +19,7 @@ import { expectUnobscured, sectors } from './focus.ts'
 
 // Every main section after the positioning block, in page order.
 const SECTIONS = [
+  'data-trust-assessment',
   'services',
   'managed-services',
   'solutions',
@@ -617,8 +618,9 @@ test.describe('earlier motion, consistent (no-preference)', () => {
   test('every CTA arrow nudges --cta-arrow-shift over --duration-cta-arrow on hover', async ({ page }) => {
     await openPage(page, 1440)
     const arrows = page.locator('.button:has(.button__arrow)')
-    // The header's, the hero's and the closing call to action's.
-    await expect(arrows).toHaveCount(3)
+    // The header's, the hero's, the Data Trust Assessment's (#71) and the
+    // closing call to action's.
+    await expect(arrows).toHaveCount(4)
     const duration = await tokenTime(page, '--duration-cta-arrow')
     for (const button of await arrows.all()) {
       const arrow = button.locator('.button__arrow')

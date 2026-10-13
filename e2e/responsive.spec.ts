@@ -48,6 +48,7 @@ const ANCHORS = [
   '#about',
   '#contact', // header call to action
   '#contact', // hero "Book a data trust assessment", its one call to action (#68)
+  '#contact', // the Data Trust Assessment's button (#71)
   '#services', // footer nav
   '#solutions',
   '#how-we-work',
@@ -397,6 +398,112 @@ const sectorOverflow = (page: Page) =>
         )
       })
       .map((element) => `${element.tagName}: ${element.textContent?.slice(0, 40)}`)
+  })
+
+/**
+ * The Data Trust Assessment's layout (#71): its padding and the gaps to
+ * its neighbours' content, its columns, the example's steps, and anything
+ * overlapping, outside the container, overflowing or broken mid-word.
+ */
+const measureAssessment = (page: Page) =>
+  page.evaluate(() => {
+    const section = document.getElementById('data-trust-assessment')!
+    const container = section.querySelector(':scope > .container')!
+    const copy = container.children[0]
+    const figure = section.querySelector('figure')!
+    const box = (element: Element) => element.getBoundingClientRect()
+    const probe = document.createElement('div')
+    probe.style.paddingTop = 'var(--space-section)'
+    probe.style.backgroundColor = 'var(--color-bg)'
+    document.body.append(probe)
+    const section_ = parseFloat(getComputedStyle(probe).paddingTop)
+    const paper = getComputedStyle(probe).backgroundColor
+    probe.remove()
+    const statement = document.querySelector('.positioning p')!
+    const servicesFirst = document.querySelector('#services > .container')!.firstElementChild!
+    const containerStyle = getComputedStyle(container)
+    const inner = {
+      left: box(container).left + parseFloat(containerStyle.paddingLeft),
+      right: box(container).right - parseFloat(containerStyle.paddingRight),
+    }
+    const all = [...container.querySelectorAll('*')]
+    // Blocks in reading order, in each column and in each step.
+    const sequences = [
+      [...copy.children],
+      [...figure.children],
+      ...[...figure.querySelectorAll('li')].map((item) => [...item.children]),
+    ]
+    const overlaps = sequences.flatMap((blocks) =>
+      blocks.slice(1).flatMap((block, i) =>
+        box(block).top < box(blocks[i]).bottom - 1
+          ? [`${blocks[i].textContent?.slice(0, 30)} / ${block.textContent?.slice(0, 30)}`]
+          : [],
+      ),
+    )
+    // A word broken across lines leaves a line that starts or ends
+    // mid-word: compare each line's text with the element's words.
+    const brokenWords = (element: Element) => {
+      const text = element.firstChild
+      if (!(text instanceof Text)) return []
+      const words = new Set(text.textContent!.split(/\s+/))
+      const range = document.createRange()
+      const lines: string[] = []
+      let line = ''
+      let top: number | null = null
+      for (let i = 0; i < text.textContent!.length; i++) {
+        range.setStart(text, i)
+        range.setEnd(text, i + 1)
+        const rect = range.getClientRects()[0]
+        if (!rect) continue
+        if (top !== null && Math.abs(rect.top - top) > 2) {
+          lines.push(line)
+          line = ''
+        }
+        top = rect.top
+        line += text.textContent![i]
+      }
+      lines.push(line)
+      return lines.flatMap((l) => l.trim().split(/\s+/)).filter((word) => word && !words.has(word))
+    }
+    return {
+      section: section_,
+      paper,
+      background: getComputedStyle(section).backgroundColor,
+      figureBackground: getComputedStyle(figure).backgroundColor,
+      paddingTop: parseFloat(getComputedStyle(section).paddingTop),
+      paddingBottom: parseFloat(getComputedStyle(section).paddingBottom),
+      servicesPaddingTop: parseFloat(getComputedStyle(document.getElementById('services')!).paddingTop),
+      gapAbove: box(copy.firstElementChild!).top - box(statement).bottom,
+      gapBelow: box(servicesFirst).top - box(container).bottom,
+      copy: box(copy).toJSON() as DOMRect,
+      figure: box(figure).toJSON() as DOMRect,
+      caption: figure.querySelector('figcaption')!.textContent,
+      steps: [...figure.querySelectorAll('li')].map((item) => {
+        const ring = getComputedStyle(item, '::before')
+        const label = box(item.firstElementChild!)
+        const itemBox = box(item)
+        return {
+          top: itemBox.top,
+          bottom: itemBox.bottom,
+          left: itemBox.left,
+          ringTop: itemBox.top + parseFloat(ring.top),
+          ringRight: itemBox.left + parseFloat(ring.left) + parseFloat(ring.width),
+          labelLeft: label.left,
+          labelTop: label.top,
+          labelBottom: label.bottom,
+        }
+      }),
+      overlaps,
+      outside: all
+        .filter((element) => box(element).left < inner.left - 1 || box(element).right > inner.right + 1)
+        .map((element) => `${element.tagName}.${element.className}`),
+      clipped: all
+        .filter((element) => element.scrollWidth > element.clientWidth + 1 && getComputedStyle(element).display !== 'inline')
+        .map((element) => `${element.tagName}.${element.className}`),
+      broken: all.flatMap(brokenWords),
+      sectionScroll: section.scrollWidth,
+      sectionWidth: section.clientWidth,
+    }
   })
 
 const serviceToggles = (page: Page) =>
@@ -1099,7 +1206,9 @@ for (const width of WIDTHS) {
     // removed the response beside it. One column at every width, with no
     // empty second column, and held to a display measure on wide screens.
     // It keeps its size, weight and colour. Its bottom padding is the only
-    // gap above the Services eyebrow, and no word breaks mid-word.
+    // gap above the Data Trust Assessment's heading (#71), which now
+    // follows it in place of the Services eyebrow, and no word breaks
+    // mid-word.
     test(`positioning section layout, spacing and wrapping at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       const m = await page.evaluate(() => {
@@ -1107,7 +1216,7 @@ for (const width of WIDTHS) {
         const paragraphs = [...block.querySelectorAll('p')]
         const [statement] = paragraphs
         const inner = block.firstElementChild!
-        const eyebrow = document.querySelector('#services p')!
+        const eyebrow = document.querySelector('#data-trust-assessment h2')!
         const box = (element: Element) => element.getBoundingClientRect()
         const probe = document.createElement('div')
         probe.style.paddingTop = 'var(--space-section)'
@@ -1169,7 +1278,7 @@ for (const width of WIDTHS) {
       })
       const detail = JSON.stringify(m)
 
-      expect(m.eyebrowText, detail).toMatch(/Capabilities$/)
+      expect(m.eyebrowText, detail).toBe('Know where every number comes from.')
       expect(m.broken, detail).toEqual([])
       // One paragraph in one column: nothing beside it.
       expect(m.paragraphs, detail).toBe(1)
@@ -1195,6 +1304,74 @@ for (const width of WIDTHS) {
         expect(gap, detail).toBeLessThanOrEqual(1.25 * m.section)
       }
     })
+
+    // The Data Trust Assessment (#71), on paper between the problem
+    // statement and Services: one --space-section gap above and below its
+    // content, never doubled or zero; the copy then the example stacked
+    // below 64em, side by side from it; the example's five steps stacked
+    // at every width; and nothing overflowing, clipped or overlapping, at
+    // the default page text size and at 200%.
+    for (const text of ['100%', '200%'] as const) {
+      test(`Data Trust Assessment layout, spacing and wrapping with ${text} text at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        if (text !== '100%') {
+          await page.addStyleTag({ content: `html { font-size: ${text}; }` })
+          await expect
+            .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
+            .toBe('32px')
+          await waitForFonts(page)
+        }
+        const m = await measureAssessment(page)
+        const detail = JSON.stringify(m)
+
+        expect(m.background, detail).toBe(m.paper)
+        expect(m.figureBackground, detail).toBe('rgb(255, 255, 255)')
+        // One section gap above (the problem statement's bottom padding)
+        // and one below (this section's), each.
+        expect(m.paddingTop, detail).toBe(0)
+        expect(m.servicesPaddingTop, detail).toBe(0)
+        expect(Math.abs(m.paddingBottom - m.section), detail).toBeLessThanOrEqual(1)
+        expect(Math.abs(m.gapAbove - m.section), `gap above: ${detail}`).toBeLessThanOrEqual(1)
+        expect(Math.abs(m.gapBelow - m.section), `gap below: ${detail}`).toBeLessThanOrEqual(1)
+        expect(m.section, detail).toBeGreaterThanOrEqual(64)
+        // Two columns from 64em. A media query in em follows the browser's
+        // text size, not page text, so with 200% page text the columns
+        // stay at 1024 and 1440px.
+        if (width >= 1024) {
+          expect(m.figure.left, detail).toBeGreaterThan(m.copy.right)
+          expect(Math.abs(m.figure.top - m.copy.top), detail).toBeLessThanOrEqual(1)
+        } else {
+          expect(m.figure.top, detail).toBeGreaterThan(m.copy.bottom)
+          expect(Math.abs(m.figure.left - m.copy.left), detail).toBeLessThanOrEqual(1)
+        }
+        // The five steps stack, in order, each below the last, level at
+        // the inline start, and each ring beside its label.
+        expect(m.steps, detail).toHaveLength(5)
+        for (let i = 1; i < m.steps.length; i++) {
+          expect(m.steps[i].top, `step ${i + 1}: ${detail}`).toBeGreaterThanOrEqual(m.steps[i - 1].bottom - 1)
+          expect(Math.abs(m.steps[i].left - m.steps[0].left), `step ${i + 1}: ${detail}`).toBeLessThanOrEqual(1)
+        }
+        for (const step of m.steps) {
+          expect(step.ringRight, detail).toBeLessThanOrEqual(step.labelLeft)
+          expect(step.ringTop, detail).toBeGreaterThanOrEqual(step.labelTop - 1)
+          expect(step.ringTop, detail).toBeLessThanOrEqual(step.labelBottom)
+        }
+        // Each block below the one before it, never over it.
+        expect(m.overlaps, detail).toEqual([])
+        // Every element inside the container's content box, none wider
+        // than its own box, and no word broken mid-word.
+        expect(m.outside, detail).toEqual([])
+        expect(m.clipped, detail).toEqual([])
+        expect(m.broken, detail).toEqual([])
+        expect(m.caption, detail).toBe('Illustrative example. Sample data only.')
+        expect(m.sectionScroll, detail).toBeLessThanOrEqual(m.sectionWidth)
+        // At 1024px with 200% page text the header's inline navigation,
+        // which starts at 64em of the browser's text size, is wider than
+        // the page; that is the header's, not this section's (noted on
+        // #71). Everywhere else the whole page fits.
+        if (!(width === 1024 && text === '200%')) await expectNoHorizontalScroll(page)
+      })
+    }
 
     if (width === 1440) {
       // The card hover (#56): with motion allowed, hovering a card's list
@@ -1466,7 +1643,8 @@ for (const width of WIDTHS) {
     // One section padding above the panel (owner decision on #58): the
     // Managed section adds no top padding after Services, so the gap from
     // the end of Services' content (it ends with the system diagram) to the panel is
-    // Services' bottom padding alone, as Positioning to Services is.
+    // Services' bottom padding alone, as the Data Trust Assessment to
+    // Services is (#71; Positioning to Services before it).
     test(`one section padding above the managed-services panel at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       const m = await page.evaluate(() => {
@@ -1474,21 +1652,21 @@ for (const width of WIDTHS) {
         const section = document.getElementById('managed-services')!
         const panel = section.querySelector('.surface-dark')!
         const servicesContent = services.querySelector(':scope > .container')!
-        const positioningContent = document.querySelector('.positioning > .container')!
+        const assessmentContent = document.querySelector('#data-trust-assessment > .container')!
         return {
           gap: panel.getBoundingClientRect().top - servicesContent.getBoundingClientRect().bottom,
           servicesPadding: parseFloat(getComputedStyle(services).paddingBottom),
           sectionPadding: parseFloat(getComputedStyle(section).paddingTop),
           rhythm:
             servicesContent.getBoundingClientRect().top -
-            positioningContent.getBoundingClientRect().bottom,
+            assessmentContent.getBoundingClientRect().bottom,
         }
       })
       const detail = JSON.stringify(m)
       expect(m.sectionPadding, detail).toBe(0)
       expect(m.servicesPadding, detail).toBeGreaterThanOrEqual(64)
       expect(Math.abs(m.gap - m.servicesPadding), detail).toBeLessThanOrEqual(1)
-      expect(Math.abs(m.gap - m.rhythm), `same as Positioning to Services: ${detail}`).toBeLessThanOrEqual(1)
+      expect(Math.abs(m.gap - m.rhythm), `same as the Data Trust Assessment to Services: ${detail}`).toBeLessThanOrEqual(1)
     })
 
     // A fresh load of /#managed-services lands the section's top on the

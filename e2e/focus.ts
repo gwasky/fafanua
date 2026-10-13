@@ -20,8 +20,10 @@ const sections = ['Services', 'Solutions', 'How We Work', 'About']
 export const nav = [...sections, 'Book a data trust assessment']
 const footerNav = [...sections, 'Contact']
 // The hero has one stop, its call to action (#68), which shares the
-// header's and the closing button's name.
+// header's and the closing button's name; the Data Trust Assessment's
+// button (#71), the same again, is its section's one stop.
 const fromHero = [
+  'Book a data trust assessment',
   'Book a data trust assessment',
   ...cards,
   managedServices.heading,

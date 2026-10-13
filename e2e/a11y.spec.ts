@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expectLanded, expectNoAxeViolations, openPage, scrollThrough, waitForMotion, waitForScrollSettle } from './fixtures.ts'
 import { SEQUENCE, walkFocus } from './focus.ts'
 import { AXE_TAGS, formatViolations } from '../src/test/axe.ts'
+import { assessmentHeading } from '../src/data/assessment.ts'
 import { managedServices, services, servicesIntro } from '../src/data/services.ts'
 
 // Axe on the production preview in a real browser, where contrast,
@@ -136,6 +137,39 @@ test.describe('axe, a service card hovered', () => {
 
       await expectNoAxeViolations(page, testInfo)
     })
+  }
+})
+
+test.describe('axe, Data Trust Assessment in view (#71)', () => {
+  // The section and its illustrative example scrolled into view, at the
+  // default text size and with 200% page text.
+  for (const width of [320, 360, 1024, 1440]) {
+    for (const text of ['100%', '200%'] as const) {
+      test(`example in view with ${text} text at ${width}px`, async ({ page }, testInfo) => {
+        await openPage(page, width)
+        if (text !== '100%') {
+          await page.addStyleTag({ content: `html { font-size: ${text}; }` })
+          await expect
+            .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
+            .toBe('32px')
+        }
+        const section = page.getByRole('region', { name: assessmentHeading })
+        const figure = section.getByRole('figure')
+        await figure.scrollIntoViewIfNeeded()
+        await expect(figure).toBeInViewport()
+        await expect(figure.locator('figcaption')).toHaveText('Illustrative example. Sample data only.')
+
+        await expectNoAxeViolations(page, testInfo)
+        // The section fits the page. (At 1024px with 200% page text the
+        // header's inline navigation is wider than the page, which is the
+        // header's, noted on #71, so the section is measured, not the page.)
+        const { scrollWidth, innerWidth } = await section.evaluate((element) => ({
+          scrollWidth: Math.max(element.scrollWidth, element.getBoundingClientRect().right),
+          innerWidth: window.innerWidth,
+        }))
+        expect(scrollWidth, `scrollWidth ${scrollWidth}, innerWidth ${innerWidth}`).toBeLessThanOrEqual(innerWidth)
+      })
+    }
   }
 })
 
