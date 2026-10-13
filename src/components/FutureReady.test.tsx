@@ -3,16 +3,16 @@ import { describe, expect, it } from 'vitest'
 import FutureReady from './FutureReady.tsx'
 
 // The heading is the owner's amended wording on #52, which plan V2 §14
-// gives exactly. The paragraph is _docs/plan.md Section 9, verbatim,
-// character for character.
+// gives exactly. The paragraph and the four labels are W5 in the trust and
+// lineage plan (#72), character for character.
 const HEADING = 'Trusted foundations for what comes next'
 const STATEMENT =
-  'The strongest analytics and AI systems begin with trusted data. Fafanua designs data foundations that preserve business definitions, access controls, quality signals, and provenance as organisations introduce more advanced analytics and AI capabilities.'
+  'AI and advanced analytics work only when three things are true: metrics are clearly defined, inputs can be traced to their source, and data quality is known. The Data Trust Assessment gives you a plain verdict for each use case you are considering: ready now, ready after specific fixes, or not ready yet.'
 const LABELS = [
   'business definitions',
   'access controls',
   'quality signals',
-  'provenance',
+  'lineage',
 ]
 // The final node's label, the refinement plan §9's preferred option (#63).
 const DESTINATION = 'advanced analytics & AI'
@@ -56,15 +56,18 @@ const FORBIDDEN = [
   'AI applications',
   'chatbot',
   'LLM',
+  // Clinical AI is never mentioned (trust and lineage plan W5), and the
+  // retired vocabulary (its section 6) is gone.
+  'clinical',
+  'diagnosis',
+  'provenance',
+  'data operating system',
 ]
 
-// The only places "AI" may appear: the readiness framing from plan Section
-// 9, and the final node's one label, a readiness destination (#63).
-const ALLOWED_AI_PHRASES = [
-  'analytics and AI systems',
-  'analytics and AI capabilities',
-  'advanced analytics & AI',
-]
+// The only places "AI" may appear: the readiness framing of W5's
+// paragraph (#72), and the final node's one label, a readiness
+// destination (#63).
+const ALLOWED_AI_PHRASES = ['AI and advanced analytics', 'advanced analytics & AI']
 
 function renderFutureReady() {
   render(<FutureReady />)
@@ -129,20 +132,32 @@ describe('FutureReady', () => {
     ).toHaveLength(0)
   })
 
-  it('hides the graphic from screen readers and lists the four labels in order', () => {
+  it('exposes the graphic: a list named by the heading with the four labels in order, then the destination', () => {
     const { section, graphic } = renderFutureReady()
+    const list = within(section).getByRole('list', { name: HEADING })
 
-    // The graphic and the technical grid behind the content.
-    expect(section.querySelectorAll('[aria-hidden="true"]')).toHaveLength(2)
-    expect(graphic).toHaveAttribute('aria-hidden', 'true')
+    // Only the technical grid behind the content is hidden now (#72).
+    expect(section.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1)
+    expect(section.querySelector('[aria-hidden="true"]')).toHaveClass('technical-grid')
+    expect(graphic).not.toHaveAttribute('aria-hidden')
+    expect(graphic).toContainElement(list)
+    expect(list).toHaveAttribute('aria-labelledby', 'future-ready-heading')
+    expect(within(list).getAllByRole('listitem').map((item) => item.textContent)).toEqual(LABELS)
+    expect(within(section).getByText(DESTINATION)).toBeVisible()
     expect(graphic).not.toContainElement(
       within(section).getByRole('heading', { level: 2 }),
     )
     expect(graphic).not.toContainElement(section.querySelector('p'))
-    expect(
-      [...graphic.querySelectorAll('li')].map((item) => item.textContent),
-    ).toEqual(LABELS)
     expect(graphic.textContent).toBe(LABELS.join('') + DESTINATION)
+  })
+
+  it('draws its dots, rail and ring only with empty pseudo-elements, so nothing decorative is in the DOM', () => {
+    const { graphic } = renderFutureReady()
+
+    expect(graphic.querySelectorAll('*')).toHaveLength(LABELS.length + 2)
+    for (const element of graphic.querySelectorAll('*')) {
+      expect(element.textContent).not.toBe('')
+    }
   })
 
   it('labels the final node "advanced analytics & AI", after the four foundations, not as a fifth', () => {
@@ -160,7 +175,7 @@ describe('FutureReady', () => {
   })
 
   it('says "advanced analytics" in the paragraph that the destination repeats', () => {
-    expect(STATEMENT).toContain('advanced analytics and AI capabilities')
+    expect(STATEMENT).toContain('AI and advanced analytics')
   })
 
   it('has exactly one technical grid, first, behind the content', () => {
@@ -172,8 +187,14 @@ describe('FutureReady', () => {
     expect(grids[0]).toHaveAttribute('aria-hidden', 'true')
   })
 
-  it('takes each graphic label word for word from the paragraph', () => {
-    for (const label of LABELS) expect(STATEMENT).toContain(label)
+  it('no longer names the graphic\'s labels in the paragraph, so the graphic adds to it (#72)', () => {
+    expect(STATEMENT).not.toContain('access controls')
+    for (const label of LABELS) expect(STATEMENT).not.toContain(label)
+  })
+
+  it('names the Data Trust Assessment and its three verdicts in the paragraph', () => {
+    expect(STATEMENT).toContain('The Data Trust Assessment')
+    expect(STATEMENT).toContain('ready now, ready after specific fixes, or not ready yet')
   })
 
   it('has no images, icons or charts', () => {
@@ -187,13 +208,23 @@ describe('FutureReady', () => {
   it.each(FORBIDDEN)('does not say "%s"', (phrase) => {
     const { section } = renderFutureReady()
     const escaped = phrase.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')
+    const text = [...section.querySelectorAll('h2, p, li, .future-ready__end')]
+      .map((element) => element.textContent)
+      .join(' ')
 
-    expect(section.textContent).not.toMatch(new RegExp(`\\b${escaped}\\b`, 'i'))
+    expect(text).toBe(
+      [HEADING, STATEMENT, ...LABELS, DESTINATION].join(' '),
+    )
+    expect(text).not.toMatch(new RegExp(`\\b${escaped}\\b`, 'i'))
   })
 
-  it('says "AI" only inside the two readiness phrases from the plan', () => {
+  it('says "AI" only inside the two readiness phrases', () => {
     const { section } = renderFutureReady()
-    const text = section.textContent!
+    // Each block's text on its own, so the heading's last word and the
+    // paragraph's first ("AI") do not run together.
+    const text = [...section.querySelectorAll('h2, p, li, .future-ready__end')]
+      .map((element) => element.textContent)
+      .join(' ')
     const matches = [...text.matchAll(/\bAI\b/g)]
 
     expect(matches).toHaveLength(ALLOWED_AI_PHRASES.length)

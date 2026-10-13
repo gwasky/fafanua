@@ -1,31 +1,20 @@
 import TechnicalGrid from './TechnicalGrid.tsx'
+import {
+  futureReadyDestination,
+  futureReadyHeading,
+  futureReadyLabels,
+  futureReadyStatement,
+} from '../data/futureReady.ts'
 import './FutureReady.css'
-
-// The heading is the owner's amended wording on #52, which plan V2 §14
-// gives exactly. The paragraph is _docs/plan.md Section 9, verbatim. Not service copy, so it lives here
-// rather than in src/data/services.ts.
-const futureReadyHeading = 'Trusted foundations for what comes next'
-const futureReadyStatement =
-  'The strongest analytics and AI systems begin with trusted data. Fafanua designs data foundations that preserve business definitions, access controls, quality signals, and provenance as organisations introduce more advanced analytics and AI capabilities.'
-
-// The graphic's labels, taken word for word from the statement, in order.
-const futureReadyLabels = [
-  'business definitions',
-  'access controls',
-  'quality signals',
-  'provenance',
-] as const
-
-// The destination the four foundations lead to: the refinement plan §9's
-// preferred label (#63), a readiness outcome, not a product.
-const futureReadyDestination = 'advanced analytics & AI'
 
 // One of the page's two full-bleed dark sections, with the hero (plan V2
 // §14): a statement of direction, not a product.
-// The graphic repeats what the paragraph already says (its four labels
-// and, as its end, the paragraph's "advanced analytics and AI"), so it is
-// hidden from screen readers. It has no links or other tab stops. The technical
-// grid sits behind the content.
+// Its copy is in src/data/futureReady.ts. The paragraph (W5, #72) no
+// longer names the graphic's four labels, so the graphic is exposed to
+// screen readers: a list named by the section heading, then the
+// destination. Its dots, rail and ring are empty CSS pseudo-elements, so
+// they stay hidden. It has no links or other tab stops. The technical grid
+// sits behind the content.
 function FutureReady() {
   return (
     <section
@@ -42,8 +31,12 @@ function FutureReady() {
           </h2>
           <p className="future-ready__statement">{futureReadyStatement}</p>
         </div>
-        <div className="future-ready__graphic" aria-hidden="true">
-          <ul className="future-ready__list" role="list">
+        <div className="future-ready__graphic">
+          <ul
+            className="future-ready__list"
+            role="list"
+            aria-labelledby="future-ready-heading"
+          >
             {futureReadyLabels.map((label) => (
               <li key={label} className="future-ready__item">
                 {label}
