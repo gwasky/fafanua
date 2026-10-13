@@ -29,13 +29,14 @@ async function expectRing(page: Page, name: string) {
 test.describe('Tab order', () => {
   // 28 and 24 after #59; the two phone links (owner decision on #60) add
   // one stop each; #67 adds the six card title links, the Managed
-  // Services heading link and the Health row.
-  test('1440 has 38 stops', () => {
-    expect(SEQUENCE[1440]).toHaveLength(38)
+  // Services heading link and the Health row; #68 removes the hero's
+  // secondary button, so the hero has one stop.
+  test('1440 has 37 stops', () => {
+    expect(SEQUENCE[1440]).toHaveLength(37)
   })
 
-  test('360 with the menu closed has 34 stops', () => {
-    expect(SEQUENCE[360]).toHaveLength(34)
+  test('360 with the menu closed has 33 stops', () => {
+    expect(SEQUENCE[360]).toHaveLength(33)
   })
 
   for (const width of [1440, 360]) {
