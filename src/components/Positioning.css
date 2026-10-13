@@ -12,9 +12,10 @@
  * (16ch) is sized for the --text-hero and --text-section headings and
  * would break this statement into ten or more lines.
  *
- * Its --space-section bottom padding is the whole gap above the
- * Data Trust Assessment (#71): TrustAssessment.css drops that section's
- * top padding when it follows this block, so the gap is not doubled.
+ * Its --space-section bottom padding is the gap above the next section.
+ * The Data Trust Assessment follows it (#71): TrustAssessment.css gives
+ * that section --space-8 of top padding and takes it off this block's
+ * bottom padding, so the gap stays one --space-section, not doubled.
  */
 
 .positioning {

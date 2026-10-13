@@ -412,14 +412,12 @@ const measureAssessment = (page: Page) =>
     const copy = container.children[0]
     const figure = section.querySelector('figure')!
     const box = (element: Element) => element.getBoundingClientRect()
-    const probe = document.createElement('div')
-    probe.style.paddingTop = 'var(--space-section)'
-    probe.style.backgroundColor = 'var(--color-bg)'
-    document.body.append(probe)
-    const section_ = parseFloat(getComputedStyle(probe).paddingTop)
-    const paper = getComputedStyle(probe).backgroundColor
-    probe.remove()
-    const statement = document.querySelector('.positioning p')!
+    // One --space-section: the problem block's top padding, measured
+    // where it is used.
+    const positioning = document.querySelector('.positioning')!
+    const section_ = parseFloat(getComputedStyle(positioning).paddingTop)
+    const paper = getComputedStyle(positioning).backgroundColor
+    const statement = positioning.querySelector('p')!
     const servicesFirst = document.querySelector('#services > .container')!.firstElementChild!
     const containerStyle = getComputedStyle(container)
     const inner = {
@@ -471,6 +469,7 @@ const measureAssessment = (page: Page) =>
       background: getComputedStyle(section).backgroundColor,
       figureBackground: getComputedStyle(figure).backgroundColor,
       paddingTop: parseFloat(getComputedStyle(section).paddingTop),
+      positioningPaddingBottom: parseFloat(getComputedStyle(positioning).paddingBottom),
       paddingBottom: parseFloat(getComputedStyle(section).paddingBottom),
       servicesPaddingTop: parseFloat(getComputedStyle(document.getElementById('services')!).paddingTop),
       gapAbove: box(copy.firstElementChild!).top - box(statement).bottom,
@@ -1273,6 +1272,7 @@ for (const width of WIDTHS) {
           eyebrowTop: box(eyebrow).top,
           eyebrowText: eyebrow.textContent,
           blockPadding: getComputedStyle(block).paddingBottom,
+          nextPadding: getComputedStyle(block.nextElementSibling!).paddingTop,
           broken: brokenWords(statement),
         }
       })
@@ -1296,7 +1296,9 @@ for (const width of WIDTHS) {
       if (width === 1440) {
         expect(m.statement.width, detail).toBeLessThan(0.75 * m.content)
       }
-      expect(parseFloat(m.blockPadding), detail).toBeCloseTo(m.section, 0)
+      // Its bottom padding and the Data Trust Assessment's top padding
+      // add up to one section padding (#71).
+      expect(parseFloat(m.blockPadding) + parseFloat(m.nextPadding), detail).toBeCloseTo(m.section, 0)
       const gap = m.eyebrowTop - m.statement.bottom
       expect(gap, detail).toBeGreaterThanOrEqual(m.section - 1)
       // Not doubled.
@@ -1326,9 +1328,12 @@ for (const width of WIDTHS) {
 
         expect(m.background, detail).toBe(m.paper)
         expect(m.figureBackground, detail).toBe('rgb(255, 255, 255)')
-        // One section gap above (the problem statement's bottom padding)
-        // and one below (this section's), each.
-        expect(m.paddingTop, detail).toBe(0)
+        // One section gap above, split between the problem block's bottom
+        // padding and this section's own top padding, so its heading
+        // lands clear of the header; and one below (this section's).
+        expect(m.paddingTop, detail).toBeGreaterThan(0)
+        expect(m.paddingTop, detail).toBeLessThan(m.section)
+        expect(Math.abs(m.positioningPaddingBottom + m.paddingTop - m.section), detail).toBeLessThanOrEqual(1)
         expect(m.servicesPaddingTop, detail).toBe(0)
         expect(Math.abs(m.paddingBottom - m.section), detail).toBeLessThanOrEqual(1)
         expect(Math.abs(m.gapAbove - m.section), `gap above: ${detail}`).toBeLessThanOrEqual(1)

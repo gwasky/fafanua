@@ -6,10 +6,13 @@
  * white (16.4:1, 6.6:1) in the example; the button is the primary button
  * on light (white on teal 700, 5.2:1).
  *
- * Its padding: the problem statement above ends with --space-section, so
- * the section adds no top padding of its own after it, and Services drops
- * its top padding after this section (Services.css). Each gap, problem to
- * assessment and assessment to Services, is one --space-section.
+ * Its padding: the gap from the problem statement above is one
+ * --space-section, split so that --space-8 of it is this section's own
+ * top padding and the rest the problem block's bottom padding. So a link
+ * or hash landing on the section puts its heading --space-8 below the
+ * header rather than against it. Services drops its top padding after
+ * this section (Services.css). Each gap, problem to assessment and
+ * assessment to Services, is one --space-section.
  *
  * Stacked by default: the copy, then the example. From 64em (literal
  * breakpoint, see the note in tokens.css) two top-aligned columns, the
@@ -32,9 +35,15 @@
   background-color: var(--color-bg);
 }
 
-/* The problem statement's --space-section bottom padding is the gap. */
+/* One --space-section between the problem statement and the heading,
+   --space-8 of it here. Without :has() the gap is --space-8 larger, never
+   doubled. */
+.positioning:has(+ .trust-assessment) {
+  padding-block-end: calc(var(--space-section) - var(--space-8));
+}
+
 .positioning + .trust-assessment {
-  padding-block-start: 0;
+  padding-block-start: var(--space-8);
 }
 
 .trust-assessment__layout {
