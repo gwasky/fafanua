@@ -1,24 +1,31 @@
-// Checks assessment.ts against W4 in the trust and lineage plan (#71), so
-// the Data Trust Assessment section's wording on the site cannot drift
-// from it: the heading, the lead, the two h3s with the four deliverables
-// and the after-line, and the illustrative example: its caption, the
-// owner's metric names (#77), the five steps and the three ratings. The
-// button's label is W1's, read from contact.ts (#68). The two list labels
-// are proposed on #77, not in the plan, so they are checked here only for
-// the owner's rules: labels only, no names, figures or amounts. The ?raw
-// imports resolve relative to this file and are never part of the
-// production bundle.
+// Checks assessment.ts against W4 in the trust and lineage plan (#71) and
+// the Data Trust Assessment homepage enhancement plan (#79), so the
+// section's wording on the site cannot drift from them: from W4 the
+// heading, the lead, the two h3s with the four deliverables, and the
+// owner's metric names (#77) and three ratings in the illustrative
+// example; from the enhancement plan the eyebrow and engagement name (§2),
+// the after-assessment statement and supporting copy (§11), the caption
+// and metrics label (§8) and the seven trace steps (§9). The button's
+// label is W1's, read from contact.ts (#68). The steps label is W4's
+// concept, retained by §9, so it is checked here only for the owner's
+// rules: labels only, no names, figures or amounts. The ?raw imports
+// resolve relative to this file and are never part of the production
+// bundle.
 import { describe, expect, it } from 'vitest'
+import enhancement from '../../_docs/fafanua-data-trust-assessment-homepage-enhancement.md?raw'
 import trustPlan from '../../_docs/fafanua-trust-lineage-positioning-plan.md?raw'
 import assessmentSource from './assessment.ts?raw'
 import {
-  assessmentAfter,
   assessmentAfterHeading,
+  assessmentAfterStatement,
+  assessmentAfterSupporting,
   assessmentCtaLabel,
   assessmentDeliverables,
   assessmentDeliverablesHeading,
+  assessmentEyebrow,
   assessmentHeading,
   assessmentLead,
+  assessmentName,
   exampleMetrics,
   lineageExample,
 } from './assessment.ts'
@@ -45,6 +52,52 @@ const deliverables = [
     .split('\n\n')[1]
     .matchAll(/^- (.+)$/gm),
 ].map((match) => match[1].trimEnd())
+
+// The enhancement plan (#79): the text of a `# N. ` section, up to the
+// next `# ` heading, and its one-line `> ` quotes, without bold markers.
+const enhancementDoc = enhancement.replace(/\r\n/g, '\n')
+
+function enhancementSection(number: number): string {
+  const at = enhancementDoc.indexOf(`\n# ${number}. `)
+  if (at === -1) throw new Error(`"# ${number}. " not found`)
+  return enhancementDoc.slice(at, enhancementDoc.indexOf('\n# ', at + 1))
+}
+
+function enhancementQuotes(number: number): string[] {
+  return [...enhancementSection(number).matchAll(/^> (.+)$/gm)].map((match) =>
+    match[1].trimEnd().replace(/^\*\*(.+)\*\*$/, '$1'),
+  )
+}
+
+const s2 = enhancementQuotes(2)
+const s8 = enhancementQuotes(8)
+const s11 = enhancementQuotes(11)
+// §9's preferred sequence: the second ```text block, its lines without
+// the arrows between them (the first lists the /data-trust-assessment
+// path, after it).
+const s9Blocks = [...enhancementSection(9).matchAll(/^```text\n([\s\S]*?)\n```$/gm)].map((match) => match[1])
+const s9Sequence = (s9Blocks.find((block) => block.includes('↓')) ?? '')
+  .split('\n')
+  .map((line) => line.trim())
+  .filter((line) => line && line !== '↓')
+
+describe('enhancement plan parser (#79)', () => {
+  it('finds the §2 labels, the §8 labels, the §9 sequence and the §11 copy', () => {
+    expect(s2.slice(0, 3)).toEqual(['START WITH TRUST', 'DATA TRUST ASSESSMENT', 'Know where every number comes from.'])
+    expect(s8).toEqual([
+      'Illustrative example',
+      'Illustrative example. Sample data only.',
+      'Sample metrics',
+      'Example leadership metrics',
+    ])
+    expect(s9Sequence).toHaveLength(7)
+    expect(s11.length).toBeGreaterThanOrEqual(3)
+    for (const quote of [...s2, ...s8, ...s9Sequence, ...s11]) {
+      expect(quote).not.toBe('')
+      expect(quote).not.toContain('*')
+    }
+  })
+})
 
 describe('W4 parser', () => {
   it('finds W4 and its fields', () => {
@@ -73,9 +126,30 @@ describe('Data Trust Assessment wording', () => {
     expect(assessmentDeliverables).toEqual(deliverables)
   })
 
-  it('uses the W4 "After the assessment" label and line', () => {
+  it('uses the W4 "After the assessment" label, kept by the enhancement plan §11', () => {
     expect(w4).toContain(`\n**${assessmentAfterHeading}:** `)
-    expect(assessmentAfter).toBe(field(assessmentAfterHeading))
+    expect(enhancementSection(11)).toContain(`\n## ${assessmentAfterHeading}\n`)
+  })
+
+  it('shows the enhancement plan §2\'s eyebrow and engagement name, in capitals, above the heading (#79)', () => {
+    expect(assessmentEyebrow).toBe('Start with trust')
+    expect(assessmentName).toBe('Data Trust Assessment')
+    expect(assessmentEyebrow.toUpperCase()).toBe(s2[0])
+    expect(assessmentName.toUpperCase()).toBe(s2[1])
+    // The heading under them is unchanged.
+    expect(s2[2]).toBe(assessmentHeading)
+  })
+
+  it('replaces the W4 after-line with the enhancement plan §11\'s statement and supporting copy (#79)', () => {
+    // §11 quotes the W4 line it strengthens first.
+    expect(s11[0]).toBe(field(assessmentAfterHeading))
+    expect(assessmentAfterStatement).toBe(s11[1])
+    expect(assessmentAfterStatement).toBe('The assessment tells us what to fix first.')
+    expect(assessmentAfterSupporting).toBe(s11[2])
+    // A spaced em dash (U+2014), not a hyphen or an en dash.
+    expect(assessmentAfterSupporting).toContain(' \u2014 ')
+    expect(assessmentAfterSupporting).not.toMatch(/ - | \u2013 /)
+    expect(assessmentAfterSupporting).toMatch(/^The findings become a prioritised roadmap\. /)
   })
 
   it('labels its button with the W1 label, read from contact.ts (#68)', () => {
@@ -85,7 +159,15 @@ describe('Data Trust Assessment wording', () => {
   })
 
   it('names no fee amount, price or currency', () => {
-    const copy = [assessmentHeading, assessmentLead, ...assessmentDeliverables, assessmentAfter].join(' ')
+    const copy = [
+      assessmentEyebrow,
+      assessmentName,
+      assessmentHeading,
+      assessmentLead,
+      ...assessmentDeliverables,
+      assessmentAfterStatement,
+      assessmentAfterSupporting,
+    ].join(' ')
 
     expect(copy).toContain('at a fixed fee.')
     expect(copy).not.toMatch(/\d|[$€£¥]|\b(UGX|USD|KES|TZS|RWF|EUR|GBP|shillings?|dollars?)\b/i)
@@ -107,9 +189,18 @@ function strings(value: unknown): string[] {
 const exampleStrings = strings(lineageExample)
 
 describe('illustrative example', () => {
-  it('uses the W4 caption, character for character', () => {
-    expect(lineageExample.caption).toBe('Illustrative example. Sample data only.')
-    expect(w4).toContain(`- Caption: "${lineageExample.caption}"`)
+  it('uses the enhancement plan §8\'s caption in place of W4\'s, character for character (#79)', () => {
+    expect(lineageExample.caption).toBe('Illustrative example')
+    expect(lineageExample.caption).toBe(s8[0])
+    // W4's caption, which §8 replaces.
+    expect(w4).toContain(`- Caption: "${s8[1]}"`)
+    expect(lineageExample.caption).not.toBe(s8[1])
+  })
+
+  it('uses the enhancement plan §8\'s metrics label in place of "Sample metrics" (#79)', () => {
+    expect(lineageExample.metricsLabel).toBe('Example leadership metrics')
+    expect(lineageExample.metricsLabel).toBe(s8[3])
+    expect(s8[2]).toBe('Sample metrics')
   })
 
   it('has exactly the caption, the two list labels, the metrics, the steps and the ratings, and no value or finding field (#77)', () => {
@@ -121,8 +212,10 @@ describe('illustrative example', () => {
       expect(Array.isArray(list)).toBe(true)
       for (const item of list) expect(typeof item).toBe('string')
     }
-    expect(lineageExample.metricsLabel).toBe('Sample metrics')
+    expect(lineageExample.metricsLabel).toBe('Example leadership metrics')
     expect(lineageExample.stepsLabel).toBe('Each traced through')
+    // §9 quotes the steps label as current and retains it.
+    expect(enhancementSection(9)).toContain(`> ${lineageExample.stepsLabel}`)
     expect(assessmentSource).not.toMatch(/\bfigure\b\s*:|\bvalue\b\s*:|\breason\b\s*:|LineageStep/)
   })
 
@@ -141,10 +234,20 @@ describe('illustrative example', () => {
     expect(lineageExample.metrics).toBe(exampleMetrics)
   })
 
-  it('traces them through the five steps W4 lists, in order', () => {
-    expect(lineageExample.steps).toEqual(['Definition', 'Calculation', 'Source systems', 'Owner', 'Trust rating'])
-    const steps = lineageExample.steps.map((step) => step.toLowerCase())
-    expect(w4).toContain(`through its ${steps.slice(0, -1).join(', ')} and ${steps.at(-1)}`)
+  it('traces them through the enhancement plan §9\'s seven-step sequence, in order (#79)', () => {
+    expect(lineageExample.steps).toEqual([
+      'Report',
+      'Definition',
+      'Calculation',
+      'Data model',
+      'Source system',
+      'Owner',
+      'Trust rating',
+    ])
+    expect(lineageExample.steps).toEqual(s9Sequence)
+    // The labels are text only: the direction is drawn in CSS.
+    for (const step of lineageExample.steps) expect(step).not.toMatch(/[→↓←↑]/)
+    // W4's five steps, which the sequence supersedes.
     expect(w4).toContain('through its definition, calculation, source systems, owner and trust rating')
   })
 
@@ -161,7 +264,8 @@ describe('illustrative example', () => {
   })
 
   it('walks every string in the example: letters, spaces and full stops only, no currency (#77)', () => {
-    expect(exampleStrings).toHaveLength(1 + 1 + 5 + 1 + 5 + 3)
+    expect(exampleStrings).toHaveLength(1 + 1 + 5 + 1 + 7 + 3)
+    expect(exampleStrings).toHaveLength(18)
     for (const text of exampleStrings) {
       expect(text).toMatch(/^[A-Za-z .]+$/)
       expect(text).not.toMatch(/\d|[$€£¥%]/)
@@ -169,8 +273,9 @@ describe('illustrative example', () => {
     }
   })
 
-  it('gives every string but the caption as a label of at most four words, not a sentence or finding (#77)', () => {
-    for (const text of exampleStrings.filter((text) => text !== lineageExample.caption)) {
+  it('gives every string, the caption included, as a label of at most four words, not a sentence or finding (#77, #79)', () => {
+    expect(exampleStrings).toContain(lineageExample.caption)
+    for (const text of exampleStrings) {
       expect(text.split(' ').length, text).toBeLessThanOrEqual(4)
       expect(text, text).not.toMatch(/\.$/)
     }
@@ -216,8 +321,12 @@ describe('other source files', () => {
   it.each([
     ['the heading', assessmentHeading],
     ['the lead', assessmentLead],
-    ['the after-line', assessmentAfter],
-    ['the caption', lineageExample.caption],
+    ['the after-assessment statement', assessmentAfterStatement],
+    ['the after-assessment supporting copy', assessmentAfterSupporting],
+    // The eyebrow and name as string literals: the words also name the
+    // section in comments.
+    ['the eyebrow', `'${assessmentEyebrow}'`],
+    ['the engagement name', `'${assessmentName}'`],
     ...assessmentDeliverables.map((item, index) => [`deliverable ${index + 1}`, item]),
   ])('do not hold %s', (_name, text) => {
     for (const [file, source] of sources) {
@@ -243,7 +352,38 @@ describe('other source files', () => {
     ...lineageExample.steps.map((step) => [`the step ${step}`, step]),
     ...lineageExample.ratings.map((rating) => [`the rating ${rating}`, rating]),
   ])('components do not hold %s', (_name, text) => {
+    // As a whole word or phrase: the step "Report" (#79) is part of
+    // "Reporting", a Solutions landing page heading in SolutionPage.tsx.
+    const pattern = new RegExp(`\\b${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`)
     for (const [file, source] of components) {
+      expect(pattern.test(source), `${file} holds "${text}"`).toBe(false)
+    }
+  })
+
+  // The caption is now two common words, so it is checked as a string
+  // literal; the old caption and after-line are gone from every source
+  // file, assessment.ts included (#79).
+  it('only assessment.ts holds the caption as a string literal', () => {
+    for (const [file, source] of sources) {
+      expect(source.includes(`'${lineageExample.caption}'`), file).toBe(false)
+    }
+  })
+
+  const allSources = Object.entries(
+    import.meta.glob<string>('/src/**/*.{ts,tsx,css,html}', {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    }),
+  ).filter(([file]) => !/\.test\.tsx?$/.test(file))
+
+  it.each([
+    ['the old after-line', 'Most organisations continue with integration and modelling, quality and governance, or reporting built on the traced numbers.'],
+    ['the old caption', 'Illustrative example. Sample data only.'],
+    ['the old metrics label', 'Sample metrics'],
+  ])('no source file holds %s (#79)', (_name, text) => {
+    expect(allSources.map(([file]) => file)).toContain('/src/data/assessment.ts')
+    for (const [file, source] of allSources) {
       expect(source.includes(text), `${file} holds "${text}"`).toBe(false)
     }
   })

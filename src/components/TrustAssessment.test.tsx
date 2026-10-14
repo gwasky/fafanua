@@ -1,7 +1,8 @@
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import {
-  assessmentAfter,
+  assessmentAfterStatement,
+  assessmentAfterSupporting,
   assessmentDeliverables,
   assessmentLead,
   exampleMetrics,
@@ -10,16 +11,26 @@ import {
 import { expectNoAxeViolations } from '../test/axe.ts'
 import TrustAssessment from './TrustAssessment.tsx'
 
-// W4 in the trust and lineage plan (#71), character for character
-// (assessment.plan.test.ts checks the data module against the plan).
+// W4 in the trust and lineage plan (#71) and the homepage enhancement
+// plan (#79), character for character (assessment.plan.test.ts checks the
+// data module against both plans).
+const EYEBROW = 'Start with trust'
+const NAME = 'Data Trust Assessment'
 const HEADING = 'Know where every number comes from.'
-const CAPTION = 'Illustrative example. Sample data only.'
-// The owner's metric names (#77), the five steps and the three ratings.
+const AFTER_STATEMENT = 'The assessment tells us what to fix first.'
+const AFTER_SUPPORTING =
+  'The findings become a prioritised roadmap. From there, Fafanua can strengthen the parts of your data foundation that need attention \u2014 from integration and modelling to quality, governance and analytics.'
+const OLD_AFTER =
+  'Most organisations continue with integration and modelling, quality and governance, or reporting built on the traced numbers.'
+const CAPTION = 'Illustrative example'
+// The owner's metric names (#77), the seven steps (#79) and the three
+// ratings.
 const METRICS = ['Revenue', 'Active Customers', 'Portfolio at Risk', 'Programme Outcomes', 'Cost per Customer']
-const STEPS = ['Definition', 'Calculation', 'Source systems', 'Owner', 'Trust rating']
+const STEPS = ['Report', 'Definition', 'Calculation', 'Data model', 'Source system', 'Owner', 'Trust rating']
 const RATINGS = ['Trusted', 'Trusted with caveats', 'Not yet trusted']
-// The two list labels, proposed on #77 for the owner to confirm.
-const METRICS_LABEL = 'Sample metrics'
+// The two list labels: the enhancement plan §8's, and W4's concept that
+// its §9 retains (#79).
+const METRICS_LABEL = 'Example leadership metrics'
 const STEPS_LABEL = 'Each traced through'
 
 function renderSection() {
@@ -50,7 +61,62 @@ describe('TrustAssessment', () => {
     ])
   })
 
-  it('shows the lead, the four deliverables in order and the after-line, in reading order', () => {
+  it('shows the eyebrow, the engagement name, the h2, the lead, the deliverables, the after-assessment copy and the button, in reading order (#79)', () => {
+    const { section } = renderSection()
+    const h2 = within(section).getByRole('heading', { level: 2 })
+    const [receive, after] = within(section).getAllByRole('heading', { level: 3 })
+    const copy = h2.parentElement!
+    const [eyebrow, name, heading, lead, receiveHeading, list, afterHeading, statement, supporting, actions, ...rest] = [
+      ...copy.children,
+    ]
+
+    expect(rest).toEqual([])
+    expect([eyebrow.tagName, eyebrow.textContent]).toEqual(['P', EYEBROW])
+    expect(eyebrow).toHaveClass('section-eyebrow')
+    expect([name.tagName, name.textContent]).toEqual(['P', NAME])
+    expect(heading).toBe(h2)
+    expect([lead.tagName, lead.textContent]).toEqual(['P', assessmentLead])
+    expect(receiveHeading).toBe(receive)
+    expect(list.tagName).toBe('UL')
+    expect(afterHeading).toBe(after)
+    expect([statement.tagName, statement.textContent]).toEqual(['P', AFTER_STATEMENT])
+    expect([supporting.tagName, supporting.textContent]).toEqual(['P', AFTER_SUPPORTING])
+    expect(actions).toContainElement(within(section).getByRole('link'))
+    // Nothing between the h3 and the button but the two paragraphs.
+    expect(after.nextElementSibling).toBe(statement)
+    expect(statement.nextElementSibling).toBe(supporting)
+    expect(supporting.nextElementSibling).toBe(actions)
+    expect(assessmentAfterStatement).toBe(AFTER_STATEMENT)
+    expect(assessmentAfterSupporting).toBe(AFTER_SUPPORTING)
+  })
+
+  it('shows the eyebrow and engagement name as paragraphs above the h2, not headings and not in it, so the region keeps the h2\'s name (#79)', () => {
+    const { section } = renderSection()
+    const h2 = within(section).getByRole('heading', { level: 2 })
+    const eyebrow = within(section).getByText(EYEBROW)
+    const name = within(section).getByText(NAME)
+
+    for (const label of [eyebrow, name]) {
+      expect(label.tagName).toBe('P')
+      expect(label.closest('h1, h2, h3, h4, h5, h6, [role="heading"]')).toBeNull()
+      expect(h2.contains(label)).toBe(false)
+      expect(label.compareDocumentPosition(h2) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    }
+    expect(eyebrow.nextElementSibling).toBe(name)
+    expect(name.nextElementSibling).toBe(h2)
+    expect(h2.textContent).toBe(HEADING)
+    expect(section).toHaveAccessibleName(HEADING)
+    expect(within(section).queryByRole('heading', { name: new RegExp(NAME, 'i') })).toBeNull()
+  })
+
+  it('no longer shows the W4 after-line (#79)', () => {
+    const { section } = renderSection()
+
+    expect(section.textContent).not.toContain(OLD_AFTER)
+    expect(section.textContent).not.toContain('Most organisations continue')
+  })
+
+  it('shows the lead, the four deliverables in order and the after-assessment copy, in reading order', () => {
     const { section } = renderSection()
     const [receive, after] = within(section).getAllByRole('heading', { level: 3 })
     const lead = within(section).getByText(assessmentLead)
@@ -66,7 +132,8 @@ describe('TrustAssessment', () => {
       'A prioritised fix list, ranked by impact and effort',
     ])
     expect(list.nextElementSibling).toBe(after)
-    expect(after.nextElementSibling).toBe(within(section).getByText(assessmentAfter))
+    expect(after.nextElementSibling).toBe(within(section).getByText(assessmentAfterStatement))
+    expect(after.nextElementSibling!.nextElementSibling).toBe(within(section).getByText(assessmentAfterSupporting))
     expect(assessmentDeliverables).toHaveLength(4)
   })
 
@@ -83,7 +150,7 @@ describe('TrustAssessment', () => {
     expect(links[0].lastElementChild).toHaveAttribute('aria-hidden', 'true')
     // After the copy, before the example.
     expect(
-      links[0].compareDocumentPosition(within(section).getByText(assessmentAfter)) &
+      links[0].compareDocumentPosition(within(section).getByText(assessmentAfterSupporting)) &
         Node.DOCUMENT_POSITION_PRECEDING,
     ).toBeTruthy()
   })
@@ -99,7 +166,7 @@ describe('TrustAssessment', () => {
     expect(section.querySelector('[hidden], [aria-hidden="true"]:not(.button__arrow)')).toBeNull()
   })
 
-  it('holds one figure, captioned "Illustrative example. Sample data only."', () => {
+  it('holds one figure, captioned "Illustrative example" (#79)', () => {
     const { section } = renderSection()
     const figures = within(section).getAllByRole('figure')
     const caption = figures[0].querySelector('figcaption')
@@ -110,7 +177,7 @@ describe('TrustAssessment', () => {
     expect(figures[0]).toHaveAccessibleName(CAPTION)
   })
 
-  it('lists the sample metrics, then the five steps, each list named by the label before it (#77)', () => {
+  it('lists the example leadership metrics, then the seven steps, each list named by the label before it (#77, #79)', () => {
     const { section } = renderSection()
     const figure = within(section).getByRole('figure')
     const [caption, metricsLabel, metrics, stepsLabel, steps, ...rest] = [...figure.children]
@@ -206,7 +273,7 @@ describe('TrustAssessment', () => {
     )
   })
 
-  it('shows the owner\'s metric names, the five steps and the three ratings, labels only (#77)', () => {
+  it('shows the owner\'s metric names, the seven steps and the three ratings, labels only (#77, #79)', () => {
     expect(exampleMetrics).toEqual(METRICS)
     expect(lineageExample.metrics).toBe(exampleMetrics)
     expect(lineageExample.steps).toEqual(STEPS)
@@ -225,7 +292,24 @@ describe('TrustAssessment', () => {
     const { section } = renderSection()
 
     expect(section.textContent).not.toMatch(/\b(products?|tools?|dashboards?|apps?|platforms?|demos?)\b/i)
-    expect(section.textContent).not.toMatch(/Fafanua Intelligence|\bAI\b|analytics/i)
+    // The figure says nothing of AI or analytics. The section names no
+    // Fafanua Intelligence or AI, and says "analytics" once, in the
+    // owner's after-assessment supporting copy (#79).
+    expect(within(section).getByRole('figure').textContent).not.toMatch(/Fafanua Intelligence|\bAI\b|analytics/i)
+    expect(section.textContent).not.toMatch(/Fafanua Intelligence|\bAI\b/i)
+    expect(section.textContent!.match(/analytics/gi)).toHaveLength(1)
+    const mentions = [...section.querySelectorAll('*')].filter(
+      (element) => element.children.length === 0 && /analytics/i.test(element.textContent!),
+    )
+    expect(mentions).toEqual([within(section).getByText(AFTER_SUPPORTING)])
+  })
+
+  it('labels its steps with text only: the direction is drawn in CSS, with no arrow characters (#79)', () => {
+    const { section } = renderSection()
+    const figure = within(section).getByRole('figure')
+
+    expect(figure.textContent).not.toMatch(/[→↓←↑⟶⇣]/)
+    expect(within(figure).getByRole('list', { name: STEPS_LABEL }).children).toHaveLength(7)
   })
 
   it('is built from HTML only: no SVG, image, canvas or inline style', () => {
@@ -235,12 +319,16 @@ describe('TrustAssessment', () => {
     expect(section.querySelector('[style]')).toBeNull()
   })
 
-  it('sits on the page background, with no eyebrow, technical grid or dark or alternate surface', () => {
+  it('sits on the page background, with one unnumbered eyebrow and no technical grid or dark or alternate surface (#79)', () => {
     const { section } = renderSection()
+    const eyebrows = section.querySelectorAll('.section-eyebrow')
 
     expect(section).not.toHaveClass('surface-alt')
     expect(section).not.toHaveClass('surface-dark')
-    expect(section.querySelector('.surface-alt, .surface-dark, .technical-grid, .section-eyebrow')).toBeNull()
+    expect(section.querySelector('.surface-alt, .surface-dark, .technical-grid')).toBeNull()
+    expect(eyebrows).toHaveLength(1)
+    expect(eyebrows[0].textContent).toBe(EYEBROW)
+    expect(eyebrows[0].textContent).not.toMatch(/\d|—/)
   })
 
   it('has no axe violations', async () => {

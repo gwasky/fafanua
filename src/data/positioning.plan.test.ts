@@ -2,8 +2,8 @@
 // on the site cannot drift from them: the problem is the V2 refinement
 // plan §3's left column quote (#63). The response, its right column's
 // quote, was removed by W3 in the trust and lineage plan (#70), so it is
-// checked as absent from src/. The eyebrow and framing are the Data Trust
-// Assessment homepage enhancement plan §5's left column, and the
+// checked as absent from src/. The eyebrow and framing are the homepage
+// enhancement plan §5's left column, and the
 // transition its §6 (#79). The ?raw imports resolve relative to this file
 // and are never part of the production bundle.
 import { describe, expect, it } from 'vitest'

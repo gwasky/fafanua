@@ -1,10 +1,15 @@
 /*
  * The Data Trust Assessment (W4 in the trust and lineage plan, #71): on
- * the page background, between the problem statement and Services, with
- * no eyebrow. Every text pairing is a verified light one: graphite 900
- * and graphite 600 on paper (14.9:1, 6.0:1) in the copy column, and on
- * white (16.4:1, 6.6:1) in the example; the button is the primary button
- * on light (white on teal 700, 5.2:1).
+ * the page background, between the problem block and Services. The homepage
+ * enhancement plan (#79) puts the unnumbered eyebrow START WITH TRUST and
+ * the engagement name DATA TRUST ASSESSMENT above the h2, both small
+ * beside it: the name is the eyebrow's uppercase tracking at --text-sm,
+ * weight 500, a step larger than the eyebrow and in graphite 900 rather
+ * than 600, so it reads as the offer's name under its context label.
+ * Every text pairing is a verified light one: graphite 900 and graphite
+ * 600 on paper (14.9:1, 6.0:1) in the copy column, and on white (16.4:1,
+ * 6.6:1) in the example; the button is the primary button on light
+ * (white on teal 700, 5.2:1).
  *
  * Its padding: the gap from the problem statement above is one
  * --space-section, split so that --space-8 of it is this section's own
@@ -20,15 +25,19 @@
  * the DOM order.
  *
  * The example is a white card with a graphite 200 hairline, as the system
- * diagram's cards, of labels only (#77): its caption, the sample metric
- * names under their label, then the five steps under theirs as a vertical
- * list at every width, the last holding the three rating categories. A
- * ring marks each step at the inline start, and a line joins each ring to
- * the next, both drawn with borders on pseudo-elements, so they have no
- * text, are never announced and stay drawn in forced-colours mode. The
- * last ring is filled, as the end of the trace. No colour carries
- * meaning, and the ratings look alike: none is given to a metric. Nothing
- * here moves beyond the section reveal.
+ * diagram's cards, of labels only (#77): its caption, the example metric
+ * names under their label, then the seven trace steps (#79) under theirs
+ * as a vertical list at every width, the last holding the three rating
+ * categories. A ring marks each step at the inline start, and a line
+ * joins each ring to the next, ending in a downward arrowhead just above
+ * it, so the trace reads as a direction, from the report to its rating.
+ * All three are drawn with borders on pseudo-elements (the arrowhead a
+ * chevron of two borders, turned 45 degrees, never a transparent border,
+ * which forced-colours mode would fill in), so they have no text, are
+ * never announced and stay drawn in forced-colours mode. The last ring is
+ * filled, as the end of the trace. No colour carries meaning, and the
+ * ratings look alike: none is given to a metric. Nothing here moves
+ * beyond the section reveal.
  */
 
 .trust-assessment {
@@ -55,6 +64,22 @@
   /* Break a word only if it cannot fit on a line of its own, rather than
      anywhere as .container allows. */
   overflow-wrap: break-word;
+}
+
+/* The eyebrow sits close above the engagement name, so the two read as
+   one label group over the h2. */
+.trust-assessment__copy > .section-eyebrow {
+  margin-block-end: var(--space-2);
+}
+
+.trust-assessment__name {
+  margin-block: 0 var(--space-4);
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
 }
 
 /* Weight 300 from the global heading styles. */
@@ -92,9 +117,23 @@
   border-block-start: var(--border-width) solid var(--color-border);
 }
 
+/* After the assessment: the statement, between the h3 and the body text
+   in size, then its supporting copy at body size. */
+.trust-assessment__after-statement {
+  max-width: var(--measure);
+  margin-block: 0 var(--space-3);
+  color: var(--color-heading);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-snug);
+  text-wrap: pretty;
+}
+
 .trust-assessment__after {
   max-width: var(--measure);
   margin-block: 0;
+  color: var(--color-text);
+  font-size: var(--text-base);
   text-wrap: pretty;
 }
 
@@ -108,6 +147,11 @@
   --step-indent: var(--space-6);
   /* The ring's top, centred on the label's line. */
   --step-ring-top: calc((var(--text-sm) * var(--leading-snug) - var(--step-ring)) / 2);
+  /* The arrowhead: a square of two borders turned 45 degrees, so its
+     lower corner points down. Its half-diagonal (s / sqrt 2) less its
+     half-side is how far that corner reaches below the square's box. */
+  --step-arrow: calc(var(--space-3) / 2);
+  --step-arrow-reach: calc(var(--step-arrow) * 0.2071);
 
   margin: 0;
   padding-block: var(--space-6);
@@ -186,6 +230,23 @@
   inset-block: calc(var(--step-ring-top) + var(--step-ring)) calc(-1 * var(--step-ring-top));
   inset-inline-start: calc((var(--step-ring) - var(--border-width)) / 2);
   border-inline-start: var(--border-width) solid var(--color-text-muted);
+  content: '';
+}
+
+/* The arrowhead at the line's end, its point just above the next ring,
+   on the step's label (the step's own two pseudo-elements are the ring
+   and the line). The step is its containing block: the label is not
+   positioned. */
+.lineage-example__step:not(:last-child) > .lineage-example__label::after {
+  position: absolute;
+  inset-block-end: calc(var(--border-width) + var(--step-arrow-reach) - var(--step-ring-top));
+  inset-inline-start: calc((var(--step-ring) - var(--step-arrow)) / 2);
+  box-sizing: border-box;
+  inline-size: var(--step-arrow);
+  block-size: var(--step-arrow);
+  border-right: calc(2 * var(--border-width)) solid var(--color-text-muted);
+  border-bottom: calc(2 * var(--border-width)) solid var(--color-text-muted);
+  transform: rotate(45deg);
   content: '';
 }
 

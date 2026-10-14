@@ -8,7 +8,12 @@ import {
   assessmentLead,
 } from './data/assessment.ts'
 import { footerNavigation, navigation, navigationCta } from './data/navigation.ts'
-import { positioningProblem } from './data/positioning.ts'
+import {
+  positioningEyebrow,
+  positioningFraming,
+  positioningProblem,
+  positioningTransition,
+} from './data/positioning.ts'
 import { processStages } from './data/process.ts'
 import { managedServices, services, servicesIntro } from './data/services.ts'
 import { homepageSolutions, solutions } from './data/solutions.ts'
@@ -23,8 +28,8 @@ const HERO = 'Trusted Data. Better Decisions.'
 const SERVICES = servicesIntro.heading
 // The Managed Services section is named by its h2, the plan V2 §10 heading.
 const MANAGED = managedServices.sectionHeading
-// The positioning section's problem (refinement plan §3), its one
-// paragraph since #70 removed the response.
+// The positioning section's problem (refinement plan §3), its statement,
+// between the eyebrow and framing and the transition (#79).
 const POSITIONING = positioningProblem
 // The Data Trust Assessment section is named by its h2 (W4 in the trust
 // and lineage plan, #71; assessment.plan.test.ts checks it).
@@ -100,8 +105,15 @@ describe('App', () => {
     expect(positioning).not.toBeNull()
     expect(positioning!.tagName).toBe('DIV')
     expect(positioning).toContainElement(lead)
-    // One paragraph, the problem, and nothing focusable (#70).
-    expect([...positioning!.querySelectorAll('p')]).toEqual([lead])
+    // Four paragraphs, the eyebrow, the framing, the problem and the
+    // transition (#79), and nothing focusable (#70).
+    expect([...positioning!.querySelectorAll('p')].map((p) => p.textContent)).toEqual([
+      positioningEyebrow,
+      positioningFraming,
+      positioningProblem,
+      positioningTransition,
+    ])
+    expect(positioning!.querySelectorAll('p')[2]).toBe(lead)
     expect(positioning!.querySelector('h1, h2, h3, a, button, [tabindex]')).toBeNull()
     expect(positioning).not.toHaveClass('surface-dark')
     expect(positioning).not.toHaveClass('surface-alt')
@@ -125,11 +137,21 @@ describe('App', () => {
     expect(assessment).not.toHaveClass('surface-dark')
     expect(assessment.querySelector('.surface-alt, .surface-dark, .technical-grid')).toBeNull()
     expect(assessment).not.toHaveAttribute('data-header-overlay')
-    // No numbered eyebrow, so 01 to 04 keep their numbers.
-    expect(assessment.querySelector('.section-eyebrow')).toBeNull()
+    // Its one eyebrow is unnumbered, as the problem block's is (#79), so
+    // 01 to 04 keep their numbers.
+    expect(
+      [...assessment.querySelectorAll('.section-eyebrow')].map((eyebrow) => eyebrow.textContent),
+    ).toEqual(['Start with trust'])
     expect(
       [...document.querySelectorAll('.section-eyebrow')].map((eyebrow) => eyebrow.textContent),
-    ).toEqual(['01 — Capabilities', '02 — Managed Services', '03 — Solutions', '04 — How We Work'])
+    ).toEqual([
+      'The problem',
+      'Start with trust',
+      '01 — Capabilities',
+      '02 — Managed Services',
+      '03 — Solutions',
+      '04 — How We Work',
+    ])
     // Not in the header or footer navigation, and nothing links to it.
     for (const item of [...navigation, ...footerNavigation, navigationCta]) {
       expect(item.id).not.toBe(assessment.id)
@@ -179,18 +201,21 @@ describe('App', () => {
 
     for (const removed of REMOVED) expect(text).not.toContain(removed)
     // The hero paragraph is the only text about tracing numbers to their
-    // source, apart from the Data Trust Assessment's lead, W4's own
-    // description of the offer (#71): no other paragraph in main repeats
-    // it. ("Traceable" and "traceability" in the process stages and the
-    // diagram's terms are not the hero's claim.)
+    // source, apart from the problem block's transition into the
+    // assessment, the owner's bridge (#79), and the lead of the
+    // Data Trust Assessment, W4's own description of the offer (#71): no
+    // other paragraph in main repeats it. ("Traceable" and "traceability" in the
+    // process stages and the diagram's terms are not the hero's claim.)
     const hero = screen.getByRole('region', { name: HERO })
     const tracing = [...screen.getByRole('main').querySelectorAll('p')].filter((p) =>
       /\btrace\b|to the source|back to (its|their) source/i.test(p.textContent!),
     )
-    expect(tracing).toHaveLength(2)
+    expect(tracing).toHaveLength(3)
     expect(hero).toContainElement(tracing[0])
-    expect(tracing[1]).toBe(screen.getByText(assessmentLead))
-    expect(screen.getByRole('region', { name: ASSESSMENT })).toContainElement(tracing[1])
+    expect(tracing[1]).toBe(screen.getByText(positioningTransition))
+    expect(tracing[1].closest('.positioning')).toBe(hero.nextElementSibling)
+    expect(tracing[2]).toBe(screen.getByText(assessmentLead))
+    expect(screen.getByRole('region', { name: ASSESSMENT })).toContainElement(tracing[2])
   })
 
   it('has the Services h2 W3 names, and no h2 that says "business intelligence" (#70)', () => {

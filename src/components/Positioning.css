@@ -1,8 +1,8 @@
 /*
  * Positioning: the problem block, a light, spacious block between the dark
- * hero and the Data Trust Assessment (plan V2 §8; the Data Trust
- * Assessment enhancement plan §5 and §6, #79). Not a card: no border,
- * fill, radius or shadow, on the page background.
+ * hero and the Data Trust Assessment (plan V2 §8; the homepage
+ * enhancement plan §5 and §6, #79). Not a card: no border, fill, radius
+ * or shadow, on the page background.
  *
  * Stacked by default, in DOM order: the unnumbered eyebrow THE PROBLEM,
  * the framing line, the statement, then the transition. From 64em

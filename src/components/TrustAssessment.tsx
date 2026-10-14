@@ -1,27 +1,34 @@
 import {
-  assessmentAfter,
   assessmentAfterHeading,
+  assessmentAfterStatement,
+  assessmentAfterSupporting,
   assessmentCtaLabel,
   assessmentDeliverables,
   assessmentDeliverablesHeading,
+  assessmentEyebrow,
   assessmentHeading,
   assessmentLead,
+  assessmentName,
   lineageExample,
 } from '../data/assessment.ts'
+import SectionEyebrow from './SectionEyebrow.tsx'
 import './TrustAssessment.css'
 
 // The Data Trust Assessment (W4 in the trust and lineage plan, #71), on
-// paper directly after the problem statement and before Services. Its copy
-// is in src/data/assessment.ts. The start column holds the h2, the lead,
-// the two h3s with the deliverables and the after-line, and the one call
-// to action (to #contact, like the hero's); the end column holds the
-// illustrative example, a static figure of labels only (#77): the sample
-// metric names, the five lineage steps each is traced through, and,
-// under the last step, the scorecard's three rating categories, none of
-// them given to any metric. The figure has no controls or tab stops: each
-// part is a list named by the label before it, so it reads in order
-// without CSS, and the steps' connectors are drawn with borders in CSS. No
-// numbered eyebrow and not in the navigation.
+// paper directly after the problem block and before Services, the entry
+// engagement (the homepage enhancement plan, #79). Its copy is in
+// src/data/assessment.ts. The start column holds the unnumbered eyebrow,
+// the engagement name (a paragraph, not a heading and not in the h2, so
+// the region keeps the h2's name), the h2, the lead, the two h3s with the
+// deliverables and, after the assessment, a statement and its supporting
+// copy, then the one call to action (to #contact, like the hero's); the
+// end column holds the illustrative example, a static figure of labels
+// only (#77): the example metric names, the seven trace steps each is
+// traced through, and, under the last step, the scorecard's three rating
+// categories, none of them given to any metric. The figure has no
+// controls or tab stops: each part is a list named by the label before
+// it, so it reads in order without CSS, and the steps' connectors and
+// arrowheads are drawn with borders in CSS. Not in the navigation.
 function TrustAssessment() {
   const { caption, metricsLabel, metrics, stepsLabel, steps, ratings } = lineageExample
   return (
@@ -33,6 +40,8 @@ function TrustAssessment() {
     >
       <div className="container trust-assessment__layout">
         <div className="trust-assessment__copy">
+          <SectionEyebrow label={assessmentEyebrow} />
+          <p className="trust-assessment__name">{assessmentName}</p>
           <h2 id="data-trust-assessment-heading" className="trust-assessment__heading">
             {assessmentHeading}
           </h2>
@@ -44,7 +53,8 @@ function TrustAssessment() {
             ))}
           </ul>
           <h3 className="trust-assessment__subheading">{assessmentAfterHeading}</h3>
-          <p className="trust-assessment__after">{assessmentAfter}</p>
+          <p className="trust-assessment__after-statement">{assessmentAfterStatement}</p>
+          <p className="trust-assessment__after">{assessmentAfterSupporting}</p>
           <div className="trust-assessment__actions">
             <a className="button" href="#contact">
               {assessmentCtaLabel}

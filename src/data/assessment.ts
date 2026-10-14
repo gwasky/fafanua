@@ -1,15 +1,23 @@
 // The Data Trust Assessment section's copy (W4 in
 // _docs/fafanua-trust-lineage-positioning-plan.md, #71): the heading, the
-// lead, the two h3s with the deliverables and the after-line, then the
-// illustrative example's caption, sample metric names, lineage steps and
-// rating categories, all labels only (the owner's instruction on #77). The
-// button reads the site's one call to action label from contact.ts (W1,
-// #68). assessment.plan.test.ts checks the plan's wording, the caption,
-// the metric names, the steps and the ratings against W4. The two list
-// labels are proposed on #77 for the owner to confirm. TrustAssessment.tsx
-// reads this copy from here and nowhere else.
+// lead, the two h3s with the deliverables, then the illustrative example's
+// metric names and rating categories, all labels only (the owner's
+// instruction on #77). The Data Trust Assessment homepage enhancement plan
+// (_docs/fafanua-data-trust-assessment-homepage-enhancement.md, #79) adds
+// the eyebrow and the engagement name above the heading (its §2), replaces
+// the after-line with a statement and supporting copy (§11), and sets the
+// example's caption, metrics label (§8) and seven trace steps (§9). The
+// eyebrow and name are stored in sentence and title case, as every eyebrow
+// is, and CSS shows them in capitals. The button reads the site's one call
+// to action label from contact.ts (W1, #68). assessment.plan.test.ts
+// checks the wording against both plans. TrustAssessment.tsx reads this
+// copy from here and nowhere else.
 
 import { ctaLabel } from './contact.ts'
+
+export const assessmentEyebrow = 'Start with trust'
+
+export const assessmentName = 'Data Trust Assessment'
 
 export const assessmentHeading = 'Know where every number comes from.'
 
@@ -27,8 +35,10 @@ export const assessmentDeliverables: readonly string[] = [
 
 export const assessmentAfterHeading = 'After the assessment'
 
-export const assessmentAfter =
-  'Most organisations continue with integration and modelling, quality and governance, or reporting built on the traced numbers.'
+export const assessmentAfterStatement = 'The assessment tells us what to fix first.'
+
+export const assessmentAfterSupporting =
+  'The findings become a prioritised roadmap. From there, Fafanua can strengthen the parts of your data foundation that need attention — from integration and modelling to quality, governance and analytics.'
 
 export const assessmentCtaLabel = ctaLabel
 
@@ -43,11 +53,12 @@ export const exampleMetrics: readonly string[] = [
   'Cost per Customer',
 ]
 
-// The illustrative example (#77): its caption, the sample metric names
-// under their label, the five lineage steps each is traced through, in
-// this order, and the scorecard's three rating categories, nested under
-// the last step. Labels only: no figure, value, rating or finding is given
-// for any metric.
+// The illustrative example (#77, #79): its caption, the example metric
+// names under their label, the seven trace steps each is traced through,
+// in this order, from the report back to its source and on to a rating,
+// and the scorecard's three rating categories, nested under the last
+// step. Labels only: no figure, value, rating or finding is given for any
+// metric.
 export const lineageExample: {
   readonly caption: string
   readonly metricsLabel: string
@@ -56,10 +67,10 @@ export const lineageExample: {
   readonly steps: readonly string[]
   readonly ratings: readonly string[]
 } = {
-  caption: 'Illustrative example. Sample data only.',
-  metricsLabel: 'Sample metrics',
+  caption: 'Illustrative example',
+  metricsLabel: 'Example leadership metrics',
   metrics: exampleMetrics,
   stepsLabel: 'Each traced through',
-  steps: ['Definition', 'Calculation', 'Source systems', 'Owner', 'Trust rating'],
+  steps: ['Report', 'Definition', 'Calculation', 'Data model', 'Source system', 'Owner', 'Trust rating'],
   ratings: ['Trusted', 'Trusted with caveats', 'Not yet trusted'],
 }
