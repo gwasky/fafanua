@@ -425,19 +425,36 @@ const measureAssessment = (page: Page) =>
       right: box(container).right - parseFloat(containerStyle.paddingRight),
     }
     const all = [...container.querySelectorAll('*')]
-    // Blocks in reading order, in each column and in each step.
+    // The example's lists (#77): the metric names, the five steps (the
+    // steps list's own items, not the lists nested in them) and the
+    // rating categories in the last step.
+    const metrics = figure.querySelector(':scope > ul')!
+    const stepItems = [...figure.querySelectorAll(':scope > ol > li')]
+    const ratings = [...figure.querySelectorAll(':scope > ol > li > ul > li')]
+    // Blocks in reading order, in each column, in each step and in the
+    // metrics list.
     const sequences = [
       [...copy.children],
       [...figure.children],
-      ...[...figure.querySelectorAll('li')].map((item) => [...item.children]),
+      ...stepItems.map((item) => [...item.children]),
+      [...metrics.children],
     ]
-    const overlaps = sequences.flatMap((blocks) =>
-      blocks.slice(1).flatMap((block, i) =>
-        box(block).top < box(blocks[i]).bottom - 1
-          ? [`${blocks[i].textContent?.slice(0, 30)} / ${block.textContent?.slice(0, 30)}`]
-          : [],
+    const name = (element: Element) => element.textContent?.slice(0, 30)
+    const overlaps = [
+      ...sequences.flatMap((blocks) =>
+        blocks.slice(1).flatMap((block, i) =>
+          box(block).top < box(blocks[i]).bottom - 1 ? [`${name(blocks[i])} / ${name(block)}`] : [],
+        ),
       ),
-    )
+      // The ratings wrap in rows, so no two may share any area.
+      ...ratings.flatMap((a, i) =>
+        ratings.slice(i + 1).flatMap((b) => {
+          const [p, q] = [box(a), box(b)]
+          const apart = p.right <= q.left + 1 || q.right <= p.left + 1 || p.bottom <= q.top + 1 || q.bottom <= p.top + 1
+          return apart ? [] : [`${name(a)} / ${name(b)}`]
+        }),
+      ),
+    ]
     // A word broken across lines leaves a line that starts or ends
     // mid-word: compare each line's text with the element's words.
     const brokenWords = (element: Element) => {
@@ -477,7 +494,19 @@ const measureAssessment = (page: Page) =>
       copy: box(copy).toJSON() as DOMRect,
       figure: box(figure).toJSON() as DOMRect,
       caption: figure.querySelector('figcaption')!.textContent,
-      steps: [...figure.querySelectorAll('li')].map((item) => {
+      metrics: [...metrics.children].map((item) => item.textContent),
+      ratings: ratings.map((item) => {
+        const style = getComputedStyle(item)
+        return {
+          text: item.textContent,
+          border: `${style.borderTopWidth} ${style.borderTopStyle} ${style.borderTopColor} ${style.borderRightColor} ${style.borderBottomColor} ${style.borderLeftColor}`,
+          background: style.backgroundColor,
+          color: style.color,
+          weight: style.fontWeight,
+          cursor: style.cursor,
+        }
+      }),
+      steps: stepItems.map((item) => {
         const ring = getComputedStyle(item, '::before')
         const label = box(item.firstElementChild!)
         const itemBox = box(item)
@@ -1361,7 +1390,22 @@ for (const width of WIDTHS) {
           expect(step.ringTop, detail).toBeGreaterThanOrEqual(step.labelTop - 1)
           expect(step.ringTop, detail).toBeLessThanOrEqual(step.labelBottom)
         }
-        // Each block below the one before it, never over it.
+        // The metric names and the three rating categories (#77), the
+        // ratings all alike and not styled as buttons.
+        expect(m.metrics, detail).toEqual(['Revenue', 'Active Customers', 'Portfolio at Risk', 'Programme Outcomes', 'Cost per Customer'])
+        expect(m.ratings.map((rating) => rating.text), detail).toEqual(['Trusted', 'Trusted with caveats', 'Not yet trusted'])
+        for (const { border, background, color, weight, cursor } of m.ratings) {
+          expect({ border, background, color, weight }, detail).toEqual({
+            border: m.ratings[0].border,
+            background: m.ratings[0].background,
+            color: m.ratings[0].color,
+            weight: m.ratings[0].weight,
+          })
+          expect(cursor, detail).not.toBe('pointer')
+        }
+        expect(m.ratings[0].weight, detail).toBe('500')
+        // Each block below the one before it, never over it, and no two
+        // ratings over each other.
         expect(m.overlaps, detail).toEqual([])
         // Every element inside the container's content box, none wider
         // than its own box, and no word broken mid-word.
@@ -1379,6 +1423,31 @@ for (const width of WIDTHS) {
     }
 
     if (width === 1440) {
+      // The Data Trust Assessment's rating categories (#77) are labels,
+      // not buttons: hovering one changes nothing about it.
+      test(`Data Trust Assessment ratings do not change on hover at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        const ratings = page
+          .locator('#data-trust-assessment figure')
+          .getByRole('list', { name: 'Trust rating' })
+          .getByRole('listitem')
+        await expect(ratings).toHaveCount(3)
+        const look = () =>
+          ratings.evaluateAll((items) =>
+            items.map((item) => {
+              const style = getComputedStyle(item)
+              return [style.borderTopColor, style.backgroundColor, style.color, style.fontWeight, style.cursor, style.transform, style.boxShadow, style.textDecorationLine]
+            }),
+          )
+        await ratings.first().scrollIntoViewIfNeeded()
+        const resting = await look()
+        for (let i = 0; i < 3; i++) {
+          await ratings.nth(i).hover()
+          expect(await look()).toEqual(resting)
+        }
+        expect(resting.every((style) => style[4] !== 'pointer')).toBe(true)
+      })
+
       // The card hover (#56): with motion allowed, hovering a card's list
       // item lifts the card 8px and darkens its border; under reduced
       // motion the card does not move. Focus never moves it.
