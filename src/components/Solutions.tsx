@@ -1,17 +1,19 @@
 import { useState } from 'react'
-import { solutions } from '../data/solutions.ts'
+import { homepageSolutions } from '../data/solutions.ts'
 import { solutionPath } from '../paths.ts'
 import SectionEyebrow from './SectionEyebrow.tsx'
 import './Solutions.css'
 
 // The Solutions section (plan V2 §12): the "03 — Solutions" eyebrow, the
-// h2, then the six sectors as compact, editorial rows numbered 01 to 06,
-// in data order. The id and h2 match the "Solutions" entry in
+// h2, then the homepage's sectors as compact, editorial rows numbered 01
+// to 03: Health, Financial Services and Education, in the order W7 of the
+// trust and lineage plan sets (homepageSolutions, #73). The other sectors
+// are linked from the footer. The id and h2 match the "Solutions" entry in
 // src/data/navigation.ts.
 //
 // Each row is the WAI-ARIA accordion header pattern: an h3 wrapping one
 // button, named by the sector title alone (the number and the chevron are
-// aria-hidden), then the plan V2 §12 summary, always visible and outside
+// aria-hidden), then the sector's tag line (W7), always visible and outside
 // the button, then the panel the button controls, holding the full
 // approved theme list. Rows open only on a click, a tap, or Enter or Space
 // on the focused button: focus and hover open nothing (owner decision on
@@ -38,7 +40,7 @@ function Solutions() {
           Solutions
         </h2>
         <ol className="solutions__list" role="list">
-          {solutions.map((solution, index) => {
+          {homepageSolutions.map((solution, index) => {
             const isOpen = open[solution.id] === true
             const panelId = `${solution.id}-themes`
             return (

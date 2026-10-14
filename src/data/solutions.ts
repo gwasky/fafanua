@@ -4,13 +4,23 @@
 // copied from those sections. The doc's "Potential client types" are left
 // out of the rows: it gives them for only three of the five sectors. Each
 // summary is the four-item line under the sector in
-// _docs/fafanua-v2-visual-upgrade-plan.md §12, shown on the collapsed row;
-// the themes are the full list its row reveals when opened.
+// _docs/fafanua-v2-visual-upgrade-plan.md §12, shown on the collapsed row,
+// except for Health, Financial Services and Education, whose tag lines are
+// W7 in _docs/fafanua-trust-lineage-positioning-plan.md (#73); the themes
+// are the full list its row reveals when opened.
+//
+// This order drives the landing pages (src/pages.ts), their "Other
+// sectors" lists and the sitemap, so it does not change. W7 decides which
+// sectors the homepage shows, and in what order: homepageSolutions. The
+// others are linked from the footer's "More sectors" line instead:
+// footerSolutions, in data order. Together they cover every sector once,
+// so every landing page keeps a link from the homepage or the footer.
 //
 // Health is the SEO plan's first-class sixth domain (§9,
 // _docs/fafanua-seo-keyword-and-implementation-plan.md, #67). No earlier
-// plan has it, so its summary and themes are written from the plan's §9
-// clusters, covering healthcare providers and health programmes alike.
+// plan has it, so its themes are written from the plan's §9 clusters,
+// covering healthcare providers and health programmes alike; its summary
+// is W7's.
 //
 // Each sector also has a landing page at /solutions/<slug> (SEO plan §6,
 // §16 and §18), titled by its heading, whose copy is in solutionPages.ts.
@@ -24,7 +34,7 @@ export type Solution = {
   readonly title: string
   /** The landing page's h1, and the anchor text of links to it. */
   readonly heading: string
-  /** Plan V2 §12: the sector's short summary, four items. */
+  /** The sector's short summary, four items: plan V2 §12, or W7. */
   readonly summary: readonly string[]
   readonly themes: readonly string[]
 }
@@ -35,7 +45,7 @@ export const solutions: readonly Solution[] = [
     slug: 'financial-services',
     title: 'Financial Services',
     heading: 'Financial Services Data & Analytics',
-    summary: ['Payments', 'Portfolio', 'Reconciliation', 'Reporting'],
+    summary: ['Payments', 'Reconciliation', 'Regulatory reporting', 'Lineage'],
     themes: [
       'Payment intelligence',
       'Portfolio analytics',
@@ -83,7 +93,7 @@ export const solutions: readonly Solution[] = [
     slug: 'health',
     title: 'Health',
     heading: 'Health Data & Analytics Solutions',
-    summary: ['Facilities', 'Programmes', 'Data quality', 'Interoperability'],
+    summary: ['Branch comparability', 'Billing and claims', 'Pharmacy stock', 'Lineage'],
     themes: [
       'Facility performance and utilisation dashboards',
       'Patient flow and service-delivery analytics',
@@ -99,7 +109,7 @@ export const solutions: readonly Solution[] = [
     slug: 'education',
     title: 'Education',
     heading: 'Education Data & Analytics',
-    summary: ['Enrolment', 'Progression', 'Outcomes', 'Payments'],
+    summary: ['Enrolment', 'Progression', 'Payments', 'Lineage'],
     themes: [
       'Learner lifecycle analytics',
       'Enrolment dashboards',
@@ -127,3 +137,19 @@ export const solutions: readonly Solution[] = [
     ],
   },
 ]
+
+const byId = (id: string) => solutions.find((solution) => solution.id === id)!
+
+/** W7 (#73): the homepage's sectors, in its order. */
+export const homepageSolutionIds = ['health', 'financial-services', 'education'] as const
+
+/** The footer's "More sectors" links (#73): the others, in data order. */
+export const footerSolutionIds = [
+  'retail-and-distribution',
+  'development-and-impact',
+  'public-sector',
+] as const
+
+export const homepageSolutions: readonly Solution[] = homepageSolutionIds.map(byId)
+
+export const footerSolutions: readonly Solution[] = footerSolutionIds.map(byId)

@@ -1,14 +1,18 @@
 // Checks solutions.ts against _docs/plan-fafanua-services-positioning.md
 // Sections 15-19, which are authoritative for the Solutions titles and
 // themes, and the summaries against plan V2
-// (_docs/fafanua-v2-visual-upgrade-plan.md) Section 12, so the wording on
-// the site cannot drift from either. The ?raw imports resolve relative to
-// this file and are never part of the production bundle.
+// (_docs/fafanua-v2-visual-upgrade-plan.md) Section 12, except the tag
+// lines W7 in _docs/fafanua-trust-lineage-positioning-plan.md updates
+// (Health, Financial Services and Education, #73), which are checked
+// against W7, so the wording on the site cannot drift from any of them.
+// The ?raw imports resolve relative to this file and are never part of
+// the production bundle.
 import { describe, expect, it } from 'vitest'
 import planV2 from '../../_docs/fafanua-v2-visual-upgrade-plan.md?raw'
 import positioning from '../../_docs/plan-fafanua-services-positioning.md?raw'
 import seoPlan from '../../_docs/fafanua-seo-keyword-and-implementation-plan.md?raw'
-import { solutions } from './solutions.ts'
+import trustPlan from '../../_docs/fafanua-trust-lineage-positioning-plan.md?raw'
+import { homepageSolutions, solutions } from './solutions.ts'
 import { solutionPages } from './solutionPages.ts'
 
 // The five sectors the positioning doc and plan V2 cover, in the site's
@@ -16,6 +20,15 @@ import { solutionPages } from './solutionPages.ts'
 const planned = solutions.filter((solution) => solution.id !== 'health')
 const health = solutions.find((solution) => solution.id === 'health')!
 const healthPage = solutionPages.health
+
+// The sectors whose tag lines W7 updates, by their W7 names (#73). W7
+// writes "Financial services"; the title keeps the positioning doc's
+// capital S (§15).
+const W7_NAMES: Record<string, string> = {
+  health: 'Health',
+  'financial-services': 'Financial services',
+  education: 'Education',
+}
 
 type DocSolution = {
   number: string
@@ -71,6 +84,20 @@ const v2Rows = [
   summary: match[3].trim().split(' · '),
 }))
 
+// W7's tag lines: a `  - Name: item • item • …` bullet under "Update the
+// tag lines:", where a proposed line has a parenthetical after its name.
+const trust = trustPlan.replace(/\r\n/g, '\n')
+const w7Start = trust.indexOf('\n### W7. Sectors on the homepage\n')
+const w7 = trust.slice(w7Start, trust.indexOf('\n### ', w7Start + 1))
+const w7Lines = new Map(
+  [...w7.matchAll(/^ {2}- ([^:(]+?)(?: \([^)]*\))?: (.+)$/gm)].map((match) => [
+    match[1].trim(),
+    match[2].trim().split(' • '),
+  ]),
+)
+// W7's homepage order: the bold list after "Show three sectors in this order:".
+const w7Order = (w7.match(/^- Show three sectors in this order: \*\*(.+)\.\*\*$/m)?.[1] ?? '').split(', ')
+
 describe('positioning doc parser', () => {
   it('finds five solutions with seven themes each in Sections 15 to 19', () => {
     expect(docSolutions.map((solution) => solution.title)).toEqual([
@@ -114,12 +141,29 @@ describe('solutions wording', () => {
     },
   )
 
-  it.each(v2Rows.map((row, index) => [row.number, row.title, index] as const))(
+  it.each(
+    v2Rows
+      .map((row, index) => [row.number, row.title, index] as const)
+      .filter(([, , index]) => !(planned[index].id in W7_NAMES)),
+  )(
     'matches the summary of row %s, %s, in plan V2 Section 12',
     (_number, _title, index) => {
       expect(planned[index].summary).toEqual(v2Rows[index].summary)
     },
   )
+
+  it('keeps the plan V2 summaries of Retail & Distribution, Development & Impact and Public Sector', () => {
+    const kept = planned.filter((solution) => !(solution.id in W7_NAMES))
+
+    expect(kept.map((solution) => solution.title)).toEqual([
+      'Retail & Distribution',
+      'Development & Impact',
+      'Public Sector',
+    ])
+    for (const solution of kept) {
+      expect(solution.summary).toEqual(v2Rows.find((row) => row.title === solution.title)?.summary)
+    }
+  })
 
   it('has the doc\'s solutions and Health, after Development & Impact, and nothing else', () => {
     expect(planned).toHaveLength(docSolutions.length)
@@ -169,5 +213,23 @@ describe('Health (SEO plan §9 and §21, #67)', () => {
 
   it('does not position Fafanua as a DHIS2 consultancy', () => {
     expect(JSON.stringify([health, healthPage])).not.toMatch(/DHIS/i)
+  })
+})
+
+describe('W7 in the trust and lineage plan (#73)', () => {
+  it('finds the three tag lines, four items each', () => {
+    expect([...w7Lines.keys()]).toEqual(['Health', 'Financial services', 'Education'])
+    for (const items of w7Lines.values()) expect(items).toHaveLength(4)
+  })
+
+  it.each(Object.entries(W7_NAMES))('uses the W7 tag line for %s, word for word', (id, name) => {
+    const solution = solutions.find((candidate) => candidate.id === id)!
+
+    expect(solution.summary).toEqual(w7Lines.get(name))
+  })
+
+  it('shows the homepage sectors in W7\'s order', () => {
+    expect(w7Order).toEqual(['Health', 'Financial services', 'Education'])
+    expect(homepageSolutions.map((solution) => W7_NAMES[solution.id])).toEqual(w7Order)
   })
 })

@@ -9,6 +9,8 @@
 //   plan, #68), read from contact.ts.
 // - footerNavigation: the footer's five plain links, the four sections
 //   then Contact (plan V2 §17).
+// - moreSectorsLabel: the label of the footer's quiet line of links to
+//   the sectors the homepage does not list (footerSolutions, #73).
 
 import { ctaLabel } from './contact.ts'
 
@@ -29,3 +31,7 @@ export const navigationCta: NavItem = { label: ctaLabel, id: 'contact' }
 export const contactNavItem: NavItem = { label: 'Contact', id: 'contact' }
 
 export const footerNavigation: readonly NavItem[] = [...navigation, contactNavItem]
+
+/** The label before the footer's links to the sectors the homepage does
+ * not list (W7 in the trust and lineage plan, #73). */
+export const moreSectorsLabel = 'More sectors'

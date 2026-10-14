@@ -1,17 +1,14 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { navigation } from '../data/navigation.ts'
-import { solutions } from '../data/solutions.ts'
+import { footerSolutions, homepageSolutions, solutions as allSolutions } from '../data/solutions.ts'
 import Solutions from './Solutions.tsx'
 
-const TITLES = [
-  'Financial Services',
-  'Retail & Distribution',
-  'Development & Impact',
-  'Health',
-  'Education',
-  'Public Sector',
-]
+// The homepage's three sectors, in W7's order (#73). The other three are
+// linked from the footer's "More sectors" line instead.
+const solutions = homepageSolutions
+
+const TITLES = ['Health', 'Financial Services', 'Education']
 
 function renderSolutions() {
   render(<Solutions />)
@@ -64,12 +61,12 @@ describe('Solutions', () => {
     expect(rows).toBe(list)
   })
 
-  it('has one h2, then six h3s, and no introduction paragraph', () => {
+  it('has one h2, then three h3s, and no introduction paragraph', () => {
     const { section } = renderSolutions()
 
     expect(
       within(section).getAllByRole('heading').map((heading) => heading.tagName),
-    ).toEqual(['H2', 'H3', 'H3', 'H3', 'H3', 'H3', 'H3'])
+    ).toEqual(['H2', 'H3', 'H3', 'H3'])
     // The eyebrow is the section's only paragraph outside the panels,
     // which each end with the link to their sector's page (#67).
     expect(
@@ -79,16 +76,50 @@ describe('Solutions', () => {
     ).toEqual(['03 — Solutions'])
   })
 
-  it('shows the six sectors as an ordered list of rows, in data order', () => {
+  it('shows the three homepage sectors as an ordered list of rows, in W7 order', () => {
     const { list, rows } = renderSolutions()
 
     expect(list.tagName).toBe('OL')
     expect(list).toHaveAttribute('role', 'list')
-    expect(rows.map((row) => row.tagName)).toEqual(Array(6).fill('LI'))
-    expect(rows.map((row) => parts(row).heading.textContent)).toEqual(
-      TITLES.map((title, index) => `0${index + 1}${title}`),
-    )
+    expect(rows.map((row) => row.tagName)).toEqual(Array(3).fill('LI'))
+    expect(rows.map((row) => parts(row).heading.textContent)).toEqual([
+      '01Health',
+      '02Financial Services',
+      '03Education',
+    ])
     expect(solutions.map((solution) => solution.title)).toEqual(TITLES)
+  })
+
+  // The other sectors are left to the footer (#73): no row names them.
+  it('leaves Retail & Distribution, Development & Impact and Public Sector out', () => {
+    const { section } = renderSolutions()
+    for (const button of within(section).getAllByRole('button')) fireEvent.click(button)
+
+    expect(footerSolutions.map((solution) => solution.title)).toEqual([
+      'Retail & Distribution',
+      'Development & Impact',
+      'Public Sector',
+    ])
+    for (const solution of footerSolutions) {
+      expect(within(section).queryByRole('button', { name: solution.title })).toBeNull()
+      expect(section.textContent).not.toContain(solution.title)
+      expect(section.querySelector(`a[href="/solutions/${solution.slug}"]`)).toBeNull()
+    }
+    expect(allSolutions).toHaveLength(6)
+  })
+
+  it('shows the W7 tag lines on the collapsed rows', () => {
+    const { rows } = renderSolutions()
+
+    expect(
+      rows.map((row) =>
+        within(parts(row).summary).getAllByRole('listitem').map((item) => item.textContent),
+      ),
+    ).toEqual([
+      ['Branch comparability', 'Billing and claims', 'Pharmacy stock', 'Lineage'],
+      ['Payments', 'Reconciliation', 'Regulatory reporting', 'Lineage'],
+      ['Enrolment', 'Progression', 'Payments', 'Lineage'],
+    ])
   })
 
   it('gives each row an h3 holding one button, named exactly the sector title', () => {
@@ -105,10 +136,10 @@ describe('Solutions', () => {
         within(row).getByRole('button', { name: TITLES[index] }),
       ).toBe(button)
     })
-    expect(screen.getAllByRole('button')).toHaveLength(6)
+    expect(screen.getAllByRole('button')).toHaveLength(3)
   })
 
-  it('shows the number 01 to 06 and a chevron in each button, both aria-hidden', () => {
+  it('shows the number 01 to 03 and a chevron in each button, both aria-hidden', () => {
     const { rows } = renderSolutions()
 
     rows.forEach((row, index) => {
@@ -126,7 +157,7 @@ describe('Solutions', () => {
     })
   })
 
-  it('lists each row\'s plan V2 summary outside the button, always visible', () => {
+  it('lists each row\'s tag line outside the button, always visible', () => {
     const { rows } = renderSolutions()
 
     rows.forEach((row, index) => {
@@ -247,36 +278,36 @@ describe('Solutions', () => {
     expect(button).toHaveAttribute('aria-expanded', 'false')
   })
 
-  it('keeps rows independent: all six can be open at once', () => {
+  it('keeps rows independent: all three can be open at once', () => {
     const { rows } = renderSolutions()
     const buttons = rows.map((row) => parts(row).button)
 
-    fireEvent.click(buttons[1])
-    fireEvent.click(buttons[3])
+    fireEvent.click(buttons[0])
+    fireEvent.click(buttons[2])
     expect(buttons.map((button) => button.getAttribute('aria-expanded'))).toEqual([
-      'false', 'true', 'false', 'true', 'false', 'false',
+      'true', 'false', 'true',
     ])
 
-    for (const button of [buttons[0], buttons[2], buttons[4], buttons[5]]) fireEvent.click(button)
+    fireEvent.click(buttons[1])
     expect(buttons.map((button) => button.getAttribute('aria-expanded'))).toEqual(
-      Array(6).fill('true'),
+      Array(3).fill('true'),
     )
     for (const row of rows) expect(parts(row).panel).toBeVisible()
 
-    fireEvent.click(buttons[2])
+    fireEvent.click(buttons[1])
     expect(buttons.map((button) => button.getAttribute('aria-expanded'))).toEqual([
-      'true', 'true', 'false', 'true', 'true', 'true',
+      'true', 'false', 'true',
     ])
   })
 
-  it('has no images or tab stops other than the six buttons and, in open panels, the page links', () => {
+  it('has no images or tab stops other than the three buttons and, in open panels, the page links', () => {
     const { section } = renderSolutions()
 
     expect(within(section).queryAllByRole('link')).toHaveLength(0)
     expect(
       section.querySelectorAll('input, select, textarea, details, img, [tabindex]'),
     ).toHaveLength(0)
-    expect(section.querySelectorAll('button')).toHaveLength(6)
+    expect(section.querySelectorAll('button')).toHaveLength(3)
   })
 
   // #67: each panel ends with a crawlable link to its sector's page, named
@@ -292,6 +323,9 @@ describe('Solutions', () => {
       expect(link).toHaveAttribute('href', `/solutions/${solutions[index].slug}`)
       expect(panel.lastElementChild).toContainElement(link)
     })
+    expect(
+      rows.map((row) => within(parts(row).panel).getByRole('link').getAttribute('href')),
+    ).toEqual(['/solutions/health', '/solutions/financial-services', '/solutions/education'])
   })
 
   it('shows no doc labels, client types, stage labels or colour markers', () => {
