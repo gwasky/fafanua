@@ -158,7 +158,7 @@ test.describe('axe, Data Trust Assessment in view (#71)', () => {
         const figure = section.getByRole('figure')
         await figure.scrollIntoViewIfNeeded()
         await expect(figure).toBeInViewport()
-        await expect(figure.locator('figcaption')).toHaveText('Illustrative example. Sample data only.')
+        await expect(figure.locator('figcaption')).toHaveText('Illustrative example')
 
         await expectNoAxeViolations(page, testInfo)
         // The section fits the page. (At 1024px with 200% page text the

@@ -152,6 +152,9 @@
      half-side is how far that corner reaches below the square's box. */
   --step-arrow: calc(var(--space-3) / 2);
   --step-arrow-reach: calc(var(--step-arrow) * 0.2071);
+  /* The space between the arrowhead's point, where the line ends, and the
+     next ring. */
+  --step-arrow-gap: var(--space-1);
 
   margin: 0;
   padding-block: var(--space-6);
@@ -224,10 +227,11 @@
   background-color: var(--color-text-muted);
 }
 
-/* The line from this ring down to the next one's top. */
+/* The line from this ring down to the arrowhead's point, just above the
+   next ring. */
 .lineage-example__step:not(:last-child)::after {
   position: absolute;
-  inset-block: calc(var(--step-ring-top) + var(--step-ring)) calc(-1 * var(--step-ring-top));
+  inset-block: calc(var(--step-ring-top) + var(--step-ring)) calc(var(--step-arrow-gap) - var(--step-ring-top));
   inset-inline-start: calc((var(--step-ring) - var(--border-width)) / 2);
   border-inline-start: var(--border-width) solid var(--color-text-muted);
   content: '';
@@ -239,7 +243,7 @@
    positioned. */
 .lineage-example__step:not(:last-child) > .lineage-example__label::after {
   position: absolute;
-  inset-block-end: calc(var(--border-width) + var(--step-arrow-reach) - var(--step-ring-top));
+  inset-block-end: calc(var(--step-arrow-gap) + var(--step-arrow-reach) - var(--step-ring-top));
   inset-inline-start: calc((var(--step-ring) - var(--step-arrow)) / 2);
   box-sizing: border-box;
   inline-size: var(--step-arrow);

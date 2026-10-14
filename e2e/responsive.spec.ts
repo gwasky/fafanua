@@ -417,7 +417,11 @@ const measureAssessment = (page: Page) =>
     const positioning = document.querySelector('.positioning')!
     const section_ = parseFloat(getComputedStyle(positioning).paddingTop)
     const paper = getComputedStyle(positioning).backgroundColor
-    const statement = positioning.querySelector('p')!
+    // The problem block's lowest content bottom: its two columns sit side
+    // by side from 64em (#79).
+    const problemBottom = Math.max(
+      ...[...positioning.querySelectorAll('p')].map((p) => p.getBoundingClientRect().bottom),
+    )
     const servicesFirst = document.querySelector('#services > .container')!.firstElementChild!
     const containerStyle = getComputedStyle(container)
     const inner = {
@@ -425,7 +429,7 @@ const measureAssessment = (page: Page) =>
       right: box(container).right - parseFloat(containerStyle.paddingRight),
     }
     const all = [...container.querySelectorAll('*')]
-    // The example's lists (#77): the metric names, the five steps (the
+    // The example's lists (#77): the metric names, the seven steps (the
     // steps list's own items, not the lists nested in them) and the
     // rating categories in the last step.
     const metrics = figure.querySelector(':scope > ul')!
@@ -489,7 +493,22 @@ const measureAssessment = (page: Page) =>
       positioningPaddingBottom: parseFloat(getComputedStyle(positioning).paddingBottom),
       paddingBottom: parseFloat(getComputedStyle(section).paddingBottom),
       servicesPaddingTop: parseFloat(getComputedStyle(document.getElementById('services')!).paddingTop),
-      gapAbove: box(copy.firstElementChild!).top - box(statement).bottom,
+      gapAbove: box(copy.firstElementChild!).top - problemBottom,
+      // The copy column's first three elements (#79): the eyebrow, the
+      // engagement name and the h2.
+      intro: [...copy.children].slice(0, 3).map((element) => {
+        const style = getComputedStyle(element)
+        return {
+          tag: element.tagName,
+          className: element.className,
+          text: (element as HTMLElement).innerText,
+          size: parseFloat(style.fontSize),
+          weight: style.fontWeight,
+          color: style.color,
+          transform: style.textTransform,
+          tracking: parseFloat(style.letterSpacing) / parseFloat(style.fontSize),
+        }
+      }),
       gapBelow: box(servicesFirst).top - box(container).bottom,
       copy: box(copy).toJSON() as DOMRect,
       figure: box(figure).toJSON() as DOMRect,
@@ -510,7 +529,29 @@ const measureAssessment = (page: Page) =>
         const ring = getComputedStyle(item, '::before')
         const label = box(item.firstElementChild!)
         const itemBox = box(item)
+        // The arrowhead (#79), on the step's label: a square of two
+        // borders turned 45 degrees, positioned against the step.
+        const arrow = getComputedStyle(item.firstElementChild!, '::after')
+        const arrowTop = itemBox.top + parseFloat(arrow.top)
         return {
+          text: item.firstElementChild!.textContent,
+          ringColor: ring.borderTopColor,
+          ringBottom: itemBox.top + parseFloat(ring.top) + parseFloat(ring.height),
+          arrow: {
+            content: arrow.content,
+            position: arrow.position,
+            top: arrowTop,
+            bottom: arrowTop + parseFloat(arrow.height),
+            centre: itemBox.left + parseFloat(arrow.left) + parseFloat(arrow.width) / 2,
+            ringCentre: itemBox.left + parseFloat(ring.left) + parseFloat(ring.width) / 2,
+            width: parseFloat(arrow.width),
+            borders: [arrow.borderTopStyle, arrow.borderRightStyle, arrow.borderBottomStyle, arrow.borderLeftStyle],
+            color: arrow.borderRightColor,
+            bottomColor: arrow.borderBottomColor,
+            background: arrow.backgroundColor,
+            transform: arrow.transform,
+            animation: arrow.animationName,
+          },
           top: itemBox.top,
           bottom: itemBox.bottom,
           left: itemBox.left,
@@ -1230,118 +1271,231 @@ for (const width of WIDTHS) {
       })
     }
 
-    // The positioning block (#56): one paragraph, the statement, since #70
-    // removed the response beside it. One column at every width, with no
-    // empty second column, and held to a display measure on wide screens.
-    // It keeps its size, weight and colour. Its bottom padding is the only
-    // gap above the Data Trust Assessment's heading (#71), which now
-    // follows it in place of the Services eyebrow, and no word breaks
-    // mid-word.
-    test(`positioning section layout, spacing and wrapping at ${width}px`, async ({ page }, testInfo) => {
-      await open(page, testInfo, width)
-      const m = await page.evaluate(() => {
-        const block = document.querySelector('main > div:not([id])')!
-        const paragraphs = [...block.querySelectorAll('p')]
-        const [statement] = paragraphs
-        const inner = block.firstElementChild!
-        const eyebrow = document.querySelector('#data-trust-assessment h2')!
-        const box = (element: Element) => element.getBoundingClientRect()
-        const probe = document.createElement('div')
-        probe.style.paddingTop = 'var(--space-section)'
-        probe.style.fontSize = 'var(--text-3xl)'
-        probe.style.color = 'var(--color-heading)'
-        probe.style.width = 'var(--container-narrow)'
-        document.body.append(probe)
-        const probeStyle = getComputedStyle(probe)
-        const section = parseFloat(probeStyle.paddingTop)
-        const tokens = {
-          size: probeStyle.fontSize,
-          color: probeStyle.color,
-          narrow: parseFloat(probeStyle.width),
+    // The problem block (#56, #79): the eyebrow THE PROBLEM and the
+    // framing line, then the statement and the transition into the Data
+    // Trust Assessment. From 64em two top-aligned columns, one third and
+    // two thirds, --space-16 apart, the statement dominant and reaching
+    // well across the content; below it one column in DOM order. The
+    // statement keeps its size, weight and colour; the framing and
+    // transition are secondary. The gap from the lower column's bottom to
+    // the assessment's eyebrow is one section padding (#71), and nothing
+    // overflows, overlaps or (at 100% text) breaks mid-word, at the
+    // default page text size and at 200%.
+    for (const text of ['100%', '200%'] as const) {
+      test(`positioning section layout, spacing and wrapping with ${text} text at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        if (text !== '100%') {
+          await page.addStyleTag({ content: `html { font-size: ${text}; }` })
+          await expect
+            .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
+            .toBe('32px')
+          await waitForFonts(page)
         }
-        probe.remove()
-        const innerStyle = getComputedStyle(inner)
-        const statementStyle = getComputedStyle(statement)
-        // A word broken across lines leaves a line that starts or ends
-        // mid-word: compare each line's text with the paragraph's words.
-        const brokenWords = (element: Element) => {
-          const words = new Set(element.textContent!.split(/\s+/))
-          const text = element.firstChild!
-          const range = document.createRange()
-          const lines: string[] = []
-          let line = ''
-          let top: number | null = null
-          for (let i = 0; i < text.textContent!.length; i++) {
-            range.setStart(text, i)
-            range.setEnd(text, i + 1)
-            const rect = range.getClientRects()[0]
-            if (!rect) continue
-            if (top !== null && Math.abs(rect.top - top) > 2) {
-              lines.push(line)
-              line = ''
-            }
-            top = rect.top
-            line += text.textContent![i]
+        const m = await page.evaluate(() => {
+          const block = document.querySelector('main > div:not([id])')!
+          const paragraphs = [...block.querySelectorAll('p')]
+          const [eyebrow] = paragraphs
+          const inner = block.firstElementChild!
+          const [start, end] = [...inner.children]
+          const next = document.querySelector('#data-trust-assessment .section-eyebrow')!
+          const box = (element: Element) => element.getBoundingClientRect().toJSON() as DOMRect
+          // A fresh probe for each token: the page's content security
+          // policy keeps a reused probe's style attribute from resetting.
+          const token = (property: string, value: string) => {
+            const element = document.createElement('div')
+            document.body.append(element)
+            element.style.setProperty(property, value)
+            const result = getComputedStyle(element).getPropertyValue(property)
+            element.remove()
+            return result
           }
-          lines.push(line)
-          return lines.flatMap((l) => l.trim().split(/\s+/)).filter((word) => word && !words.has(word))
-        }
-        return {
-          section,
-          tokens,
-          paragraphs: paragraphs.length,
-          children: inner.children.length,
-          columns: innerStyle.display === 'grid' ? innerStyle.gridTemplateColumns.split(' ').length : 1,
-          content: box(inner).width - parseFloat(innerStyle.paddingLeft) - parseFloat(innerStyle.paddingRight),
-          contentLeft: box(inner).left + parseFloat(innerStyle.paddingLeft),
-          statement: box(statement),
-          size: statementStyle.fontSize,
-          weight: statementStyle.fontWeight,
-          color: statementStyle.color,
-          eyebrowTop: box(eyebrow).top,
-          eyebrowText: eyebrow.textContent,
-          blockPadding: getComputedStyle(block).paddingBottom,
-          nextPadding: getComputedStyle(block.nextElementSibling!).paddingTop,
-          broken: brokenWords(statement),
-        }
-      })
-      const detail = JSON.stringify(m)
+          const tokens = {
+            section: parseFloat(token('padding-top', 'var(--space-section)')),
+            gap: parseFloat(token('padding-top', 'var(--space-16)')),
+            size: token('font-size', 'var(--text-3xl)'),
+            bodyLg: token('font-size', 'var(--text-body-lg)'),
+            eyebrowSize: token('font-size', 'var(--text-eyebrow)'),
+            heading: token('color', 'var(--color-heading)'),
+            text: token('color', 'var(--color-text)'),
+            muted: token('color', 'var(--color-text-muted)'),
+            narrow: parseFloat(token('width', 'var(--container-narrow)')),
+          }
+          const probe = document.createElement('div')
+          probe.style.fontSize = 'var(--text-body-lg)'
+          probe.style.width = 'var(--measure)'
+          document.body.append(probe)
+          const measure = parseFloat(getComputedStyle(probe).width)
+          probe.remove()
+          const lineProbe = document.createElement('div')
+          lineProbe.style.fontSize = 'var(--text-3xl)'
+          lineProbe.style.lineHeight = 'var(--leading-tight)'
+          document.body.append(lineProbe)
+          const tight = getComputedStyle(lineProbe).lineHeight
+          lineProbe.remove()
+          const innerStyle = getComputedStyle(inner)
+          const contentLeft = box(inner).left + parseFloat(innerStyle.paddingLeft)
+          const contentRight = box(inner).right - parseFloat(innerStyle.paddingRight)
+          // A word broken across lines leaves a line that starts or ends
+          // mid-word: compare each line's text with the paragraph's words.
+          const brokenWords = (element: Element) => {
+            const words = new Set(element.textContent!.split(/\s+/))
+            const node = element.firstChild!
+            const range = document.createRange()
+            const lines: string[] = []
+            let line = ''
+            let top: number | null = null
+            for (let i = 0; i < node.textContent!.length; i++) {
+              range.setStart(node, i)
+              range.setEnd(node, i + 1)
+              const rect = range.getClientRects()[0]
+              if (!rect) continue
+              if (top !== null && Math.abs(rect.top - top) > 2) {
+                lines.push(line)
+                line = ''
+              }
+              top = rect.top
+              line += node.textContent![i]
+            }
+            lines.push(line)
+            return lines.flatMap((l) => l.trim().split(/\s+/)).filter((word) => word && !words.has(word))
+          }
+          const style = (element: Element) => {
+            const s = getComputedStyle(element)
+            return {
+              size: s.fontSize,
+              weight: s.fontWeight,
+              color: s.color,
+              lineHeight: s.lineHeight,
+              tracking: s.letterSpacing,
+              transform: s.textTransform,
+            }
+          }
+          // Everything inside the container, whose padding is outside its
+          // content box.
+          const all = [...inner.querySelectorAll('*')]
+          return {
+            tokens,
+            measure,
+            tight,
+            texts: paragraphs.map((p) => p.textContent),
+            eyebrowClass: eyebrow.className,
+            eyebrowText: (eyebrow as HTMLElement).innerText,
+            columns: innerStyle.gridTemplateColumns.split(' ').length,
+            columnGap: parseFloat(innerStyle.columnGap),
+            contentLeft,
+            contentRight,
+            content: contentRight - contentLeft,
+            start: box(start),
+            end: box(end),
+            blocks: paragraphs.map(box),
+            styles: paragraphs.map(style),
+            eyebrowTracking: parseFloat(getComputedStyle(eyebrow).letterSpacing) / parseFloat(getComputedStyle(eyebrow).fontSize),
+            nextTop: box(next).top,
+            nextText: next.textContent,
+            blockPadding: parseFloat(getComputedStyle(block).paddingBottom),
+            nextPadding: parseFloat(getComputedStyle(block.nextElementSibling!).paddingTop),
+            broken: paragraphs.flatMap(brokenWords),
+            outside: all
+              .filter((element) => box(element).left < contentLeft - 1 || box(element).right > contentRight + 1)
+              .map((element) => `${element.tagName}.${element.className}`),
+            clipped: all
+              .filter((element) => element.scrollWidth > element.clientWidth + 1)
+              .map((element) => `${element.tagName}.${element.className}`),
+          }
+        })
+        const detail = JSON.stringify(m)
+        const [eyebrow, framing, statement, transition] = m.blocks
+        const [eyebrowStyle, framingStyle, statementStyle, transitionStyle] = m.styles
 
-      expect(m.eyebrowText, detail).toBe('Know where every number comes from.')
-      expect(m.broken, detail).toEqual([])
-      // One paragraph in one column: nothing beside it.
-      expect(m.paragraphs, detail).toBe(1)
-      expect(m.children, detail).toBe(1)
-      expect(m.columns, detail).toBe(1)
-      expect(Math.abs(m.statement.left - m.contentLeft), detail).toBeLessThanOrEqual(1)
-      // Its size, weight and colour are unchanged.
-      expect(m.size, detail).toBe(m.tokens.size)
-      expect(m.weight, detail).toBe('300')
-      expect(m.color, detail).toBe(m.tokens.color)
-      // A display measure, not the full container: at 1440px it stops
-      // well short of the content width, so the line is not over-long.
-      expect(m.statement.width, detail).toBeLessThanOrEqual(m.tokens.narrow + 1)
-      expect(m.statement.width, detail).toBeLessThanOrEqual(m.content + 1)
-      if (width === 1440) {
-        expect(m.statement.width, detail).toBeLessThan(0.75 * m.content)
-      }
-      // Its bottom padding and the Data Trust Assessment's top padding
-      // add up to one section padding (#71).
-      expect(parseFloat(m.blockPadding) + parseFloat(m.nextPadding), detail).toBeCloseTo(m.section, 0)
-      const gap = m.eyebrowTop - m.statement.bottom
-      expect(gap, detail).toBeGreaterThanOrEqual(m.section - 1)
-      // Not doubled.
-      if (width === 1440) {
-        expect(gap, detail).toBeLessThanOrEqual(1.25 * m.section)
-      }
-    })
+        // Four paragraphs, in reading order.
+        expect(m.texts, detail).toEqual([
+          'The problem',
+          'Organisations rarely lack data. The challenge is knowing whether the numbers used to run the business are connected, consistent and trustworthy.',
+          'Most organisations already have data, reporting and operational systems. The challenge is making the information flowing through them connected, consistent and trusted.',
+          'That is why Fafanua starts by tracing the numbers leadership relies on most back to their source.',
+        ])
+        // The eyebrow, in the existing eyebrow style.
+        expect(m.eyebrowClass, detail).toBe('section-eyebrow')
+        expect(m.eyebrowText, detail).toBe('THE PROBLEM')
+        expect(eyebrowStyle.size, detail).toBe(m.tokens.eyebrowSize)
+        expect(eyebrowStyle.weight, detail).toBe('500')
+        expect(eyebrowStyle.transform, detail).toBe('uppercase')
+        expect(eyebrowStyle.color, detail).toBe(m.tokens.muted)
+        expect(m.eyebrowTracking, detail).toBeCloseTo(0.08, 2)
+        // The statement keeps its treatment and is the largest text.
+        expect(statementStyle.size, detail).toBe(m.tokens.size)
+        expect(statementStyle.weight, detail).toBe('300')
+        expect(statementStyle.color, detail).toBe(m.tokens.heading)
+        expect(statementStyle.lineHeight, detail).toBe(m.tight)
+        expect(statement.width, detail).toBeLessThanOrEqual(m.tokens.narrow + 1)
+        // The framing and transition are secondary.
+        for (const [s, b] of [
+          [framingStyle, framing],
+          [transitionStyle, transition],
+        ] as const) {
+          expect(s.size, detail).toBe(m.tokens.bodyLg)
+          expect(parseFloat(s.size), detail).toBeLessThan(parseFloat(statementStyle.size))
+          expect(s.weight, detail).toBe('400')
+          expect(s.color, detail).toBe(m.tokens.text)
+          expect(b.width, detail).toBeLessThanOrEqual(m.measure + 1)
+        }
+        expect(parseFloat(eyebrowStyle.size), detail).toBeLessThan(parseFloat(statementStyle.size))
+        // The transition sits beneath the statement, its left edge level.
+        expect(transition.top, detail).toBeGreaterThanOrEqual(statement.bottom - 1)
+        expect(Math.abs(transition.left - statement.left), detail).toBeLessThanOrEqual(1)
+        expect(Math.abs(framing.left - m.contentLeft), detail).toBeLessThanOrEqual(1)
+        if (width >= 1024) {
+          // Two top-aligned columns, one third and two thirds, --space-16
+          // apart. (A media query in em follows the browser's text size,
+          // not page text, so with 200% page text the columns stay.)
+          expect(m.columns, detail).toBe(2)
+          expect(Math.abs(m.start.width * 2 - m.end.width), detail).toBeLessThanOrEqual(2)
+          expect(Math.abs(m.columnGap - m.tokens.gap), detail).toBeLessThanOrEqual(1)
+          expect(Math.abs(m.end.left - m.start.right - m.tokens.gap), detail).toBeLessThanOrEqual(1)
+          expect(Math.abs(eyebrow.top - statement.top), detail).toBeLessThanOrEqual(1)
+          expect(framing.top, detail).toBeGreaterThanOrEqual(eyebrow.bottom - 1)
+          expect(Math.abs(statement.left - m.end.left), detail).toBeLessThanOrEqual(1)
+          expect(framing.right, detail).toBeLessThanOrEqual(m.start.right + 1)
+          // Not stranded on one side: the right column's text reaches well
+          // across the content.
+          if (width === 1440) {
+            expect(Math.max(statement.right, transition.right) - m.contentLeft, detail).toBeGreaterThanOrEqual(0.6 * m.content)
+          }
+        } else {
+          // One column, stacked in DOM order, every left edge on the
+          // content edge, and no two blocks overlapping.
+          expect(m.columns, detail).toBe(1)
+          m.blocks.forEach((b, i) => {
+            expect(Math.abs(b.left - m.contentLeft), `block ${i + 1}: ${detail}`).toBeLessThanOrEqual(1)
+            if (i > 0) expect(b.top, `block ${i + 1}: ${detail}`).toBeGreaterThanOrEqual(m.blocks[i - 1].bottom - 1)
+          })
+        }
+        // One section padding from the lower column's bottom to the
+        // assessment's eyebrow, split between this block's bottom padding
+        // and the section's top padding (#71): not doubled, not zero.
+        expect(m.nextText, detail).toBe('Start with trust')
+        expect(Math.abs(m.blockPadding + m.nextPadding - m.tokens.section), detail).toBeLessThanOrEqual(1)
+        const bottom = Math.max(m.start.bottom, m.end.bottom, ...m.blocks.map((b) => b.bottom))
+        expect(Math.abs(m.nextTop - bottom - m.tokens.section), `gap: ${detail}`).toBeLessThanOrEqual(1)
+        // Nothing outside the content box or clipped, and at 100% text no
+        // word broken mid-word.
+        expect(m.outside, detail).toEqual([])
+        expect(m.clipped, detail).toEqual([])
+        if (text === '100%') expect(m.broken, detail).toEqual([])
+        // At 1024px with 200% page text the header's inline navigation is
+        // wider than the page (noted on #71); everywhere else the page fits.
+        if (!(width === 1024 && text === '200%')) await expectNoHorizontalScroll(page)
+      })
+    }
 
     // The Data Trust Assessment (#71), on paper between the problem
-    // statement and Services: one --space-section gap above and below its
-    // content, never doubled or zero; the copy then the example stacked
-    // below 64em, side by side from it; the example's five steps stacked
-    // at every width; and nothing overflowing, clipped or overlapping, at
-    // the default page text size and at 200%.
+    // block and Services: one --space-section gap above and below its
+    // content, never doubled or zero; the eyebrow and engagement name
+    // small above the dominant h2 (#79); the copy then the example stacked
+    // below 64em, side by side from it; the example's seven steps stacked
+    // at every width, each but the last with its arrowhead (#79); and
+    // nothing overflowing, clipped or overlapping, at the default page
+    // text size and at 200%.
     for (const text of ['100%', '200%'] as const) {
       test(`Data Trust Assessment layout, spacing and wrapping with ${text} text at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
@@ -1378,13 +1532,62 @@ for (const width of WIDTHS) {
           expect(m.figure.top, detail).toBeGreaterThan(m.copy.bottom)
           expect(Math.abs(m.figure.left - m.copy.left), detail).toBeLessThanOrEqual(1)
         }
-        // The five steps stack, in order, each below the last, level at
+        // START WITH TRUST, then DATA TRUST ASSESSMENT, then the h2 (#79):
+        // the eyebrow in its own style, the name a step larger and darker,
+        // both paragraphs, and the h2 at least twice the size of either.
+        const [eyebrow, name, h2] = m.intro
+        expect([eyebrow.tag, eyebrow.className, eyebrow.text], detail).toEqual(['P', 'section-eyebrow', 'START WITH TRUST'])
+        expect([name.tag, name.text], detail).toEqual(['P', 'DATA TRUST ASSESSMENT'])
+        expect([h2.tag, h2.text.replace(/\s+/g, ' ')], detail).toEqual(['H2', 'Know where every number comes from.'])
+        expect(eyebrow.weight, detail).toBe('500')
+        expect(name.weight, detail).toBe('500')
+        expect(h2.weight, detail).toBe('300')
+        for (const label of [eyebrow, name]) {
+          expect(label.transform, detail).toBe('uppercase')
+          expect(label.tracking, detail).toBeCloseTo(0.08, 2)
+          expect(h2.size, detail).toBeGreaterThanOrEqual(2 * label.size)
+        }
+        expect(name.size, detail).toBeGreaterThan(eyebrow.size)
+        expect(name.color, detail).toBe(h2.color)
+        expect(name.color, detail).not.toBe(eyebrow.color)
+        // The seven steps stack, in order, each below the last, level at
         // the inline start, and each ring beside its label.
-        expect(m.steps, detail).toHaveLength(5)
+        expect(m.steps.map((step) => step.text), detail).toEqual([
+          'Report',
+          'Definition',
+          'Calculation',
+          'Data model',
+          'Source system',
+          'Owner',
+          'Trust rating',
+        ])
+        expect(m.steps, detail).toHaveLength(7)
         for (let i = 1; i < m.steps.length; i++) {
           expect(m.steps[i].top, `step ${i + 1}: ${detail}`).toBeGreaterThanOrEqual(m.steps[i - 1].bottom - 1)
           expect(Math.abs(m.steps[i].left - m.steps[0].left), `step ${i + 1}: ${detail}`).toBeLessThanOrEqual(1)
         }
+        // Each step but the last has its arrowhead (#79): two solid
+        // borders in the rings' colour, no fill, turned to point down,
+        // centred on the line, between this ring and the next, and still.
+        m.steps.forEach((step, i) => {
+          const where = `step ${i + 1}: ${detail}`
+          if (i === m.steps.length - 1) {
+            expect(step.arrow.content, where).toBe('none')
+            return
+          }
+          expect(step.arrow.content, where).toBe('""')
+          expect(step.arrow.position, where).toBe('absolute')
+          expect(step.arrow.width, where).toBeGreaterThan(0)
+          expect(step.arrow.borders, where).toEqual(['none', 'solid', 'solid', 'none'])
+          expect(step.arrow.color, where).toBe(step.ringColor)
+          expect(step.arrow.bottomColor, where).toBe(step.ringColor)
+          expect(step.arrow.background, where).toBe('rgba(0, 0, 0, 0)')
+          expect(step.arrow.transform, where).not.toBe('none')
+          expect(step.arrow.animation, where).toBe('none')
+          expect(Math.abs(step.arrow.centre - step.arrow.ringCentre), where).toBeLessThanOrEqual(1)
+          expect(step.arrow.top, where).toBeGreaterThan(step.ringBottom)
+          expect(step.arrow.bottom, where).toBeLessThan(m.steps[i + 1].ringTop)
+        })
         for (const step of m.steps) {
           expect(step.ringRight, detail).toBeLessThanOrEqual(step.labelLeft)
           expect(step.ringTop, detail).toBeGreaterThanOrEqual(step.labelTop - 1)
@@ -1412,7 +1615,7 @@ for (const width of WIDTHS) {
         expect(m.outside, detail).toEqual([])
         expect(m.clipped, detail).toEqual([])
         expect(m.broken, detail).toEqual([])
-        expect(m.caption, detail).toBe('Illustrative example. Sample data only.')
+        expect(m.caption, detail).toBe('Illustrative example')
         expect(m.sectionScroll, detail).toBeLessThanOrEqual(m.sectionWidth)
         // At 1024px with 200% page text the header's inline navigation,
         // which starts at 64em of the browser's text size, is wider than
