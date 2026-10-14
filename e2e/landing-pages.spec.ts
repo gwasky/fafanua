@@ -134,12 +134,13 @@ test.describe('one call to action', () => {
 })
 
 // The closing section's supporting line (#74, W9 in the trust and lineage
-// plan): on the homepage, every landing page and the not-found page, the
-// served HTML has the one paragraph, and not the line it replaces.
+// plan): every pre-rendered landing page and the not-found page serve it
+// in their HTML, without the line it replaces; the homepage, rendered in
+// the browser, shows it in #contact.
 test.describe('closing supporting line', () => {
   const LINE = 'Which number do you trust least? Tell us about the reports and figures your organisation relies on.'
 
-  for (const path of ['/', ...PATHS, '/nope']) {
+  for (const path of [...PATHS, '/nope']) {
     test(`${path} has the W9 line in the closing section`, async ({ page }) => {
       const html = await (await page.request.get(path, { maxRedirects: 0 })).text()
 
@@ -152,6 +153,7 @@ test.describe('closing supporting line', () => {
     await openPath(page, '/', 1440)
     const contact = page.locator('#contact')
     await expect(contact.locator('p')).toHaveText([LINE])
+    await expect(page.getByText('reporting challenges')).toHaveCount(0)
     await expect(contact.getByRole('heading', { level: 2 })).toHaveText(
       'Let\u2019s build a data foundation your organisation can trust.',
     )
