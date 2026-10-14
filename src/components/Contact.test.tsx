@@ -3,12 +3,15 @@ import { describe, expect, it } from 'vitest'
 import { contactNavItem, footerNavigation, navigationCta } from '../data/navigation.ts'
 import Contact from './Contact.tsx'
 
-// Plan V2 §16 and plan Section 11, character for character: the heading
-// with its typographic apostrophe (U+2019) and the supporting copy; the
-// button label, without its arrow, is W1 in the trust and lineage plan
-// (#68). The phone number is the owner's decision on #60.
+// Character for character: the plan V2 §16 heading with its typographic
+// apostrophe (U+2019); the supporting copy is W9 in the trust and lineage
+// plan (#74), and the button label, without its arrow, W1 (#68). The
+// phone number is the owner's decision on #60.
 const HEADING = 'Let\u2019s build a data foundation your organisation can trust.'
 const PARAGRAPH =
+  'Which number do you trust least? Tell us about the reports and figures your organisation relies on.'
+// The supporting copy W9 replaces (#74).
+const RETIRED_PARAGRAPH =
   'Tell us about the systems, reporting challenges, or data priorities your organisation is working through.'
 const LABEL = 'Book a data trust assessment'
 const EMAIL = 'info@fafanua.tech'
@@ -59,6 +62,13 @@ describe('Contact', () => {
 
     expect(paragraphs).toHaveLength(1)
     expect(paragraphs[0].textContent).toBe(PARAGRAPH)
+  })
+
+  it('no longer shows the supporting copy W9 replaces (#74)', () => {
+    const section = renderContact()
+
+    expect(section.textContent).not.toContain(RETIRED_PARAGRAPH)
+    expect(section.textContent).not.toContain('reporting challenges')
   })
 
   it('has exactly three links: the button and the address, both to the mailto, then the phone number', () => {

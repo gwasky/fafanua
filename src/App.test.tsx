@@ -395,6 +395,17 @@ describe('App', () => {
     expect(main.lastElementChild).toBe(contact)
   })
 
+  it('shows the W9 supporting line in the homepage closing section, once (#74)', () => {
+    render(<App />)
+    const contact = screen.getByRole('region', { name: CONTACT })
+    const line =
+      'Which number do you trust least? Tell us about the reports and figures your organisation relies on.'
+
+    expect([...contact.querySelectorAll('p')].map((p) => p.textContent)).toEqual([line])
+    expect(document.body.textContent?.split(line)).toHaveLength(2)
+    expect(document.body.textContent).not.toContain('reporting challenges')
+  })
+
   it('lands the header call to action and the hero button on section#contact', () => {
     render(<App />)
     const contact = screen.getByRole('region', { name: CONTACT })

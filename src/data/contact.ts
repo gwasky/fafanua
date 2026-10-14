@@ -1,8 +1,8 @@
 // The closing call to action's copy, and the address and phone number it
 // links to. The heading is plan V2 §16
-// (_docs/fafanua-v2-visual-upgrade-plan.md); the supporting copy is the
-// second Section 11 suggested line in _docs/plan.md, which plan V2 §16
-// repeats. ctaLabel is the site's one call to action (W1 in
+// (_docs/fafanua-v2-visual-upgrade-plan.md); the supporting copy is W9 in
+// _docs/fafanua-trust-lineage-positioning-plan.md (#74), which replaces
+// the Section 11 line in _docs/plan.md that plan V2 §16 repeated. ctaLabel is the site's one call to action (W1 in
 // _docs/fafanua-trust-lineage-positioning-plan.md, #68), without its
 // arrow, which each button draws: the header's button, the hero's button
 // and the closing button all show it, so it is defined here once and
@@ -14,7 +14,7 @@ export const contactHeading =
   'Let’s build a data foundation your organisation can trust.'
 
 export const contactText =
-  'Tell us about the systems, reporting challenges, or data priorities your organisation is working through.'
+  'Which number do you trust least? Tell us about the reports and figures your organisation relies on.'
 
 export const ctaLabel = 'Book a data trust assessment'
 

@@ -81,6 +81,10 @@ describe.each(pages.map((page) => [page.path, page] as const))('%s', (_path, pag
       `mailto:${email}`,
       phoneHref,
     ])
+    // The W9 supporting line (#74), the section's one paragraph.
+    expect([...contact.querySelectorAll('p')].map((p) => p.textContent)).toEqual([
+      'Which number do you trust least? Tell us about the reports and figures your organisation relies on.',
+    ])
   })
 
   it('links only to real pages, homepage sections, contact or email', () => {

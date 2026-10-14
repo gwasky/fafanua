@@ -18,8 +18,20 @@ describe('render', () => {
       expect(html).toContain('<main id="main"')
       expect(html).toContain('href="/#services"')
       expect(html).toContain('Let’s build a data foundation your organisation can trust.')
+      // The closing section's W9 supporting line (#74), and not the line
+      // it replaces.
+      expect(html).toContain(
+        '<p class="contact__text">Which number do you trust least? Tell us about the reports and figures your organisation relies on.</p>',
+      )
+      expect(html).not.toContain('reporting challenges')
     },
   )
+
+  it('renders the not-found page with the W9 closing line (#74)', () => {
+    const { html } = render(notFound)
+    expect(html).toContain('Which number do you trust least? Tell us about the reports and figures your organisation relies on.')
+    expect(html).not.toContain('reporting challenges')
+  })
 
   it('shows the build year, which hydration keeps until it re-renders', () => {
     const { html } = render(pages[0])
