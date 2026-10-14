@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { services } from '../src/data/services.ts'
-import { solutions } from '../src/data/solutions.ts'
+import { homepageSolutions } from '../src/data/solutions.ts'
 import {
   expectLanded,
   focusedName,
@@ -38,8 +38,9 @@ const SECTIONS = [
 const INSIDE = ['#about-heading', '#data-quality-and-reliability-heading'] as const
 
 const disclosures = services.map((service) => `Typical engagements for ${service.name}`)
-// The Solutions rows' buttons (#59), named by the sector titles.
-const sectors = solutions.map((solution) => solution.title)
+// The Solutions rows' buttons (#59), named by the sector titles: the
+// homepage's three sectors since #73.
+const sectors = homepageSolutions.map((solution) => solution.title)
 
 /** A header nav link, found whether or not it is currently shown. */
 const navLink = (page: Page, name: string) =>
@@ -223,7 +224,7 @@ test.describe('hashes that name nothing visible', () => {
     test(`a hidden Solutions panel stays at the top, with every row closed, at ${width}px`, async ({
       page,
     }) => {
-      const hash = `#${solutions[0].id}-themes`
+      const hash = `#${homepageSolutions[0].id}-themes`
       await openPath(page, `/${hash}`, width)
 
       await expectTop(page)

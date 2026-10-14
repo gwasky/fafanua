@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test'
 import { processStages } from '../src/data/process.ts'
 import { servicesIntro } from '../src/data/services.ts'
-import { solutions } from '../src/data/solutions.ts'
+import { homepageSolutions } from '../src/data/solutions.ts'
 import { openPage, test } from './fixtures.ts'
 
 // The Solutions rows and the How We Work timeline (#59) in conditions the
@@ -37,7 +37,7 @@ const tokenPx = (page: Page, token: string) =>
   }, token)
 
 test.describe('Solutions', () => {
-  test('reads as the eyebrow, the h2 and six rows, each a heading button and its summary', async ({ page }) => {
+  test('reads as the eyebrow, the h2 and three rows, each a heading button and its tag line', async ({ page }) => {
     await openPage(page, 1440)
 
     const snapshot = await solutionsRegion(page).ariaSnapshot()
@@ -47,7 +47,7 @@ test.describe('Solutions', () => {
         '  - paragraph: 03 — Solutions',
         '  - heading "Solutions" [level=2]',
         '  - list:',
-        ...solutions.flatMap((solution) => [
+        ...homepageSolutions.flatMap((solution) => [
           '    - listitem:',
           `      - heading "${solution.title}" [level=3]:`,
           `        - button "${solution.title}"`,
@@ -59,6 +59,14 @@ test.describe('Solutions', () => {
     // Below the eyebrow: no separator characters, row numbers or theme
     // text while collapsed.
     expect(snapshot.split('\n').slice(2).join('\n')).not.toMatch(/[·•]|\b0\d\b|Payment intelligence/)
+    // W7 (#73): Health, Financial Services and Education, in that order;
+    // the other sectors are linked from the footer, not listed here.
+    expect([...snapshot.matchAll(/button "(.+)"/g)].map((match) => match[1])).toEqual([
+      'Health',
+      'Financial Services',
+      'Education',
+    ])
+    expect(snapshot).not.toMatch(/Retail|Development|Public Sector/)
   })
 
   test('paints graphite on paper only, with graphite 200 hairlines', async ({ page }) => {
@@ -188,7 +196,7 @@ test.describe('Solutions', () => {
       }
     })
 
-    expect(m.lines).toHaveLength(6 + 1 + 18)
+    expect(m.lines).toHaveLength(3 + 1 + 9)
     for (const line of m.lines) {
       expect(line.style).toBe('solid')
       expect(line.width).toBeGreaterThan(0)

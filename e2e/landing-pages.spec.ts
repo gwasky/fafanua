@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { managedServices, services } from '../src/data/services.ts'
-import { solutions } from '../src/data/solutions.ts'
+import { footerSolutions, homepageSolutions, solutions } from '../src/data/solutions.ts'
 import { expectNoAxeViolations, openPath, test, WIDTHS } from './fixtures.ts'
 
 // The SEO landing pages (#67) on the production preview: each path
@@ -155,12 +155,19 @@ test.describe('crawl from the homepage', () => {
   // Instant scrolling, and no section reveal under the pointer.
   test.use({ reducedMotion: 'reduce' })
 
+  // Since #73 three sector pages are linked from the Solutions rows in
+  // main and the other three from the footer's "More sectors" line (W7).
   test('the homepage links to every landing page with an <a href>', async ({ page }) => {
     await openPath(page, '/', 1440)
-    const hrefs = await page.locator('main a[href]').evaluateAll((links) =>
-      links.map((link) => link.getAttribute('href')),
+    const hrefs = (selector: string) =>
+      page.locator(`${selector} a[href]`).evaluateAll((links) => links.map((link) => link.getAttribute('href')))
+    const [main, footer] = await Promise.all([hrefs('main'), hrefs('footer')])
+    for (const path of PATHS) expect([...main, ...footer], path).toContain(path)
+    for (const path of servicePaths) expect(main, path).toContain(path)
+    for (const solution of homepageSolutions) expect(main).toContain(`/solutions/${solution.slug}`)
+    expect(footer.filter((href) => href?.startsWith('/solutions/'))).toEqual(
+      footerSolutions.map((solution) => `/solutions/${solution.slug}`),
     )
-    for (const path of PATHS) expect(hrefs, path).toContain(path)
   })
 
   test('a service card title opens its page, and the header leads back to the section', async ({ page }) => {
@@ -227,6 +234,43 @@ test.describe('in the browser', () => {
     await expect
       .poll(() => page.getByRole('banner').evaluate((header) => Math.round(header.getBoundingClientRect().top)))
       .toBe(0)
+  })
+
+  // The footer's "More sectors" line (#73) on every landing page and the
+  // not-found page: in the pre-rendered HTML, so a crawler finds it, and
+  // after the footer hydrates (with no console error, from the fixture),
+  // where each link opens its page.
+  for (const path of [...PATHS, '/404']) {
+    test(`${path} links the footer's "More sectors" line to the other sectors`, async ({ page }) => {
+      const { html } = await served(page, path)
+      const footerHtml = html.slice(html.indexOf('<footer'))
+      for (const solution of footerSolutions) {
+        expect(footerHtml).toContain(`href="/solutions/${solution.slug}"`)
+      }
+      expect(footerHtml).toContain('More sectors')
+
+      await openPath(page, path, 1440)
+      const footer = page.getByRole('contentinfo')
+      await expect(footer.getByText('More sectors', { exact: true })).toBeVisible()
+      const links = footer.locator('.site-footer__sectors a')
+      await expect(links).toHaveText(footerSolutions.map((solution) => solution.heading))
+      expect(await links.evaluateAll((all) => all.map((link) => link.getAttribute('href')))).toEqual(
+        footerSolutions.map((solution) => `/solutions/${solution.slug}`),
+      )
+      await expect(footer.getByRole('navigation', { name: 'Footer' }).getByRole('link')).toHaveCount(5)
+    })
+  }
+
+  test('a "More sectors" link opens its sector page, which answers 200', async ({ page }) => {
+    await openPath(page, '/solutions/health', 1440)
+    const target = footerSolutions[1]
+    const [response] = await Promise.all([
+      page.waitForResponse((r) => new URL(r.url()).pathname === `/solutions/${target.slug}`),
+      page.getByRole('contentinfo').getByRole('link', { name: target.heading, exact: true }).click(),
+    ])
+    expect(response.status()).toBe(200)
+    await expect(page).toHaveURL(new RegExp(`/solutions/${target.slug}$`))
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(target.heading)
   })
 
   test('the footer shows the current year after hydrating', async ({ page }) => {

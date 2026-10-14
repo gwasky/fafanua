@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test'
 import { managedServices, services } from '../src/data/services.ts'
 import { email, phone } from '../src/data/contact.ts'
-import { solutions } from '../src/data/solutions.ts'
+import { footerSolutions, homepageSolutions } from '../src/data/solutions.ts'
 import { focusAndHeaderBoxes, focusedName, pressTab, waitForScrollSettle } from './fixtures.ts'
 
 // The page's Tab order, shared by keyboard.spec.ts and the enlarged-text
@@ -12,8 +12,12 @@ export const disclosures = services.map((service) => `Typical engagements for ${
 // Each card's title links to the service's page, before its disclosure
 // (#67); the Managed Services heading links to its page.
 export const cards = services.flatMap((service) => [service.name, `Typical engagements for ${service.name}`])
-// The Solutions rows' buttons (#59), each named by its sector title.
-export const sectors = solutions.map((solution) => solution.title)
+// The Solutions rows' buttons (#59), each named by its sector title: the
+// homepage's three sectors, in W7's order (#73).
+export const sectors = homepageSolutions.map((solution) => solution.title)
+// The footer's "More sectors" links (#73), after the phone number and the
+// copyright, named by the sectors' headings.
+export const moreSectors = footerSolutions.map((solution) => solution.heading)
 // The header's four section links and its call to action, which replaces
 // a Contact link; the footer keeps Contact.
 const sections = ['Services', 'Solutions', 'How We Work', 'About']
@@ -36,6 +40,7 @@ const fromHero = [
   ...footerNav,
   email,
   phone,
+  ...moreSectors,
 ]
 
 /** Every Tab stop, with the inline nav and with the Menu toggle. */

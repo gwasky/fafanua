@@ -1,7 +1,7 @@
 import type { Page, TestInfo } from '@playwright/test'
 import { expect } from '@playwright/test'
 import { managedServices, servicesIntro } from '../src/data/services.ts'
-import { solutions } from '../src/data/solutions.ts'
+import { footerSolutions, homepageSolutions } from '../src/data/solutions.ts'
 import {
   WIDTHS,
   expectLanded,
@@ -287,7 +287,7 @@ const spread = (values: number[]) => Math.max(...values) - Math.min(...values)
 const heroRegion = (page: Page) =>
   page.getByRole('region', { name: 'Trusted Data. Better Decisions.' })
 
-// The Solutions section's five row buttons (#59), in order.
+// The Solutions section's three row buttons (#59, #73), in order.
 const sectorButtons = (page: Page) =>
   page.getByRole('region', { name: 'Solutions' }).getByRole('button')
 
@@ -557,7 +557,7 @@ for (const width of WIDTHS) {
       await expectNoHorizontalScroll(page)
     })
 
-    test(`all five Solutions rows open at ${width}px`, async ({ page }, testInfo) => {
+    test(`all three Solutions rows open at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       await openAllSectors(page)
 
@@ -1778,7 +1778,7 @@ for (const width of WIDTHS) {
     // at most two, top to bottom, from 768px. Nothing overflows.
     test(`solutions rows are ${width >= 1024 ? 'one line each, lined up' : 'title then summary'}, not cards, and open beneath the row, at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
-      await expect(sectorButtons(page)).toHaveCount(6)
+      await expect(sectorButtons(page)).toHaveCount(3)
 
       const closed = await measureSectors(page)
       const detail = (row: SectorBox) => JSON.stringify(row)
@@ -1817,9 +1817,9 @@ for (const width of WIDTHS) {
         expect(spread(closed.rows.map((row) => row.number.left)), 'numbers lined up').toBeLessThanOrEqual(1)
       }
       // Compact: no taller than one title line height + --space-12 per
-      // row (six rows since Health, #67).
+      // row (three rows since #73).
       if (width === 1440) {
-        const limit = 6 * (closed.rows[0].titleLineHeight + 48)
+        const limit = 3 * (closed.rows[0].titleLineHeight + 48)
         expect(closed.listHeight, `list height, limit ${limit}`).toBeLessThanOrEqual(limit)
       }
       expect(await sectorOverflow(page), 'overflowing, collapsed').toEqual([])
@@ -1837,7 +1837,7 @@ for (const width of WIDTHS) {
         }
         // The themes in data order, one column below 768px, at most two
         // from 768px, flowing down each column.
-        expect(row.themes.map((theme) => theme.text)).toEqual(solutions[index].themes)
+        expect(row.themes.map((theme) => theme.text)).toEqual(homepageSolutions[index].themes)
         const lefts = new Set(row.themes.map((theme) => Math.round(theme.left)))
         expect(lefts.size, `theme columns: ${detail(row)}`).toBeLessThanOrEqual(width >= 768 ? 2 : 1)
         for (let i = 1; i < row.themes.length; i++) {
@@ -1889,7 +1889,7 @@ for (const width of WIDTHS) {
         await expect(button).toHaveAttribute('aria-expanded', 'true')
         await button.locator('.solution-row__title').tap()
         await expect(button).toHaveAttribute('aria-expanded', 'false')
-        for (const other of [0, 2, 3, 4]) {
+        for (const other of [0, 2]) {
           await expect(sectorButtons(page).nth(other)).toHaveAttribute('aria-expanded', 'false')
         }
       })
@@ -1898,8 +1898,8 @@ for (const width of WIDTHS) {
     // A tap on a row's summary (owner decision on #59) opens or closes
     // that row, or leaves it as it was, and changes no other row. WebKit's
     // touch adjustment may send the tap to the row's button; Chromium's
-    // does not. Two other rows are open first, so a tap that reached them
-    // would show.
+    // does not. With three rows (#73), the first is open and the second
+    // closed first, so a tap that reached either would show.
     if (width === 360 || width === 1440) {
       test.describe('touch on the summary', () => {
         test.use({ hasTouch: true })
@@ -1907,11 +1907,12 @@ for (const width of WIDTHS) {
         test(`a tap on a Solutions summary changes only that row at ${width}px`, async ({ page }, testInfo) => {
           await open(page, testInfo, width)
           const buttons = sectorButtons(page)
-          for (const index of [0, 3]) {
+          await expect(buttons).toHaveCount(3)
+          for (const index of [0]) {
             await buttons.nth(index).locator('.solution-row__title').tap()
             await expect(buttons.nth(index)).toHaveAttribute('aria-expanded', 'true')
           }
-          const others = { 0: 'true', 1: 'false', 3: 'true', 4: 'false' } as const
+          const others = { 0: 'true', 1: 'false' } as const
           const target = buttons.nth(2)
           const panel = page.locator(`[id="${await target.getAttribute('aria-controls')}"]`)
           const items = target.locator('xpath=../../ul[1]/li')
@@ -2167,7 +2168,7 @@ for (const width of WIDTHS) {
           // The footer's items, as laid out (#61): the logo, the nav, the
           // contact links and the copyright, and the row gap.
           footerLayout: {
-            items: ['.site-footer__logo', '.site-footer__nav', '.site-footer__contact', '.site-footer__copyright'].map(box),
+            items: ['.site-footer__logo', '.site-footer__nav', '.site-footer__contact', '.site-footer__copyright', '.site-footer__sectors'].map(box),
             rowGap: parseFloat(style('.site-footer__inner').rowGap),
             sources: [...document.querySelectorAll('picture > source')].map((source) => getComputedStyle(source).display),
           },
@@ -2196,6 +2197,8 @@ for (const width of WIDTHS) {
         ...FOOTER_NAV,
         'info@fafanua.tech',
         '+256 752 008 822',
+        // The "More sectors" line (#73).
+        ...footerSolutions.map((solution) => solution.heading),
       ])
       // The button above the address below 768px, beside it from 768px.
       // The phone number follows the address, on its row where both fit.
@@ -2224,7 +2227,7 @@ for (const width of WIDTHS) {
       // The logo picture's <source> takes no box, in the header or the
       // footer (#61).
       expect(m.footerLayout.sources, detail).toEqual(['none', 'none'])
-      const [logo, nav, contact, copyright] = m.footerLayout.items
+      const [logo, nav, contact, copyright, sectors] = m.footerLayout.items
       if (width >= 1024) {
         // Two rows: the logo at the start with the nav at the end, then
         // the contact links at the start with the copyright at the end.
@@ -2234,15 +2237,86 @@ for (const width of WIDTHS) {
         expect(nav.top, detail).toBeLessThan(contact.top)
         expect(copyright.left, detail).toBeGreaterThan(contact.right)
         expect(contact.top, detail).toBeGreaterThanOrEqual(Math.max(logo.bottom, nav.bottom))
+        // Then the "More sectors" line (#73), a row of its own below
+        // them, at the start.
+        expect(sectors.top, detail).toBeGreaterThanOrEqual(Math.max(contact.bottom, copyright.bottom))
+        expect(Math.abs(sectors.left - logo.left), detail).toBeLessThanOrEqual(1)
       } else {
-        // Stacked in DOM order, one row gap apart, the logo first.
-        const items = [logo, nav, contact, copyright]
+        // Stacked in DOM order, one row gap apart, the logo first and the
+        // "More sectors" line (#73) last.
+        const items = [logo, nav, contact, copyright, sectors]
         for (let i = 1; i < items.length; i++) {
           expect(items[i].top - items[i - 1].bottom, `gap ${i}: ${detail}`).toBeCloseTo(m.footerLayout.rowGap, 0)
         }
         for (const item of items) expect(Math.abs(item.left - logo.left), detail).toBeLessThanOrEqual(1)
       }
       if (width <= 360) expect(m.broken, detail).toEqual([])
+      await expectNoHorizontalScroll(page)
+    })
+
+    // The footer's "More sectors" line (#73): quiet, in the footer's small
+    // text, the label graphite 400 and the links paper like the footer
+    // nav's, underlined on hover only, each at least 24px tall (and 44px,
+    // as every footer link), wrapping inside the footer with no
+    // horizontal scroll.
+    test(`the footer's "More sectors" line is quiet and wraps cleanly at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      const footer = page.getByRole('contentinfo')
+      await footer.scrollIntoViewIfNeeded()
+      const m = await footer.evaluate((root) => {
+        const probe = (property: 'color' | 'fontSize', value: string) => {
+          const element = document.createElement('span')
+          element.style[property] = value
+          root.append(element)
+          const result = getComputedStyle(element)[property]
+          element.remove()
+          return result
+        }
+        const line = root.querySelector('.site-footer__sectors')!
+        const label = line.querySelector('.site-footer__sectors-label')!
+        const inner = root.querySelector('.site-footer__inner')!.getBoundingClientRect()
+        const links = [...line.querySelectorAll('a')]
+        const navLink = root.querySelector('.site-footer__nav a')!
+        return {
+          label: { text: label.textContent, colour: getComputedStyle(label).color, size: getComputedStyle(label).fontSize },
+          muted: probe('color', 'var(--color-text-muted)'),
+          small: probe('fontSize', 'var(--text-sm)'),
+          navColour: getComputedStyle(navLink).color,
+          links: links.map((link) => {
+            const { left, right, height } = link.getBoundingClientRect()
+            return {
+              name: link.textContent,
+              colour: getComputedStyle(link).color,
+              size: getComputedStyle(link).fontSize,
+              decoration: getComputedStyle(link).textDecorationLine,
+              left,
+              right,
+              height,
+            }
+          }),
+          inner: { left: inner.left, right: inner.right },
+          headings: line.querySelectorAll('h1, h2, h3, h4, h5, h6').length,
+        }
+      })
+      const detail = JSON.stringify(m)
+
+      expect(m.label, detail).toEqual({ text: 'More sectors', colour: m.muted, size: m.small })
+      expect(m.links.map((link) => link.name)).toEqual(footerSolutions.map((solution) => solution.heading))
+      for (const link of m.links) {
+        expect(link.colour, detail).toBe(m.navColour)
+        expect(link.size, detail).toBe(m.small)
+        expect(link.decoration, detail).toBe('none')
+        expect(link.height, detail).toBeGreaterThanOrEqual(24)
+        expect(link.left, detail).toBeGreaterThanOrEqual(m.inner.left - 1)
+        expect(link.right, detail).toBeLessThanOrEqual(m.inner.right + 1)
+      }
+      expect(m.headings).toBe(0)
+
+      const first = footer.getByRole('link', { name: m.links[0].name!, exact: true })
+      await first.hover()
+      await expect
+        .poll(() => first.evaluate((link) => getComputedStyle(link).textDecorationLine))
+        .toBe('underline')
       await expectNoHorizontalScroll(page)
     })
 

@@ -10,10 +10,11 @@ import { managedServices, services, servicesIntro } from '../src/data/services.t
 // target size and reflow can be measured. Each state is its own test, so
 // a failure names the state and width that broke.
 
-/** Opens all six Solutions rows (#59, Health since #67) with the keyboard. */
+/** Opens all three Solutions rows (#59; Health, Financial Services and
+ * Education since #73) with the keyboard. */
 async function openAllSectors(page: Page) {
   const buttons = page.getByRole('region', { name: 'Solutions' }).getByRole('button')
-  await expect(buttons).toHaveCount(6)
+  await expect(buttons).toHaveCount(3)
   for (const button of await buttons.all()) {
     await button.focus()
     await page.keyboard.press('Enter')
@@ -104,9 +105,9 @@ test.describe('axe, all Typical engagements disclosures open', () => {
   }
 })
 
-test.describe('axe, all six Solutions rows open', () => {
+test.describe('axe, all three Solutions rows open', () => {
   for (const width of [320, 768, 1440]) {
-    test(`six rows open at ${width}px`, async ({ page }, testInfo) => {
+    test(`three rows open at ${width}px`, async ({ page }, testInfo) => {
       await openPage(page, width)
       await openAllSectors(page)
       // Focusing the first row smooth-scrolls past Services, which is tall
@@ -622,7 +623,7 @@ test.describe('320px at 200% text size', () => {
     await noHorizontalScroll(page)
   })
 
-  test('no horizontal scroll with all six Solutions rows open', async ({ page }) => {
+  test('no horizontal scroll with all three Solutions rows open', async ({ page }) => {
     await openAllSectors(page)
 
     await noHorizontalScroll(page)
@@ -767,7 +768,7 @@ test.describe('browser text size 200%: the header falls back to the Menu', () =>
             summaryTop: item.querySelector('h3 + ul')!.getBoundingClientRect().top,
           })),
         )
-      expect(rows).toHaveLength(6)
+      expect(rows).toHaveLength(3)
       for (const row of rows) {
         expect(row.summaryTop, JSON.stringify(row)).toBeGreaterThanOrEqual(row.titleBottom - 1)
       }

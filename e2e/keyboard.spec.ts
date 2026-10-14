@@ -1,9 +1,9 @@
 import { expect, type Page } from '@playwright/test'
 import { assessmentHeading } from '../src/data/assessment.ts'
 import { managedServices, services } from '../src/data/services.ts'
-import { solutions } from '../src/data/solutions.ts'
+import { homepageSolutions } from '../src/data/solutions.ts'
 import { focusedName, focusStyle, openPage, pressTab, test, waitForFonts } from './fixtures.ts'
-import { disclosures, expectUnobscured, nav, sectors, SEQUENCE as FOCUS_ORDER, tabTo, walkFocus } from './focus.ts'
+import { disclosures, expectUnobscured, moreSectors, nav, sectors, SEQUENCE as FOCUS_ORDER, tabTo, walkFocus } from './focus.ts'
 
 // The automated part of the keyboard review: Tab order, focus rings,
 // the skip link, focus after in-page links, the Menu toggle, the
@@ -32,13 +32,28 @@ test.describe('Tab order', () => {
   // one stop each; #67 adds the six card title links, the Managed
   // Services heading link and the Health row; #68 removes the hero's
   // secondary button, so the hero has one stop; #71 adds the Data Trust
-  // Assessment's button after it.
+  // Assessment's button after it; #73 leaves three Solutions rows and
+  // adds the footer's three "More sectors" links, so the count holds.
   test('1440 has 38 stops', () => {
     expect(SEQUENCE[1440]).toHaveLength(38)
   })
 
   test('360 with the menu closed has 34 stops', () => {
     expect(SEQUENCE[360]).toHaveLength(34)
+  })
+
+  // #73: three Solutions rows, in W7's order, and the page ends with the
+  // footer's "More sectors" links.
+  test('has the three homepage sectors and ends with the footer\'s "More sectors" links', () => {
+    expect(sectors).toEqual(['Health', 'Financial Services', 'Education'])
+    expect(moreSectors).toEqual([
+      'Retail & Distribution Analytics',
+      'Development & Impact Data Systems',
+      'Public Sector Data & Analytics',
+    ])
+    for (const width of [1440, 360]) {
+      expect(SEQUENCE[width].slice(-3)).toEqual(moreSectors)
+    }
   })
 
   for (const width of [1440, 360]) {
@@ -236,7 +251,7 @@ test.describe('disclosures', () => {
 // of the header, and Shift+Tab goes back up through them. Rows are
 // independent, so earlier rows stay open.
 // Each open row's link to its sector's page (#67).
-const sectorPages = solutions.map((solution) => solution.heading)
+const sectorPages = homepageSolutions.map((solution) => solution.heading)
 
 test.describe('Solutions rows', () => {
   for (const width of [360, 1440]) {
@@ -269,7 +284,7 @@ test.describe('Solutions rows', () => {
         await expect(button).toBeFocused()
         await expectUnobscured(page, name)
       }
-      // All six are open at once.
+      // All three are open at once.
       for (const name of sectors) {
         await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute('aria-expanded', 'true')
       }
