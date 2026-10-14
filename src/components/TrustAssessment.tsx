@@ -15,13 +15,15 @@ import './TrustAssessment.css'
 // is in src/data/assessment.ts. The start column holds the h2, the lead,
 // the two h3s with the deliverables and the after-line, and the one call
 // to action (to #contact, like the hero's); the end column holds the
-// illustrative example, a static figure that traces one sample number
-// through five steps. The figure has no controls or tab stops: its steps
-// are an ordered list, each a label then its value, so they read in order
-// without CSS, and its connectors are drawn with borders in CSS. No
+// illustrative example, a static figure of labels only (#77): the sample
+// metric names, the five lineage steps each is traced through, and,
+// under the last step, the scorecard's three rating categories, none of
+// them given to any metric. The figure has no controls or tab stops: each
+// part is a list named by the label before it, so it reads in order
+// without CSS, and the steps' connectors are drawn with borders in CSS. No
 // numbered eyebrow and not in the navigation.
 function TrustAssessment() {
-  const { caption, figure, steps } = lineageExample
+  const { caption, metricsLabel, metrics, stepsLabel, steps, ratings } = lineageExample
   return (
     <section
       id="data-trust-assessment"
@@ -56,29 +58,52 @@ function TrustAssessment() {
           <figcaption id="lineage-example-caption" className="lineage-example__caption">
             {caption}
           </figcaption>
-          <p id="lineage-example-figure" className="lineage-example__figure">
-            {figure}
+          <p id="lineage-example-metrics-label" className="lineage-example__label">
+            {metricsLabel}
+          </p>
+          <ul
+            className="lineage-example__metrics"
+            role="list"
+            aria-labelledby="lineage-example-metrics-label"
+          >
+            {metrics.map((metric) => (
+              <li key={metric}>{metric}</li>
+            ))}
+          </ul>
+          <p id="lineage-example-steps-label" className="lineage-example__label">
+            {stepsLabel}
           </p>
           <ol
             className="lineage-example__steps"
             role="list"
-            aria-labelledby="lineage-example-figure"
+            aria-labelledby="lineage-example-steps-label"
           >
-            {steps.map((step) => (
-              <li key={step.label} className="lineage-example__step">
-                <p className="lineage-example__label">{step.label}</p>
-                <p
-                  className={
-                    step.reason
-                      ? 'lineage-example__value lineage-example__value--rating'
-                      : 'lineage-example__value'
-                  }
-                >
-                  {step.value}
-                </p>
-                {step.reason && <p className="lineage-example__reason">{step.reason}</p>}
-              </li>
-            ))}
+            {steps.map((step, index) => {
+              const last = index === steps.length - 1
+              return (
+                <li key={step} className="lineage-example__step">
+                  <p
+                    id={last ? 'lineage-example-rating-label' : undefined}
+                    className="lineage-example__label"
+                  >
+                    {step}
+                  </p>
+                  {last && (
+                    <ul
+                      className="lineage-example__ratings"
+                      role="list"
+                      aria-labelledby="lineage-example-rating-label"
+                    >
+                      {ratings.map((rating) => (
+                        <li key={rating} className="lineage-example__rating">
+                          {rating}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              )
+            })}
           </ol>
         </figure>
       </div>

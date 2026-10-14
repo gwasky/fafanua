@@ -1,10 +1,11 @@
 // Checks assessment.ts against W4 in the trust and lineage plan (#71), so
 // the Data Trust Assessment section's wording on the site cannot drift
 // from it: the heading, the lead, the two h3s with the four deliverables
-// and the after-line, the example's caption and its sample figure. The
-// button's label is W1's, read from contact.ts (#68). The steps' sample
-// values are proposed on #71, not in the plan, so they are checked here
-// only for the plan's rules: no names, figures or amounts. The ?raw
+// and the after-line, and the illustrative example: its caption, the
+// owner's metric names (#77), the five steps and the three ratings. The
+// button's label is W1's, read from contact.ts (#68). The two list labels
+// are proposed on #77, not in the plan, so they are checked here only for
+// the owner's rules: labels only, no names, figures or amounts. The ?raw
 // imports resolve relative to this file and are never part of the
 // production bundle.
 import { describe, expect, it } from 'vitest'
@@ -18,6 +19,7 @@ import {
   assessmentDeliverablesHeading,
   assessmentHeading,
   assessmentLead,
+  exampleMetrics,
   lineageExample,
 } from './assessment.ts'
 import { ctaLabel } from './contact.ts'
@@ -90,57 +92,95 @@ describe('Data Trust Assessment wording', () => {
   })
 })
 
+// The owner's instruction on #77, the blockquote under the dated note in W4.
+const ownerAt = w4.indexOf('\n**Owner update (2026-10-14, #77):**\n')
+const ownerNote = (w4.slice(ownerAt).match(/^> (.+)$/m) ?? [])[1] ?? ''
+
+/** Every string in a value, found recursively through arrays and objects. */
+function strings(value: unknown): string[] {
+  if (typeof value === 'string') return [value]
+  if (Array.isArray(value)) return value.flatMap(strings)
+  if (value && typeof value === 'object') return Object.values(value).flatMap(strings)
+  return []
+}
+
+const exampleStrings = strings(lineageExample)
+
 describe('illustrative example', () => {
   it('uses the W4 caption, character for character', () => {
     expect(lineageExample.caption).toBe('Illustrative example. Sample data only.')
     expect(w4).toContain(`- Caption: "${lineageExample.caption}"`)
   })
 
-  it('traces the W4 sample figure', () => {
-    expect(lineageExample.figure).toBe('Monthly revenue by branch')
-    expect(w4).toContain(`single sample figure ("${lineageExample.figure}")`)
+  it('has exactly the caption, the two list labels, the metrics, the steps and the ratings, and no value or finding field (#77)', () => {
+    expect(Object.keys(lineageExample)).toEqual(['caption', 'metricsLabel', 'metrics', 'stepsLabel', 'steps', 'ratings'])
+    expect(typeof lineageExample.caption).toBe('string')
+    expect(typeof lineageExample.metricsLabel).toBe('string')
+    expect(typeof lineageExample.stepsLabel).toBe('string')
+    for (const list of [lineageExample.metrics, lineageExample.steps, lineageExample.ratings]) {
+      expect(Array.isArray(list)).toBe(true)
+      for (const item of list) expect(typeof item).toBe('string')
+    }
+    expect(lineageExample.metricsLabel).toBe('Sample metrics')
+    expect(lineageExample.stepsLabel).toBe('Each traced through')
+    expect(assessmentSource).not.toMatch(/\bfigure\b\s*:|\bvalue\b\s*:|\breason\b\s*:|LineageStep/)
   })
 
-  it('traces it through the five steps W4 lists, in order', () => {
-    expect(lineageExample.steps.map((step) => step.label)).toEqual([
-      'Definition',
-      'Calculation',
-      'Source systems',
-      'Owner',
-      'Trust rating',
+  it('shows the owner\'s representative metric names, in order, from the one shared export (#77)', () => {
+    expect(ownerAt).toBeGreaterThan(-1)
+    expect(ownerNote).toContain('Example metrics are illustrative labels only.')
+    expect(exampleMetrics).toEqual([
+      'Revenue',
+      'Active Customers',
+      'Portfolio at Risk',
+      'Programme Outcomes',
+      'Cost per Customer',
     ])
+    for (const metric of exampleMetrics) expect(ownerNote).toContain(metric)
+    // The same array, not a copy.
+    expect(lineageExample.metrics).toBe(exampleMetrics)
+  })
+
+  it('traces them through the five steps W4 lists, in order', () => {
+    expect(lineageExample.steps).toEqual(['Definition', 'Calculation', 'Source systems', 'Owner', 'Trust rating'])
+    const steps = lineageExample.steps.map((step) => step.toLowerCase())
+    expect(w4).toContain(`through its ${steps.slice(0, -1).join(', ')} and ${steps.at(-1)}`)
     expect(w4).toContain('through its definition, calculation, source systems, owner and trust rating')
   })
 
-  it('gives one of the scorecard\'s three ratings, with its reason, on the last step only', () => {
-    const ratings = ['Trusted', 'Trusted with caveats', 'Not yet trusted']
-    const rating = lineageExample.steps.at(-1)!
-
-    expect(ratings).toContain(rating.value)
-    expect(rating.reason).toBeTruthy()
-    for (const step of lineageExample.steps.slice(0, -1)) expect(step.reason).toBeUndefined()
+  it('lists the scorecard\'s three rating categories and gives none of them to a metric', () => {
+    expect(lineageExample.ratings).toEqual(['Trusted', 'Trusted with caveats', 'Not yet trusted'])
+    const [a, b, c] = lineageExample.ratings.map((rating) => rating.toLowerCase())
     // The scorecard deliverable names the same three ratings.
-    expect(assessmentDeliverables[1]).toContain('trusted, trusted with caveats, or not yet trusted')
+    expect(assessmentDeliverables[1]).toContain(`${a}, ${b}, or ${c}`)
+    expect(w4).toContain('trusted, trusted with caveats, or not yet trusted')
+    // No field pairs a rating with a metric: the ratings are one list of
+    // their own, and nothing else in the example holds a rating name.
+    const elsewhere = strings({ ...lineageExample, ratings: [] })
+    for (const rating of lineageExample.ratings) expect(elsewhere).not.toContain(rating)
   })
 
-  it('has no digits, amounts or currency in its sample values (#71)', () => {
-    for (const step of lineageExample.steps) {
-      for (const text of [step.value, step.reason ?? '']) {
-        expect(text).not.toMatch(/\d|[$€£¥%]|\b(UGX|USD|KES|shillings?|dollars?)\b/i)
-      }
+  it('walks every string in the example: letters, spaces and full stops only, no currency (#77)', () => {
+    expect(exampleStrings).toHaveLength(1 + 1 + 5 + 1 + 5 + 3)
+    for (const text of exampleStrings) {
+      expect(text).toMatch(/^[A-Za-z .]+$/)
+      expect(text).not.toMatch(/\d|[$€£¥%]/)
+      expect(text).not.toMatch(/\b(UGX|USD|KES|TZS|RWF|EUR|GBP|shillings?|dollars?)\b/i)
     }
   })
 
-  it('names roles, not people or organisations, and never a product, tool or live demo', () => {
-    const text = [
-      lineageExample.caption,
-      lineageExample.figure,
-      ...lineageExample.steps.flatMap((step) => [step.label, step.value, step.reason ?? '']),
-    ].join(' ')
+  it('gives every string but the caption as a label of at most four words, not a sentence or finding (#77)', () => {
+    for (const text of exampleStrings.filter((text) => text !== lineageExample.caption)) {
+      expect(text.split(' ').length, text).toBeLessThanOrEqual(4)
+      expect(text, text).not.toMatch(/\.$/)
+    }
+  })
 
-    expect(lineageExample.steps[3].value).toBe('Head of finance')
-    expect(text).not.toMatch(/\b(product|tool|dashboard|app|platform|demo|software|Fafanua)\b/i)
-    expect(text).not.toMatch(/\b(Ltd|Limited|Inc|Bank|Hospital|Clinic|University|Mr|Mrs|Ms|Dr)\b/)
+  it('names no person or organisation, and never a product, tool or live demo', () => {
+    for (const text of exampleStrings) {
+      expect(text).not.toMatch(/\b(product|tool|dashboard|app|platform|demo|software|Fafanua)\b/i)
+      expect(text).not.toMatch(/\b(Ltd|Limited|Inc|Bank|Hospital|Clinic|University|Mr|Mrs|Ms|Dr)\b/)
+    }
   })
 })
 
@@ -178,12 +218,42 @@ describe('other source files', () => {
     ['the lead', assessmentLead],
     ['the after-line', assessmentAfter],
     ['the caption', lineageExample.caption],
-    ['the sample figure', lineageExample.figure],
     ...assessmentDeliverables.map((item, index) => [`deliverable ${index + 1}`, item]),
-    ...lineageExample.steps.map((step) => [`the ${step.label} value`, step.value]),
   ])('do not hold %s', (_name, text) => {
     for (const [file, source] of sources) {
       expect(source.includes(text), `${file} holds "${text}"`).toBe(false)
     }
   })
+
+  // The components and App hold none of the example's strings anywhere,
+  // not even in a comment (#77).
+  const components = sources.filter(([file]) => file.startsWith('/src/components/') || file === '/src/App.tsx')
+
+  it('scans the components and App', () => {
+    expect(components.map(([file]) => file)).toEqual(
+      expect.arrayContaining(['/src/App.tsx', '/src/components/TrustAssessment.tsx']),
+    )
+  })
+
+  it.each([
+    ['the caption', lineageExample.caption],
+    ['the metrics label', lineageExample.metricsLabel],
+    ['the steps label', lineageExample.stepsLabel],
+    ...lineageExample.metrics.map((metric) => [`the metric ${metric}`, metric]),
+    ...lineageExample.steps.map((step) => [`the step ${step}`, step]),
+    ...lineageExample.ratings.map((rating) => [`the rating ${rating}`, rating]),
+  ])('components do not hold %s', (_name, text) => {
+    for (const [file, source] of components) {
+      expect(source.includes(text), `${file} holds "${text}"`).toBe(false)
+    }
+  })
+
+  it.each(['Active Customers', 'Portfolio at Risk', 'Programme Outcomes', 'Cost per Customer'])(
+    'only assessment.ts holds "%s"',
+    (metric) => {
+      for (const [file, source] of sources) {
+        expect(source.includes(metric), `${file} holds "${metric}"`).toBe(false)
+      }
+    },
+  )
 })

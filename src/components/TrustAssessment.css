@@ -20,14 +20,15 @@
  * the DOM order.
  *
  * The example is a white card with a graphite 200 hairline, as the system
- * diagram's cards: its caption, the sample figure's name, then its five
- * steps as a vertical list at every width. A ring marks each step at the
- * inline start, and a line joins each ring to the next, both drawn with
- * borders on pseudo-elements, so they have no text, are never announced
- * and stay drawn in forced-colours mode. The last ring is filled, as the
- * end of the trace. No colour carries meaning: the rating is given in
- * text, in a hairline outline. Nothing here moves beyond the section
- * reveal.
+ * diagram's cards, of labels only (#77): its caption, the sample metric
+ * names under their label, then the five steps under theirs as a vertical
+ * list at every width, the last holding the three rating categories. A
+ * ring marks each step at the inline start, and a line joins each ring to
+ * the next, both drawn with borders on pseudo-elements, so they have no
+ * text, are never announced and stay drawn in forced-colours mode. The
+ * last ring is filled, as the end of the trace. No colour carries
+ * meaning, and the ratings look alike: none is given to a metric. Nothing
+ * here moves beyond the section reveal.
  */
 
 .trust-assessment {
@@ -124,11 +125,25 @@
   line-height: var(--leading-snug);
 }
 
-.lineage-example__figure {
-  margin-block: 0 var(--space-6);
+/* The two list labels, each above the list it names. */
+.lineage-example > .lineage-example__label {
+  margin-block-end: var(--space-3);
+}
+
+/* The metric names, one per row, each above a hairline and one below the
+   last, as the deliverables. */
+.lineage-example__metrics {
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  list-style: none;
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.lineage-example__metrics > li {
+  padding-block: var(--space-3);
+  border-block-start: var(--border-width) solid var(--color-border);
   color: var(--color-heading);
-  font-size: var(--text-xl);
-  line-height: var(--leading-snug);
+  font-weight: var(--weight-regular);
 }
 
 .lineage-example__steps {
@@ -182,15 +197,20 @@
   line-height: var(--leading-snug);
 }
 
-.lineage-example__value {
-  margin-block: var(--space-1) 0;
-  color: var(--color-text);
+/* The scorecard's three rating categories, under the last step, as small
+   labels in a hairline outline, all alike, so none reads as given to a
+   metric. They wrap rather than overflow, and are not buttons: no hover
+   and no pointer. */
+.lineage-example__ratings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-/* The rating as a small label in a hairline outline, so it stands apart
-   from the values above it without colour. */
-.lineage-example__value--rating {
-  display: inline-block;
+.lineage-example__rating {
   padding: var(--space-1) var(--space-2);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -198,12 +218,6 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   line-height: var(--leading-snug);
-}
-
-.lineage-example__reason {
-  margin-block: var(--space-2) 0;
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
 }
 
 @media (min-width: 64em) {

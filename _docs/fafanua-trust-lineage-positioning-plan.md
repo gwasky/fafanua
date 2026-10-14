@@ -84,6 +84,12 @@ Add a section directly after the problem section, with this copy.
 - Keyboard accessible, readable by screen readers and respectful of reduced motion.
 - No real client names or figures, and never described as a product, tool or live demo.
 
+**Owner update (2026-10-14, #77):**
+
+> Example metrics are illustrative labels only. Do not invent customer figures, percentages, currencies, company names, or assessment findings. Use representative metric names such as Revenue, Active Customers, Portfolio at Risk, Programme Outcomes and Cost per Customer. Store these examples in a shared content/data source and reuse them wherever the Data Trust Assessment is presented, rather than hardcoding separate copies in multiple components.
+
+This supersedes the sample figure "Monthly revenue by branch": the example now shows the metric names, the five lineage steps and the three rating categories as labels only.
+
 **Acceptance:** the section sits directly after the problem section. The button uses the W1 label. Copy lives in a `src/data/` file, not inside components. The section passes the axe checks.
 
 ### W5. AI-readiness copy (in place)

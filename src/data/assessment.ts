@@ -1,12 +1,13 @@
 // The Data Trust Assessment section's copy (W4 in
 // _docs/fafanua-trust-lineage-positioning-plan.md, #71): the heading, the
 // lead, the two h3s with the deliverables and the after-line, then the
-// illustrative example's caption, sample figure and its five steps. The
+// illustrative example's caption, sample metric names, lineage steps and
+// rating categories, all labels only (the owner's instruction on #77). The
 // button reads the site's one call to action label from contact.ts (W1,
-// #68). assessment.plan.test.ts checks the plan's wording, the caption and
-// the figure name against W4. The steps' sample values are proposed on
-// #71 for the owner to confirm: roles, not names, and no numbers or
-// amounts. TrustAssessment.tsx reads this copy from here and nowhere else.
+// #68). assessment.plan.test.ts checks the plan's wording, the caption,
+// the metric names, the steps and the ratings against W4. The two list
+// labels are proposed on #77 for the owner to confirm. TrustAssessment.tsx
+// reads this copy from here and nowhere else.
 
 import { ctaLabel } from './contact.ts'
 
@@ -31,43 +32,34 @@ export const assessmentAfter =
 
 export const assessmentCtaLabel = ctaLabel
 
-export type LineageStep = {
-  readonly label: string
-  readonly value: string
-  /** Why the number has its rating; the trust rating step only. */
-  readonly reason?: string
-}
+// The representative metric names the illustrative example shows (#77),
+// in the owner's words and order: labels only, never values. Any page that
+// presents the Data Trust Assessment reads them from here.
+export const exampleMetrics: readonly string[] = [
+  'Revenue',
+  'Active Customers',
+  'Portfolio at Risk',
+  'Programme Outcomes',
+  'Cost per Customer',
+]
 
-// The illustrative example: one sample figure traced through five steps,
-// in this order.
+// The illustrative example (#77): its caption, the sample metric names
+// under their label, the five lineage steps each is traced through, in
+// this order, and the scorecard's three rating categories, nested under
+// the last step. Labels only: no figure, value, rating or finding is given
+// for any metric.
 export const lineageExample: {
   readonly caption: string
-  readonly figure: string
-  readonly steps: readonly LineageStep[]
+  readonly metricsLabel: string
+  readonly metrics: readonly string[]
+  readonly stepsLabel: string
+  readonly steps: readonly string[]
+  readonly ratings: readonly string[]
 } = {
   caption: 'Illustrative example. Sample data only.',
-  figure: 'Monthly revenue by branch',
-  steps: [
-    {
-      label: 'Definition',
-      value: 'Invoiced revenue for each branch in the calendar month, net of refunds and discounts.',
-    },
-    {
-      label: 'Calculation',
-      value: 'Invoice totals minus refunds, summed by branch and month.',
-    },
-    {
-      label: 'Source systems',
-      value: 'Billing system, then the finance ledger.',
-    },
-    {
-      label: 'Owner',
-      value: 'Head of finance',
-    },
-    {
-      label: 'Trust rating',
-      value: 'Trusted with caveats',
-      reason: 'Two branches record refunds a day late, so month-end totals can differ from the ledger.',
-    },
-  ],
+  metricsLabel: 'Sample metrics',
+  metrics: exampleMetrics,
+  stepsLabel: 'Each traced through',
+  steps: ['Definition', 'Calculation', 'Source systems', 'Owner', 'Trust rating'],
+  ratings: ['Trusted', 'Trusted with caveats', 'Not yet trusted'],
 }

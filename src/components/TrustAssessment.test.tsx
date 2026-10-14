@@ -4,6 +4,7 @@ import {
   assessmentAfter,
   assessmentDeliverables,
   assessmentLead,
+  exampleMetrics,
   lineageExample,
 } from '../data/assessment.ts'
 import { expectNoAxeViolations } from '../test/axe.ts'
@@ -13,8 +14,13 @@ import TrustAssessment from './TrustAssessment.tsx'
 // (assessment.plan.test.ts checks the data module against the plan).
 const HEADING = 'Know where every number comes from.'
 const CAPTION = 'Illustrative example. Sample data only.'
-const FIGURE = 'Monthly revenue by branch'
+// The owner's metric names (#77), the five steps and the three ratings.
+const METRICS = ['Revenue', 'Active Customers', 'Portfolio at Risk', 'Programme Outcomes', 'Cost per Customer']
 const STEPS = ['Definition', 'Calculation', 'Source systems', 'Owner', 'Trust rating']
+const RATINGS = ['Trusted', 'Trusted with caveats', 'Not yet trusted']
+// The two list labels, proposed on #77 for the owner to confirm.
+const METRICS_LABEL = 'Sample metrics'
+const STEPS_LABEL = 'Each traced through'
 
 function renderSection() {
   const result = render(<TrustAssessment />)
@@ -104,43 +110,109 @@ describe('TrustAssessment', () => {
     expect(figures[0]).toHaveAccessibleName(CAPTION)
   })
 
-  it('traces "Monthly revenue by branch" through five labelled steps, each label then its value, in order', () => {
+  it('lists the sample metrics, then the five steps, each list named by the label before it (#77)', () => {
     const { section } = renderSection()
     const figure = within(section).getByRole('figure')
-    const steps = within(figure).getByRole('list', { name: FIGURE })
-    const items = within(steps).getAllByRole('listitem')
+    const [caption, metricsLabel, metrics, stepsLabel, steps, ...rest] = [...figure.children]
+
+    expect(rest).toEqual([])
+    expect(caption.tagName).toBe('FIGCAPTION')
+    // The labels are paragraphs, not headings.
+    for (const [label, text] of [
+      [metricsLabel, METRICS_LABEL],
+      [stepsLabel, STEPS_LABEL],
+    ] as const) {
+      expect(label.tagName).toBe('P')
+      expect(label.textContent).toBe(text)
+      expect(label.id).not.toBe('')
+    }
+    expect(within(figure).queryAllByRole('heading')).toHaveLength(0)
+
+    expect(metrics.tagName).toBe('UL')
+    expect(metrics).toHaveAttribute('role', 'list')
+    expect(metrics).toHaveAttribute('aria-labelledby', metricsLabel.id)
+    expect(within(figure).getByRole('list', { name: METRICS_LABEL })).toBe(metrics)
+    const metricItems = [...metrics.children]
+    expect(metricItems.map((item) => item.tagName)).toEqual(METRICS.map(() => 'LI'))
+    // Each metric is its name as text, and nothing else.
+    expect(metricItems.map((item) => item.textContent)).toEqual(METRICS)
+    for (const item of metricItems) expect(item.children).toHaveLength(0)
 
     expect(steps.tagName).toBe('OL')
-    expect(within(figure).getByText(FIGURE).tagName).toBe('P')
-    expect(items).toHaveLength(5)
-    items.forEach((item, index) => {
-      const [label, value, ...rest] = [...item.children]
-      const step = lineageExample.steps[index]
+    expect(steps).toHaveAttribute('role', 'list')
+    expect(steps).toHaveAttribute('aria-labelledby', stepsLabel.id)
+    expect(within(figure).getByRole('list', { name: STEPS_LABEL })).toBe(steps)
+    const stepItems = [...steps.children]
+    expect(stepItems.map((item) => item.tagName)).toEqual(STEPS.map(() => 'LI'))
+    stepItems.forEach((item, index) => {
+      const [label, ...after] = [...item.children]
+      expect(label.tagName).toBe('P')
       expect(label.textContent).toBe(STEPS[index])
-      expect(value.textContent).toBe(step.value)
-      expect(rest.map((child) => child.textContent)).toEqual(step.reason ? [step.reason] : [])
+      // No value under any step; only the last holds the rating list.
+      expect(after.map((child) => child.tagName)).toEqual(index === STEPS.length - 1 ? ['UL'] : [])
     })
   })
 
-  it('gives the trust rating in text, one of the scorecard\'s three ratings, with its reason', () => {
+  it('lists the three rating categories inside the Trust rating step only, named by its label (#77)', () => {
     const { section } = renderSection()
-    const items = within(within(section).getByRole('figure')).getAllByRole('listitem')
-    const rating = items[4]
+    const figure = within(section).getByRole('figure')
+    const steps = within(figure).getByRole('list', { name: STEPS_LABEL })
+    const lastStep = steps.lastElementChild!
+    const ratings = within(figure).getByRole('list', { name: 'Trust rating' })
+    const label = lastStep.firstElementChild!
 
-    expect(rating.children[1].textContent).toBe('Trusted with caveats')
-    expect(rating.children[2].textContent).toBe(
-      'Two branches record refunds a day late, so month-end totals can differ from the ledger.',
+    expect(ratings.parentElement).toBe(lastStep)
+    expect(ratings.tagName).toBe('UL')
+    expect(ratings).toHaveAttribute('role', 'list')
+    expect(ratings).toHaveAttribute('aria-labelledby', label.id)
+    expect(label.id).not.toBe('')
+    expect(ratings.previousElementSibling).toBe(label)
+    expect([...ratings.children].map((item) => [item.tagName, item.textContent, item.children.length])).toEqual(
+      RATINGS.map((rating) => ['LI', rating, 0]),
+    )
+    // The only nested list in the figure.
+    expect(figure.querySelectorAll('li ul, li ol')).toHaveLength(1)
+    expect(figure.querySelectorAll('ul, ol')).toHaveLength(3)
+  })
+
+  it('gives no rating to any metric: the three look alike and none is marked (#77)', () => {
+    const { section } = renderSection()
+    const figure = within(section).getByRole('figure')
+    const items = [...within(figure).getByRole('list', { name: 'Trust rating' }).children]
+
+    expect(new Set(items.map((item) => item.className)).size).toBe(1)
+    expect(items[0].className).toBe('lineage-example__rating')
+    for (const item of items) {
+      expect(item.attributes).toHaveLength(1)
+      expect(item).not.toHaveAttribute('aria-current')
+      expect(item).not.toHaveAttribute('aria-selected')
+      expect(item).not.toHaveAttribute('aria-checked')
+    }
+    expect(figure.querySelector('[aria-current], [aria-selected], [aria-checked]')).toBeNull()
+    // No rating sits in the metrics list or beside a metric name.
+    const metrics = within(figure).getByRole('list', { name: METRICS_LABEL })
+    for (const rating of RATINGS) {
+      expect(within(metrics).queryByText(rating)).toBeNull()
+    }
+    expect(metrics.contains(items[0])).toBe(false)
+  })
+
+  it('holds exactly the caption, the two list labels, the metrics, the steps and the ratings, in order (#77)', () => {
+    const { section } = renderSection()
+    const figure = within(section).getByRole('figure')
+
+    expect(figure.textContent!.replace(/\s+/g, ' ').trim()).toBe(
+      [CAPTION, METRICS_LABEL, ...METRICS, STEPS_LABEL, ...STEPS, ...RATINGS].join(''),
     )
   })
 
-  it('shows the proposed sample values (#71; the owner confirms them)', () => {
-    expect(lineageExample.steps.map((step) => step.value)).toEqual([
-      'Invoiced revenue for each branch in the calendar month, net of refunds and discounts.',
-      'Invoice totals minus refunds, summed by branch and month.',
-      'Billing system, then the finance ledger.',
-      'Head of finance',
-      'Trusted with caveats',
-    ])
+  it('shows the owner\'s metric names, the five steps and the three ratings, labels only (#77)', () => {
+    expect(exampleMetrics).toEqual(METRICS)
+    expect(lineageExample.metrics).toBe(exampleMetrics)
+    expect(lineageExample.steps).toEqual(STEPS)
+    expect(lineageExample.ratings).toEqual(RATINGS)
+    expect(lineageExample.metricsLabel).toBe(METRICS_LABEL)
+    expect(lineageExample.stepsLabel).toBe(STEPS_LABEL)
   })
 
   it('shows no price, currency or figure anywhere', () => {
