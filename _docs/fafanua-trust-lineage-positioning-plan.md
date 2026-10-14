@@ -90,6 +90,8 @@ Add a section directly after the problem section, with this copy.
 
 This supersedes the sample figure "Monthly revenue by branch": the example now shows the metric names, the five lineage steps and the three rating categories as labels only.
 
+**Owner update (2026-10-14, #79):** `_docs/fafanua-data-trust-assessment-homepage-enhancement.md` supersedes the caption (now "Illustrative example"), the metrics label (now "Example leadership metrics") and the five steps (now its seven-step sequence, Report to Trust rating), and replaces the "After the assessment" line with its statement and supporting copy. It also adds the START WITH TRUST eyebrow and the DATA TRUST ASSESSMENT engagement name above the heading.
+
 **Acceptance:** the section sits directly after the problem section. The button uses the W1 label. Copy lives in a `src/data/` file, not inside components. The section passes the axe checks.
 
 ### W5. AI-readiness copy (in place)
