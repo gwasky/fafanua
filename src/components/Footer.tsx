@@ -1,5 +1,7 @@
 import { email, phone, phoneHref } from '../data/contact.ts'
-import { footerNavigation } from '../data/navigation.ts'
+import { footerNavigation, moreSectorsLabel } from '../data/navigation.ts'
+import { footerSolutions } from '../data/solutions.ts'
+import { solutionPath } from '../paths.ts'
 import { useYear } from '../useYear.ts'
 import './Footer.css'
 
@@ -10,7 +12,12 @@ const FORCED_LIGHT = '(forced-colors: active) and (prefers-color-scheme: light)'
 // The page footer, outside main, dark and minimal (plan V2 §17): the
 // reversed logo (an image, not a link), the five footer links
 // (footerNavigation in src/data/navigation.ts), the email and phone links
-// from src/data/contact.ts and the copyright line. The year is read when
+// from src/data/contact.ts, the copyright line, then a quiet "More
+// sectors" line linking, by their headings, to the sector pages the
+// homepage's Solutions list leaves out (footerSolutions, W7, #73), so
+// every sector page keeps a crawlable link from the homepage or the
+// footer. It reads only solutions.ts, never the landing pages' copy, as
+// the footer is hydrated on every landing page. The year is read when
 // the component renders, so it is never fixed at build time. It uses no
 // ids, so nothing duplicates the header's. On the landing pages (#67)
 // `home` is the homepage's path, so the section links lead back to it;
@@ -60,6 +67,21 @@ function Footer({ home }: { home?: string }) {
         <p className="site-footer__copyright">
           {`© ${year} Fafanua Technologies Limited`}
         </p>
+        <div className="site-footer__sectors">
+          <span className="site-footer__sectors-label">{moreSectorsLabel}</span>
+          <ul className="site-footer__sectors-list" role="list">
+            {footerSolutions.map((solution) => (
+              <li key={solution.id}>
+                <a
+                  className="site-footer__link site-footer__sector"
+                  href={solutionPath(solution.id)}
+                >
+                  {solution.heading}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </footer>
   )

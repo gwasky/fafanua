@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
 import {
@@ -11,7 +11,7 @@ import { footerNavigation, navigation, navigationCta } from './data/navigation.t
 import { positioningProblem } from './data/positioning.ts'
 import { processStages } from './data/process.ts'
 import { managedServices, services, servicesIntro } from './data/services.ts'
-import { solutions } from './data/solutions.ts'
+import { homepageSolutions, solutions } from './data/solutions.ts'
 import { systemFlow } from './data/systemFlow.ts'
 
 const FUTURE_READY = 'Trusted foundations for what comes next'
@@ -153,8 +153,10 @@ describe('App', () => {
     expect(count('system-flow__loop')).toBe(1)
     expect(document.querySelector('.system-flow svg')).toHaveClass('system-flow__loop')
     expect(count('service-card__chevron')).toBe(services.length)
-    expect(count('solution-row__chevron')).toBe(solutions.length)
-    expect(svgs).toHaveLength(1 + services.length + solutions.length)
+    // One chevron per homepage Solutions row, not per sector (#73).
+    expect(count('solution-row__chevron')).toBe(homepageSolutions.length)
+    expect(count('solution-row__chevron')).toBe(3)
+    expect(svgs).toHaveLength(1 + services.length + homepageSolutions.length)
     for (const svg of svgs) expect(svg).toHaveAttribute('aria-hidden', 'true')
     expect(document.querySelectorAll('canvas')).toHaveLength(0)
     expect([...document.querySelectorAll('img')].map((img) => img.closest('header, footer')?.tagName)).toEqual([
@@ -622,13 +624,13 @@ describe('App', () => {
     expect(text.replace(/(business|payment) intelligence/gi, '')).not.toMatch(/intelligence/i)
   })
 
-  it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its h3, h2 Solutions, six h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
+  it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its h3, h2 Solutions, three h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
 
     expect(levels).toEqual([
-      1, 2, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2,
+      1, 2, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 2, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2,
     ])
     expect(levels.filter((level) => level === 1)).toHaveLength(1)
     // No level is skipped.
@@ -650,21 +652,55 @@ describe('App', () => {
     expect(headings[14].textContent).toBe('Solutions')
     // Each sector h3 holds its row's button (the accordion header
     // pattern), and is named by the title alone: the number is aria-hidden.
-    headings.slice(15, 21).forEach((heading, index) => {
-      expect(heading).toHaveAccessibleName(solutions[index].title)
+    // The homepage's three sectors, in W7's order (#73).
+    expect(headings.slice(15, 18).map((heading) => heading.textContent)).toEqual([
+      '01Health',
+      '02Financial Services',
+      '03Education',
+    ])
+    headings.slice(15, 18).forEach((heading, index) => {
+      expect(heading).toHaveAccessibleName(homepageSolutions[index].title)
       expect(within(heading).getByRole('button')).toHaveAccessibleName(
-        solutions[index].title,
+        homepageSolutions[index].title,
       )
     })
-    expect(headings[21].textContent).toBe('How We Work')
-    expect(headings.slice(22, 26).map((heading) => heading.textContent)).toEqual(
+    expect(headings[18].textContent).toBe('How We Work')
+    expect(headings.slice(19, 23).map((heading) => heading.textContent)).toEqual(
       processStages.map((stage) => stage.name),
     )
-    expect(headings[26].textContent).toBe(FUTURE_READY)
-    expect(headings[27].textContent).toBe('About Fafanua')
-    expect(headings[28].textContent).toBe(CONTACT)
+    expect(headings[23].textContent).toBe(FUTURE_READY)
+    expect(headings[24].textContent).toBe('About Fafanua')
+    expect(headings[25].textContent).toBe(CONTACT)
     expect(
       within(screen.getByRole('contentinfo')).queryAllByRole('heading'),
     ).toHaveLength(0)
+  })
+
+  // W7 (#73): every sector's landing page keeps a crawlable link from the
+  // homepage, in its Solutions row's panel, or from the footer's "More
+  // sectors" line, and no page is linked from both.
+  it('links every solution landing page from either a Solutions row or the footer', () => {
+    render(<App />)
+    const region = screen.getByRole('region', { name: 'Solutions' })
+    for (const button of within(region).getAllByRole('button')) fireEvent.click(button)
+    const footer = screen.getByRole('contentinfo')
+    const hrefs = (root: HTMLElement) =>
+      [...root.querySelectorAll<HTMLAnchorElement>('a[href^="/solutions/"]')].map((link) =>
+        link.getAttribute('href'),
+      )
+    const fromRows = hrefs(region)
+    const fromFooter = hrefs(footer)
+
+    expect(fromRows).toEqual(['/solutions/health', '/solutions/financial-services', '/solutions/education'])
+    expect(fromFooter).toEqual([
+      '/solutions/retail-distribution',
+      '/solutions/development-impact',
+      '/solutions/public-sector',
+    ])
+    expect([...fromRows, ...fromFooter].sort()).toEqual(
+      solutions.map((solution) => `/solutions/${solution.slug}`).sort(),
+    )
+    expect(document.querySelectorAll('a[href^="/solutions/"]')).toHaveLength(solutions.length)
+    expect(within(footer).getByText('More sectors')).toBeVisible()
   })
 })

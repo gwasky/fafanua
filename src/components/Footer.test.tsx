@@ -1,7 +1,9 @@
 import { render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { footerNavigation } from '../data/navigation.ts'
+import { footerNavigation, moreSectorsLabel } from '../data/navigation.ts'
+import { footerSolutions } from '../data/solutions.ts'
 import footerCss from './Footer.css?raw'
+import footerSource from './Footer.tsx?raw'
 import Footer from './Footer.tsx'
 
 const EMAIL = 'info@fafanua.tech'
@@ -9,6 +11,13 @@ const EMAIL = 'info@fafanua.tech'
 const PHONE = '+256 752 008 822'
 const TEL = 'tel:+256752008822'
 const COPYRIGHT = /^© \d{4} Fafanua Technologies Limited$/
+// The "More sectors" line (#73): the sectors the homepage leaves out, by
+// their headings, in data order.
+const SECTORS = [
+  ['Retail & Distribution Analytics', '/solutions/retail-distribution'],
+  ['Development & Impact Data Systems', '/solutions/development-impact'],
+  ['Public Sector Data & Analytics', '/solutions/public-sector'],
+] as const
 
 // Claims the footer must not make, and details it must not invent.
 const FORBIDDEN = [
@@ -142,7 +151,7 @@ describe('Footer', () => {
     )
   })
 
-  it('orders the logo, nav, email link, phone link and copyright line', () => {
+  it('orders the logo, nav, email link, phone link, copyright line and the "More sectors" line', () => {
     const footer = renderFooter()
     const parts = [
       within(footer).getByRole('img'),
@@ -150,6 +159,7 @@ describe('Footer', () => {
       within(footer).getByRole('link', { name: EMAIL }),
       within(footer).getByRole('link', { name: PHONE }),
       copyright(footer),
+      footer.querySelector('.site-footer__sectors')!,
     ]
 
     for (let i = 1; i < parts.length; i++) {
@@ -160,16 +170,24 @@ describe('Footer', () => {
     }
   })
 
-  it('contains nothing else: seven links, no headings, ids or forms', () => {
+  it('contains nothing else: ten links, no headings, ids or forms', () => {
     const footer = renderFooter()
     const year = new Date().getFullYear()
 
-    expect(within(footer).getAllByRole('link')).toHaveLength(7)
+    expect(within(footer).getAllByRole('link')).toHaveLength(10)
+    expect(within(footer).getAllByRole('link').map((link) => link.textContent)).toEqual([
+      ...footerNavigation.map((item) => item.label),
+      EMAIL,
+      PHONE,
+      ...SECTORS.map(([name]) => name),
+    ])
     expect(footer.textContent).toBe(
       footerNavigation.map((item) => item.label).join('') +
         EMAIL +
         PHONE +
-        `© ${year} Fafanua Technologies Limited`,
+        `© ${year} Fafanua Technologies Limited` +
+        'More sectors' +
+        SECTORS.map(([name]) => name).join(''),
     )
     expect(footer.querySelectorAll('h1, h2, h3, h4, h5, h6')).toHaveLength(0)
     expect(footer.querySelectorAll('[id]')).toHaveLength(0)
@@ -207,5 +225,61 @@ describe('Footer', () => {
     expect(footer).not.toHaveClass('surface-alt')
     expect(footer.querySelector('.surface-dark, .surface-alt, .technical-grid')).toBeNull()
     expect(footer.querySelectorAll('[aria-hidden]')).toHaveLength(0)
+  })
+
+  // W7 in the trust and lineage plan (#73): a quiet line after the
+  // copyright links to the sector pages the homepage's list leaves out.
+  describe('the "More sectors" line', () => {
+    function sectorsLine(footer: HTMLElement) {
+      return footer.querySelector<HTMLElement>('.site-footer__sectors')!
+    }
+
+    it('shows the label, then the three sector links, by their headings, in data order', () => {
+      const footer = renderFooter()
+      const line = sectorsLine(footer)
+      const links = within(line).getAllByRole('link')
+
+      expect(line.textContent).toBe('More sectors' + SECTORS.map(([name]) => name).join(''))
+      expect(line.firstElementChild?.textContent).toBe(moreSectorsLabel)
+      expect(moreSectorsLabel).toBe('More sectors')
+      expect(links.map((link) => [link.textContent, link.getAttribute('href')])).toEqual(SECTORS)
+      expect(links.map((link) => link.textContent)).toEqual(
+        footerSolutions.map((solution) => solution.heading),
+      )
+      for (const link of links) {
+        expect(link).toHaveClass('site-footer__link')
+        expect(link).not.toHaveClass('button')
+        expect(link).not.toHaveAttribute('target')
+      }
+    })
+
+    it('lists the links in a list, outside the Footer nav, with no heading or landmark of its own', () => {
+      const footer = renderFooter()
+      const line = sectorsLine(footer)
+      const nav = within(footer).getByRole('navigation', { name: 'Footer' })
+      const list = within(line).getByRole('list')
+
+      expect(within(nav).getAllByRole('link')).toHaveLength(5)
+      expect(nav).not.toContainElement(line)
+      expect(within(footer).getAllByRole('navigation')).toHaveLength(1)
+      expect(list.tagName).toBe('UL')
+      expect(within(list).getAllByRole('listitem')).toHaveLength(3)
+      expect(line.querySelector('h1, h2, h3, h4, h5, h6, nav, [role]:not([role="list"])')).toBeNull()
+    })
+
+    it('links to the same pages from a landing page, where home is "/"', () => {
+      render(<Footer home="/" />)
+      const line = sectorsLine(screen.getByRole('contentinfo'))
+
+      expect(
+        within(line).getAllByRole('link').map((link) => link.getAttribute('href')),
+      ).toEqual(SECTORS.map(([, href]) => href))
+    })
+
+    it('keeps the label in src/data/ and the landing pages\' copy out of the footer bundle', () => {
+      expect(footerSource).not.toContain("'More sectors'")
+      expect(footerSource).not.toMatch(/solutionPages|servicePages|\/pages\.ts/)
+      for (const [name] of SECTORS) expect(footerSource).not.toContain(name)
+    })
   })
 })

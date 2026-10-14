@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { email, phoneHref } from '../data/contact.ts'
 import { managedServices, services } from '../data/services.ts'
-import { solutions } from '../data/solutions.ts'
+import { footerSolutions, solutions } from '../data/solutions.ts'
 import { notFound, pages, type Page } from '../pages.ts'
 import { expectNoAxeViolations } from '../test/axe.ts'
 import LandingPage from './LandingPage.tsx'
@@ -28,6 +28,25 @@ const solutionPages = pages.filter((page) => page.kind === 'solution')
 const paths = new Set(pages.map((page) => page.path))
 
 const renderPage = (page: Page) => render(<LandingPage page={page} />)
+
+// The footer's "More sectors" line (#73): the three sector pages the
+// homepage's Solutions list leaves out, by their headings, on every page.
+const MORE_SECTORS = [
+  ['Retail & Distribution Analytics', '/solutions/retail-distribution'],
+  ['Development & Impact Data Systems', '/solutions/development-impact'],
+  ['Public Sector Data & Analytics', '/solutions/public-sector'],
+]
+
+function expectMoreSectors() {
+  const footer = screen.getByRole('contentinfo')
+  const line = within(footer).getByText('More sectors').parentElement!
+  const links = within(line).getAllByRole('link')
+  expect(links.map((link) => [link.textContent, link.getAttribute('href')])).toEqual(MORE_SECTORS)
+  expect(links.map((link) => link.textContent)).toEqual(footerSolutions.map((solution) => solution.heading))
+  for (const [, href] of MORE_SECTORS) expect(paths.has(href)).toBe(true)
+  expect(within(footer).getByRole('navigation', { name: 'Footer' })).not.toContainElement(line)
+  expect(within(within(footer).getByRole('navigation', { name: 'Footer' })).getAllByRole('link')).toHaveLength(5)
+}
 
 const h2s = (main: HTMLElement) =>
   within(main).getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)
@@ -78,6 +97,11 @@ describe.each(pages.map((page) => [page.path, page] as const))('%s', (_path, pag
   it('has no axe violations', async () => {
     const { container } = renderPage(page)
     await expectNoAxeViolations(container)
+  })
+
+  it('links the footer\'s "More sectors" line to the three sectors the homepage leaves out', () => {
+    renderPage(page)
+    expectMoreSectors()
   })
 })
 
@@ -192,6 +216,11 @@ describe('not-found page', () => {
     const hrefs = mainLinks().map(([, href]) => href)
     expect(hrefs).toContain('/')
     for (const page of pages) expect(hrefs).toContain(page.path)
+  })
+
+  it('links the footer\'s "More sectors" line too', () => {
+    renderPage(notFound)
+    expectMoreSectors()
   })
 })
 

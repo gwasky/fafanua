@@ -6,10 +6,11 @@
  * copyright graphite 400 (5.9:1) and the focus ring teal 400. The change
  * from the graphite 100 Contact section above is the only separator, so
  * there is no border, and there is no technical grid. Logo, nav, email
- * and phone, and copyright stack in DOM order; from 1024px the logo and
- * nav share the first row and the contact links and copyright the second
- * (literal breakpoints; see the note in tokens.css). No reordering, so
- * the visual order always matches the DOM order.
+ * and phone, copyright and the "More sectors" line (#73) stack in DOM
+ * order; from 1024px the logo and nav share the first row, the contact
+ * links and copyright the second, and the "More sectors" line spans the
+ * third (literal breakpoints; see the note in tokens.css). No reordering,
+ * so the visual order always matches the DOM order.
  */
 
 .site-footer {
@@ -102,6 +103,37 @@
   font-weight: var(--weight-regular);
 }
 
+/* The "More sectors" line (#73): quiet, in the copyright's small text.
+   The label is graphite 400 (5.9:1), the links paper (14.9:1) and
+   underlined on hover, as the nav's. The links wrap, inside a link and
+   onto further rows, so nothing overflows with large text; each box is
+   still at least 48px tall. No separators: the gaps divide the items. */
+.site-footer__sectors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-6);
+  font-size: var(--text-sm);
+}
+
+.site-footer__sectors-label {
+  color: var(--color-text-muted);
+  font-weight: var(--weight-regular);
+}
+
+.site-footer__sectors-list {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-footer__sector {
+  white-space: normal;
+}
+
 @media (min-width: 64em) {
   .site-footer__inner {
     display: grid;
@@ -114,5 +146,9 @@
   .site-footer__nav,
   .site-footer__copyright {
     justify-self: end;
+  }
+
+  .site-footer__sectors {
+    grid-column: 1 / -1;
   }
 }

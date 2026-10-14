@@ -4,7 +4,7 @@ import App from './App.tsx'
 import { email } from './data/contact.ts'
 import { footerNavigation, navigation, navigationCta } from './data/navigation.ts'
 import { services } from './data/services.ts'
-import { solutions } from './data/solutions.ts'
+import { homepageSolutions } from './data/solutions.ts'
 import { accessibleNames, expectNoAxeViolations } from './test/axe.ts'
 
 // jsdom has no matchMedia, which the header uses for its breakpoint.
@@ -52,13 +52,13 @@ describe('App accessibility (axe)', () => {
     await expectNoAxeViolations(container)
   })
 
-  it('has no axe violations with all six Solutions rows open', async () => {
+  it('has no axe violations with all three Solutions rows open', async () => {
     const { container } = render(<App />)
     const region = screen.getByRole('region', { name: 'Solutions' })
     const buttons = within(region).getAllByRole('button')
     for (const button of buttons) fireEvent.click(button)
 
-    expect(buttons).toHaveLength(6)
+    expect(buttons).toHaveLength(3)
     for (const button of buttons) {
       expect(button).toHaveAttribute('aria-expanded', 'true')
     }
@@ -169,14 +169,14 @@ describe('App links and buttons', () => {
     for (const { href } of links) expect(href).toBe(`mailto:${email}`)
   })
 
-  it('has three kinds of button: the Menu toggle, six disclosures and six Solutions rows', () => {
+  it('has three kinds of button: the Menu toggle, six disclosures and three Solutions rows', () => {
     render(<App />)
     const buttons = controls().filter(({ element }) => element.tagName === 'BUTTON')
 
     expect(buttons.map(({ name }) => name)).toEqual([
       'Menu',
       ...services.map((service) => disclosureName(service.name)),
-      ...solutions.map((solution) => solution.title),
+      ...homepageSolutions.map((solution) => solution.title),
     ])
   })
 
