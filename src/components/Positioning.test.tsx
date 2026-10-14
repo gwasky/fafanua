@@ -5,21 +5,59 @@ import Positioning from './Positioning.tsx'
 // The problem, the refinement plan §3's left column, character for
 // character (positioning.plan.test.ts checks it against the plan), and
 // Fafanua's response, its right column, which W3 in the trust and lineage
-// plan removed because it restated the hero (#70).
+// plan removed because it restated the hero (#70). The eyebrow, framing
+// and transition are the homepage enhancement plan's §5 and §6 (#79).
+const EYEBROW = 'The problem'
+const FRAMING =
+  'Organisations rarely lack data. The challenge is knowing whether the numbers used to run the business are connected, consistent and trustworthy.'
+const TRANSITION =
+  'That is why Fafanua starts by tracing the numbers leadership relies on most back to their source.'
 const STATEMENT =
   'Most organisations already have data, reporting and operational systems. The challenge is making the information flowing through them connected, consistent and trusted.'
 const SUPPORT =
   'Fafanua helps organisations build and strengthen the foundations underneath reporting, analytics and operations \u2014 from integration and modelling to quality, governance and ongoing platform support.'
 
 describe('Positioning', () => {
-  it('shows the problem exactly, as its one paragraph', () => {
+  it('shows the eyebrow, framing, problem and transition exactly, as its four paragraphs, in order (#79)', () => {
     const { container } = render(<Positioning />)
     const paragraphs = [...container.querySelectorAll('p')]
 
-    expect(paragraphs.map((paragraph) => paragraph.textContent)).toEqual([STATEMENT])
-    expect(screen.getByText(STATEMENT)).toBe(paragraphs[0])
-    expect(paragraphs[0]).toHaveClass('positioning__statement')
-    expect(container.textContent).toBe(STATEMENT)
+    expect(paragraphs.map((paragraph) => paragraph.textContent)).toEqual([
+      EYEBROW,
+      FRAMING,
+      STATEMENT,
+      TRANSITION,
+    ])
+    expect(screen.getByText(STATEMENT)).toBe(paragraphs[2])
+    expect(paragraphs[2]).toHaveClass('positioning__statement')
+    expect(container.textContent).toBe([EYEBROW, FRAMING, STATEMENT, TRANSITION].join(''))
+    // Nothing else holds text: every element is a paragraph or a wrapper.
+    for (const element of container.querySelectorAll('*')) {
+      expect(['DIV', 'P']).toContain(element.tagName)
+    }
+  })
+
+  it('shows THE PROBLEM as an unnumbered section eyebrow, a paragraph, first (#79)', () => {
+    const { container } = render(<Positioning />)
+    const eyebrows = container.querySelectorAll('.section-eyebrow')
+
+    expect(eyebrows).toHaveLength(1)
+    expect(eyebrows[0].tagName).toBe('P')
+    expect(eyebrows[0].textContent).toBe(EYEBROW)
+    expect(eyebrows[0].textContent).not.toMatch(/\d|—/)
+    expect(container.querySelector('p')).toBe(eyebrows[0])
+  })
+
+  it('puts the eyebrow and framing in one column, then the statement and transition in the other (#79)', () => {
+    const { container } = render(<Positioning />)
+    const [eyebrow, framing, statement, transition] = [...container.querySelectorAll('p')]
+
+    expect(eyebrow.parentElement).toBe(framing.parentElement)
+    expect(statement.parentElement).toBe(transition.parentElement)
+    expect(framing.parentElement).not.toBe(statement.parentElement)
+    expect(framing.parentElement!.nextElementSibling).toBe(statement.parentElement)
+    expect(eyebrow.nextElementSibling).toBe(framing)
+    expect(statement.nextElementSibling).toBe(transition)
   })
 
   it('no longer shows the response, which restated the hero (#70)', () => {

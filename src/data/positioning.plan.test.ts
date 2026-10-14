@@ -1,14 +1,22 @@
-// Checks positioning.ts against the V2 refinement plan §3, so the
-// positioning section's wording on the site cannot drift from it: the
-// problem is the left column's quote (#63). The response, the right
-// column's quote, was removed by W3 in the trust and lineage plan (#70),
-// so it is checked as absent from src/. The ?raw imports resolve relative
-// to this file and are never part of the production bundle.
+// Checks positioning.ts against its plans, so the problem block's wording
+// on the site cannot drift from them: the problem is the V2 refinement
+// plan §3's left column quote (#63). The response, its right column's
+// quote, was removed by W3 in the trust and lineage plan (#70), so it is
+// checked as absent from src/. The eyebrow and framing are the Data Trust
+// Assessment homepage enhancement plan §5's left column, and the
+// transition its §6 (#79). The ?raw imports resolve relative to this file
+// and are never part of the production bundle.
 import { describe, expect, it } from 'vitest'
+import enhancement from '../../_docs/fafanua-data-trust-assessment-homepage-enhancement.md?raw'
 import refinement from '../../_docs/fafanua-v2-refinement-plan.md?raw'
 import positioningSource from './positioning.ts?raw'
 import * as positioning from './positioning.ts'
-import { positioningProblem } from './positioning.ts'
+import {
+  positioningEyebrow,
+  positioningFraming,
+  positioningProblem,
+  positioningTransition,
+} from './positioning.ts'
 
 const doc = refinement.replace(/\r\n/g, '\n')
 
@@ -30,6 +38,34 @@ function quotes(heading: string): string[] {
 const problem = quotes('Left column — The problem')
 const response = quotes("Right column — Fafanua's response")
 
+// The enhancement plan (#79): the text of a `# N. ` section, up to the
+// next `# ` heading, and its one-line `> ` quotes, without bold markers,
+// optionally only those under one `## ` heading.
+const enhancementDoc = enhancement.replace(/\r\n/g, '\n')
+
+function enhancementSection(number: number): string {
+  const at = enhancementDoc.indexOf(`\n# ${number}. `)
+  if (at === -1) throw new Error(`"# ${number}. " not found`)
+  return enhancementDoc.slice(at, enhancementDoc.indexOf('\n# ', at + 1))
+}
+
+function enhancementQuotes(number: number, heading?: string): string[] {
+  let text = enhancementSection(number)
+  if (heading !== undefined) {
+    const at = text.indexOf(`\n## ${heading}\n`)
+    if (at === -1) throw new Error(`"## ${heading}" not found in §${number}`)
+    const end = text.indexOf('\n## ', at + 1)
+    text = end === -1 ? text.slice(at) : text.slice(at, end)
+  }
+  return [...text.matchAll(/^> (.+)$/gm)].map((match) =>
+    match[1].trimEnd().replace(/^\*\*(.+)\*\*$/, '$1'),
+  )
+}
+
+const leftColumn = enhancementQuotes(5, 'Left column')
+const rightColumn = enhancementQuotes(5, 'Right column')
+const transition = enhancementQuotes(6)
+
 describe('refinement plan §3 parser', () => {
   it('finds one quote under each column heading', () => {
     expect(start).toBeGreaterThan(-1)
@@ -39,13 +75,54 @@ describe('refinement plan §3 parser', () => {
   })
 })
 
+describe('enhancement plan §5 and §6 parser (#79)', () => {
+  it('finds the eyebrow and framing under the left column, the statement under the right, and the transition', () => {
+    expect(leftColumn).toHaveLength(2)
+    expect(rightColumn).toHaveLength(1)
+    expect(transition).toHaveLength(1)
+    for (const quote of [...leftColumn, ...rightColumn, ...transition]) {
+      expect(quote).not.toBe('')
+      expect(quote).not.toContain('*')
+    }
+  })
+})
+
 describe('positioning wording', () => {
   it('uses the left column\'s problem, character for character', () => {
     expect(positioningProblem).toBe(problem[0])
   })
 
-  it('no longer exports the right column\'s response, or any copy but the problem (#70)', () => {
-    expect(Object.keys(positioning)).toEqual(['positioningProblem'])
+  it('keeps the problem as the enhancement plan\'s right column statement (#79)', () => {
+    expect(positioningProblem).toBe(rightColumn[0])
+  })
+
+  it('uses the enhancement plan §5\'s eyebrow, shown in capitals (#79)', () => {
+    expect(leftColumn[0]).toBe('THE PROBLEM')
+    expect(positioningEyebrow).toBe('The problem')
+    expect(positioningEyebrow.toUpperCase()).toBe(leftColumn[0])
+  })
+
+  it('uses the enhancement plan §5\'s framing line, character for character (#79)', () => {
+    expect(positioningFraming).toBe(leftColumn[1])
+    expect(positioningFraming).toBe(
+      'Organisations rarely lack data. The challenge is knowing whether the numbers used to run the business are connected, consistent and trustworthy.',
+    )
+  })
+
+  it('uses the enhancement plan §6\'s transition, character for character (#79)', () => {
+    expect(positioningTransition).toBe(transition[0])
+    expect(positioningTransition).toBe(
+      'That is why Fafanua starts by tracing the numbers leadership relies on most back to their source.',
+    )
+  })
+
+  it('exports exactly the eyebrow, framing, problem and transition, and not the right column\'s response (#70, #79)', () => {
+    expect(Object.keys(positioning)).toEqual([
+      'positioningEyebrow',
+      'positioningFraming',
+      'positioningProblem',
+      'positioningTransition',
+    ])
     expect(positioningSource).not.toContain(response[0])
     expect(response[0]).toContain(' — ')
   })
@@ -77,6 +154,11 @@ describe('other source files', () => {
 
   it.each([
     ['the problem', positioningProblem],
+    // The eyebrow as a string literal: the words also name the block in
+    // comments.
+    ['the eyebrow', `'${positioningEyebrow}'`],
+    ['the framing', positioningFraming],
+    ['the transition', positioningTransition],
     // Removed by W3 in the trust and lineage plan (#70).
     ['the response', response[0]],
     // The two paragraphs the refinement replaced.

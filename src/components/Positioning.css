@@ -1,16 +1,25 @@
 /*
- * Positioning: a light, spacious block between the dark hero and Services
- * (plan V2 §8): the problem as one large statement (refinement plan §3).
- * Fafanua's response beside it was removed as it restated the hero (W3 in
- * the trust and lineage plan, #70), so the block is one column at every
- * width. Not a card: no border, fill, radius or shadow, on the page
- * background. The statement is large and light, in graphite 900 on paper
- * (14.9:1). It is capped at --container-narrow (45rem, about the width of
- * the start column it filled when it shared the block with the response),
- * a display measure of roughly 35 to 40 characters at --text-3xl, so it
- * does not stretch to an over-long line on wide screens. --measure-display
- * (16ch) is sized for the --text-hero and --text-section headings and
- * would break this statement into ten or more lines.
+ * Positioning: the problem block, a light, spacious block between the dark
+ * hero and the Data Trust Assessment (plan V2 §8; the Data Trust
+ * Assessment enhancement plan §5 and §6, #79). Not a card: no border,
+ * fill, radius or shadow, on the page background.
+ *
+ * Stacked by default, in DOM order: the unnumbered eyebrow THE PROBLEM,
+ * the framing line, the statement, then the transition. From 64em
+ * (literal breakpoint, see the note in tokens.css) two top-aligned
+ * columns, one third and two thirds, --space-16 apart, as the landing
+ * pages' sections: the eyebrow and framing at the start, compact, and the
+ * statement with the transition beneath it at the end, carrying the
+ * weight. This replaces #70's one column, which left the statement
+ * stranded on one side of wide screens.
+ *
+ * The statement is large and light, in graphite 900 on paper (14.9:1),
+ * capped at --container-narrow (45rem), a display measure of roughly 35
+ * to 40 characters at --text-3xl, so it never stretches to an over-long
+ * line. The framing and transition are secondary: --text-body-lg at
+ * weight 400 in --color-text (graphite 900 on paper), no wider than
+ * --measure. The eyebrow is SectionEyebrow's own style (graphite 600 on
+ * paper, 6.0:1). No new pairing.
  *
  * Its --space-section bottom padding is the gap above the next section.
  * The Data Trust Assessment follows it (#71): TrustAssessment.css gives
@@ -25,6 +34,24 @@
 
 /* Breaks a word only if it cannot fit on a line of its own, rather than
    anywhere as .container allows. */
+.positioning__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--space-8);
+  align-items: start;
+  overflow-wrap: break-word;
+}
+
+.positioning__framing,
+.positioning__transition {
+  max-width: var(--measure);
+  margin-block: 0;
+  color: var(--color-text);
+  font-size: var(--text-body-lg);
+  font-weight: var(--weight-regular);
+  text-wrap: pretty;
+}
+
 .positioning__statement {
   max-width: var(--container-narrow);
   margin-block: 0;
@@ -32,6 +59,16 @@
   font-size: var(--text-3xl);
   font-weight: var(--weight-light);
   line-height: var(--leading-tight);
-  overflow-wrap: break-word;
   text-wrap: balance;
+}
+
+.positioning__transition {
+  margin-block-start: var(--space-6);
+}
+
+@media (min-width: 64em) {
+  .positioning__layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    column-gap: var(--space-16);
+  }
 }
