@@ -18,7 +18,7 @@ import { expectLanded, test, waitForLanding } from './fixtures.ts'
 
 const HASHES = [
   '#data-trust-assessment',
-  '#services',
+  '#capabilities',
   '#managed-services',
   '#solutions',
   '#how-we-work',

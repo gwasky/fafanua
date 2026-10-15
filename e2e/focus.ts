@@ -8,10 +8,10 @@ import { focusAndHeaderBoxes, focusedName, pressTab, waitForScrollSettle } from 
 // checks in a11y.spec.ts, and the WCAG 2.4.11 check that the header never
 // covers the focused element.
 
-export const disclosures = services.map((service) => `Typical engagements for ${service.name}`)
-// Each card's title links to the service's page, before its disclosure
-// (#67); the Managed Services heading links to its page.
-export const cards = services.flatMap((service) => [service.name, `Typical engagements for ${service.name}`])
+// Each capability cell's title links to the service's page (#67), the
+// cell's one stop since the open grid (#83), named by the service; the
+// Managed Services heading links to its page.
+export const cards = services.map((service) => service.name)
 // The Solutions rows' buttons (#59), each named by its sector title: the
 // homepage's three sectors, in W7's order (#73).
 export const sectors = homepageSolutions.map((solution) => solution.title)
@@ -23,11 +23,13 @@ export const moreSectors = footerSolutions.map((solution) => solution.heading)
 const sections = ['Services', 'Solutions', 'How We Work', 'About']
 export const nav = [...sections, 'Book a data trust assessment']
 const footerNav = [...sections, 'Contact']
-// The hero has one stop, its call to action (#68), which shares the
-// header's and the closing button's name; the Data Trust Assessment's
-// button (#71), the same again, is its section's one stop.
+// The hero has two stops: its call to action (#68), which shares the
+// header's and the closing button's name, then its text link to the
+// capabilities (#83); the Data Trust Assessment's button (#71), the same
+// name again, is its section's one stop.
 const fromHero = [
   'Book a data trust assessment',
+  'Explore our capabilities',
   'Book a data trust assessment',
   ...cards,
   managedServices.heading,

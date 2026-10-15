@@ -12,15 +12,16 @@ import {
 import { managedServices } from '../src/data/services.ts'
 import { expectUnobscured, sectors } from './focus.ts'
 
-// The motion layer (#61): the hero reveal, the hero grid's fade-in, the
-// lifecycle rail's line and the one-time section reveals (useReveal.ts),
+// The motion layer (#61): the hero reveal, the hero grid's fade-in and
+// the one-time section reveals (useReveal.ts; the lifecycle rail's line
+// left with the open grid, #83),
 // and their safety rules. Runs in the chromium and webkit projects. Each
 // test sets its own motion setting.
 
 // Every main section after the positioning block, in page order.
 const SECTIONS = [
   'data-trust-assessment',
-  'services',
+  'capabilities',
   'managed-services',
   'solutions',
   'how-we-work',
@@ -115,25 +116,22 @@ function expectShown(section: Awaited<ReturnType<typeof sectionStates>>[number],
   }
 }
 
-/** The lifecycle rail's state and its connectors' transforms. */
-const rail = (page: Page) =>
-  page.evaluate(() => {
-    const frame = document.querySelector('.lifecycle-rail-frame')!
-    const stages = [...frame.querySelectorAll('.lifecycle-rail__stage')]
+/** How many lifecycle rails, or line reveals, the page has: none since
+ * the open grid (#83). */
+const railCount = (page: Page) => page.locator('.lifecycle-rail, .lifecycle-rail-frame, [data-reveal="line"]').count()
+
+/** A capability cell's box, its transform and its title link's, and its
+ * transition. */
+const cellState = (page: Page, index: number) =>
+  page.locator('.services__list > li').nth(index).evaluate((cell) => {
+    const box = cell.getBoundingClientRect()
+    const link = cell.querySelector('a')!
+    const style = getComputedStyle(cell)
     return {
-      state: frame.getAttribute('data-reveal-state'),
-      lines: stages.slice(0, -1).map((stage) => getComputedStyle(stage, '::after').transform),
-      lineDurations: stages
-        .slice(0, -1)
-        .map((stage) => {
-          const style = getComputedStyle(stage, '::after')
-          return [style.transitionDuration, style.transitionDelay]
-        }),
-      labels: stages.map((stage) => {
-        const label = stage.querySelector('.lifecycle-rail__label')!
-        const marker = stage.querySelector('.lifecycle-rail__marker')!
-        return [getComputedStyle(label).opacity, getComputedStyle(marker).opacity]
-      }),
+      box: [box.left, box.top + scrollY, box.width, box.height].map(Math.round),
+      transforms: [style.transform, getComputedStyle(link).transform, style.translate, style.scale],
+      shadow: style.boxShadow,
+      transition: [style.transitionProperty, style.transitionDuration],
     }
   })
 
@@ -258,18 +256,29 @@ test.describe('reduced motion: everything in its final state from the first pain
         expect(section.state).toBeNull()
         expectShown(section, 'on load')
       }
-      const line = await rail(page)
-      expect(line.state).toBeNull()
-      for (const transform of line.lines) expect(transform).toBe('none')
+      // No rail, so no line to draw (#83).
+      expect(await railCount(page)).toBe(0)
 
       await scrollThrough(page)
-      // A card under the pointer does not move (hover only on a pointer
-      // that can hover; this one can).
-      const card = page.locator('.services__list > li').nth(1)
-      await card.hover()
-      expect(await card.locator('.service-card').evaluate((element) => getComputedStyle(element).transform)).toBe(
-        'none',
-      )
+      // A cell under the pointer does not move (hover only on a pointer
+      // that can hover; this one can), and nothing in it transitions: no
+      // tint, underline or arrow transition runs (#83).
+      const before = await cellState(page, 1)
+      await page.locator('.services__list > li').nth(1).hover()
+      const hovered = await cellState(page, 1)
+      expect(hovered.box).toEqual(before.box)
+      expect(hovered.transforms).toEqual(['none', 'none', 'none', 'none'])
+      expect(hovered.transition[0]).toBe('none')
+      expect(
+        await page
+          .locator('.services__list > li')
+          .nth(1)
+          .evaluate((cell) =>
+            [cell.querySelector('a')!, cell.querySelector('a [aria-hidden="true"]')!].map(
+              (element) => getComputedStyle(element).transitionProperty,
+            ),
+          ),
+      ).toEqual(['none', 'none'])
       // Nor does the header's call-to-action arrow, where it shows.
       if (width >= 1024) {
         await page.getByRole('banner').getByRole('link', { name: 'Book a data trust assessment' }).hover()
@@ -412,123 +421,55 @@ test.describe('section reveals and the rail line, no-preference', () => {
     await page.screenshot({ path: test.info().outputPath('scrolled-through-1440.png'), fullPage: true })
   })
 
+  // The lifecycle rail and its line draw left with the open grid (#83):
+  // no line exists, the section's own reveal still runs once, and a cell
+  // never moves on hover or focus; only its tint, underline and arrow
+  // change, over --duration-card-hover.
   for (const width of [360, 1440]) {
-    test(`the rail line draws from the first stage to the last once it is half in view, at ${width}px`, async ({
-      page,
-    }) => {
+    test(`no rail line draws, and the capabilities section reveals once, at ${width}px`, async ({ page }) => {
       await openPage(page, width)
-      const hidden = await rail(page)
-      expect(hidden.state).toBe('hidden')
-      // Undrawn: scaled to nothing along its length (scaleX in the row at
-      // 1440, scaleY in the vertical list at 360).
-      for (const transform of hidden.lines) {
-        expect(transform).toBe(width === 1440 ? 'matrix(0, 0, 0, 1, 0, 0)' : 'matrix(1, 0, 0, 0, 0, 0)')
-      }
-
-      await page.locator('.lifecycle-rail').scrollIntoViewIfNeeded()
-      await expect.poll(async () => (await rail(page)).state).toBe('in')
-      const drawing = await rail(page)
-      // Five steps, each a fifth of --duration-rail-draw, one after the
-      // other: the whole line takes --duration-rail-draw (2 x slow).
-      const total = await tokenTime(page, '--duration-rail-draw')
-      expect(total).toBe(2 * (await tokenTime(page, '--duration-slow')))
-      drawing.lineDurations.forEach(([duration, delay], index) => {
-        expect(parseFloat(duration)).toBeCloseTo(total / 5, 5)
-        expect(parseFloat(delay)).toBeCloseTo((total / 5) * index, 5)
-      })
-      // The labels and markers never fade.
-      for (const [label, marker] of drawing.labels) expect([label, marker]).toEqual(['1', '1'])
-
+      expect(await railCount(page)).toBe(0)
+      expect(await page.locator('#capabilities').getAttribute('data-reveal-state')).toBe('hidden')
+      await page.locator('#capabilities .services__list').scrollIntoViewIfNeeded()
+      await expect.poll(() => page.locator('#capabilities').getAttribute('data-reveal-state')).toBe('in')
       await waitForMotion(page)
-      const drawn = await rail(page)
-      for (const transform of drawn.lines) expect(transform).toBe('none')
+      for (const section of await sectionStates(page)) {
+        if (section.id === 'capabilities') expectShown(section, 'after its reveal')
+      }
+      // Back to the top and down again: it does not hide or replay.
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
+      await page.locator('#capabilities .services__list').scrollIntoViewIfNeeded()
+      expect(await page.locator('#capabilities').getAttribute('data-reveal-state')).toBe('in')
     })
-  }
 
-  // The stage labels and markers are fully shown and at rest for the
-  // whole of the draw: from the frame the rail switches to "in" until
-  // every connector is drawn, each label's and marker's opacity, times
-  // every ancestor's, is 1 and no ancestor is transformed (owner decision
-  // on #61). The draw waits for the Services section's own reveal to end.
-  for (const width of [360, 1440]) {
-    for (const how of ['header link', 'scroll into view', 'wheel'] as const) {
-      test(`the rail labels and markers are fully shown throughout the draw, ${how}, at ${width}px`, async ({
-        page,
-      }) => {
-        await openPage(page, width)
-        expect((await rail(page)).state).toBe('hidden')
-        // Sample from the state change on, every frame, until the line is
-        // drawn.
-        await page.evaluate(() => {
-          const frame = document.querySelector('.lifecycle-rail-frame')!
-          const stages = [...frame.querySelectorAll('.lifecycle-rail__stage')]
-          const items = stages.flatMap((stage) => [
-            stage.querySelector('.lifecycle-rail__label')!,
-            stage.querySelector('.lifecycle-rail__marker')!,
-          ])
-          const samples: { opacity: number; transformed: number; undrawn: number }[] = []
-          ;(window as unknown as { __rail: typeof samples }).__rail = samples
-          const sample = () => {
-            let opacity = 1
-            let transformed = 0
-            for (const item of items) {
-              let own = 1
-              for (let element: Element | null = item; element; element = element.parentElement) {
-                const style = getComputedStyle(element)
-                own *= Number(style.opacity)
-                if (style.transform !== 'none') transformed++
-              }
-              opacity = Math.min(opacity, own)
-            }
-            const undrawn = stages
-              .slice(0, -1)
-              .filter((stage) => getComputedStyle(stage, '::after').transform !== 'none').length
-            samples.push({ opacity, transformed, undrawn })
-            return undrawn
-          }
-          const tick = () => {
-            if (sample() > 0) requestAnimationFrame(tick)
-          }
-          new MutationObserver((_records, observer) => {
-            if (frame.getAttribute('data-reveal-state') !== 'in') return
-            observer.disconnect()
-            tick()
-          }).observe(frame, { attributes: true, attributeFilter: ['data-reveal-state'] })
-        })
+    test(`a cell never moves on hover or focus, and transitions only its tint, at ${width}px`, async ({ page }) => {
+      await openPage(page, width)
+      const cells = page.locator('#capabilities .services__list > li')
+      await cells.first().scrollIntoViewIfNeeded()
+      await waitForMotion(page)
+      const rest = await cellState(page, 2)
+      const duration = await tokenTime(page, '--duration-card-hover')
+      expect(rest.transition[0]).toBe('background-color')
+      expect(parseFloat(rest.transition[1])).toBeCloseTo(duration, 5)
+      expect(rest.shadow).toBe('none')
 
-        if (how === 'header link') {
-          const toggle = page.getByRole('button', { name: 'Menu' })
-          if (await toggle.isVisible()) await toggle.click()
-          await page.getByRole('banner').getByRole('link', { name: 'Services', exact: true }).click()
-        } else if (how === 'scroll into view') {
-          await page.locator('.lifecycle-rail').scrollIntoViewIfNeeded()
-        } else {
-          // 150px a step, as a mouse wheel scrolls, until the line starts.
-          await page.mouse.move(width / 2, 400)
-          for (let step = 0; step < 60 && (await rail(page)).state !== 'in'; step++) {
-            await page.mouse.wheel(0, 150)
-            await page.evaluate(
-              () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
-            )
-          }
-        }
+      await cells.nth(2).hover()
+      await waitForMotion(page)
+      const hovered = await cellState(page, 2)
+      expect(hovered.box).toEqual(rest.box)
+      expect(hovered.transforms).toEqual(['none', 'none', 'none', 'none'])
+      expect(hovered.shadow).toBe('none')
 
-        await expect
-          .poll(() => page.evaluate(() => (window as unknown as { __rail: unknown[] }).__rail.length))
-          .toBeGreaterThan(0)
-        await waitForMotion(page)
-        const samples = await page.evaluate(
-          () => (window as unknown as { __rail: { opacity: number; transformed: number; undrawn: number }[] }).__rail,
-        )
-        // The first sample is the frame the draw starts in, with the line
-        // still undrawn; the last, the line drawn.
-        expect(samples[0].undrawn, JSON.stringify(samples)).toBeGreaterThan(0)
-        expect(samples.at(-1)!.undrawn, JSON.stringify(samples)).toBe(0)
-        for (const { opacity, transformed } of samples) {
-          expect({ opacity, transformed }, JSON.stringify(samples)).toEqual({ opacity: 1, transformed: 0 })
-        }
-      })
-    }
+      await page.mouse.move(0, 0)
+      // Keyboard focus, so :focus-visible matches.
+      await cells.nth(1).locator('a').focus()
+      await pressTab(page)
+      await expect(cells.nth(2).locator('a')).toBeFocused()
+      await waitForMotion(page)
+      const focused = await cellState(page, 2)
+      expect(focused.box).toEqual(rest.box)
+      expect(focused.transforms).toEqual(['none', 'none', 'none', 'none'])
+    })
   }
 
   test('print shows every section, with nothing scrolled into view', async ({ page }) => {
@@ -536,7 +477,7 @@ test.describe('section reveals and the rail line, no-preference', () => {
     expect((await sectionStates(page)).filter((section) => section.state === 'hidden')).not.toHaveLength(0)
     await page.emulateMedia({ media: 'print' })
     for (const section of await sectionStates(page)) expectShown(section, 'in print')
-    for (const transform of (await rail(page)).lines) expect(transform).toBe('none')
+    expect(await railCount(page)).toBe(0)
   })
 })
 

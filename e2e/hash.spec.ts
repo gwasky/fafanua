@@ -27,7 +27,7 @@ const MOTIONS = ['reduce', 'no-preference'] as const
 // Assessment (#71) is between the problem statement and Services.
 const SECTIONS = [
   '#data-trust-assessment',
-  '#services',
+  '#capabilities',
   '#managed-services',
   '#solutions',
   '#how-we-work',
@@ -264,7 +264,7 @@ test.describe('motion', () => {
       test.use({ reducedMotion: motion })
 
       for (const width of WIDTHS) {
-        for (const hash of ['#services', '#contact'] as const) {
+        for (const hash of ['#capabilities', '#contact'] as const) {
           test(`/${hash} jumps straight to it at ${width}px, ${motion}`, async ({ page }) => {
             await recordScroll(page)
             await openPath(page, `/${hash}`, width)
@@ -295,7 +295,7 @@ test.describe('motion', () => {
           ).toBe(motion === 'reduce' ? 'auto' : 'smooth')
 
           // The header is sticky, so showing the link scrolls nothing;
-          // the click then scrolls up from #contact to #services.
+          // the click then scrolls up from #contact to #capabilities.
           await showNav(page, 'Services')
           const from = await scrollY(page)
           await page.evaluate(() => {
@@ -313,8 +313,8 @@ test.describe('motion', () => {
           // settled, so wait until the page moves first, as links.spec.ts
           // does (#55). An instant jump has already moved.
           await expect.poll(() => scrollY(page)).not.toBe(from)
-          await expectLanded(page, '#services')
-          expect(await page.evaluate(() => location.hash)).toBe('#services')
+          await expectLanded(page, '#capabilities')
+          expect(await page.evaluate(() => location.hash)).toBe('#capabilities')
 
           // A smooth scroll passes through positions between the two.
           const to = await scrollY(page)
@@ -458,7 +458,7 @@ test.describe('keyboard focus', () => {
 
   const cases = [
     // The first card's title link (#67).
-    { path: '/#services', next: services[0].name },
+    { path: '/#capabilities', next: services[0].name },
     { path: '/#solutions', next: sectors[0] },
     // The section's one stop, its button (#71).
     { path: '/#data-trust-assessment', next: 'Book a data trust assessment' },
@@ -519,14 +519,14 @@ test.describe('history', () => {
       }) => {
         await openPage(page, 1440)
         await clickNav(page, 'Services')
-        await expectLanded(page, '#services')
+        await expectLanded(page, '#capabilities')
         const servicesLeftAt = await clickNav(page, 'Book a data trust assessment')
         await expectLanded(page, '#contact')
 
         await page.goBack()
-        await expect(page).toHaveURL(/\/#services$/)
+        await expect(page).toHaveURL(/\/#capabilities$/)
         if (browserName === 'webkit') {
-          // WebKit restores the position the #services entry was left at,
+          // WebKit restores the position the #capabilities entry was left at,
           // which was the top while the header was not sticky (before #54):
           // showNav scrolled up to it before the click. Measured at 1440 × 800, both motion
           // settings: WebKit 0, Chromium 705 (it scrolls to the fragment).
@@ -535,7 +535,7 @@ test.describe('history', () => {
           // when they chose the link, as on any other page.
           await expectRestored(page, servicesLeftAt)
         } else {
-          await expectLanded(page, '#services')
+          await expectLanded(page, '#capabilities')
         }
         const servicesRestoredAt = await scrollY(page)
 
@@ -545,16 +545,16 @@ test.describe('history', () => {
         expect(await scrollY(page)).toBe(0)
 
         await page.goForward()
-        await expect(page).toHaveURL(/\/#services$/)
+        await expect(page).toHaveURL(/\/#capabilities$/)
         if (browserName === 'webkit' && motion === 'reduce') {
           // Under reduce, WebKit again restores the position the entry was
           // left at by the back above (0). Under no-preference it lands on
-          // #services (705), as Chromium does under both. Measured at
+          // #capabilities (705), as Chromium does under both. Measured at
           // 1440 × 800; the static page behaves the same. The visitor sees
           // the page as they last left it.
           await expectRestored(page, servicesRestoredAt)
         } else {
-          await expectLanded(page, '#services')
+          await expectLanded(page, '#capabilities')
         }
 
         await page.goForward()
@@ -566,8 +566,8 @@ test.describe('history', () => {
         page,
         browserName,
       }) => {
-        await openPath(page, '/#services', 1440)
-        await expectLanded(page, '#services')
+        await openPath(page, '/#capabilities', 1440)
+        await expectLanded(page, '#capabilities')
         const servicesLeftAt = await clickNav(page, 'Book a data trust assessment')
         // Chromium can take several frames to start a smooth scroll, which
         // waitForScrollSettle (in expectLanded) would read as settled, so
@@ -577,15 +577,15 @@ test.describe('history', () => {
         await expectLanded(page, '#contact')
 
         await page.goBack()
-        await expect(page).toHaveURL(/\/#services$/)
+        await expect(page).toHaveURL(/\/#capabilities$/)
         if (browserName === 'webkit') {
           // As in the test above: WebKit restores the position the entry
-          // was left at (0, after showNav), Chromium lands on #services
+          // was left at (0, after showNav), Chromium lands on #capabilities
           // (705). Measured at 1440 × 800, both motion settings, and the
           // same on the static page.
           await expectRestored(page, servicesLeftAt)
         } else {
-          await expectLanded(page, '#services')
+          await expectLanded(page, '#capabilities')
         }
       })
 
@@ -621,8 +621,8 @@ test.describe('reload', () => {
       // fragment scroll to #contact, so either end state is accepted, but
       // not the top (#38, "Reload after scrolling away"). At 1440 × 800
       // #contact lands at the bottom limit, so the footer case can't tell
-      // the two apart; the #services case can.
-      for (const to of ['footer', '#services'] as const) {
+      // the two apart; the #capabilities case can.
+      for (const to of ['footer', '#capabilities'] as const) {
         test(`reloading after scrolling to ${to} ends where it was or on #contact at 1440px, ${motion}`, async ({
           page,
         }, testInfo) => {
@@ -635,7 +635,7 @@ test.describe('reload', () => {
           }, to)
           await waitForScrollSettle(page)
           const before = await scrollY(page)
-          if (to === '#services') expect(before).toBeGreaterThan(0)
+          if (to === '#capabilities') expect(before).toBeGreaterThan(0)
 
           await page.reload()
           await waitForFonts(page)

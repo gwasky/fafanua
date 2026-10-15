@@ -13,7 +13,8 @@ type ServiceCardProps = {
 // passed in. The stage number is the service's position in `services`,
 // hidden from screen readers (the list announces the position), so the
 // line reads as the stage alone. The arrow after the title is decorative
-// and shows on hover and focus; the link's name is the service's name.
+// and shows on hover and focus; the link's name is the service's name. A
+// no-break space joins it to the last word, so it never wraps alone.
 // The cell itself (the list item, styled in Services.css) carries the
 // hover and focus tint and the stretched link's overlay.
 function ServiceCard({ service }: ServiceCardProps) {
@@ -32,7 +33,7 @@ function ServiceCard({ service }: ServiceCardProps) {
         <a className="service-card__link" href={servicePath(service.id)}>
           {service.name}
           <span className="service-card__arrow" aria-hidden="true">
-            {' →'}
+            {'\u00A0→'}
           </span>
         </a>
       </h3>

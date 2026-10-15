@@ -66,9 +66,9 @@ test.describe('smooth scrolling', () => {
   test.use({ reducedMotion: 'no-preference' })
 
   const cases = [
-    { from: 'header', name: 'Services', hash: '#services' },
+    { from: 'header', name: 'Services', hash: '#capabilities' },
     { from: 'header', name: 'Book a data trust assessment', hash: '#contact' },
-    { from: 'footer', name: 'Services', hash: '#services' },
+    { from: 'footer', name: 'Services', hash: '#capabilities' },
   ] as const
 
   for (const width of [360, 1440]) {

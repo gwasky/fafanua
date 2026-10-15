@@ -127,6 +127,16 @@
   }
 }
 
+/* Under reduced motion nothing in a cell transitions, not even the
+   global 0.01ms (global.css): the tint, underline and arrow just change. */
+@media (prefers-reduced-motion: reduce) {
+  .services__cell,
+  .service-card__link,
+  .service-card__arrow {
+    transition-property: none;
+  }
+}
+
 /* Forced colours force the underline's colour, so at rest it is not
    drawn at all; hover and focus draw it. */
 @media (forced-colors: active) {

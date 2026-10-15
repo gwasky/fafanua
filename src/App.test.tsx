@@ -724,7 +724,7 @@ describe('App', () => {
     ])
     expect(headings[4].textContent).toBe(servicesIntro.heading)
     // Each title's arrow is aria-hidden; its text is the service's name.
-    expect(headings.slice(5, 11).map((heading) => heading.textContent!.replace(/ →$/, ''))).toEqual(
+    expect(headings.slice(5, 11).map((heading) => heading.textContent!.replace(/\u00A0→$/, ''))).toEqual(
       services.map((service) => service.name),
     )
     expect(headings[11].textContent).toBe(systemFlow.heading)

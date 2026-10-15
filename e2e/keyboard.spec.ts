@@ -3,11 +3,11 @@ import { assessmentHeading } from '../src/data/assessment.ts'
 import { managedServices, services } from '../src/data/services.ts'
 import { homepageSolutions } from '../src/data/solutions.ts'
 import { focusedName, focusStyle, openPage, pressTab, test, waitForFonts } from './fixtures.ts'
-import { disclosures, expectUnobscured, moreSectors, nav, sectors, SEQUENCE as FOCUS_ORDER, tabTo, walkFocus } from './focus.ts'
+import { cards, expectUnobscured, moreSectors, nav, sectors, SEQUENCE as FOCUS_ORDER, tabTo, walkFocus } from './focus.ts'
 
 // The automated part of the keyboard review: Tab order, focus rings,
 // the skip link, focus after in-page links, the Menu toggle, the
-// disclosures and focus from the mouse. Reduced motion keeps scrolling
+// capability titles, the Solutions rows and focus from the mouse. Reduced motion keeps scrolling
 // instant, so no test waits on an animation. Tab and Shift+Tab go
 // through pressTab, which presses the key with Alt in WebKit, so the
 // same stops are checked in both engines.
@@ -33,13 +33,30 @@ test.describe('Tab order', () => {
   // Services heading link and the Health row; #68 removes the hero's
   // secondary button, so the hero has one stop; #71 adds the Data Trust
   // Assessment's button after it; #73 leaves three Solutions rows and
-  // adds the footer's three "More sectors" links, so the count holds.
-  test('1440 has 38 stops', () => {
-    expect(SEQUENCE[1440]).toHaveLength(38)
+  // adds the footer's three "More sectors" links, so the count holds;
+  // #83 removes the six disclosures and restores the hero's text link.
+  test('1440 has 33 stops', () => {
+    expect(SEQUENCE[1440]).toHaveLength(33)
   })
 
-  test('360 with the menu closed has 34 stops', () => {
-    expect(SEQUENCE[360]).toHaveLength(34)
+  test('360 with the menu closed has 29 stops', () => {
+    expect(SEQUENCE[360]).toHaveLength(29)
+  })
+
+  // #83: hero button, the hero link, the assessment's button, then the six
+  // capability titles in lifecycle order.
+  test('goes hero button, hero link, assessment button, then the six titles', () => {
+    for (const width of [1440, 360]) {
+      const at = SEQUENCE[width].indexOf('Explore our capabilities')
+      expect(SEQUENCE[width].slice(at - 1, at + 8)).toEqual([
+        'Book a data trust assessment',
+        'Explore our capabilities',
+        'Book a data trust assessment',
+        ...services.map((service) => service.name),
+      ])
+      expect(SEQUENCE[width].filter((name) => name === 'Explore our capabilities')).toHaveLength(1)
+      expect(SEQUENCE[width].join('\n')).not.toContain('Typical engagements')
+    }
   })
 
   // #73: three Solutions rows, in W7's order, and the page ends with the
@@ -111,20 +128,22 @@ test.describe('skip link', () => {
 })
 
 test.describe('focus after in-page links', () => {
-  // The first service card's title link (#67), the first stop in Services.
-  const firstDisclosure = services[0].name
+  // The first capability title link (#67), the first stop in the
+  // capabilities section since the open grid (#83).
+  const firstTitle = services[0].name
   // The first Solutions row's button (#59).
   const firstSector = sectors[0]
 
   const cases = [
-    { from: 'header', link: 'Services', hash: '#services', next: firstDisclosure },
+    { from: 'header', link: 'Services', hash: '#capabilities', next: firstTitle },
     { from: 'header', link: 'Solutions', hash: '#solutions', next: firstSector },
     { from: 'header', link: 'How We Work', hash: '#how-we-work', next: 'Book a data trust assessment' },
     { from: 'header', link: 'About', hash: '#about', next: 'Book a data trust assessment' },
     { from: 'header', link: 'Book a data trust assessment', hash: '#contact', next: 'Book a data trust assessment' },
     { from: 'hero', link: 'Book a data trust assessment', hash: '#contact', next: 'Book a data trust assessment' },
+    { from: 'hero', link: 'Explore our capabilities', hash: '#capabilities', next: firstTitle },
     { from: 'assessment', link: 'Book a data trust assessment', hash: '#contact', next: 'Book a data trust assessment' },
-    { from: 'footer', link: 'Services', hash: '#services', next: firstDisclosure },
+    { from: 'footer', link: 'Services', hash: '#capabilities', next: firstTitle },
     { from: 'footer', link: 'Solutions', hash: '#solutions', next: firstSector },
   ] as const
 
@@ -150,7 +169,7 @@ test.describe('focus after in-page links', () => {
     })
   }
 
-  test('menu "Services" closes the menu, then Tab goes to the first card at 360px', async ({ page }) => {
+  test('menu "Services" closes the menu, then Tab goes to the first capability title at 360px', async ({ page }) => {
     await openPage(page, 360)
     const toggle = page.getByRole('button', { name: 'Menu' })
     await toggle.focus()
@@ -158,10 +177,10 @@ test.describe('focus after in-page links', () => {
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
     await tabTo(page, 'Services')
     await page.keyboard.press('Enter')
-    await expect(page).toHaveURL(/#services$/)
+    await expect(page).toHaveURL(/#capabilities$/)
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
 
-    await tabTo(page, firstDisclosure)
+    await tabTo(page, firstTitle)
   })
 
   test('menu "Solutions" closes the menu, then Tab goes to the first Solutions row at 360px', async ({ page }) => {
@@ -221,26 +240,25 @@ test.describe('Menu toggle at 360px', () => {
   })
 })
 
-test.describe('disclosures', () => {
+// The capability titles (#83): each cell's one stop, the title link,
+// with a ring; the section has no disclosures to toggle.
+test.describe('capability titles', () => {
   for (const width of [360, 1440]) {
-    test(`Enter and Space toggle each of the six at ${width}px`, async ({ page }) => {
+    test(`Tab reaches each of the six titles in order with a ring at ${width}px`, async ({ page }) => {
       await openPage(page, width)
-      for (const name of disclosures) {
-        const button = page.getByRole('button', { name, exact: true })
-        const panelId = await button.getAttribute('aria-controls')
-        const panel = page.locator(`[id="${panelId}"]`)
-        await button.focus()
-
-        await page.keyboard.press('Enter')
-        await expect(button).toHaveAttribute('aria-expanded', 'true')
-        await expect(panel).not.toHaveAttribute('hidden')
-        await expect(button).toBeFocused()
-
-        await page.keyboard.press('Space')
-        await expect(button).toHaveAttribute('aria-expanded', 'false')
-        await expect(panel).toHaveAttribute('hidden')
-        await expect(button).toBeFocused()
+      const section = page.locator('#capabilities')
+      await expect(section.getByRole('button')).toHaveCount(0)
+      await expect(section.locator('[aria-expanded]')).toHaveCount(0)
+      await page
+        .getByRole('region', { name: assessmentHeading })
+        .getByRole('link', { name: 'Book a data trust assessment' })
+        .focus()
+      for (const name of cards) {
+        await tabTo(page, name)
+        await expectRing(page, name)
+        await expectUnobscured(page, name)
       }
+      await tabTo(page, managedServices.heading)
     })
   }
 })
@@ -305,7 +323,9 @@ test.describe('Solutions rows', () => {
 })
 
 test.describe('mouse focus', () => {
-  test('a click on Book a data trust assessment or a disclosure shows no focus ring', async ({ page, browserName }) => {
+  // The disclosure this clicked left with the open grid (#83); a Solutions
+  // row's button is the page's other disclosure.
+  test('a click on Book a data trust assessment or a Solutions row shows no focus ring', async ({ page, browserName }) => {
     await openPage(page, 1440)
     const cta = page
       .getByRole('region', { name: 'Trusted Data. Better Decisions.' })
@@ -314,8 +334,9 @@ test.describe('mouse focus', () => {
     await expect(page).toHaveURL(/#contact$/)
     expect(await cta.evaluate((element) => element.matches(':focus-visible'))).toBe(false)
 
-    const disclosure = page.getByRole('button', { name: disclosures[0] })
-    await disclosure.click()
+    const disclosure = page.getByRole('button', { name: sectors[0], exact: true })
+    // On its title, as the row's summary sits over the rest of it.
+    await disclosure.locator('.solution-row__title').click()
     await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
 
     // Measured for #46 at 1440: in Chromium the clicked disclosure takes
@@ -323,9 +344,8 @@ test.describe('mouse focus', () => {
     // not focus a button: focus goes to <main> (tabIndex -1), which does
     // not match :focus-visible and has outline-style none. A visitor sees
     // no difference, as no ring shows in either engine, and Option+Tab
-    // straight after the click goes to the second card's "Typical
-    // engagements" button, the same stop as Chromium's Tab, so the keyboard
-    // continues from the clicked card.
+    // straight after the click goes to the same stop as Chromium's Tab, so
+    // the keyboard continues from the clicked row.
     let focused = disclosure
     if (browserName === 'webkit') {
       focused = page.getByRole('main')

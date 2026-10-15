@@ -29,7 +29,7 @@ import { expectFlow, flowDiagram, flowList, flowProblems, flowShapeAt, measureFl
 const NAV = ['Services', 'Solutions', 'How We Work', 'About', 'Book a data trust assessment'] as const
 const FOOTER_NAV = ['Services', 'Solutions', 'How We Work', 'About', 'Contact'] as const
 const HASH: Record<(typeof NAV)[number] | (typeof FOOTER_NAV)[number], string> = {
-  Services: '#services',
+  Services: '#capabilities',
   Solutions: '#solutions',
   'How We Work': '#how-we-work',
   About: '#about',
@@ -42,14 +42,15 @@ const HASH: Record<(typeof NAV)[number] | (typeof FOOTER_NAV)[number], string> =
 const ANCHORS = [
   '#main', // skip link
   '#top', // logo
-  '#services', // header nav
+  '#capabilities', // header nav
   '#solutions',
   '#how-we-work',
   '#about',
   '#contact', // header call to action
   '#contact', // hero "Book a data trust assessment", its one call to action (#68)
+  '#capabilities', // hero "Explore our capabilities", its text link (#83)
   '#contact', // the Data Trust Assessment's button (#71)
-  '#services', // footer nav
+  '#capabilities', // footer nav
   '#solutions',
   '#how-we-work',
   '#about',
@@ -768,7 +769,7 @@ const measureAssessment = (page: Page) =>
     const problemBottom = Math.max(
       ...[...positioning.querySelectorAll('p')].map((p) => p.getBoundingClientRect().bottom),
     )
-    const servicesFirst = document.querySelector('#services > .container')!.firstElementChild!
+    const servicesFirst = document.querySelector('#capabilities > .container')!.firstElementChild!
     const panelStyle = getComputedStyle(panel)
     const inner = {
       left: box(panel).left + parseFloat(panelStyle.paddingLeft),
@@ -887,7 +888,7 @@ const measureAssessment = (page: Page) =>
       paddingTop: parseFloat(getComputedStyle(section).paddingTop),
       positioningPaddingBottom: parseFloat(getComputedStyle(positioning).paddingBottom),
       paddingBottom: parseFloat(getComputedStyle(section).paddingBottom),
-      servicesPaddingTop: parseFloat(getComputedStyle(document.getElementById('services')!).paddingTop),
+      servicesPaddingTop: parseFloat(getComputedStyle(document.getElementById('capabilities')!).paddingTop),
       gapAbove: box(panel).top - problemBottom,
       gapBelow: box(servicesFirst).top - box(panel).bottom,
       containerChildren: container.children.length,
@@ -1599,7 +1600,7 @@ for (const width of WIDTHS) {
 
         // Nothing overflows its card.
         const overflowing = await page
-          .locator('#services .services__list > li > div')
+          .locator('#capabilities .services__list > li > div')
           .evaluateAll((boxes) =>
             boxes.flatMap((box) =>
               [...box.children]
@@ -2408,7 +2409,7 @@ for (const width of WIDTHS) {
         const containerStyle = getComputedStyle(container)
         const panel = container.firstElementChild!
         const panelStyle = getComputedStyle(panel)
-        const services = document.getElementById('services')!
+        const services = document.getElementById('capabilities')!
         const solutions = document.getElementById('solutions')!
         const pick = (selector: string) => box(panel.querySelector(selector)!)
         return {
@@ -2560,7 +2561,7 @@ for (const width of WIDTHS) {
     test(`one section padding above the managed-services panel at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       const m = await page.evaluate(() => {
-        const services = document.getElementById('services')!
+        const services = document.getElementById('capabilities')!
         const section = document.getElementById('managed-services')!
         const panel = section.querySelector('.surface-dark')!
         const servicesContent = services.querySelector(':scope > .container')!

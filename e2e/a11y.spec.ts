@@ -1,10 +1,10 @@
 import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { expectLanded, expectNoAxeViolations, openPage, scrollThrough, waitForMotion, waitForScrollSettle } from './fixtures.ts'
+import { expectLanded, expectNoAxeViolations, openPage, pressTab, scrollThrough, waitForMotion, waitForScrollSettle, WIDTHS } from './fixtures.ts'
 import { SEQUENCE, walkFocus } from './focus.ts'
 import { AXE_TAGS, formatViolations } from '../src/test/axe.ts'
 import { assessmentHeading } from '../src/data/assessment.ts'
-import { managedServices, services, servicesIntro } from '../src/data/services.ts'
+import { managedServices, servicesIntro } from '../src/data/services.ts'
 
 // Axe on the production preview in a real browser, where contrast,
 // target size and reflow can be measured. Each state is its own test, so
@@ -89,17 +89,24 @@ test.describe('axe, mobile menu open', () => {
   }
 })
 
-test.describe('axe, all Typical engagements disclosures open', () => {
-  for (const width of [320, 1440]) {
-    test(`six disclosures open at ${width}px`, async ({ page }, testInfo) => {
+// The disclosures these opened left with the open grid (#83): axe checks
+// the grid with a hovered cell and with a focused title instead.
+test.describe('axe, a hovered capability cell and a focused title', () => {
+  for (const width of WIDTHS) {
+    test(`hovered cell, then focused title, at ${width}px`, async ({ page }, testInfo) => {
       await openPage(page, width)
-      const buttons = page.getByRole('button', { name: /^Typical engagements for / })
-      await expect(buttons).toHaveCount(6)
-      for (const button of await buttons.all()) {
-        await button.click()
-        await expect(button).toHaveAttribute('aria-expanded', 'true')
-      }
+      await expect(page.getByRole('button', { name: /^Typical engagements/ })).toHaveCount(0)
+      const cells = page.locator('#capabilities .services__list > li')
+      await expect(cells).toHaveCount(6)
+      await cells.nth(4).scrollIntoViewIfNeeded()
+      await waitForScrollSettle(page)
+      await cells.nth(4).hover()
+      await expectNoAxeViolations(page, testInfo)
 
+      await page.mouse.move(0, 0)
+      await cells.nth(0).locator('a').focus()
+      await pressTab(page)
+      await expect(cells.nth(1).locator('a')).toBeFocused()
       await expectNoAxeViolations(page, testInfo)
     })
   }
@@ -120,9 +127,9 @@ test.describe('axe, all three Solutions rows open', () => {
   }
 })
 
-test.describe('axe, a service card hovered', () => {
+test.describe('axe, a capability cell hovered', () => {
   for (const width of [768, 1440]) {
-    test(`second card hovered at ${width}px`, async ({ page }, testInfo) => {
+    test(`second cell hovered at ${width}px`, async ({ page }, testInfo) => {
       await openPage(page, width)
       const card = page
         .getByRole('region', { name: servicesIntro.heading })
@@ -130,11 +137,20 @@ test.describe('axe, a service card hovered', () => {
         .filter({ has: page.getByRole('heading', { level: 3 }) })
         .nth(1)
       await card.hover()
-      // The active card's accent ring and glow (#66), once the transition
-      // has finished.
+      // The hovered cell's graphite 100 tint and its title's teal arrow
+      // (#83), once the transition has finished.
+      const tint = await page.evaluate(() => {
+        const probe = document.createElement('div')
+        probe.style.backgroundColor = 'var(--color-surface-alt)'
+        document.body.append(probe)
+        const value = getComputedStyle(probe).backgroundColor
+        probe.remove()
+        return value
+      })
+      await expect.poll(() => card.evaluate((item) => getComputedStyle(item).backgroundColor)).toBe(tint)
       await expect
-        .poll(() => card.evaluate((item) => getComputedStyle(item.firstElementChild!).boxShadow))
-        .toMatch(/0px 0px 0px 1px, .* 0px 4px 24px 0px$/)
+        .poll(() => card.evaluate((item) => getComputedStyle(item.querySelector('a [aria-hidden="true"]')!).opacity))
+        .toBe('1')
 
       await expectNoAxeViolations(page, testInfo)
     })
@@ -445,13 +461,16 @@ test.describe('axe, 200% browser zoom', () => {
     const header = page.getByRole('banner')
     expect(await header.evaluate((element) => getComputedStyle(element).position)).toBe('relative')
 
-    // The hero has no Services link (#68): the footer's lands the same.
-    await page.getByRole('contentinfo').getByRole('link', { name: 'Services' }).click()
-    await expect(page).toHaveURL(/#services$/)
-    await expectLanded(page, '#services')
+    // The hero's "Explore our capabilities" link (#83) lands the section.
+    await page
+      .getByRole('region', { name: 'Trusted Data. Better Decisions.' })
+      .getByRole('link', { name: 'Explore our capabilities' })
+      .click()
+    await expect(page).toHaveURL(/#capabilities$/)
+    await expectLanded(page, '#capabilities')
     const { headerBottom, top } = await page.evaluate(() => ({
       headerBottom: document.querySelector('header')!.getBoundingClientRect().bottom,
-      top: document.getElementById('services')!.getBoundingClientRect().top,
+      top: document.getElementById('capabilities')!.getBoundingClientRect().top,
     }))
     expect(headerBottom).toBeLessThanOrEqual(0)
     expect(Math.abs(top)).toBeLessThanOrEqual(1)
@@ -472,14 +491,15 @@ test.describe('reduced motion', () => {
 
   const durations = (page: Page) =>
     page.evaluate(() => {
-      const chevron = document.querySelector('.service-card__chevron')
+      // The service cards' chevrons left with the open grid (#83).
+      if (document.querySelector('.service-card__chevron')) throw new Error('A service card chevron is back')
       const sector = document.querySelector('.solution-row__chevron')
-      if (!chevron || !sector) throw new Error('No chevron found')
-      const card = document.querySelector('.service-card')
-      if (!card) throw new Error('No service card found')
+      if (!sector) throw new Error('No chevron found')
+      const card = document.querySelector('.services__list > li')
+      if (!card) throw new Error('No capability cell found')
       return {
         scroll: getComputedStyle(document.documentElement).scrollBehavior,
-        chevron: getComputedStyle(chevron).transitionDuration,
+        cardProperty: getComputedStyle(card).transitionProperty,
         sector: getComputedStyle(sector).transitionDuration,
         sectorProperty: getComputedStyle(sector).transitionProperty,
         sectorEasing: getComputedStyle(sector).transitionTimingFunction,
@@ -497,23 +517,31 @@ test.describe('reduced motion', () => {
     sector(page).evaluate((button) => getComputedStyle(button.querySelector('svg')!).translate)
 
   // One of each button style: the hero's one call to action (#68), the
-  // primary, and the first service card's disclosure, the secondary.
+  // primary, and the header's Menu toggle, the secondary, which shows
+  // below 64em (the service cards' disclosures, the secondary example
+  // before, left with the open grid, #83). The viewport is narrowed for
+  // the toggle, then put back.
   const buttonDurations = async (page: Page) => {
-    const disclosure = `Typical engagements for ${services[0].name}`
-    const links = {
-      'Book a data trust assessment': page
-        .getByRole('region', { name: 'Trusted Data. Better Decisions.' })
-        .getByRole('link', { name: 'Book a data trust assessment' }),
-      [disclosure]: page.getByRole('button', { name: disclosure }),
-    }
     const results: { name: string; duration: number }[] = []
-    for (const [name, link] of Object.entries(links)) {
+    const measure = async (name: string, link: ReturnType<Page['getByRole']>) => {
       await expect(link).toBeVisible()
       const duration = await link.evaluate(
         (element) => getComputedStyle(element).transitionDuration,
       )
       results.push({ name, duration: ms(duration) })
     }
+    await measure(
+      'Book a data trust assessment',
+      page
+        .getByRole('region', { name: 'Trusted Data. Better Decisions.' })
+        .getByRole('link', { name: 'Book a data trust assessment' }),
+    )
+    const size = page.viewportSize()!
+    await page.setViewportSize({ width: 800, height: size.height })
+    const toggle = page.getByRole('button', { name: 'Menu' })
+    await expect(toggle).toHaveClass(/button--secondary/)
+    await measure('Menu', toggle)
+    await page.setViewportSize(size)
     return results
   }
 
@@ -557,7 +585,8 @@ test.describe('reduced motion', () => {
       expect.soft(duration, `longest transition-duration of "${name}"`)
         .toBeLessThanOrEqual(0.01)
     }
-    expect(ms(result.chevron)).toBeLessThanOrEqual(0.01)
+    // The capability cells transition nothing at all (#83).
+    expect(result.cardProperty, 'capability cell').toBe('none')
     expect(ms(result.sector), 'Solutions chevron').toBeLessThanOrEqual(0.01)
 
     // The Solutions chevron does not move on hover, and still turns to
@@ -596,7 +625,7 @@ test.describe('reduced motion', () => {
     expect((await arrowAndHeader(page)).arrowTranslate, 'arrow on focus').toBe('none')
   })
 
-  test('no-preference: smooth scrolling, 150ms button transitions and the card-hover nudge', async ({ page }) => {
+  test('no-preference: smooth scrolling, 150ms button transitions and the cell-hover tint', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' })
     await openPage(page, 1440)
     const buttons = await buttonDurations(page)
@@ -605,11 +634,12 @@ test.describe('reduced motion', () => {
     expect(moved.scroll).toBe('smooth')
     // The Solutions chevron turns over --duration-fast (150ms), and on
     // hover nudges --cta-arrow-shift (4px) down, or up once open (#59),
-    // over the service cards' hover duration and easing (#61).
+    // over the capability cells' hover duration and easing (#61, #83).
     expect(moved.sectorProperty).toBe('transform, translate')
     expect(moved.sector).toBe(
       `${await tokenDuration(page, '--duration-fast')}, ${await tokenDuration(page, '--duration-card-hover')}`,
     )
+    expect(moved.cardProperty).toBe('background-color')
     expect(moved.card.split(', ')[0]).toBe(await tokenDuration(page, '--duration-card-hover'))
     expect(moved.sectorEasing.split(', ')[0]).toBe(moved.cardEasing.split(', ')[0])
     // Solutions reveals as it scrolls into view (#61): let it finish, so
@@ -712,15 +742,16 @@ test.describe('320px at 200% text size', () => {
     await noHorizontalScroll(page)
   })
 
-  test('no horizontal scroll with all disclosures open', async ({ page }) => {
-    for (const button of await page
-      .getByRole('button', { name: /^Typical engagements for / })
-      .all()) {
-      await button.click()
-      await expect(button).toHaveAttribute('aria-expanded', 'true')
+  // The disclosures this opened left with the open grid (#83): a hovered
+  // capability cell, with its arrow shown, instead.
+  test('no horizontal scroll with a capability cell hovered', async ({ page }) => {
+    await expect(page.getByRole('button', { name: /^Typical engagements/ })).toHaveCount(0)
+    const cells = page.locator('#capabilities .services__list > li')
+    for (const cell of await cells.all()) {
+      await cell.scrollIntoViewIfNeeded()
+      await cell.hover()
+      await noHorizontalScroll(page)
     }
-
-    await noHorizontalScroll(page)
   })
 
   test('no horizontal scroll with all three Solutions rows open', async ({ page }) => {
@@ -757,13 +788,14 @@ test.describe('a header taller than a quarter of the viewport is static', () => 
     }))
     expect(height).toBeGreaterThan(0.25 * viewport)
 
-    // The hero has no Services link (#68): the footer's lands the same.
+    // The footer's Services link lands the same section as the hero's
+    // "Explore our capabilities" link (#83).
     await page.getByRole('contentinfo').getByRole('link', { name: 'Services' }).click()
-    await expect(page).toHaveURL(/#services$/)
-    await expectLanded(page, '#services')
+    await expect(page).toHaveURL(/#capabilities$/)
+    await expectLanded(page, '#capabilities')
     const { headerBottom, top } = await page.evaluate(() => ({
       headerBottom: document.querySelector('header')!.getBoundingClientRect().bottom,
-      top: document.getElementById('services')!.getBoundingClientRect().top,
+      top: document.getElementById('capabilities')!.getBoundingClientRect().top,
     }))
     expect(headerBottom).toBeLessThanOrEqual(0)
     expect(Math.abs(top)).toBeLessThanOrEqual(1)
@@ -832,8 +864,7 @@ test.describe('browser text size 200%: the header falls back to the Menu', () =>
 
   // Every Tab and Shift+Tab stop is wholly visible below the sticky
   // header. The content breakpoints are in em too, so at 1024px with 32px
-  // text the service cards are one column and their disclosure buttons
-  // stay short (in three columns they were about 658px tall).
+  // text the capability grid is one column (#83).
   for (const motion of ['no-preference', 'reduce'] as const) {
     test(`Tab and Shift+Tab keep every stop wholly visible at 1024 x 800, ${motion}`, async ({ page }) => {
       // With motion allowed the sections below the first screen start
@@ -841,19 +872,18 @@ test.describe('browser text size 200%: the header falls back to the Menu', () =>
       await page.emulateMedia({ reducedMotion: motion })
       await openPage(page, 1024)
       expect((await header(page)).position).toBe('sticky')
-      // The section's first list is the lifecycle rail, the second the
-      // service cards.
+      // The section's first list is the capability grid (#83); there is no
+      // lifecycle rail.
       const lists = page.getByRole('region', { name: servicesIntro.heading }).getByRole('list')
       const lefts = (index: number) =>
         lists
           .nth(index)
           .locator(':scope > li')
           .evaluateAll((items) => items.map((item) => Math.round(item.getBoundingClientRect().left)))
-      expect(new Set(await lefts(1)).size, 'service card columns').toBe(1)
-      // The rail is vertical: one left edge, each stage below the last.
-      const rail = await lefts(0)
-      expect(rail, 'rail stages').toHaveLength(6)
-      expect(new Set(rail).size, 'rail columns').toBe(1)
+      const grid = await lefts(0)
+      expect(grid, 'capability cells').toHaveLength(6)
+      expect(new Set(grid).size, 'capability grid columns').toBe(1)
+      expect(await page.locator('.lifecycle-rail').count(), 'lifecycle rail').toBe(0)
 
       // Solutions is in its below-64em layout: each summary below its
       // row's title, not beside it (#59).
