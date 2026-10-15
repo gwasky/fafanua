@@ -68,7 +68,7 @@ Before a change is considered done, `npm run lint`, `npm run typecheck`, `npm te
 src/
   components/   One React component per file, with its CSS and tests
   data/         The site's copy
-    services.ts   The service cards' and Managed Services' copy
+    services.ts   The capability grid's and Managed Services' copy
     servicePages.ts  The service landing pages' copy
     solutions.ts  The Solutions rows
     solutionPages.ts The solution landing pages' copy
