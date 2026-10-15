@@ -15,6 +15,8 @@ import {
   positioningEyebrow,
   positioningFraming,
   positioningProblem,
+  positioningProblemChallenge,
+  positioningProblemLead,
   positioningTransition,
 } from './positioning.ts'
 
@@ -116,10 +118,27 @@ describe('positioning wording', () => {
     )
   })
 
-  it('exports exactly the eyebrow, framing, problem and transition, and not the right column\'s response (#70, #79)', () => {
+  it('keeps the problem as its lead and challenge joined by exactly one space (#80)', () => {
+    expect(positioningProblem).toBe(`${positioningProblemLead} ${positioningProblemChallenge}`)
+    expect(positioningProblemLead).toBe(
+      'Most organisations already have data, reporting and operational systems.',
+    )
+    expect(positioningProblemChallenge).toBe(
+      'The challenge is making the information flowing through them connected, consistent and trusted.',
+    )
+    expect(problem[0]).toBe(`${positioningProblemLead} ${positioningProblemChallenge}`)
+    for (const half of [positioningProblemLead, positioningProblemChallenge]) {
+      expect(half).toBe(half.trim())
+      expect(half).not.toMatch(/\s{2}/)
+    }
+  })
+
+  it('exports exactly the eyebrow, framing, problem, its two sentences and transition, and not the right column\'s response (#70, #79, #80)', () => {
     expect(Object.keys(positioning)).toEqual([
       'positioningEyebrow',
       'positioningFraming',
+      'positioningProblemLead',
+      'positioningProblemChallenge',
       'positioningProblem',
       'positioningTransition',
     ])
@@ -134,6 +153,11 @@ describe('positioning source', () => {
 
   it('holds its strings as literals and does not read the plan', () => {
     expect(code).not.toMatch(/\bimport\b|\brequire\(|\bfetch\(|readFile|plan\.md/)
+  })
+
+  it('holds the statement\'s two sentences as literals (#80)', () => {
+    expect(code).toContain(`export const positioningProblemLead =\n  '${positioningProblemLead}'`)
+    expect(code).toContain(`export const positioningProblemChallenge =\n  '${positioningProblemChallenge}'`)
   })
 })
 
@@ -154,6 +178,9 @@ describe('other source files', () => {
 
   it.each([
     ['the problem', positioningProblem],
+    // Its two sentences, the statement's two tones (W10, #80).
+    ['the problem\'s first sentence', positioningProblemLead],
+    ['the problem\'s second sentence', positioningProblemChallenge],
     // The eyebrow as a string literal: the words also name the block in
     // comments.
     ['the eyebrow', `'${positioningEyebrow}'`],

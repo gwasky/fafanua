@@ -29,8 +29,12 @@ const SERVICES = servicesIntro.heading
 // The Managed Services section is named by its h2, the plan V2 §10 heading.
 const MANAGED = managedServices.sectionHeading
 // The positioning section's problem (refinement plan §3), its statement,
-// between the eyebrow and framing and the transition (#79).
+// after the eyebrow and before the framing and the transition (#80). Its
+// two sentences are two spans (W10, #80), so it is found as the paragraph
+// whose whole text it is.
 const POSITIONING = positioningProblem
+const byPositioning = (_content: string, element: Element | null) =>
+  element?.tagName === 'P' && element.textContent === POSITIONING
 // The Data Trust Assessment section is named by its h2 (W4 in the trust
 // and lineage plan, #71; assessment.plan.test.ts checks it).
 const ASSESSMENT = assessmentHeading
@@ -95,7 +99,7 @@ describe('App', () => {
   it('renders the positioning section after the hero, then the Data Trust Assessment, then Services, inside main', () => {
     render(<App />)
     const hero = screen.getByRole('region', { name: HERO })
-    const lead = screen.getByText(POSITIONING)
+    const lead = screen.getByText(byPositioning)
     const positioning = hero.nextElementSibling
     const assessment = screen.getByRole('region', { name: ASSESSMENT })
     const services = screen.getByRole('region', { name: SERVICES })
@@ -105,15 +109,15 @@ describe('App', () => {
     expect(positioning).not.toBeNull()
     expect(positioning!.tagName).toBe('DIV')
     expect(positioning).toContainElement(lead)
-    // Four paragraphs, the eyebrow, the framing, the problem and the
-    // transition (#79), and nothing focusable (#70).
+    // Four paragraphs, the eyebrow, the problem, the framing and the
+    // transition (#79, in W10's order, #80), and nothing focusable (#70).
     expect([...positioning!.querySelectorAll('p')].map((p) => p.textContent)).toEqual([
       positioningEyebrow,
-      positioningFraming,
       positioningProblem,
+      positioningFraming,
       positioningTransition,
     ])
-    expect(positioning!.querySelectorAll('p')[2]).toBe(lead)
+    expect(positioning!.querySelectorAll('p')[1]).toBe(lead)
     expect(positioning!.querySelector('h1, h2, h3, a, button, [tabindex]')).toBeNull()
     expect(positioning).not.toHaveClass('surface-dark')
     expect(positioning).not.toHaveClass('surface-alt')
@@ -240,7 +244,7 @@ describe('App', () => {
 
     expect(children).toEqual([
       screen.getByRole('region', { name: HERO }),
-      screen.getByText(POSITIONING).closest('.positioning'),
+      screen.getByText(byPositioning).closest('.positioning'),
       screen.getByRole('region', { name: ASSESSMENT }),
       screen.getByRole('region', { name: SERVICES }),
       screen.getByRole('region', { name: MANAGED }),

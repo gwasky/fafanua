@@ -167,6 +167,10 @@
      width (about 1216px); between 1024 and 1216px the longest wrap. */
   --text-service-compact: 1.0625rem;
   --text-eyebrow: 0.8125rem;
+  /* The problem block's statement (W10 in the trust and lineage plan,
+     #80): 32 / 41 / 52px at 390 / 1024 / 1440px, and at least 64px with
+     200% page text, since its ends are in rem. */
+  --text-statement: clamp(2rem, 4vw, 3.25rem);
 
   --leading-display: 1.05;
   --leading-tight: 1.15;
@@ -235,6 +239,9 @@
   /* Layout */
   --container-max: 72rem;
   --container-narrow: 45rem;
+  /* The problem block's statement and row (W10, #80): five lines of the
+     statement at 52px, where --container-narrow takes seven. */
+  --container-statement: 56rem;
   --container-padding: clamp(var(--space-4), 5vw, var(--space-8));
 
   /* Breakpoints: 48em and 64em, which are 768px and 1024px at the

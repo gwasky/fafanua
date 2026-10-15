@@ -1,25 +1,32 @@
 /*
  * Positioning: the problem block, a light, spacious block between the dark
  * hero and the Data Trust Assessment (plan V2 §8; the homepage
- * enhancement plan §5 and §6, #79). Not a card: no border, fill, radius
- * or shadow, on the page background.
+ * enhancement plan §5 and §6, #79), laid out centred as W10 in the trust
+ * and lineage plan (#80), which replaces #79's two columns. Not a card:
+ * no border, fill, radius or shadow, on the page background.
  *
- * Stacked by default, in DOM order: the unnumbered eyebrow THE PROBLEM,
- * the framing line, the statement, then the transition. From 64em
- * (literal breakpoint, see the note in tokens.css) two top-aligned
- * columns, one third and two thirds, --space-16 apart, as the landing
- * pages' sections: the eyebrow and framing at the start, compact, and the
- * statement with the transition beneath it at the end, carrying the
- * weight. This replaces #70's one column, which left the statement
- * stranded on one side of wide screens.
+ * Top to bottom, in DOM order: the unnumbered eyebrow THE PROBLEM,
+ * centred between two short teal hairlines; the statement, centred, large
+ * and light, in two tones; then a row of the framing paragraph and the
+ * bridge line, centred under the statement and as wide as it. From 48em
+ * (literal breakpoint, see the note in tokens.css) the two sit side by
+ * side, left-aligned, with a vertical graphite 200 hairline between them,
+ * --space-8 from each; below it they stack, the hairline horizontal and
+ * --space-6 from each.
  *
- * The statement is large and light, in graphite 900 on paper (14.9:1),
- * capped at --container-narrow (45rem), a display measure of roughly 35
- * to 40 characters at --text-3xl, so it never stretches to an over-long
- * line. The framing and transition are secondary: --text-body-lg at
- * weight 400 in --color-text (graphite 900 on paper), no wider than
- * --measure. The eyebrow is SectionEyebrow's own style (graphite 600 on
- * paper, 6.0:1). No new pairing.
+ * Colours, all existing pairings on paper: the eyebrow keeps
+ * SectionEyebrow's graphite 600 (6.0:1); the statement's first sentence
+ * and the framing paragraph are --color-text-muted (graphite 600, 6.0:1),
+ * the statement's second sentence and the bridge line --color-heading
+ * (graphite 900, 14.9:1). The eyebrow's hairlines are --color-accent
+ * (teal 600, graphics only) and the row's divider --color-border; all are
+ * borders, so forced-colours mode keeps them, and none is text.
+ *
+ * The statement is --text-statement (32 / 41 / 52px at 390 / 1024 /
+ * 1440), weight 300, --leading-tight, balanced, no wider than
+ * --container-statement (56rem), which sets it in about five lines at
+ * 1440px. The bridge (--text-xl) is a step larger than the framing
+ * (--text-lg), both weight 400.
  *
  * Its --space-section bottom padding is the gap above the next section.
  * The Data Trust Assessment follows it (#71): TrustAssessment.css gives
@@ -35,40 +42,87 @@
 /* Breaks a word only if it cannot fit on a line of its own, rather than
    anywhere as .container allows. */
 .positioning__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  row-gap: var(--space-8);
-  align-items: start;
   overflow-wrap: break-word;
 }
 
-.positioning__framing,
-.positioning__transition {
-  max-width: var(--measure);
-  margin-block: 0;
-  color: var(--color-text);
-  font-size: var(--text-body-lg);
-  font-weight: var(--weight-regular);
-  text-wrap: pretty;
+/* The eyebrow, centred between two hairlines of equal length, which
+   shorten rather than let it overflow; the text never wraps. Local to
+   this block: SectionEyebrow itself is unchanged. */
+.positioning .section-eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-block: 0 var(--space-6);
+  white-space: nowrap;
+}
+
+.positioning .section-eyebrow::before,
+.positioning .section-eyebrow::after {
+  content: '';
+  flex: 0 1 var(--space-8);
+  min-width: 0;
+  border-block-start: var(--border-width) solid var(--color-accent);
 }
 
 .positioning__statement {
-  max-width: var(--container-narrow);
+  max-width: var(--container-statement);
   margin-block: 0;
+  margin-inline: auto;
   color: var(--color-heading);
-  font-size: var(--text-3xl);
+  font-size: var(--text-statement);
   font-weight: var(--weight-light);
   line-height: var(--leading-tight);
+  text-align: center;
   text-wrap: balance;
 }
 
-.positioning__transition {
-  margin-block-start: var(--space-6);
+.positioning__lead {
+  color: var(--color-text-muted);
 }
 
-@media (min-width: 64em) {
-  .positioning__layout {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-    column-gap: var(--space-16);
+.positioning__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--space-6);
+  max-width: var(--container-statement);
+  margin-block-start: var(--space-8);
+  margin-inline: auto;
+}
+
+.positioning__framing,
+.positioning__bridge {
+  margin-block: 0;
+  font-weight: var(--weight-regular);
+  text-align: start;
+  text-wrap: pretty;
+}
+
+.positioning__framing {
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+  line-height: var(--leading-normal);
+}
+
+.positioning__bridge {
+  padding-block-start: var(--space-6);
+  border-block-start: var(--border-width) solid var(--color-border);
+  color: var(--color-heading);
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+}
+
+@media (min-width: 48em) {
+  .positioning__row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: var(--space-8);
+    margin-block-start: var(--space-12);
+  }
+
+  .positioning__bridge {
+    padding-block-start: 0;
+    padding-inline-start: var(--space-8);
+    border-block-start: 0;
+    border-inline-start: var(--border-width) solid var(--color-border);
   }
 }

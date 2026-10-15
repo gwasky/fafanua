@@ -48,6 +48,8 @@ describe('V2 tokens', () => {
       '--text-service': 'clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem)',
       '--text-body-lg': 'clamp(1.0625rem, 1rem + 0.3vw, 1.25rem)',
       '--text-eyebrow': '0.8125rem',
+      '--text-statement': 'clamp(2rem, 4vw, 3.25rem)',
+      '--container-statement': '56rem',
       '--leading-display': '1.05',
       '--tracking-eyebrow': '0.08em',
       '--measure-display': '16ch',
@@ -85,6 +87,16 @@ describe('V2 tokens', () => {
       expect(px).toBeLessThanOrEqual(max)
     })
   }
+
+  // The problem block's statement (W10, #80): 32 / 41 / 52px at 390 /
+  // 1024 / 1440px.
+  it.each([
+    [390, 32],
+    [1024, 40.96],
+    [1440, 52],
+  ])('--text-statement at %ipx is about %fpx', (width, px) => {
+    expect(size('--text-statement', width)).toBeCloseTo(px, 1)
+  })
 
   it('keeps the eyebrow compact: smaller than body text', () => {
     expect(size('--text-eyebrow', 1440)).toBeLessThan(ROOT_PX)
