@@ -174,6 +174,76 @@ test.describe('axe, Data Trust Assessment in view (#71)', () => {
   }
 })
 
+test.describe('axe, Data Trust Assessment in forced colours (#81)', () => {
+  // Every rule but color-contrast, as for the Managed Services panel
+  // below (owner decision on #58: Chromium's emulation leaves
+  // -webkit-text-fill-color authored, which axe pairs with the forced
+  // background). Then every drawing W11 adds is checked as still drawn:
+  // the trace's rule, its rings, the rating markers, the tiles' rules, the
+  // selected chip's border and the tag's outline, each a non-zero solid
+  // border in a visible colour, and the hollow marker still hollow.
+  for (const width of [390, 1440]) {
+    test(`example in view, forced colours, at ${width}px`, async ({ page }, testInfo) => {
+      await page.emulateMedia({ forcedColors: 'active' })
+      await openPage(page, width)
+      const section = page.getByRole('region', { name: assessmentHeading })
+      const figure = section.getByRole('figure')
+      await figure.scrollIntoViewIfNeeded()
+      await expect(figure).toBeInViewport()
+
+      const results = await new AxeBuilder({ page })
+        .withTags(AXE_TAGS)
+        .disableRules(['color-contrast'])
+        .analyze()
+      expect(
+        results.violations,
+        `axe violations in "${testInfo.title}":\n${formatViolations(results.violations)}`,
+      ).toEqual([])
+
+      const drawn = await section.evaluate((root) => {
+        const border = (element: Element, pseudo: string | null, side: 'Top' | 'Left') => {
+          const style = getComputedStyle(element, pseudo)
+          return {
+            width: parseFloat(style.getPropertyValue(`border-${side.toLowerCase()}-width`)),
+            style: style.getPropertyValue(`border-${side.toLowerCase()}-style`),
+            color: style.getPropertyValue(`border-${side.toLowerCase()}-color`),
+            background: style.backgroundColor,
+            content: pseudo ? style.content : '""',
+          }
+        }
+        const figure = root.querySelector('figure')!
+        return {
+          rule: border(figure.querySelector(':scope > div')!, null, 'Left'),
+          rings: [...figure.querySelectorAll('ol > li')].map((step) => border(step, '::before', 'Top')),
+          markers: [...figure.querySelectorAll('dl li')].map((chip) => border(chip, '::before', 'Top')),
+          tileRules: [...root.querySelectorAll('h3 + ul > li')].map((tile) => border(tile, '::before', 'Top')),
+          selected: border(figure.querySelector(':scope > ul > li')!, null, 'Top'),
+          tag: border(root.querySelector('.section-eyebrow + p')!, null, 'Top'),
+          canvas: getComputedStyle(root).backgroundColor,
+        }
+      })
+      const detail = JSON.stringify(drawn)
+      const all = [drawn.rule, ...drawn.rings, ...drawn.markers, ...drawn.tileRules, drawn.selected, drawn.tag]
+      expect(drawn.rings, detail).toHaveLength(5)
+      expect(drawn.markers, detail).toHaveLength(3)
+      expect(drawn.tileRules, detail).toHaveLength(4)
+      for (const line of all) {
+        expect(line.content, detail).toBe('""')
+        expect(line.width, detail).toBeGreaterThan(0)
+        expect(line.style, detail).toBe('solid')
+        expect(line.color, detail).not.toBe('rgba(0, 0, 0, 0)')
+        expect(line.color, detail).not.toBe(drawn.canvas)
+      }
+      expect(drawn.selected.width, detail).toBe(2)
+      // The hollow marker is a ring narrower than its half-width, so its
+      // centre stays empty.
+      const hollow = drawn.markers[2]
+      expect(hollow.width, detail).toBe(2)
+      expect(hollow.background, detail).not.toBe(hollow.color)
+    })
+  }
+})
+
 test.describe('axe, Managed Services panel in view', () => {
   // The dark panel (#58) scrolled into view under the solid header.
   const showPanel = async (page: Page) => {
