@@ -108,6 +108,9 @@ const pairs: [string, string, Declarations][] = [
   ['--color-button-secondary-text', '--color-bg', root],
   ['--color-button-secondary-text', '--color-surface', root],
   ['--color-button-secondary-text', '--color-button-secondary-bg-hover', root],
+  // The tag in the teal tint (W11, #81): the Data Trust Assessment's
+  // engagement name and its selected metric chip.
+  ['--color-tag-text', '--color-tag-bg', root],
   // Inside .surface-dark (graphite 900, with graphite 800 raised surfaces).
   ...textTokens.map((text): [string, string, Declarations] => [
     text,
@@ -123,6 +126,7 @@ const pairs: [string, string, Declarations][] = [
   ['--color-button-text', '--color-button-bg-hover', surfaceDark],
   ['--color-button-secondary-text', '--color-bg', surfaceDark],
   ['--color-button-secondary-text', '--color-button-secondary-bg-hover', surfaceDark],
+  ['--color-tag-text', '--color-tag-bg', surfaceDark],
 ]
 
 // Resolved hex for each pair, so a failure names the colours and the
@@ -187,6 +191,17 @@ describe('semantic colour tokens', () => {
     expect(surfaceDark['--color-button-secondary-bg-hover']).not.toBe(
       root['--color-button-secondary-bg-hover'],
     )
+  })
+
+  it('pairs the tag text with teal 800 on teal 100, because teal 700 fails there (#81)', () => {
+    expect(resolve('--color-tag-text', root)).toBe(resolve('--teal-800', root))
+    expect(resolve('--color-tag-bg', root)).toBe(resolve('--teal-100', root))
+    expect(contrast(resolve('--teal-800', root), resolve('--teal-100', root))).toBeCloseTo(6.93, 1)
+    expect(contrast(resolve('--color-tag-text', surfaceDark), resolve('--color-tag-bg', surfaceDark))).toBeCloseTo(8.67, 1)
+    // Never used: teal 700 on teal 100 is 4.47:1.
+    const teal700 = contrast(resolve('--teal-700', root), resolve('--teal-100', root))
+    expect(teal700).toBeLessThan(4.5)
+    expect(teal700).toBeCloseTo(4.47, 1)
   })
 
   it('makes .on-dark the same reassignment as .surface-dark', () => {

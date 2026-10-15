@@ -8,7 +8,10 @@
 // and metrics label (§8) and the seven trace steps (§9). The button's
 // label is W1's, read from contact.ts (#68). The steps label is W4's
 // concept, retained by §9, so it is checked here only for the owner's
-// rules: labels only, no names, figures or amounts. The ?raw imports
+// rules: labels only, no names, figures or amounts. W11 (#81) adds five
+// labels, the tiles' and the owner row's value, checked against its "New
+// copy approved by the owner" list, and moves the last two of §9's seven
+// steps into the example's footer. The ?raw imports
 // resolve relative to this file and are never part of the production
 // bundle.
 import { describe, expect, it } from 'vitest'
@@ -20,6 +23,7 @@ import {
   assessmentAfterStatement,
   assessmentAfterSupporting,
   assessmentCtaLabel,
+  assessmentDeliverableLabels,
   assessmentDeliverables,
   assessmentDeliverablesHeading,
   assessmentEyebrow,
@@ -55,6 +59,21 @@ const deliverables = [
 
 // The enhancement plan (#79): the text of a `# N. ` section, up to the
 // next `# ` heading, and its one-line `> ` quotes, without bold markers.
+// W11 (#81): its "New copy approved by the owner" list, the quoted
+// strings on each `- Label: ` line.
+const w11Start = doc.indexOf('\n### W11. Data Trust Assessment section layout (owner proposal)\n')
+const w11 = doc.slice(w11Start, doc.indexOf('\n## ', w11Start + 1))
+const newCopyAt = w11.indexOf('\n**New copy approved by the owner in this item**')
+
+function w11Quotes(label: string): string[] {
+  const line = w11.slice(newCopyAt).match(new RegExp(`^- ${label}: (.+)$`, 'm'))
+  if (!line) throw new Error(`"- ${label}:" not found in W11`)
+  return [...line[1].matchAll(/"([^"]+)"/g)].map((match) => match[1])
+}
+
+const w11TileLabels = w11Quotes('Tile labels')
+const w11OwnerValue = w11Quotes('Owner row value')
+
 const enhancementDoc = enhancement.replace(/\r\n/g, '\n')
 
 function enhancementSection(number: number): string {
@@ -99,6 +118,19 @@ describe('enhancement plan parser (#79)', () => {
   })
 })
 
+describe('W11 parser (#81)', () => {
+  it('finds W11, its four tile labels and its owner row value', () => {
+    expect(w11Start).toBeGreaterThan(-1)
+    expect(newCopyAt).toBeGreaterThan(-1)
+    expect(w11TileLabels).toHaveLength(4)
+    expect(w11OwnerValue).toHaveLength(1)
+    for (const text of [...w11TileLabels, ...w11OwnerValue]) {
+      expect(text).not.toBe('')
+      expect(text).not.toMatch(/[*"]/)
+    }
+  })
+})
+
 describe('W4 parser', () => {
   it('finds W4 and its fields', () => {
     expect(w4Start).toBeGreaterThan(-1)
@@ -124,6 +156,15 @@ describe('Data Trust Assessment wording', () => {
   it('uses the W4 "What you receive" label and its four deliverables, in order', () => {
     expect(w4).toContain(`\n**${assessmentDeliverablesHeading}:**\n`)
     expect(assessmentDeliverables).toEqual(deliverables)
+  })
+
+  it('labels the four deliverable tiles with W11\'s new copy, each label naming its deliverable (#81)', () => {
+    expect(assessmentDeliverableLabels).toEqual(['Lineage map', 'Trust scorecard', 'Shared definitions', 'Fix list'])
+    expect(assessmentDeliverableLabels).toEqual(w11TileLabels)
+    expect(assessmentDeliverableLabels).toHaveLength(assessmentDeliverables.length)
+    assessmentDeliverableLabels.forEach((label, i) => {
+      expect(assessmentDeliverables[i].toLowerCase(), label).toContain(label.toLowerCase())
+    })
   })
 
   it('uses the W4 "After the assessment" label, kept by the enhancement plan §11', () => {
@@ -203,11 +244,21 @@ describe('illustrative example', () => {
     expect(s8[2]).toBe('Sample metrics')
   })
 
-  it('has exactly the caption, the two list labels, the metrics, the steps and the ratings, and no value or finding field (#77)', () => {
-    expect(Object.keys(lineageExample)).toEqual(['caption', 'metricsLabel', 'metrics', 'stepsLabel', 'steps', 'ratings'])
-    expect(typeof lineageExample.caption).toBe('string')
-    expect(typeof lineageExample.metricsLabel).toBe('string')
-    expect(typeof lineageExample.stepsLabel).toBe('string')
+  it('has exactly the caption, the two list labels, the metrics, the steps, the footer\'s labels and owner role and the ratings, and no value or finding field (#77, #81)', () => {
+    expect(Object.keys(lineageExample)).toEqual([
+      'caption',
+      'metricsLabel',
+      'metrics',
+      'stepsLabel',
+      'steps',
+      'ownerLabel',
+      'ownerRole',
+      'ratingLabel',
+      'ratings',
+    ])
+    for (const key of ['caption', 'metricsLabel', 'stepsLabel', 'ownerLabel', 'ownerRole', 'ratingLabel'] as const) {
+      expect(typeof lineageExample[key]).toBe('string')
+    }
     for (const list of [lineageExample.metrics, lineageExample.steps, lineageExample.ratings]) {
       expect(Array.isArray(list)).toBe(true)
       for (const item of list) expect(typeof item).toBe('string')
@@ -234,21 +285,23 @@ describe('illustrative example', () => {
     expect(lineageExample.metrics).toBe(exampleMetrics)
   })
 
-  it('traces them through the enhancement plan §9\'s seven-step sequence, in order (#79)', () => {
-    expect(lineageExample.steps).toEqual([
-      'Report',
-      'Definition',
-      'Calculation',
-      'Data model',
-      'Source system',
-      'Owner',
-      'Trust rating',
-    ])
-    expect(lineageExample.steps).toEqual(s9Sequence)
-    // The labels are text only: the direction is drawn in CSS.
-    for (const step of lineageExample.steps) expect(step).not.toMatch(/[→↓←↑]/)
+  it('traces them through the enhancement plan §9\'s seven-step sequence, in order: five steps, then the footer\'s two labels (#79, #81)', () => {
+    const { steps, ownerLabel, ratingLabel } = lineageExample
+    expect(steps).toEqual(['Report', 'Definition', 'Calculation', 'Data model', 'Source system'])
+    expect(ownerLabel).toBe('Owner')
+    expect(ratingLabel).toBe('Trust rating')
+    expect([...steps, ownerLabel, ratingLabel]).toEqual(s9Sequence)
+    // The labels are text only: the rule and rings are drawn in CSS.
+    for (const step of [...steps, ownerLabel, ratingLabel]) expect(step).not.toMatch(/[→↓←↑]/)
     // W4's five steps, which the sequence supersedes.
     expect(w4).toContain('through its definition, calculation, source systems, owner and trust rating')
+  })
+
+  it('gives the owner row W11\'s value, a role, never a person, team or finding (#81)', () => {
+    expect(lineageExample.ownerRole).toBe('One role per metric')
+    expect([lineageExample.ownerRole]).toEqual(w11OwnerValue)
+    // The key names a role, never a value or finding.
+    expect(Object.keys(lineageExample)).not.toContain('ownerValue')
   })
 
   it('lists the scorecard\'s three rating categories and gives none of them to a metric', () => {
@@ -264,8 +317,8 @@ describe('illustrative example', () => {
   })
 
   it('walks every string in the example: letters, spaces and full stops only, no currency (#77)', () => {
-    expect(exampleStrings).toHaveLength(1 + 1 + 5 + 1 + 7 + 3)
-    expect(exampleStrings).toHaveLength(18)
+    expect(exampleStrings).toHaveLength(1 + 1 + 5 + 1 + 5 + 1 + 1 + 1 + 3)
+    expect(exampleStrings).toHaveLength(19)
     for (const text of exampleStrings) {
       expect(text).toMatch(/^[A-Za-z .]+$/)
       expect(text).not.toMatch(/\d|[$€£¥%]/)
@@ -328,6 +381,8 @@ describe('other source files', () => {
     ['the eyebrow', `'${assessmentEyebrow}'`],
     ['the engagement name', `'${assessmentName}'`],
     ...assessmentDeliverables.map((item, index) => [`deliverable ${index + 1}`, item]),
+    // W11's tile labels as string literals (#81).
+    ...assessmentDeliverableLabels.map((label) => [`the tile label ${label}`, `'${label}'`]),
   ])('do not hold %s', (_name, text) => {
     for (const [file, source] of sources) {
       expect(source.includes(text), `${file} holds "${text}"`).toBe(false)
@@ -350,7 +405,12 @@ describe('other source files', () => {
     ['the steps label', lineageExample.stepsLabel],
     ...lineageExample.metrics.map((metric) => [`the metric ${metric}`, metric]),
     ...lineageExample.steps.map((step) => [`the step ${step}`, step]),
+    ['the footer label Owner', lineageExample.ownerLabel],
+    ['the owner role', lineageExample.ownerRole],
+    ['the footer label Trust rating', lineageExample.ratingLabel],
     ...lineageExample.ratings.map((rating) => [`the rating ${rating}`, rating]),
+    // W11's tile labels (#81).
+    ...assessmentDeliverableLabels.map((label) => [`the tile label ${label}`, label]),
   ])('components do not hold %s', (_name, text) => {
     // As a whole word or phrase: the step "Report" (#79) is part of
     // "Reporting", a Solutions landing page heading in SolutionPage.tsx.
