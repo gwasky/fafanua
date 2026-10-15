@@ -1920,6 +1920,13 @@ for (const width of WIDTHS) {
             .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
             .toBe('32px')
           await waitForFonts(page)
+          // The section's own text has doubled too, not only the root's
+          // (a rare Chromium run measured the section at 100%, #82).
+          await expect
+            .poll(() =>
+              page.evaluate(() => getComputedStyle(document.querySelector('#data-trust-assessment .section-eyebrow')!).fontSize),
+            )
+            .toBe('26px')
         }
         const m = await measureAssessment(page)
         const t = m.tokens
