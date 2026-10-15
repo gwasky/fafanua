@@ -92,7 +92,7 @@ This supersedes the sample figure "Monthly revenue by branch": the example now s
 
 **Owner update (2026-10-14, #79):** `_docs/fafanua-data-trust-assessment-homepage-enhancement.md` supersedes the caption (now "Illustrative example"), the metrics label (now "Example leadership metrics") and the five steps (now its seven-step sequence, Report to Trust rating), and replaces the "After the assessment" line with its statement and supporting copy. It also adds the START WITH TRUST eyebrow and the DATA TRUST ASSESSMENT engagement name above the heading.
 
-**Owner update (2026-10-15):** W11 supersedes the layout of this section and of its illustrative example.
+**Owner update (2026-10-15):** W11 supersedes the layout of this section and of its illustrative example. The Data Trust Assessment Dark Panel plan (#82) now supersedes W11.
 
 **Acceptance:** the section sits directly after the problem section. The button uses the W1 label. Copy lives in a `src/data/` file, not inside components. The section passes the axe checks.
 
@@ -164,6 +164,8 @@ Added by the owner on 2026-10-15. Layout only: no copy, data, section order or l
 - [ ] No tagline and no image are added. The hero `h1`, the promise and the SEO plan's protected phrases are unchanged.
 
 ### W11. Data Trust Assessment section layout (owner proposal)
+
+**Superseded (2026-10-15, #82):** by `_docs/fafanua-data-trust-assessment-dark-panel-plan.md` in full. Do not implement W11.
 
 Added by the owner on 2026-10-15. The owner's layout proposal supersedes, for this section only:
 
@@ -272,7 +274,7 @@ Items marked with a G-number depend on that approval. Without it, keep the curre
 
 1. Hero (W1, W2)
 2. Problem statement (W3, laid out per W10)
-3. Data Trust Assessment (W4, laid out per W11)
+3. Data Trust Assessment (W4, laid out per `_docs/fafanua-data-trust-assessment-dark-panel-plan.md`, which supersedes W11)
 4. AI readiness (W5, moves here only with G8)
 5. How we work (G2)
 6. Connected diagram (G3 removes the cards above it)
@@ -331,7 +333,7 @@ Create these issues in order and follow `_docs/process.md` for each.
 6. Homepage sectors: Health, Financial services, Education (W7)
 7. Closing section supporting line (W9)
 8. About founder block, blocked until the owner supplies content (W8)
-9. Data Trust Assessment section layout (W11)
+9. Data Trust Assessment section layout (W11, built in #81; superseded by the dark panel plan, #82)
 10. One issue per ticked item in section 5 (G1 to G9)
 
 ## 11. Definition of done
