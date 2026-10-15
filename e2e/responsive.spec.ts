@@ -6,6 +6,7 @@ import {
   WIDTHS,
   expectLanded,
   linkName,
+  pressTab,
   test,
   waitForFonts,
   waitForLanding,
@@ -406,32 +407,30 @@ async function expectMenuClosed(page: Page) {
 
 const currentHash = (page: Page) => page.evaluate(() => location.hash)
 
-type CardBox = {
-  /** The item's top, which groups the cards into grid rows. */
+type CellBox = {
+  /** The cell's top, which groups the cells into grid rows. */
   row: number
-  /** Card edges, relative to the top left of the card list. */
+  /** Cell edges, relative to the top left of the grid. */
   top: number
   left: number
   width: number
   height: number
   bottom: number
-  /** Offsets from the card's top border edge. */
-  title: number
-  label: number
-  description: number
-  tags: number
-  toggle: number
-  titleHeight: number
-  titleLineHeight: number
-  titleLines: number
-  toggleWidth: number
-  toggleBelow: number
-  listGap: number | null
-  listBelow: number | null
+  /** The bottom of its tags line, relative to the grid's top. */
+  tagsBottom: number
+  /** Its content's left edge, in the viewport. */
+  contentLeft: number
+  /** Its border widths: top, right, bottom, left. */
+  borders: number[]
+  borderColors: string[]
+  padding: number[]
+  background: string
+  radius: string
+  shadow: string
 }
 
-// The card grid: the section's one list with headings in it (the
-// lifecycle rail and the tag lists have none).
+// The capability grid (#83): the section's one list with headings in it
+// (the system diagram's lists have none).
 const serviceList = (page: Page) =>
   servicesRegion(page)
     .getByRole('list')
@@ -483,48 +482,33 @@ const managedOverflow = (page: Page, { words = true } = {}) =>
     }, words)
 
 /**
- * Measures each service card (the bordered box inside each item) relative
- * to the card list, with the title, lifecycle label and toggle offsets
- * from the card's top edge. Measuring from the list rather than the page
- * keeps the values independent of anything above it: in WebKit, the
- * Services intro heading can still reflow from two lines to one after the
- * font has loaded, which moves the whole list down.
+ * Measures each capability cell (the list item, #83) relative to the
+ * grid. Measuring from the list rather than the page keeps the values
+ * independent of anything above it: in WebKit, the intro heading can
+ * still reflow after the font has loaded, which moves the whole list down.
  */
-const measureCards = (page: Page): Promise<CardBox[]> =>
+const measureCells = (page: Page): Promise<CellBox[]> =>
   serviceList(page).evaluate((list) => {
     const origin = list.getBoundingClientRect()
     return [...list.children].map((item) => {
-      const card = item.firstElementChild!
-      const box = card.getBoundingClientRect()
-      const part = (selector: string) => card.querySelector(selector)!
-      const rect = (selector: string) => part(selector).getBoundingClientRect()
-      const title = rect('h3')
-      const toggle = rect('button')
-      // The engagements panel has an id; the tag list does not.
-      const panel = part('ul[id]') as HTMLElement
-      const panelBox = panel.hidden ? null : panel.getBoundingClientRect()
-      const range = document.createRange()
-      range.selectNodeContents(part('h3'))
+      const box = item.getBoundingClientRect()
+      const style = getComputedStyle(item)
+      const sides = ['Top', 'Right', 'Bottom', 'Left'] as const
       return {
-        row: Math.round(item.getBoundingClientRect().top - origin.top),
+        row: Math.round(box.top - origin.top),
         top: box.top - origin.top,
         left: box.left - origin.left,
         width: box.width,
         height: box.height,
         bottom: box.bottom - origin.top,
-        title: title.top - box.top,
-        label: rect('h3 + p').top - box.top,
-        description: rect('h3 + p + p').top - box.top,
-        tags: rect('ul:not([id])').top - box.top,
-        toggle: toggle.top - box.top,
-        titleHeight: title.height,
-        titleLineHeight: parseFloat(getComputedStyle(part('h3')).lineHeight),
-        titleLines: new Set([...range.getClientRects()].map((line) => Math.round(line.top)))
-          .size,
-        toggleWidth: toggle.width,
-        toggleBelow: box.bottom - toggle.bottom,
-        listGap: panelBox && panelBox.top - toggle.bottom,
-        listBelow: panelBox && box.bottom - panelBox.bottom,
+        tagsBottom: item.querySelector('.service-card__tags')!.getBoundingClientRect().bottom - origin.top,
+        contentLeft: item.querySelector('.service-card__stage')!.getBoundingClientRect().left,
+        borders: sides.map((side) => parseFloat(style.getPropertyValue(`border-${side.toLowerCase()}-width`))),
+        borderColors: sides.map((side) => style.getPropertyValue(`border-${side.toLowerCase()}-color`)),
+        padding: sides.map((side) => parseFloat(style.getPropertyValue(`padding-${side.toLowerCase()}`))),
+        background: style.backgroundColor,
+        radius: style.borderRadius,
+        shadow: style.boxShadow,
       }
     })
   })
@@ -540,7 +524,7 @@ async function waitForStableLayout(page: Page) {
       const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
       const boxes = () =>
         JSON.stringify(
-          [...section.querySelectorAll('h2, h3, p, li > div, button')].map((element) => {
+          [...section.querySelectorAll('h2, h3, p, li, button')].map((element) => {
             const box = element.getBoundingClientRect()
             return [box.left, box.top + scrollY, box.width, box.height]
           }),
@@ -558,10 +542,10 @@ async function waitForStableLayout(page: Page) {
     .toBe(true)
 }
 
-/** The cards grouped into grid rows, in order, as indexes into the list. */
-function cardRows(cards: CardBox[]) {
+/** The cells grouped into grid rows, in order, as indexes into the list. */
+function cellRows(cells: CellBox[]) {
   const rows = new Map<number, number[]>()
-  cards.forEach((card, i) => rows.set(card.row, [...(rows.get(card.row) ?? []), i]))
+  cells.forEach((cell, i) => rows.set(cell.row, [...(rows.get(cell.row) ?? []), i]))
   return [...rows.values()]
 }
 
@@ -1130,9 +1114,6 @@ const measureAssessment = (page: Page) =>
     }
   })
 
-const serviceToggles = (page: Page) =>
-  page.getByRole('button', { name: /^Typical engagements for / })
-
 for (const width of WIDTHS) {
   test.describe('no horizontal scroll', () => {
     test(`page as loaded, everything closed, at ${width}px`, async ({ page }, testInfo) => {
@@ -1141,16 +1122,18 @@ for (const width of WIDTHS) {
       await expectNoHorizontalScroll(page)
     })
 
-    test(`all six Typical engagements disclosures open at ${width}px`, async ({ page }, testInfo) => {
+    // The disclosures this opened left with the open grid (#83): each
+    // capability cell hovered, its arrow shown, instead.
+    test(`each capability cell hovered at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
-      const buttons = page.getByRole('button', { name: /^Typical engagements for / })
-      await expect(buttons).toHaveCount(6)
-      for (const button of await buttons.all()) {
-        await button.click()
-        await expect(button).toHaveAttribute('aria-expanded', 'true')
+      await expect(page.getByRole('button', { name: /^Typical engagements/ })).toHaveCount(0)
+      const cells = serviceList(page).locator(':scope > li')
+      await expect(cells).toHaveCount(6)
+      for (const cell of await cells.all()) {
+        await cell.scrollIntoViewIfNeeded()
+        await cell.hover()
+        await expectNoHorizontalScroll(page)
       }
-
-      await expectNoHorizontalScroll(page)
     })
 
     test(`all three Solutions rows open at ${width}px`, async ({ page }, testInfo) => {
@@ -1337,7 +1320,8 @@ for (const width of WIDTHS) {
 
     // The dark hero (#55): from 64em 80-90% of the viewport's height
     // (85svh); below it, its natural height, with its one call to action
-    // on the first screen (the projects' viewport is 800px tall).
+    // on the first screen (the projects' viewport is 800px tall), then
+    // its text link to the capabilities (#83).
     test(`hero height and call to action at scroll 0 at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       const m = await page.evaluate(() => {
@@ -1364,8 +1348,12 @@ for (const width of WIDTHS) {
       } else {
         expect(m.minBlockSize, detail).toBe('0px')
       }
-      expect(m.links, detail).toBe(1)
+      expect(m.links, detail).toBe(2)
       expect(m.primaryBottom, detail).toBeLessThanOrEqual(m.viewport)
+      await expect(heroRegion(page).getByRole('link', { name: 'Explore our capabilities', exact: true })).toHaveAttribute(
+        'href',
+        '#capabilities',
+      )
       await expect(heroRegion(page).getByRole('link', { name: 'Book a data trust assessment', exact: true })).toBeInViewport({ ratio: 1 })
     })
 
@@ -1380,451 +1368,163 @@ for (const width of WIDTHS) {
       expect(heavy).toEqual([])
     })
 
-    test(`service cards in ${columns(width)} ${columns(width) === 1 ? 'column' : 'columns'} at ${width}px`, async ({ page }, testInfo) => {
+    test(`capability grid in ${columns(width)} ${columns(width) === 1 ? 'column' : 'columns'} at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
-      const cards = servicesRegion(page)
-        .getByRole('listitem')
-        .filter({ has: page.getByRole('heading', { level: 3 }) })
-      await expect(cards).toHaveCount(6)
+      const cells = serviceList(page).locator(':scope > li')
+      await expect(cells).toHaveCount(6)
 
       const lefts = new Set<number>()
-      for (const card of await cards.all()) {
-        const box = await card.boundingBox()
-        if (!box) throw new Error('A service card has no box')
+      for (const cell of await cells.all()) {
+        const box = await cell.boundingBox()
+        if (!box) throw new Error('A capability cell has no box')
         lefts.add(Math.round(box.x))
       }
       expect(lefts.size, `left edges ${[...lefts].join(', ')}`)
         .toBe(columns(width))
     })
 
-    test(`service cards fit their text, with 44px toggles, all disclosures open, at ${width}px`, async ({ page }, testInfo) => {
-      await open(page, testInfo, width)
-      const buttons = page.getByRole('button', { name: /^Typical engagements for / })
-      await expect(buttons).toHaveCount(6)
-      for (const button of await buttons.all()) {
-        await button.click()
-        await expect(button).toHaveAttribute('aria-expanded', 'true')
-        const box = await button.boundingBox()
-        if (!box) throw new Error('A toggle has no box')
-        expect(box.width, 'toggle width').toBeGreaterThanOrEqual(44)
-        expect(box.height, 'toggle height').toBeGreaterThanOrEqual(44)
-      }
+    // Each cell fits its text with 100% and 200% page text, and the
+    // stretched title link makes the whole cell its hit area (#83), far
+    // over 44px.
+    for (const text of ['100%', '200%'] as const) {
+      test(`capability cells fit their text, each a title link's hit area of at least 44px, with ${text} text, at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        if (text !== '100%') {
+          await page.addStyleTag({ content: `html { font-size: ${text}; }` })
+          await expect
+            .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
+            .toBe('32px')
+        }
+        await waitForStableLayout(page)
+        const m = await serviceList(page).evaluate((list) => {
+          const section = list.closest('section')!.querySelector(':scope > .container')!.getBoundingClientRect()
+          const cells = [...list.children]
+          return {
+            overflowing: [...list.closest('section')!.querySelectorAll('.services__intro *, .services__list *')]
+              .filter((element) => {
+                const box = element.getBoundingClientRect()
+                const cell = element.closest('li')?.getBoundingClientRect()
+                return (
+                  element.scrollWidth > element.clientWidth + 1 ||
+                  box.right > section.right + 1 ||
+                  box.left < section.left - 1 ||
+                  (cell !== undefined && (box.right > cell.right + 1 || box.bottom > cell.bottom + 1))
+                )
+              })
+              .map((element) => `${element.tagName}.${element.className}: ${element.textContent?.slice(0, 30)}`),
+            hits: cells.map((cell) => {
+              const link = cell.querySelector('a')!
+              const overlay = getComputedStyle(link, '::after')
+              const box = cell.getBoundingClientRect()
+              return {
+                position: overlay.position,
+                inset: [overlay.top, overlay.right, overlay.bottom, overlay.left].join(' '),
+                width: box.width,
+                height: box.height,
+              }
+            }),
+          }
+        })
+        expect(m.overflowing).toEqual([])
+        for (const hit of m.hits) {
+          expect(hit.position).toBe('absolute')
+          expect(hit.inset).toBe('0px 0px 0px 0px')
+          expect(hit.width).toBeGreaterThanOrEqual(44)
+          expect(hit.height).toBeGreaterThanOrEqual(44)
+        }
+        // With 200% text at 1024px the header's inline nav overflows the
+        // page (#65, out of scope here), so the page check is at 100%; the
+        // section's own content is checked above at both sizes.
+        if (text === '100%') await expectNoHorizontalScroll(page)
+        expect(
+          await servicesRegion(page).evaluate((section) => section.scrollWidth - section.clientWidth),
+          'section scroll',
+        ).toBeLessThanOrEqual(0)
+      })
+    }
 
-      // No text element in the section is wider than its own box, and no
-      // card is wider than its grid cell.
-      const overflowing = await servicesRegion(page)
-        .evaluate((section) =>
-          [...section.querySelectorAll('h2, h3, p, li, button, li > div')]
-            .filter(
-              (element) =>
-                element.scrollWidth > element.clientWidth + 1 ||
-                element.getBoundingClientRect().right >
-                  section.getBoundingClientRect().right + 1,
-            )
-            .map((element) => element.textContent?.slice(0, 40)),
-        )
-      expect(overflowing).toEqual([])
+    // The open grid's hairlines and rows (#83, replacing #53's subgrid
+    // alignment): in two and three columns, a hairline above the grid,
+    // one under every row, the last included, and one between columns,
+    // none on the outer sides; in one column, hairlines between cells
+    // only. No cell has a fill, radius or shadow at rest. Cells in a row
+    // are one height, with their tag lines' bottoms aligned; the first
+    // cell of each row starts flush with the heading.
+    test(`capability grid hairlines, equal rows and aligned tag lines at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      await waitForStableLayout(page)
+      const cells = await measureCells(page)
+      const n = columns(width)
+      const rows = cellRows(cells)
+      expect(rows.map((row) => row.length)).toEqual(Array(6 / n).fill(n))
+      const line = await page.evaluate(() => {
+        const probe = document.createElement('div')
+        probe.style.borderTop = 'var(--border-width) solid var(--color-border)'
+        document.body.append(probe)
+        const color = getComputedStyle(probe).borderTopColor
+        probe.remove()
+        return color
+      })
+      const grid = await serviceList(page).evaluate((list) => {
+        const style = getComputedStyle(list)
+        return {
+          top: parseFloat(style.borderTopWidth),
+          topColor: style.borderTopColor,
+          sides: [style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth].map(parseFloat),
+        }
+      })
+      const heading = await servicesRegion(page).getByRole('heading', { level: 2 }).boundingBox()
+      if (!heading) throw new Error('The heading has no box')
+
+      expect(grid.sides, 'grid sides and bottom').toEqual([0, 0, 0])
+      expect(grid.top, 'hairline above the grid').toBe(n === 1 ? 0 : 1)
+      if (n > 1) expect(grid.topColor).toBe(line)
+      for (const [i, cell] of cells.entries()) {
+        const detail = `cell ${i + 1}: ${JSON.stringify(cell)}`
+        const first = i % n === 0
+        expect(cell.background, detail).toBe('rgba(0, 0, 0, 0)')
+        expect(cell.radius, detail).toBe('0px')
+        expect(cell.shadow, detail).toBe('none')
+        if (n === 1) {
+          expect(cell.borders, detail).toEqual([i === 0 ? 0 : 1, 0, 0, 0])
+          expect([cell.padding[1], cell.padding[3]], `${detail} inline padding`).toEqual([0, 0])
+        } else {
+          expect(cell.borders, detail).toEqual([0, 0, 1, first ? 0 : 1])
+          expect(cell.padding[3] === 0, `${detail} inline-start padding`).toBe(first)
+          expect(cell.padding[1], `${detail} inline-end padding`).toBeGreaterThan(0)
+        }
+        cell.borders.forEach((border, side) => {
+          if (border > 0) expect(cell.borderColors[side], detail).toBe(line)
+        })
+        if (first) expect(Math.abs(cell.contentLeft - heading.x), `${detail} lines up with the heading`).toBeLessThanOrEqual(1)
+      }
+      for (const row of rows) {
+        const of = (key: 'height' | 'tagsBottom' | 'top') => row.map((i) => cells[i][key])
+        const context = `row ${row.map((i) => i + 1).join(', ')}`
+        expect(spread(of('height')), `${context} heights ${of('height')}`).toBeLessThanOrEqual(1)
+        expect(spread(of('top')), `${context} tops ${of('top')}`).toBeLessThanOrEqual(1)
+        expect(spread(of('tagsBottom')), `${context} tag line bottoms ${of('tagsBottom')}`).toBeLessThanOrEqual(1)
+      }
+      // No gap between rows: each row starts where the last ends.
+      for (let r = 1; r < rows.length; r++) {
+        const gap = cells[rows[r][0]].top - cells[rows[r - 1][0]].bottom
+        expect(Math.abs(gap), `gap above row ${r + 1}: ${gap}`).toBeLessThanOrEqual(1)
+      }
     })
 
-    if (columns(width) > 1) {
-      test(`service card titles, labels, toggles and heights line up in each row at ${width}px`, async ({ page }, testInfo) => {
-        await open(page, testInfo, width)
-        await waitForStableLayout(page)
-        const cards = await measureCards(page)
-        const rows = cardRows(cards)
-        expect(rows.map((row) => row.length)).toEqual(
-          Array(6 / columns(width)).fill(columns(width)),
-        )
-
-        for (const row of rows) {
-          const of = (key: keyof CardBox) => row.map((i) => cards[i][key] as number)
-          const context = `row ${row.map((i) => i + 1).join(', ')}`
-          expect(spread(of('title')), `${context} title tops ${of('title')}`).toBeLessThanOrEqual(1)
-          expect(spread(of('label')), `${context} label tops ${of('label')}`).toBeLessThanOrEqual(1)
-          expect(spread(of('description')), `${context} description tops ${of('description')}`).toBeLessThanOrEqual(1)
-          expect(spread(of('tags')), `${context} tag list tops ${of('tags')}`).toBeLessThanOrEqual(1)
-          expect(spread(of('toggle')), `${context} toggle tops ${of('toggle')}`).toBeLessThanOrEqual(1)
-          expect(spread(of('height')), `${context} heights ${of('height')}`).toBeLessThanOrEqual(1)
-        }
-        for (const [i, card] of cards.entries()) {
-          // The tags sit between the description and the toggle.
-          expect(card.tags, `card ${i + 1} tags below the description`).toBeGreaterThan(card.description)
-          expect(card.toggle, `card ${i + 1} toggle below the tags`).toBeGreaterThan(card.tags)
-          // A two-line title block, whether the title wraps or not.
-          expect(card.titleHeight, `card ${i + 1} title height`)
-            .toBeGreaterThanOrEqual(2 * card.titleLineHeight - 0.5)
-          // The toggle is last, 24px padding and a 1px border above the
-          // card's bottom edge, so any extra height is above it.
-          expect(Math.abs(card.toggleBelow - 25), `card ${i + 1} space below toggle ${card.toggleBelow}`)
-            .toBeLessThanOrEqual(1)
-          // Its natural width, not stretched across the card's content box.
-          expect(card.toggleWidth, `card ${i + 1} toggle width`).toBeLessThan(card.width - 50 - 1)
-        }
-        // Today's titles leave every label at the same offset.
-        expect(spread(cards.map((card) => card.label)), 'label offsets').toBeLessThanOrEqual(1)
-        // The toggles keep the one natural width.
-        expect(spread(cards.map((card) => card.toggleWidth)), 'toggle widths').toBeLessThanOrEqual(1)
-
-        // Rows are --space-6 (24px) apart.
-        for (let r = 1; r < rows.length; r++) {
-          const gap =
-            Math.min(...rows[r].map((i) => cards[i].top)) -
-            Math.max(...rows[r - 1].map((i) => cards[i].bottom))
-          expect(Math.abs(gap - 24), `gap above row ${r + 1}: ${gap}`).toBeLessThanOrEqual(1)
-        }
-      })
-
-      test(`every service title reserves two lines, even when all fit on one, at ${width}px`, async ({ page }, testInfo) => {
-        await open(page, testInfo, width)
-        // Test-only text in the browser; services.ts is unchanged. With
-        // every title on one line, only the title's own minimum height
-        // keeps the two-line block.
-        await serviceList(page)
-          .getByRole('heading', { level: 3 })
-          .evaluateAll((headings) => {
-            for (const heading of headings) heading.textContent = 'Data'
-          })
-        await waitForStableLayout(page)
-        const cards = await measureCards(page)
-
-        for (const [i, card] of cards.entries()) {
-          expect(card.titleLines, `card ${i + 1} title lines`).toBe(1)
-          expect(card.titleHeight, `card ${i + 1} title height`)
-            .toBeGreaterThanOrEqual(2 * card.titleLineHeight - 0.5)
-        }
-      })
-
-      for (const [where, at] of [
-        ['in the middle of', 1],
-        ['at the start of', 0],
-      ] as const) {
-        test(`opening a service card ${where} a row grows only that card at ${width}px`, async ({ page }, testInfo) => {
-          await open(page, testInfo, width)
-          await waitForStableLayout(page)
-          const before = await measureCards(page)
-          const row = cardRows(before).find((cells) => cells.includes(at))!
-          const toggle = serviceToggles(page).nth(at)
-
-          await toggle.click()
-          await expect(toggle).toHaveAttribute('aria-expanded', 'true')
-          await waitForStableLayout(page)
-          const opened = await measureCards(page)
-
-          const card = (i: number) => `card ${i + 1}`
-          expect(opened[at].height, `${card(at)} grew`).toBeGreaterThan(before[at].height + 24)
-          expect(Math.abs(opened[at].top - before[at].top), `${card(at)} top`).toBeLessThanOrEqual(1)
-          expect(Math.abs(opened[at].toggle - before[at].toggle), `${card(at)} toggle top`)
-            .toBeLessThanOrEqual(1)
-          expect(Math.abs(opened[at].listGap! - 16), `list gap ${opened[at].listGap}`)
-            .toBeLessThanOrEqual(1)
-          expect(Math.abs(opened[at].listBelow! - 25), `space below list ${opened[at].listBelow}`)
-            .toBeLessThanOrEqual(1)
-          for (const i of row.filter((cell) => cell !== at)) {
-            for (const key of ['height', 'top', 'left'] as const) {
-              expect(Math.abs(opened[i][key] - before[i][key]), `${card(i)} ${key}`)
-                .toBeLessThanOrEqual(1)
-            }
-          }
-
-          await toggle.click()
-          await expect(toggle).toHaveAttribute('aria-expanded', 'false')
-          await waitForStableLayout(page)
-          const closed = await measureCards(page)
-          expect(Math.abs(closed[at].height - before[at].height), `${card(at)} height after closing`)
-            .toBeLessThanOrEqual(1)
-          expect(Math.abs(closed[at].toggle - before[at].toggle), `${card(at)} toggle after closing`)
-            .toBeLessThanOrEqual(1)
-          for (const i of row) {
-            for (const key of ['height', 'top', 'left'] as const) {
-              expect(Math.abs(closed[i][key] - before[i][key]), `${card(i)} ${key} after closing`)
-                .toBeLessThanOrEqual(1)
-            }
-          }
-        })
-      }
-    } else {
-      test(`service cards keep their natural height, with one-line titles one line tall, at ${width}px`, async ({ page }, testInfo) => {
-        await open(page, testInfo, width)
-        // At --text-service (#56) no real title fits on one line at 320px,
-        // so the first card gets a short test-only title; services.ts is
-        // unchanged.
-        await serviceList(page)
-          .getByRole('heading', { level: 3 })
-          .first()
-          .evaluate((heading) => {
-            heading.textContent = 'Data'
-          })
-        await waitForStableLayout(page)
-        const cards = await measureCards(page)
-
-        const oneLine = cards.filter((card) => card.titleLines === 1)
-        expect(oneLine.length, 'cards with a one-line title').toBeGreaterThan(0)
-        for (const card of oneLine) {
-          expect(Math.abs(card.titleHeight - card.titleLineHeight), 'one-line title height')
-            .toBeLessThanOrEqual(1)
-        }
-        expect(spread(cards.map((card) => card.height)), 'card heights differ')
-          .toBeGreaterThan(1)
-      })
-    }
-
-    if (width === 1024) {
-      test(`a three-line title widens the title block for its row at ${width}px`, async ({ page }, testInfo) => {
-        await open(page, testInfo, width)
-        // Test-only text in the browser; services.ts is unchanged.
-        const title = serviceList(page).getByRole('heading', { level: 3 }).nth(1)
-        await title.evaluate((heading) => {
-          // Long enough to wrap to three lines at the 17px titles (#66).
-          heading.textContent = 'Data Warehousing, Lakehouse, Semantic Layer & Analytics Modelling Services'
-        })
-        await waitForStableLayout(page)
-        const cards = await measureCards(page)
-        expect(cards[1].titleLines, 'the long title wraps to three lines').toBe(3)
-
-        const [first, second] = cardRows(cards)
-        for (const row of [first, second]) {
-          const of = (key: keyof CardBox) => row.map((i) => cards[i][key] as number)
-          expect(spread(of('label')), `label tops ${of('label')}`).toBeLessThanOrEqual(1)
-          expect(spread(of('tags')), `tag list tops ${of('tags')}`).toBeLessThanOrEqual(1)
-          expect(spread(of('toggle')), `toggle tops ${of('toggle')}`).toBeLessThanOrEqual(1)
-          expect(spread(of('height')), `heights ${of('height')}`).toBeLessThanOrEqual(1)
-        }
-        for (const i of first) {
-          expect(cards[i].titleHeight, `card ${i + 1} title block`)
-            .toBeGreaterThanOrEqual(3 * cards[i].titleLineHeight - 0.5)
-        }
-        for (const i of second) {
-          expect(Math.abs(cards[i].titleHeight - 2 * cards[i].titleLineHeight), `card ${i + 1} title block`)
-            .toBeLessThanOrEqual(1)
-        }
-
-        // Nothing overflows its card.
-        const overflowing = await page
-          .locator('#capabilities .services__list > li > div')
-          .evaluateAll((boxes) =>
-            boxes.flatMap((box) =>
-              [...box.children]
-                .filter(
-                  (child) =>
-                    child.getBoundingClientRect().bottom > box.getBoundingClientRect().bottom + 1 ||
-                    child.scrollWidth > child.clientWidth + 1,
-                )
-                .map((child) => child.textContent?.slice(0, 40)),
-            ),
-          )
-        expect(overflowing).toEqual([])
-      })
-    }
-
-    // The lifecycle rail (#56): one row of six from 768px, a vertical
-    // list below it, never a scroll container, each item one line.
-    test(`lifecycle rail is ${width < 768 ? 'vertical' : 'one row'}, unclipped, with no scroll container, at ${width}px`, async ({ page }, testInfo) => {
+    // The lifecycle rail (#56) left with the open grid (#83): each cell's
+    // stage line shows its stage instead.
+    test(`no lifecycle rail, and the grid follows the header, at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
-      const rail = servicesRegion(page).getByRole('list').first()
-      const items = rail.getByRole('listitem')
-      await expect(items).toHaveCount(6)
-      await expect(rail).toContainText('Design')
-
-      const m = await rail.evaluate((list) => {
-        const box = list.getBoundingClientRect()
-        const lineHeight = (element: Element) => parseFloat(getComputedStyle(element).lineHeight)
-        return {
-          overflowX: getComputedStyle(list).overflowX,
-          scroll: list.scrollWidth - list.clientWidth,
-          left: box.left,
-          right: box.right,
-          items: [...list.children].map((item) => {
-            const b = item.getBoundingClientRect()
-            const label = item.lastElementChild!
-            const range = document.createRange()
-            range.selectNodeContents(label)
-            return {
-              left: b.left,
-              right: b.right,
-              top: b.top,
-              bottom: b.bottom,
-              height: b.height,
-              lineHeight: lineHeight(item),
-              labelLines: new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size,
-              labelClipped: label.scrollWidth > label.clientWidth + 1,
-              labelRight: label.getBoundingClientRect().right,
-            }
-          }),
-        }
-      })
-      const detail = JSON.stringify(m)
-
-      expect(m.overflowX, detail).toBe('visible')
-      expect(m.scroll, detail).toBeLessThanOrEqual(0)
-      for (const [i, item] of m.items.entries()) {
-        expect(item.labelLines, `item ${i + 1} label lines`).toBe(1)
-        expect(item.labelClipped, `item ${i + 1} label clipped`).toBe(false)
-        expect(item.left, `item ${i + 1} left`).toBeGreaterThanOrEqual(m.left - 1)
-        expect(item.labelRight, `item ${i + 1} label right`).toBeLessThanOrEqual(m.right + 1)
-        // Subordinate to the cards: no taller than two lines of --text-sm.
-        expect(item.height, `item ${i + 1} height`).toBeLessThanOrEqual(2 * item.lineHeight)
-      }
-      for (let i = 1; i < m.items.length; i++) {
-        const [before, after] = [m.items[i - 1], m.items[i]]
-        if (width < 768) {
-          expect(after.top, `item ${i + 1} below item ${i}`).toBeGreaterThanOrEqual(before.bottom)
-          expect(Math.abs(after.left - before.left), `item ${i + 1} left edge`).toBeLessThanOrEqual(1)
-        } else {
-          expect(Math.abs(after.top - before.top), `item ${i + 1} on the row`).toBeLessThanOrEqual(1)
-          expect(after.left, `item ${i + 1} right of item ${i}`).toBeGreaterThanOrEqual(before.right - 1)
-        }
-      }
-      // The rail sits between the intro and the card grid.
-      const railBox = await rail.boundingBox()
+      expect(await page.locator('.lifecycle-rail, .lifecycle-rail-frame').count()).toBe(0)
+      const first = servicesRegion(page).getByRole('list').first()
+      await expect(first.locator(':scope > li h3')).toHaveCount(6)
       const gridBox = await serviceList(page).boundingBox()
-      const heading = await servicesRegion(page).getByRole('heading', { level: 2 }).boundingBox()
-      if (!railBox || !gridBox || !heading) throw new Error('The rail, grid or heading has no box')
-      expect(railBox.y).toBeGreaterThan(heading.y + heading.height)
-      expect(gridBox.y).toBeGreaterThan(railBox.y + railBox.height)
+      const promise = await servicesRegion(page).locator('.services__promise').boundingBox()
+      if (!gridBox || !promise) throw new Error('The grid or promise line has no box')
+      expect(gridBox.y).toBeGreaterThan(promise.y + promise.height)
       await expectNoHorizontalScroll(page)
     })
-
-    // The rail's connector (#56 QA): the rail is either one row of six or
-    // one vertical column, never a wrapped row, and every pair of stages
-    // is joined by a graphite 200 rule at least 8px (--space-2) long that
-    // runs from just after one stage to just before the next. Measured at
-    // the default text size across the widths where the six items are
-    // tightest (a 1fr column once left Connect to Model with no line from
-    // 768 to 775px), and with 150% and 200% page text, which the 48em
-    // media query does not follow (a flex-wrap fallback once left the rail
-    // in two or three unjoined rows). Chromium also checks 32px browser
-    // text, set through CDP. Run from the 768px projects, in Chromium and
-    // WebKit.
-    if (width === 768) {
-      test(`the lifecycle rail is one joined row or one joined column, with default and enlarged text, at ${width}px`, async ({ page, browserName }, testInfo) => {
-        await open(page, testInfo, width)
-        const rail = servicesRegion(page).getByRole('list').first()
-        const measure = () =>
-          rail.evaluate((list) => {
-            const probe = document.createElement('div')
-            probe.style.borderTop = 'var(--border-width) solid var(--color-border)'
-            probe.style.width = 'var(--space-2)'
-            document.body.append(probe)
-            const want = {
-              border: `${getComputedStyle(probe).borderTopWidth} solid ${getComputedStyle(probe).borderTopColor}`,
-              min: parseFloat(getComputedStyle(probe).width),
-            }
-            probe.remove()
-            const items = [...list.children]
-            const markers = items.map((item) => item.firstElementChild!.getBoundingClientRect())
-            const rows = new Set(markers.map((marker) => Math.round(marker.top))).size
-            const columns = new Set(markers.map((marker) => Math.round(marker.left))).size
-            const horizontal = columns > 1
-            const segments = items.slice(0, -1).map((item, i) => {
-              const after = getComputedStyle(item, '::after')
-              const marker = markers[i]
-              const next = markers[i + 1]
-              const label = item.lastElementChild!.getBoundingClientRect()
-              if (!horizontal) {
-                // Vertical: from below this marker to the top of the next.
-                const top = item.getBoundingClientRect().top + parseFloat(after.top)
-                return {
-                  content: after.content,
-                  border: `${after.borderLeftWidth} ${after.borderLeftStyle} ${after.borderLeftColor}`,
-                  length: parseFloat(after.height),
-                  startGap: top - marker.bottom,
-                  endGap: next.top - (top + parseFloat(after.height)),
-                }
-              }
-              // The item's flex gap and the rule's own margin come first.
-              const start =
-                label.right + parseFloat(getComputedStyle(item).columnGap) + parseFloat(after.marginLeft)
-              const end = start + parseFloat(after.width)
-              return {
-                content: after.content,
-                border: `${after.borderTopWidth} ${after.borderTopStyle} ${after.borderTopColor}`,
-                length: parseFloat(after.width),
-                startGap: start - label.right,
-                // Always measured to the next marker: on a wrapped row it
-                // is on another line, and this fails.
-                endGap: next.left - end,
-              }
-            })
-            const box = list.getBoundingClientRect()
-            return {
-              want,
-              rows,
-              columns,
-              horizontal,
-              segments,
-              // The rail stays inside its own box. (The page as a whole is
-              // not checked here: with 200% page text the header's inline
-              // nav overflows at 1024px, which is outside #56.)
-              overflow:
-                list.scrollWidth - list.clientWidth +
-                Math.max(0, ...items.map((item) => item.getBoundingClientRect().right - box.right)),
-            }
-          })
-
-        const check = async (context: string, { row }: { row?: boolean } = {}) => {
-          // Chromium can report a pseudo-element's previous container-query
-          // styles until the next rendered frame after a resize or a text
-          // size change, so wait two frames before measuring.
-          await page.evaluate(
-            () =>
-              new Promise((resolve) =>
-                requestAnimationFrame(() => requestAnimationFrame(resolve)),
-              ),
-          )
-          const m = await measure()
-          const shape = `${context}: ${m.rows} rows, ${m.columns} columns`
-          // One row of six, or one column of six: never both several rows
-          // and several columns.
-          expect.soft(m.rows === 1 || m.columns === 1, shape).toBe(true)
-          if (row !== undefined) expect.soft(m.horizontal, `${shape}, one row expected: ${row}`).toBe(row)
-          expect.soft(m.segments, context).toHaveLength(5)
-          for (const [i, segment] of m.segments.entries()) {
-            const detail = `${context}, stage ${i + 1} to ${i + 2}: ${JSON.stringify(segment)}`
-            // Soft, so a failure lists every segment and width.
-            expect.soft(segment.content, detail).not.toBe('none')
-            expect.soft(segment.border, detail).toBe(m.want.border)
-            expect.soft(segment.length, detail).toBeGreaterThanOrEqual(m.want.min - 0.5)
-            // It starts just after the label (or marker) and runs up to the
-            // next marker: no gap wider than --space-2 at either end.
-            expect.soft(segment.startGap, detail).toBeLessThanOrEqual(m.want.min + 1)
-            expect.soft(segment.endGap, detail).toBeLessThanOrEqual(m.want.min + 1)
-            expect.soft(segment.endGap, detail).toBeGreaterThanOrEqual(-1)
-          }
-          expect.soft(m.overflow, `${context} rail overflow`).toBeLessThanOrEqual(1)
-        }
-
-        const cases: [string, number[]][] = [
-          ['100%', [768, 775, 800, 1023, 1024, 1440]],
-          ['150%', [768, 1024, 1440]],
-          ['200%', [768, 790, 1024, 1440]],
-        ]
-        const style = await page.addStyleTag({ content: '/* page text size */' })
-        for (const [text, widths] of cases) {
-          await style.evaluate((element, size) => {
-            element.textContent = `html { font-size: ${size}; }`
-          }, text)
-          for (const w of widths) {
-            await page.setViewportSize({ width: w, height: 800 })
-            // At the default text size the rail is one row from 48em.
-            await check(`${w}px, ${text} page text`, text === '100%' ? { row: true } : {})
-          }
-        }
-
-        if (browserName === 'chromium') {
-          await style.evaluate((element) => {
-            element.textContent = ''
-          })
-          const session = await page.context().newCDPSession(page)
-          await session.send('Page.enable')
-          await session.send('Page.setFontSizes', { fontSizes: { standard: 32 } })
-          for (const w of [768, 1024, 1440, 1600]) {
-            await page.setViewportSize({ width: w, height: 800 })
-            // 48em is 1536px here, so the rail is vertical below it.
-            await check(`${w}px, 32px browser text`, w < 1536 ? { row: false } : {})
-          }
-        }
-      })
-    }
 
     // The problem block, laid out as W10 in the trust and lineage plan
     // (#80, replacing #79's two columns): centred, top to bottom, the
@@ -2287,42 +1987,53 @@ for (const width of WIDTHS) {
         expect(resting.every((style) => style[5] !== 'pointer')).toBe(true)
       })
 
-      // The card hover (#56): with motion allowed, hovering a card's list
-      // item lifts the card 8px and darkens its border; under reduced
-      // motion the card does not move. Focus never moves it.
-      test(`service card hover lifts the card, except under reduced motion, at ${width}px`, async ({ page }, testInfo) => {
+      // The cell hover (#83, replacing #56's card lift): hovering a cell
+      // tints it graphite 100 and shows its title's underline and arrow,
+      // with or without reduced motion; nothing moves, and focus does the
+      // same without moving anything either.
+      test(`capability cell hover tints the cell and never moves it, at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
-        const card = serviceList(page).locator(':scope > li').nth(1)
+        const cell = serviceList(page).locator(':scope > li').nth(1)
         const look = () =>
-          card.evaluate((item) => {
-            const style = getComputedStyle(item.firstElementChild!)
-            return { transform: style.transform, border: style.borderTopColor, shadow: style.boxShadow }
+          cell.evaluate((item) => {
+            const style = getComputedStyle(item)
+            const box = item.getBoundingClientRect()
+            return {
+              transform: style.transform,
+              background: style.backgroundColor,
+              shadow: style.boxShadow,
+              arrow: getComputedStyle(item.querySelector('a [aria-hidden="true"]')!).opacity,
+              box: [box.left, box.top + scrollY, box.width, box.height].map(Math.round),
+            }
           })
-        await card.scrollIntoViewIfNeeded()
+        await cell.scrollIntoViewIfNeeded()
         const resting = await look()
-        expect(resting.transform).toBe('none')
+        expect(resting).toMatchObject({ transform: 'none', background: 'rgba(0, 0, 0, 0)', shadow: 'none', arrow: '0' })
 
-        // Reduced motion (the project's setting): border and shadow
-        // change, no movement.
-        await card.hover()
+        // Reduced motion (the project's setting): the tint and arrow, no
+        // movement.
+        await cell.hover()
         await expect.poll(look).not.toEqual(resting)
-        expect((await look()).transform).toBe('none')
+        expect({ ...(await look()), background: resting.background, arrow: resting.arrow }).toEqual(resting)
+        expect((await look()).arrow).toBe('1')
         await page.mouse.move(0, 0)
         await expect.poll(look).toEqual(resting)
 
         await page.emulateMedia({ reducedMotion: 'no-preference' })
-        await card.hover()
-        await expect.poll(async () => (await look()).transform).toBe('matrix(1, 0, 0, 1, 0, -8)')
-        // The list item itself does not move.
-        const itemBox = await card.boundingBox()
+        await cell.hover()
+        await expect.poll(async () => (await look()).arrow).toBe('1')
+        expect((await look()).transform).toBe('none')
+        expect((await look()).box).toEqual(resting.box)
         await page.mouse.move(0, 0)
-        await expect.poll(async () => (await look()).transform).toBe('none')
-        expect(await card.boundingBox()).toEqual(itemBox)
+        await expect.poll(look).toEqual(resting)
 
-        // Keyboard focus on the toggle moves nothing.
-        await card.getByRole('button').focus()
+        // Keyboard focus on the title moves nothing.
+        await serviceList(page).locator(':scope > li').nth(0).getByRole('link').focus()
+        await pressTab(page)
+        await expect(cell.getByRole('link')).toBeFocused()
         await page.waitForTimeout(300)
         expect((await look()).transform).toBe('none')
+        expect((await look()).box).toEqual(resting.box)
       })
     }
 
