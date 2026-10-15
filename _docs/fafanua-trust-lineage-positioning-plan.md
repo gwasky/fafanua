@@ -92,6 +92,8 @@ This supersedes the sample figure "Monthly revenue by branch": the example now s
 
 **Owner update (2026-10-14, #79):** `_docs/fafanua-data-trust-assessment-homepage-enhancement.md` supersedes the caption (now "Illustrative example"), the metrics label (now "Example leadership metrics") and the five steps (now its seven-step sequence, Report to Trust rating), and replaces the "After the assessment" line with its statement and supporting copy. It also adds the START WITH TRUST eyebrow and the DATA TRUST ASSESSMENT engagement name above the heading.
 
+**Owner update (2026-10-15):** W11 supersedes the layout of this section and of its illustrative example.
+
 **Acceptance:** the section sits directly after the problem section. The button uses the W1 label. Copy lives in a `src/data/` file, not inside components. The section passes the axe checks.
 
 ### W5. AI-readiness copy (in place)
@@ -160,6 +162,43 @@ Added by the owner on 2026-10-15. Layout only: no copy, data, section order or l
 - [ ] From 768px the paragraph and bridge line sit side by side, centred under the statement, left-aligned, with a 1px vertical hairline between them; below 768px they stack in that order with a horizontal hairline between them.
 - [ ] Desktop padding is about 96 to 120px from the token scale, and nothing overflows at 320 to 1440px or with 200% text.
 - [ ] No tagline and no image are added. The hero `h1`, the promise and the SEO plan's protected phrases are unchanged.
+
+### W11. Data Trust Assessment section layout (owner proposal)
+
+Added by the owner on 2026-10-15. The owner's layout proposal supersedes, for this section only:
+
+- the illustrative example requirements in W4, including the owner updates from #77 and #79 where they differ from this item;
+- `_docs/fafanua-data-trust-assessment-homepage-enhancement.md` on the presentation of START WITH TRUST / DATA TRUST ASSESSMENT, the presentation of the seven-step sequence, and the layout of the illustrative card, the deliverables and the "After the assessment" content.
+
+Everything else in W4 and in that enhancement plan stands, including the headline "Know where every number comes from.", the three-week fixed-fee lead, the deliverable sentences, the "After the assessment" statement and supporting copy, the call to action, the six service lines, no duplicate assessment section and no second large lineage diagram.
+
+**Reference image:** `_docs/design-references/data-trust-assessment-layout.png` (supplied by the owner). The reference was rendered in a dark preview: the section keeps its current light paper treatment and tokens. The reference's casing comes from the preview tool and is not a copy change; keep the current casing of every string.
+
+**Layout:**
+
+- **Three rows.** Row 1: intro on the left and the illustrative card on the right, top-aligned. Row 2: the four deliverables as four equal tiles. Row 3: a closing band with the "After the assessment" content and the call to action.
+- **Intro:** the "START WITH TRUST" eyebrow, with "DATA TRUST ASSESSMENT" beside it as a small tag in the teal tint token. Then the headline and the lead.
+- **Card:** the "Illustrative example" caption and the "Example leadership metrics" label, then the five metrics as chips. The first chip (Revenue) shows a selected state; chips are not interactive. Below the chips, a teal vertical rule runs beside "Each traced through" and five hollow nodes: Report, Definition, Calculation, Data model, Source system, with Report in the full ink token. A hairline follows, then a footer with two rows: "Owner" with "One role per metric", and "Trust rating" with the three rating chips.
+- **Rating chips:** a teal dot for Trusted, an amber dot for Trusted with caveats and a hollow dot for Not yet trusted. The text labels stay, so meaning never relies on colour alone.
+- **Row 2:** a "What you receive" label, then four tiles, each with a short teal rule at the top, a label and the existing deliverable sentence.
+- **Row 3:** "After the assessment" as a small label, then the existing statement and supporting copy on the left, and the "Book a data trust assessment" button on the right. Below 768px the button stacks under the text.
+- **Mobile:** stack intro, card, tiles (two per row, then one per row), then the band.
+- Design tokens only, weight 300 for large headings and 500 only for small labels and buttons, no new dependency, no hex colours.
+
+**New copy approved by the owner in this item** (store it in the data file, not in components):
+
+- Tile labels: "Lineage map", "Trust scorecard", "Shared definitions", "Fix list".
+- Owner row value: "One role per metric".
+
+**Acceptance:**
+
+- [ ] The section matches the reference layout in three rows, on the current light paper treatment.
+- [ ] Every existing string is unchanged in wording and casing; the only new strings are the five listed above.
+- [ ] The Revenue chip has a non-interactive selected state, and the trace rule runs beside the five steps from Report to Source system.
+- [ ] Owner and Trust rating sit in a footer after a hairline, and each rating chip has its marker and text.
+- [ ] The left column no longer runs far past the card at 1440 and 1024px.
+- [ ] Every text colour is a verified pairing, and nothing overflows at 320 to 1440px or with 200% text.
+- [ ] The hero `h1`, the promise and the SEO plan's protected phrases are unchanged.
 
 ## 5. Owner decisions (gated)
 
@@ -233,7 +272,7 @@ Items marked with a G-number depend on that approval. Without it, keep the curre
 
 1. Hero (W1, W2)
 2. Problem statement (W3, laid out per W10)
-3. Data Trust Assessment (W4)
+3. Data Trust Assessment (W4, laid out per W11)
 4. AI readiness (W5, moves here only with G8)
 5. How we work (G2)
 6. Connected diagram (G3 removes the cards above it)
@@ -292,7 +331,8 @@ Create these issues in order and follow `_docs/process.md` for each.
 6. Homepage sectors: Health, Financial services, Education (W7)
 7. Closing section supporting line (W9)
 8. About founder block, blocked until the owner supplies content (W8)
-9. One issue per ticked item in section 5 (G1 to G9)
+9. Data Trust Assessment section layout (W11)
+10. One issue per ticked item in section 5 (G1 to G9)
 
 ## 11. Definition of done
 
