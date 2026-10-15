@@ -2,10 +2,10 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
 import {
-  assessmentAfterHeading,
   assessmentDeliverablesHeading,
   assessmentHeading,
   assessmentLead,
+  assessmentNextStatement,
 } from './data/assessment.ts'
 import { footerNavigation, navigation, navigationCta } from './data/navigation.ts'
 import {
@@ -127,7 +127,7 @@ describe('App', () => {
     expect(services.previousElementSibling).toBe(assessment)
   })
 
-  it('renders the Data Trust Assessment as a light section#data-trust-assessment, out of the navigation (#71)', () => {
+  it('renders the Data Trust Assessment as a section#data-trust-assessment on paper holding a dark panel, out of the navigation (#71, #82)', () => {
     render(<App />)
     const assessment = screen.getByRole('region', { name: ASSESSMENT })
     const main = screen.getByRole('main')
@@ -136,21 +136,29 @@ describe('App', () => {
     expect(assessment.id).toBe('data-trust-assessment')
     expect(assessment.parentElement).toBe(main)
     expect(assessment).toHaveAttribute('data-reveal', 'section')
-    // On paper: neither an alternate nor a dark surface, and holding none.
+    // On paper: neither an alternate nor a dark surface itself, holding
+    // one dark panel inset in its container (#82), with a light card in it,
+    // and no alternate surface or technical grid.
     expect(assessment).not.toHaveClass('surface-alt')
     expect(assessment).not.toHaveClass('surface-dark')
-    expect(assessment.querySelector('.surface-alt, .surface-dark, .technical-grid')).toBeNull()
+    expect(assessment.querySelector('.surface-alt, .technical-grid')).toBeNull()
+    const panels = assessment.querySelectorAll('.surface-dark')
+    expect(panels).toHaveLength(1)
+    expect(panels[0].parentElement).toHaveClass('container')
+    expect(panels[0].parentElement!.parentElement).toBe(assessment)
+    expect(panels[0].querySelectorAll('.surface-light')).toHaveLength(1)
     expect(assessment).not.toHaveAttribute('data-header-overlay')
-    // Its one eyebrow is unnumbered, as the problem block's is (#79), so
-    // 01 to 04 keep their numbers.
+    // Its two eyebrows are unnumbered, as the problem block's is (#79,
+    // #82), so 01 to 04 keep their numbers.
     expect(
       [...assessment.querySelectorAll('.section-eyebrow')].map((eyebrow) => eyebrow.textContent),
-    ).toEqual(['Start with trust'])
+    ).toEqual(['Start with trust', 'What happens next'])
     expect(
       [...document.querySelectorAll('.section-eyebrow')].map((eyebrow) => eyebrow.textContent),
     ).toEqual([
       'The problem',
       'Start with trust',
+      'What happens next',
       '01 — Capabilities',
       '02 — Managed Services',
       '03 — Solutions',
@@ -166,12 +174,13 @@ describe('App', () => {
     ).not.toContain(ASSESSMENT)
   })
 
-  // The one inline SVG illustration the design system allows is the
-  // system diagram's return loop (owner decision on #63); the only other
-  // inline SVGs are the disclosure chevron icons of the service cards and
-  // the Solutions rows. No canvas anywhere, and the only images are the
-  // two logos.
-  it('has no inline SVG but the disclosure chevrons and the diagram\'s loop, and no canvas', () => {
+  // The inline SVG illustrations the design system allows are the system
+  // diagram's return loop (owner decision on #63) and the decorative
+  // contour lines in the assessment's dark panel (#82); the
+  // only other inline SVGs are the disclosure chevron icons of the service
+  // cards and the Solutions rows. No canvas anywhere, and the only images
+  // are the two logos.
+  it('has no inline SVG but the disclosure chevrons, the diagram\'s loop and the assessment\'s contours, and no canvas', () => {
     render(<App />)
     const svgs = [...document.querySelectorAll('svg')]
     const count = (name: string) => svgs.filter((svg) => svg.getAttribute('class') === name).length
@@ -182,7 +191,9 @@ describe('App', () => {
     // One chevron per homepage Solutions row, not per sector (#73).
     expect(count('solution-row__chevron')).toBe(homepageSolutions.length)
     expect(count('solution-row__chevron')).toBe(3)
-    expect(svgs).toHaveLength(1 + services.length + homepageSolutions.length)
+    expect(count('trust-assessment__contours')).toBe(1)
+    expect(document.querySelector('#data-trust-assessment svg')).toHaveClass('trust-assessment__contours')
+    expect(svgs).toHaveLength(1 + 1 + services.length + homepageSolutions.length)
     for (const svg of svgs) expect(svg).toHaveAttribute('aria-hidden', 'true')
     expect(document.querySelectorAll('canvas')).toHaveLength(0)
     expect([...document.querySelectorAll('img')].map((img) => img.closest('header, footer')?.tagName)).toEqual([
@@ -582,10 +593,11 @@ describe('App', () => {
     expect(document.querySelector('a[href*="future-ready"]')).toBeNull()
   })
 
-  it('has two dark sections, the hero and future-ready, the inset Managed panel and the dark footer', () => {
+  it('has two dark sections, the hero and future-ready, the inset assessment and Managed panels and the dark footer', () => {
     render(<App />)
     const dark = [...document.querySelectorAll('.surface-dark')]
     const managed = screen.getByRole('region', { name: MANAGED })
+    const assessment = screen.getByRole('region', { name: ASSESSMENT })
 
     // The full-bleed dark sections are main's children.
     expect(
@@ -596,12 +608,19 @@ describe('App', () => {
       screen.getByRole('region', { name: HERO }),
       screen.getByRole('region', { name: FUTURE_READY }),
     ])
-    // The Managed panel is inside its section's container, on paper, and
-    // the footer (#60) is the last dark surface, outside main.
-    expect(dark).toHaveLength(4)
-    expect(dark[3]).toBe(screen.getByRole('contentinfo'))
+    // In order: the hero, the assessment panel (#82), the Managed panel,
+    // future-ready and the footer. Each panel is inside its section's
+    // container, on paper, and the footer (#60) is the last dark surface,
+    // outside main.
+    expect(dark).toHaveLength(5)
+    expect(dark[0]).toBe(screen.getByRole('region', { name: HERO }))
+    expect(dark[3]).toBe(screen.getByRole('region', { name: FUTURE_READY }))
+    expect(dark[4]).toBe(screen.getByRole('contentinfo'))
     expect(dark[1].parentElement).toHaveClass('container')
-    expect(dark[1].parentElement!.parentElement).toBe(managed)
+    expect(dark[1].parentElement!.parentElement).toBe(assessment)
+    expect(assessment).not.toHaveClass('surface-dark')
+    expect(dark[2].parentElement).toHaveClass('container')
+    expect(dark[2].parentElement!.parentElement).toBe(managed)
     expect(managed).not.toHaveClass('surface-dark')
     for (const section of dark) {
       expect(section.querySelector('.surface-alt')).toBeNull()
@@ -680,7 +699,7 @@ describe('App', () => {
     expect(headings.slice(1, 4).map((heading) => heading.textContent)).toEqual([
       ASSESSMENT,
       assessmentDeliverablesHeading,
-      assessmentAfterHeading,
+      assessmentNextStatement,
     ])
     expect(headings[4].textContent).toBe(servicesIntro.heading)
     expect(headings.slice(5, 11).map((heading) => heading.textContent)).toEqual(

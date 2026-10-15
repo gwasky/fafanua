@@ -11,8 +11,7 @@
 // is, and CSS shows them in capitals. The button reads the site's one call
 // to action label from contact.ts (W1, #68). assessment.plan.test.ts
 // checks the wording against both plans. W11 in the trust and lineage plan
-// (#81) added the four deliverable tiles' labels. The Data Trust
-// Assessment dark panel plan
+// (#81) added the four deliverable tiles' labels. The dark panel plan
 // (_docs/fafanua-data-trust-assessment-dark-panel-plan.md, #82) supersedes
 // W11 and the enhancement plan's §11 block: it adds the facts pill, a
 // description for each of the seven steps, and the closing strip's
