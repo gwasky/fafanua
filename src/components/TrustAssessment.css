@@ -1,32 +1,39 @@
 /*
- * The Data Trust Assessment (W4 in the trust and lineage plan, #71): on
- * the page background, between the problem block and Services, laid out
- * by W11 (#81) after the owner's reference image
- * (_docs/design-references/data-trust-assessment-layout.png) in three
- * rows, every one a child of the container: the intro and the example
- * card, side by side from 64em; the four deliverable tiles; and the band
- * with the after-assessment copy and the button.
+ * The Data Trust Assessment (W4 in the trust and lineage plan, #71): a
+ * section on paper, between the problem block and Services, holding one
+ * graphite 900 panel inset within the container, like Managed Services
+ * (#58), laid out by the dark panel plan (#82, which supersedes W11 and
+ * #81's build) after the owner's reference image
+ * (_docs/design-references/data-trust-assessment-dark-panel.png), in three
+ * rows: the intro and the light example card, side by side from 64em; the
+ * four deliverable tiles; and, after a hairline, the closing strip with
+ * the button.
  *
- * Every text pairing is a verified light one: graphite 900 and graphite
- * 600 on paper (14.9:1, 6.0:1) in the intro and the tiles' heading, and on
- * white (16.4:1, 6.6:1) in the card, the tiles and the band; the tag and
- * the first metric chip teal 800 on teal 100 (6.9:1); the button the
- * primary button on light (white on teal 700, 5.2:1).
+ * Every colour inside the panel comes from the .surface-dark reassignment
+ * (global.css), and inside the card from .surface-light (tokens.css), so
+ * this file names no -on-dark token. Text pairings, all verified: in the
+ * panel the eyebrows teal 400 (--color-accent-text, 7.5:1), the name,
+ * headings and pill paper (14.9:1), the lead and closing paragraph
+ * graphite 400 (6.0:1); on the graphite 800 tiles paper (12.1:1) and
+ * graphite 400 (4.8:1); in the white card graphite 900 (16.4:1) and
+ * graphite 600 (6.6:1), and the Trusted chip teal 800 on teal 100 (6.9:1);
+ * the button the primary button on dark (graphite 900 on teal 400, 7.5:1).
  *
  * Its padding: the gap from the problem statement above is one
  * --space-section, split so that --space-8 of it is this section's own
  * top padding and the rest the problem block's bottom padding. So a link
- * or hash landing on the section puts its eyebrow --space-8 below the
- * header rather than against it. Services drops its top padding after
- * this section (Services.css). Each gap, problem to assessment and
- * assessment to Services, is one --space-section.
+ * or hash landing on the section puts the panel's top edge --space-8 below
+ * the header rather than against it. Services drops its top padding after
+ * this section (Services.css). Each gap, problem to panel and panel to
+ * Services, is one --space-section.
  *
- * Every rule, ring and marker is a border on a pseudo-element or on the
+ * Every line, ring and marker is a border on a pseudo-element or on the
  * element itself, never a transparent border standing for a shape (which
  * forced-colours mode would fill in), so they have no text, are never
- * announced and stay drawn in forced-colours mode. Nothing here is
- * interactive but the button: the chips have no hover, pointer or focus.
- * Nothing moves beyond the section reveal.
+ * announced and stay drawn in forced-colours mode. The contour lines are
+ * the one inline SVG, decoration only, hidden below 64em and in forced
+ * colours. Nothing here is interactive but the button: the chips have no
+ * hover, pointer or focus. Nothing moves beyond the section reveal.
  */
 
 .trust-assessment {
@@ -34,7 +41,7 @@
   background-color: var(--color-bg);
 }
 
-/* One --space-section between the problem statement and the eyebrow,
+/* One --space-section between the problem statement and the panel,
    --space-8 of it here. Without :has() the gap is --space-8 larger, never
    doubled. */
 .positioning:has(+ .trust-assessment) {
@@ -45,46 +52,69 @@
   padding-block-start: var(--space-8);
 }
 
-/* The rows: stacked, --space-12 apart, below 64em; from it the intro and
-   the card share the first row, the intro the wider (as in the reference),
-   and the tiles and the band span both columns, --space-16 apart. */
-.trust-assessment__layout {
+/* The panel, and its rows: stacked, --space-12 apart, below 64em; from it
+   the intro and the card share the first row, the intro the wider (as in
+   the reference), and the tiles and the closing strip span both columns,
+   --space-16 apart. Below 48em its inline padding, and the tiles', is
+   --space-6 at the default text size, shrinking to 8px as page text grows
+   to 200%, so the longest words, and the button's label, still fit at
+   320px. */
+.trust-assessment__panel {
+  --tile-inset: clamp(8px, 48px - var(--space-6), var(--space-6));
+
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   row-gap: var(--space-12);
   align-items: start;
+  padding: var(--space-8) var(--tile-inset);
+  border-radius: var(--radius-lg);
   /* Break a word only if it cannot fit on a line of its own, rather than
      anywhere as .container allows. */
   overflow-wrap: break-word;
 }
 
-/* Row 1: the intro. */
-
-/* The eyebrow, with the tag beside it, or below it when the two do not
-   fit on one line. The tag's padding and border reach outside the row
-   (its negative block margin), so the row is the eyebrow's height and the
-   eyebrow its first content: the gap from the problem block is measured
-   to it. */
-.trust-assessment__labels {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-  margin-block-end: var(--space-6);
+/* Both eyebrows in the teal accent text colour (teal 400 in the panel). */
+.trust-assessment__panel .section-eyebrow {
+  color: var(--color-accent-text);
 }
 
-.trust-assessment__labels > .section-eyebrow {
+/* Row 1: the intro. */
+
+.trust-assessment__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-inline-size: 0;
+}
+
+/* The eyebrow, then a short hairline, up to --space-24 long, shortening
+   rather than overflowing. The row draws it, not the eyebrow, which keeps
+   no ::before or ::after like every other eyebrow. */
+.trust-assessment__eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  inline-size: 100%;
+}
+
+.trust-assessment__eyebrow-row > .section-eyebrow {
+  flex: 0 1 auto;
+  min-inline-size: 0;
   margin-block: 0;
 }
 
-.trust-assessment__tag {
-  margin-block: calc(-1 * (var(--space-1) + var(--border-width)));
-  padding: var(--space-1) var(--space-3);
-  /* Transparent, so forced-colours mode draws the tag's outline. */
-  border: var(--border-width) solid transparent;
-  border-radius: var(--radius-full);
-  background-color: var(--color-tag-bg);
-  color: var(--color-tag-text);
+.trust-assessment__eyebrow-row::after {
+  /* Shrinks well before the eyebrow wraps. */
+  flex: 0 100 var(--space-24);
+  min-inline-size: 0;
+  border-block-start: var(--border-width) solid var(--color-border);
+  content: '';
+}
+
+/* The engagement name: plain text in the eyebrow style, in paper. */
+.trust-assessment__name {
+  margin-block: var(--space-2) 0;
+  color: var(--color-heading);
   font-size: var(--text-eyebrow);
   font-weight: var(--weight-medium);
   line-height: var(--leading-snug);
@@ -92,46 +122,66 @@
   text-transform: uppercase;
 }
 
-/* Weight 300 from the global heading styles. */
+/* Paper, weight 300 from the global heading styles. */
 .trust-assessment__heading {
   max-width: var(--measure-display);
-  margin-block-end: var(--space-6);
+  margin-block: var(--space-6) 0;
   font-size: var(--text-section);
   line-height: var(--leading-display);
 }
 
 .trust-assessment__lead {
   max-width: var(--measure);
-  margin-block: 0;
+  margin-block: var(--space-6) 0;
   color: var(--color-text-muted);
   font-size: var(--text-body-lg);
   text-wrap: pretty;
 }
 
+/* The facts: a thin outlined pill, as wide as its text. */
+.trust-assessment__facts {
+  max-inline-size: 100%;
+  margin-block: var(--space-8) 0;
+  padding: var(--space-2) min(var(--space-4), 16px);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-full);
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-snug);
+}
+
+/* The contour lines: shown only beside the card, from 64em, where they
+   take the free height below the pill and nothing more. */
+.trust-assessment__contours {
+  display: none;
+}
+
 /* Row 1: the card. */
 
 .lineage-example {
-  /* The trace's rings and their gap to the text, and the line their
-     labels sit on. The rings are a fixed-size drawing, --space-4 and
-     --space-2 at the default text size: in rem they would double with
-     200% page text and leave the steps too little room at 320px. */
+  /* The trace's rings, their centre dots and the gap to the text, and the
+     line the names sit on. The rings are a fixed-size drawing, --space-4,
+     6px and --space-3 at the default text size: in rem they would double
+     with 200% page text and leave the steps too little room at 320px. */
   --step-ring: min(var(--space-4), 16px);
-  --step-gap: min(var(--space-2), 8px);
-  --step-line: calc(var(--text-base) * var(--leading-normal));
+  --step-dot: 6px;
+  --step-gap: min(var(--space-3), 12px);
+  --step-line: calc(var(--text-base) * var(--leading-snug));
   /* The rating markers. */
   --rating-dot: var(--space-2);
 
   margin: 0;
   padding-block: var(--space-8);
   padding-inline: var(--example-inset);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-md);
+  /* Transparent, so forced-colours mode draws the card's edge. */
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-lg);
   background-color: var(--color-surface);
-  box-shadow: var(--shadow-sm);
 }
 
 .lineage-example__caption {
-  margin-block-end: var(--space-4);
+  margin-block-end: var(--space-2);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   line-height: var(--leading-snug);
@@ -145,11 +195,8 @@
   line-height: var(--leading-snug);
 }
 
-/* The metric names as chips that wrap rather than overflow. They are not
-   buttons: no hover, no pointer and no focus. The first is shown as
-   selected, by a thicker teal border as well as its tint, so not by
-   colour alone; it is presentational and announces nothing, since the
-   trace applies to every metric. */
+/* The metric names as chips, all alike, that wrap rather than overflow.
+   They are not buttons: no hover, no pointer and no focus. */
 .lineage-example__metrics {
   display: flex;
   flex-wrap: wrap;
@@ -160,7 +207,7 @@
 }
 
 .lineage-example__metrics > li {
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-2) min(var(--space-4), 16px);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-full);
   background-color: var(--color-surface);
@@ -170,85 +217,76 @@
   line-height: var(--leading-snug);
 }
 
-/* The thicker border takes the hairline's place, so the chip keeps its
-   size. */
-.lineage-example__metrics > li:first-child {
-  padding: calc(var(--space-2) - var(--border-width)) calc(var(--space-4) - var(--border-width));
-  border: calc(2 * var(--border-width)) solid var(--color-accent);
-  background-color: var(--color-tag-bg);
-  color: var(--color-tag-text);
-}
-
-/* The trace: a continuous teal rule at the inline start, from the label's
-   top to the last step, and beside it the label and the five steps, each
-   with a hollow ring level with its text. The first step, the report, is
-   in full ink. */
-.lineage-example__trace {
-  padding-inline-start: var(--example-inset);
-  border-inline-start: calc(2 * var(--border-width)) solid var(--color-accent);
-}
-
+/* The trace: the seven steps, each a ringed marker level with its name
+   and the description below the name. One thin line joins the markers'
+   centres: each step but the last draws the segment from its marker to
+   the next one's, so the segments join, behind the white-filled rings. */
 .lineage-example__steps {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-3);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.lineage-example__steps > li {
+.lineage-example__step {
+  --step-marker: var(--color-accent);
+
   position: relative;
   padding-inline-start: calc(var(--step-ring) + var(--step-gap));
-  color: var(--color-text-muted);
-  font-size: var(--text-base);
-  line-height: var(--leading-normal);
 }
 
-.lineage-example__steps > li::before {
+.lineage-example__step--attribute {
+  --step-marker: var(--color-heading);
+}
+
+.lineage-example__step:not(:last-child)::before {
   position: absolute;
-  inset-block-start: calc((var(--step-line) - var(--step-ring)) / 2);
-  inset-inline-start: 0;
-  box-sizing: border-box;
-  inline-size: var(--step-ring);
-  block-size: var(--step-ring);
-  border: calc(2 * var(--border-width)) solid currentColor;
-  border-radius: var(--radius-full);
-  background-color: var(--color-surface);
+  inset-block-start: calc(var(--step-line) / 2);
+  inset-inline-start: calc((var(--step-ring) - var(--border-width)) / 2);
+  block-size: calc(100% + var(--space-3));
+  border-inline-start: var(--border-width) solid var(--color-border);
   content: '';
 }
 
-.lineage-example__steps > li:first-child {
+.lineage-example__step-name {
+  margin: 0;
   color: var(--color-heading);
-}
-
-/* The footer, after a hairline: each label beside its value when they
-   fit, above it when they do not. */
-.lineage-example__footer {
-  display: grid;
-  gap: var(--space-4);
-  margin: var(--space-6) 0 0;
-  padding-block-start: var(--space-6);
-  border-block-start: var(--border-width) solid var(--color-border);
-}
-
-.lineage-example__footer > div {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-6);
-}
-
-.lineage-example__footer dt {
-  flex: 0 0 8em;
-  color: var(--color-heading);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
+  font-size: var(--text-base);
   line-height: var(--leading-snug);
 }
 
-.lineage-example__footer dd {
-  flex: 1 1 14em;
-  min-inline-size: 0;
+.lineage-example__step--attribute .lineage-example__step-name {
+  color: var(--color-text-muted);
+}
+
+/* The ring, hollow and filled white, and its solid centre dot. */
+.lineage-example__step-name::before,
+.lineage-example__step-name::after {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: var(--radius-full);
+  content: '';
+}
+
+.lineage-example__step-name::before {
+  inset-block-start: calc((var(--step-line) - var(--step-ring)) / 2);
+  inset-inline-start: 0;
+  inline-size: var(--step-ring);
+  block-size: var(--step-ring);
+  border: calc(2 * var(--border-width)) solid var(--step-marker);
+  background-color: var(--color-surface);
+}
+
+.lineage-example__step-name::after {
+  inset-block-start: calc((var(--step-line) - var(--step-dot)) / 2);
+  inset-inline-start: calc((var(--step-ring) - var(--step-dot)) / 2);
+  inline-size: var(--step-dot);
+  block-size: var(--step-dot);
+  border: calc(var(--step-dot) / 2) solid var(--step-marker);
+}
+
+.lineage-example__step-description {
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
@@ -256,16 +294,16 @@
 }
 
 /* The scorecard's three rating categories, a legend, never a rating
-   given to a metric: alike but for their markers, a teal dot, an amber
-   dot and a hollow ring, each beside its text, so meaning never relies on
-   colour alone. The amber is a state colour on a status label (see the
-   design system). The solid dots are all border, so forced-colours mode
-   still draws them, and the ring stays hollow. */
+   given to a metric: a teal dot on the teal tint, an amber dot and a
+   hollow ring, each beside its text, so meaning never relies on colour
+   alone. The amber is a state colour on a status label (see the design
+   system). The solid dots are all border, so forced-colours mode still
+   draws them, and the ring stays hollow. */
 .lineage-example__ratings {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin: 0;
+  margin: var(--space-6) 0 0;
   padding: 0;
   list-style: none;
 }
@@ -274,7 +312,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) var(--space-3);
+  padding: var(--space-1) min(var(--space-3), 12px);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-full);
   background-color: var(--color-surface);
@@ -282,6 +320,14 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   line-height: var(--leading-snug);
+}
+
+/* Trusted: the teal tint, with a transparent border so forced-colours
+   mode still outlines it. */
+.lineage-example__ratings > li:first-child {
+  border-color: transparent;
+  background-color: var(--color-tag-bg);
+  color: var(--color-tag-text);
 }
 
 .lineage-example__ratings > li::before {
@@ -302,15 +348,9 @@
   border: calc(2 * var(--border-width)) solid var(--color-text-muted);
 }
 
-/* The tiles' and the band's inline padding below 48em: --space-6 at the
-   default text size, shrinking to 8px as page text grows to 200%, so the
-   longest words, and the button's label, still fit at 320px. */
-.trust-assessment__layout {
-  --tile-inset: clamp(8px, 48px - var(--space-6), var(--space-6));
-}
-
-/* Row 2: what you receive, as four tiles: one per row, two from 48em and
-   four from 64em (fewer with 200% page text), equal in each row. */
+/* Row 2: what you receive, as four tiles on the lighter dark surface: one
+   per row, two from 48em and four from 64em (fewer with 200% page text),
+   equal in each row. */
 .trust-assessment__receive-heading {
   margin-block: 0 var(--space-6);
 }
@@ -355,55 +395,35 @@
   text-wrap: pretty;
 }
 
-/* Row 3: the band. Stacked below 48em, the button --space-6 under the
-   supporting copy; from 48em the text group on the left and the button on
-   the right, centred against it, wrapping below it when the two do not
-   fit (with 200% page text, since the breakpoints follow the browser's
-   text size). */
-.trust-assessment__band {
+/* Row 3: the closing strip, after a hairline across the panel. Stacked
+   below 48em, the button full width --space-6 under the paragraph; from
+   48em the text group on the left and the button on the right, centred
+   against it, wrapping below it when the two do not fit (with 200% page
+   text, since the breakpoints follow the browser's text size). */
+.trust-assessment__next {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   gap: var(--space-6) var(--space-12);
-  padding: var(--space-6) var(--tile-inset);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-md);
-  background-color: var(--color-surface);
+  padding-block-start: var(--space-8);
+  border-block-start: var(--border-width) solid var(--color-border);
 }
 
-.trust-assessment__band-text {
+.trust-assessment__next-text {
   min-inline-size: 0;
   max-inline-size: 100%;
 }
 
-/* No wider than the band, so the button (max-width 100%) wraps its label
-   rather than overflowing. */
-.trust-assessment__actions {
-  min-inline-size: 0;
-  max-inline-size: 100%;
+.trust-assessment__next-text > .section-eyebrow {
+  margin-block-end: var(--space-3);
 }
 
-.trust-assessment__band-label {
-  margin-block: 0 var(--space-2);
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-snug);
-  text-transform: none;
+/* Paper, weight 300 and --text-2xl from the global heading styles. */
+.trust-assessment__next-statement {
+  margin-block-end: var(--space-3);
 }
 
-/* The statement, larger than the label and the body text. */
-.trust-assessment__after-statement {
-  max-width: var(--measure);
-  margin-block: 0 var(--space-3);
-  color: var(--color-heading);
-  font-size: var(--text-xl);
-  font-weight: var(--weight-regular);
-  line-height: var(--leading-snug);
-  text-wrap: pretty;
-}
-
-.trust-assessment__after {
+.trust-assessment__next-supporting {
   max-width: var(--measure);
   margin-block: 0;
   color: var(--color-text-muted);
@@ -411,47 +431,93 @@
   text-wrap: pretty;
 }
 
+/* No wider than the strip, so the button (max-width 100%) wraps its label
+   rather than overflowing. */
+.trust-assessment__actions {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.trust-assessment__actions > .button {
+  inline-size: 100%;
+}
 
 @media (min-width: 48em) {
+  .trust-assessment__panel {
+    --tile-inset: var(--space-6);
+
+    padding: var(--space-10);
+  }
+
   /* Two per row, or one when a tile would be narrower than 12rem (with
      200% page text), so no word breaks. */
   .trust-assessment__tiles {
     grid-template-columns: repeat(auto-fit, minmax(max(12rem, calc((100% - var(--space-6)) / 2)), 1fr));
   }
 
-  .trust-assessment__layout {
-    --tile-inset: var(--space-6);
-  }
-
-  .trust-assessment__band {
+  .trust-assessment__next {
     flex-flow: row wrap;
     align-items: center;
-    padding: var(--space-8);
   }
 
-  .trust-assessment__band-text {
+  .trust-assessment__next-text {
     flex: 1 1 16em;
   }
 
   .trust-assessment__actions {
     flex: 0 1 auto;
   }
+
+  .trust-assessment__actions > .button {
+    inline-size: auto;
+  }
 }
 
 @media (min-width: 64em) {
-  .trust-assessment__layout {
+  .trust-assessment__panel {
     grid-template-columns: minmax(0, 8fr) minmax(0, 7fr);
     column-gap: var(--space-16);
     row-gap: var(--space-16);
+    padding: var(--space-16);
+  }
+
+  /* The intro stretches to the row's height, so the contours can take the
+     free height below the pill beside the card. */
+  .trust-assessment__intro {
+    align-self: stretch;
   }
 
   .trust-assessment__receive,
-  .trust-assessment__band {
+  .trust-assessment__next {
     grid-column: 1 / -1;
   }
 
-  /* Four per row, or fewer when a tile would be narrower than 12rem. */
+  .trust-assessment__next {
+    padding-block-start: var(--space-12);
+  }
+
+  /* Faint teal curves in the free height below the pill, at least
+     --space-8 under it; 0px tall when there is none. */
+  .trust-assessment__contours {
+    display: block;
+    flex: 1 1 0;
+    inline-size: 100%;
+    min-block-size: 0;
+    margin-block-start: var(--space-8);
+    color: var(--color-accent);
+    opacity: var(--opacity-contour);
+  }
+
+  /* Four per row, or fewer when a tile would be narrower than 11rem: at
+     1024px the panel's padding leaves each tile about 190px (11.9rem). */
   .trust-assessment__tiles {
-    grid-template-columns: repeat(auto-fit, minmax(max(12rem, calc((100% - 3 * var(--space-6)) / 4)), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(max(11rem, calc((100% - 3 * var(--space-6)) / 4)), 1fr));
+  }
+}
+
+/* Decoration only: not drawn in forced-colours mode. */
+@media (forced-colors: active) {
+  .trust-assessment__contours {
+    display: none;
   }
 }

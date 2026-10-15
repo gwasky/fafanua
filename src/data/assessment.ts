@@ -11,9 +11,14 @@
 // is, and CSS shows them in capitals. The button reads the site's one call
 // to action label from contact.ts (W1, #68). assessment.plan.test.ts
 // checks the wording against both plans. W11 in the trust and lineage plan
-// (#81) lays the section out in three rows and adds five labels, the only
-// new copy: the four deliverable tiles' labels and the example's owner row
-// value. TrustAssessment.tsx reads this copy from here and nowhere else.
+// (#81) added the four deliverable tiles' labels. The Data Trust
+// Assessment dark panel plan
+// (_docs/fafanua-data-trust-assessment-dark-panel-plan.md, #82) supersedes
+// W11 and the enhancement plan's §11 block: it adds the facts pill, a
+// description for each of the seven steps, and the closing strip's
+// eyebrow, statement and paragraph, and removes the after-assessment copy
+// and W11's owner row value. TrustAssessment.tsx reads this copy from here
+// and nowhere else.
 
 import { ctaLabel } from './contact.ts'
 
@@ -25,6 +30,10 @@ export const assessmentHeading = 'Know where every number comes from.'
 
 export const assessmentLead =
   'The Data Trust Assessment takes the numbers your leadership relies on most and traces each one from the report back to its source. It runs for three weeks at a fixed fee.'
+
+// The facts pill under the lead (the dark panel plan §3, #82): a middle
+// dot (U+00B7) between the two facts.
+export const assessmentFacts = '3 weeks · fixed fee'
 
 export const assessmentDeliverablesHeading = 'What you receive'
 
@@ -44,12 +53,16 @@ export const assessmentDeliverableLabels: readonly string[] = [
   'Fix list',
 ]
 
-export const assessmentAfterHeading = 'After the assessment'
+// The closing strip (the dark panel plan §3, #82), which replaces the
+// enhancement plan §11's after-assessment block: its eyebrow, stored
+// in sentence case and shown in capitals like every eyebrow, the statement
+// (an h3) and the paragraph.
+export const assessmentNextEyebrow = 'What happens next'
 
-export const assessmentAfterStatement = 'The assessment tells us what to fix first.'
+export const assessmentNextStatement = 'Turn findings into a prioritised roadmap.'
 
-export const assessmentAfterSupporting =
-  'The findings become a prioritised roadmap. From there, Fafanua can strengthen the parts of your data foundation that need attention — from integration and modelling to quality, governance and analytics.'
+export const assessmentNextSupporting =
+  'The assessment shows where trust breaks down and what matters most. From there, Fafanua can strengthen the parts of your data foundation that need attention — from integration and modelling to quality, governance and analytics.'
 
 export const assessmentCtaLabel = ctaLabel
 
@@ -64,32 +77,39 @@ export const exampleMetrics: readonly string[] = [
   'Cost per Customer',
 ]
 
-// The illustrative example (#77, #79, laid out by W11 in #81): its
-// caption, the example metric names under their label, the five trace
-// steps each is traced through, in order from the report back to its
-// source, then the footer's two rows: the owner label with its value, a
-// role and never a name, and the trust rating label over the scorecard's
-// three rating categories. The steps, then the two footer labels, are
-// still the enhancement plan's seven-step sequence (§9). Labels only: no
-// figure, value, rating or finding is given for any metric.
+// The illustrative example (#77, #79, laid out by the dark panel plan in
+// #82): its caption, the example metric names under their label, then the
+// enhancement plan §9's seven trace steps, in order from the report back
+// to its source, each with the dark panel plan §3's description, then the
+// scorecard's three rating categories. Owner and Trust rating are
+// attributes of a traced number rather than places it passes through:
+// `attribute` marks them, and the card draws them with an ink marker and a
+// muted name. Labels only: no figure, value, rating or finding is given
+// for any metric.
 export const lineageExample: {
   readonly caption: string
   readonly metricsLabel: string
   readonly metrics: readonly string[]
   readonly stepsLabel: string
-  readonly steps: readonly string[]
-  readonly ownerLabel: string
-  readonly ownerRole: string
-  readonly ratingLabel: string
+  readonly steps: readonly {
+    readonly name: string
+    readonly description: string
+    readonly attribute: boolean
+  }[]
   readonly ratings: readonly string[]
 } = {
   caption: 'Illustrative example',
   metricsLabel: 'Example leadership metrics',
   metrics: exampleMetrics,
   stepsLabel: 'Each traced through',
-  steps: ['Report', 'Definition', 'Calculation', 'Data model', 'Source system'],
-  ownerLabel: 'Owner',
-  ownerRole: 'One role per metric',
-  ratingLabel: 'Trust rating',
+  steps: [
+    { name: 'Report', description: 'The leadership report where the number appears', attribute: false },
+    { name: 'Definition', description: 'How the number is defined', attribute: false },
+    { name: 'Calculation', description: 'The logic and rules that produce it', attribute: false },
+    { name: 'Data model', description: 'The tables the calculation reads from', attribute: false },
+    { name: 'Source system', description: 'Where the data is first recorded', attribute: false },
+    { name: 'Owner', description: 'Who is accountable for the number', attribute: true },
+    { name: 'Trust rating', description: 'How far the number can be trusted, and why', attribute: true },
+  ],
   ratings: ['Trusted', 'Trusted with caveats', 'Not yet trusted'],
 }
