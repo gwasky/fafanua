@@ -85,7 +85,7 @@ describe('TrustAssessment', () => {
     expect(intro).toContainElement(within(section).getByRole('heading', { level: 2 }))
     expect(figure).toBe(within(section).getByRole('figure'))
     expect(receive.firstElementChild).toBe(within(section).getByRole('heading', { name: 'What you receive' }))
-    expect(band.firstElementChild).toBe(within(section).getByRole('heading', { name: 'After the assessment' }))
+    expect(band.firstElementChild!.firstElementChild).toBe(within(section).getByRole('heading', { name: 'After the assessment' }))
   })
 
   it('shows the eyebrow and engagement name in one row, then the h2 and the lead, in the intro (#79, #81)', () => {
@@ -105,14 +105,19 @@ describe('TrustAssessment', () => {
     expect([lead.tagName, lead.textContent]).toEqual(['P', assessmentLead])
   })
 
-  it('shows the band\'s h3, statement, supporting copy and the button, in reading order, the button last in the section (#79, #81)', () => {
+  it('shows the band\'s text group (h3, statement, supporting copy), then the button, in reading order, the button last in the section (#79, #81)', () => {
     const { section } = renderSection()
     const after = within(section).getByRole('heading', { name: 'After the assessment' })
-    const band = after.parentElement!
-    const [heading, statement, supporting, actions, ...rest] = [...band.children]
+    const textGroup = after.parentElement!
+    const band = textGroup.parentElement!
+    const [heading, statement, supporting, ...rest] = [...textGroup.children]
+    const [group, actions, ...more] = [...band.children]
     const link = within(section).getByRole('link')
 
     expect(rest).toEqual([])
+    expect(more).toEqual([])
+    expect(group).toBe(textGroup)
+    expect(textGroup.tagName).toBe('DIV')
     expect(heading).toBe(after)
     expect([statement.tagName, statement.textContent]).toEqual(['P', AFTER_STATEMENT])
     expect([supporting.tagName, supporting.textContent]).toEqual(['P', AFTER_SUPPORTING])

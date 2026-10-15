@@ -111,8 +111,12 @@
 /* Row 1: the card. */
 
 .lineage-example {
-  /* The trace's rings, and the line their labels sit on. */
-  --step-ring: var(--space-4);
+  /* The trace's rings and their gap to the text, and the line their
+     labels sit on. The rings are a fixed-size drawing, --space-4 and
+     --space-2 at the default text size: in rem they would double with
+     200% page text and leave the steps too little room at 320px. */
+  --step-ring: min(var(--space-4), 16px);
+  --step-gap: min(var(--space-2), 8px);
   --step-line: calc(var(--text-base) * var(--leading-normal));
   /* The rating markers. */
   --rating-dot: var(--space-2);
@@ -180,7 +184,7 @@
    with a hollow ring level with its text. The first step, the report, is
    in full ink. */
 .lineage-example__trace {
-  padding-inline-start: var(--space-5);
+  padding-inline-start: var(--example-inset);
   border-inline-start: calc(2 * var(--border-width)) solid var(--color-accent);
 }
 
@@ -194,7 +198,7 @@
 
 .lineage-example__steps > li {
   position: relative;
-  padding-inline-start: calc(var(--step-ring) + var(--space-3));
+  padding-inline-start: calc(var(--step-ring) + var(--step-gap));
   color: var(--color-text-muted);
   font-size: var(--text-base);
   line-height: var(--leading-normal);
@@ -298,8 +302,15 @@
   border: calc(2 * var(--border-width)) solid var(--color-text-muted);
 }
 
+/* The tiles' and the band's inline padding below 48em: --space-6 at the
+   default text size, shrinking to 8px as page text grows to 200%, so the
+   longest words, and the button's label, still fit at 320px. */
+.trust-assessment__layout {
+  --tile-inset: clamp(8px, 48px - var(--space-6), var(--space-6));
+}
+
 /* Row 2: what you receive, as four tiles: one per row, two from 48em and
-   four from 64em, equal in each row. */
+   four from 64em (fewer with 200% page text), equal in each row. */
 .trust-assessment__receive-heading {
   margin-block: 0 var(--space-6);
 }
@@ -314,7 +325,7 @@
 }
 
 .trust-assessment__tiles > li {
-  padding: var(--space-6);
+  padding: var(--space-6) var(--tile-inset);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-md);
   background-color: var(--color-surface);
@@ -345,15 +356,31 @@
 }
 
 /* Row 3: the band. Stacked below 48em, the button --space-6 under the
-   supporting copy; from 48em the text on the left and the button on the
-   right, centred against it. */
+   supporting copy; from 48em the text group on the left and the button on
+   the right, centred against it, wrapping below it when the two do not
+   fit (with 200% page text, since the breakpoints follow the browser's
+   text size). */
 .trust-assessment__band {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-6) var(--space-12);
+  padding: var(--space-6) var(--tile-inset);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-md);
   background-color: var(--color-surface);
+}
+
+.trust-assessment__band-text {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+/* No wider than the band, so the button (max-width 100%) wraps its label
+   rather than overflowing. */
+.trust-assessment__actions {
+  min-inline-size: 0;
+  max-inline-size: 100%;
 }
 
 .trust-assessment__band-label {
@@ -384,30 +411,30 @@
   text-wrap: pretty;
 }
 
-.trust-assessment__actions {
-  margin-block-start: var(--space-6);
-}
 
 @media (min-width: 48em) {
+  /* Two per row, or one when a tile would be narrower than 12rem (with
+     200% page text), so no word breaks. */
   .trust-assessment__tiles {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(max(12rem, calc((100% - var(--space-6)) / 2)), 1fr));
+  }
+
+  .trust-assessment__layout {
+    --tile-inset: var(--space-6);
   }
 
   .trust-assessment__band {
-    grid-template-columns: minmax(0, 1fr) auto;
-    column-gap: var(--space-12);
+    flex-flow: row wrap;
     align-items: center;
     padding: var(--space-8);
   }
 
-  .trust-assessment__band > :not(.trust-assessment__actions) {
-    grid-column: 1;
+  .trust-assessment__band-text {
+    flex: 1 1 16em;
   }
 
   .trust-assessment__actions {
-    grid-column: 2;
-    grid-row: 1 / span 3;
-    margin-block-start: 0;
+    flex: 0 1 auto;
   }
 }
 
@@ -423,7 +450,8 @@
     grid-column: 1 / -1;
   }
 
+  /* Four per row, or fewer when a tile would be narrower than 12rem. */
   .trust-assessment__tiles {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(max(12rem, calc((100% - 3 * var(--space-6)) / 4)), 1fr));
   }
 }

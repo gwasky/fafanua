@@ -28,8 +28,8 @@ import './TrustAssessment.css'
 // rule; then, after a hairline, a definition list of the owner row and the
 // trust rating row with the scorecard's three rating categories, none of
 // them given to any metric. Row 2: the h3 over the four deliverables as
-// tiles, each with its label. Row 3: a band with the h3, the statement,
-// its supporting copy and the one call to action (to #contact, like the
+// tiles, each with its label. Row 3: a band with its text group (the h3,
+// the statement and its supporting copy) and the one call to action (to #contact, like the
 // hero's). The figure has no controls or tab stops: each list is named by
 // the label before it, so it reads in order without CSS, and every rule,
 // ring and marker is drawn with borders in CSS. Not in the navigation.
@@ -117,9 +117,11 @@ function TrustAssessment() {
           </ul>
         </div>
         <div className="trust-assessment__band">
-          <h3 className="trust-assessment__band-label">{assessmentAfterHeading}</h3>
-          <p className="trust-assessment__after-statement">{assessmentAfterStatement}</p>
-          <p className="trust-assessment__after">{assessmentAfterSupporting}</p>
+          <div className="trust-assessment__band-text">
+            <h3 className="trust-assessment__band-label">{assessmentAfterHeading}</h3>
+            <p className="trust-assessment__after-statement">{assessmentAfterStatement}</p>
+            <p className="trust-assessment__after">{assessmentAfterSupporting}</p>
+          </div>
           <div className="trust-assessment__actions">
             <a className="button" href="#contact">
               {assessmentCtaLabel}

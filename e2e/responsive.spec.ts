@@ -684,17 +684,54 @@ const sectorOverflow = (page: Page) =>
   })
 
 /**
- * The Data Trust Assessment's layout (#71): its padding and the gaps to
- * its neighbours' content, its columns, the example's steps, and anything
- * overlapping, outside the container, overflowing or broken mid-word.
+ * The Data Trust Assessment's layout (#71, laid out by W11 in #81): its
+ * padding and the gaps to its neighbours' content, its three rows, the
+ * intro's labels, the card's chips, trace and footer, the tiles, the band,
+ * and anything overlapping, outside the container, overflowing or broken
+ * mid-word.
  */
 const measureAssessment = (page: Page) =>
   page.evaluate(() => {
     const section = document.getElementById('data-trust-assessment')!
     const container = section.querySelector(':scope > .container')!
-    const copy = container.children[0]
-    const figure = section.querySelector('figure')!
+    const [intro, figure, receive, band] = [...container.children]
     const box = (element: Element) => element.getBoundingClientRect()
+    const rect = (element: Element) => box(element).toJSON() as DOMRect
+    // A fresh probe for each token: the page's content security policy
+    // keeps a reused probe's style attribute from resetting.
+    const token = (property: string, value: string) => {
+      const element = document.createElement('div')
+      document.body.append(element)
+      element.style.setProperty(property, value)
+      const result = getComputedStyle(element).getPropertyValue(property)
+      element.remove()
+      return result
+    }
+    const px = (value: string) => parseFloat(token('padding-top', value))
+    const colour = (value: string) => token('color', value)
+    const tokens = {
+      space2: px('var(--space-2)'),
+      space3: px('var(--space-3)'),
+      space4: px('var(--space-4)'),
+      space6: px('var(--space-6)'),
+      space8: px('var(--space-8)'),
+      space12: px('var(--space-12)'),
+      space16: px('var(--space-16)'),
+      measure: px('var(--measure)'),
+      heading: colour('var(--color-heading)'),
+      muted: colour('var(--color-text-muted)'),
+      text: colour('var(--color-text)'),
+      border: colour('var(--color-border)'),
+      accent: colour('var(--color-accent)'),
+      warning: colour('var(--state-warning)'),
+      surface: colour('var(--color-surface)'),
+      tagText: colour('var(--color-tag-text)'),
+      tagBg: colour('var(--color-tag-bg)'),
+      sm: parseFloat(token('font-size', 'var(--text-sm)')),
+      base: parseFloat(token('font-size', 'var(--text-base)')),
+      xl: parseFloat(token('font-size', 'var(--text-xl)')),
+      eyebrow: parseFloat(token('font-size', 'var(--text-eyebrow)')),
+    }
     // One --space-section: the problem block's top padding, measured
     // where it is used.
     const positioning = document.querySelector('.positioning')!
@@ -712,34 +749,65 @@ const measureAssessment = (page: Page) =>
       right: box(container).right - parseFloat(containerStyle.paddingRight),
     }
     const all = [...container.querySelectorAll('*')]
-    // The example's lists (#77): the metric names, the seven steps (the
-    // steps list's own items, not the lists nested in them) and the
-    // rating categories in the last step.
-    const metrics = figure.querySelector(':scope > ul')!
-    const stepItems = [...figure.querySelectorAll(':scope > ol > li')]
-    const ratings = [...figure.querySelectorAll(':scope > ol > li > ul > li')]
-    // Blocks in reading order, in each column, in each step and in the
-    // metrics list.
-    const sequences = [
-      [...copy.children],
-      [...figure.children],
-      ...stepItems.map((item) => [...item.children]),
-      [...metrics.children],
-    ]
+    const [labels, h2, lead] = [...intro.children]
+    const [eyebrow, tag] = [...labels.children]
+    const metrics = [...figure.querySelectorAll(':scope > ul > li')]
+    const trace = figure.querySelector(':scope > div')!
+    const [stepsLabel, stepsList] = [...trace.children]
+    const steps = [...stepsList.children]
+    const footer = figure.querySelector(':scope > dl')!
+    const footerRows = [...footer.children]
+    const ratings = [...footer.querySelectorAll('li')]
+    const tiles = [...receive.querySelectorAll(':scope > ul > li')]
+    const [bandText, actions] = [...band.children]
+    const [bandLabel, statement, supporting] = [...bandText.children]
+    const button = actions.querySelector('a')!
     const name = (element: Element) => element.textContent?.slice(0, 30)
+    const borders = (style: CSSStyleDeclaration) =>
+      [style.borderTopWidth, style.borderTopStyle, style.borderTopColor].join(' ') +
+      ' | ' +
+      [style.borderRightWidth, style.borderRightStyle, style.borderRightColor].join(' ') +
+      ' | ' +
+      [style.borderBottomWidth, style.borderBottomStyle, style.borderBottomColor].join(' ') +
+      ' | ' +
+      [style.borderLeftWidth, style.borderLeftStyle, style.borderLeftColor].join(' ')
+    const look = (element: Element) => {
+      const style = getComputedStyle(element)
+      return {
+        size: parseFloat(style.fontSize),
+        weight: style.fontWeight,
+        color: style.color,
+        background: style.backgroundColor,
+        transform: style.textTransform,
+        tracking: parseFloat(style.letterSpacing) / parseFloat(style.fontSize),
+        lineHeight: parseFloat(style.lineHeight) / parseFloat(style.fontSize),
+      }
+    }
+    // Blocks in reading order that must stack, each below the one before.
+    const sequences = [
+      [labels, h2, lead],
+      [...figure.children],
+      [stepsLabel, ...steps],
+      [...footerRows],
+      [receive.firstElementChild!, receive.lastElementChild!],
+      ...tiles.map((tile) => [...tile.children]),
+    ]
+    // Items that wrap in rows: no two may share any area.
+    const groups = [[eyebrow, tag], metrics, ratings, tiles, ...footerRows.map((row) => [...row.children])]
     const overlaps = [
       ...sequences.flatMap((blocks) =>
         blocks.slice(1).flatMap((block, i) =>
           box(block).top < box(blocks[i]).bottom - 1 ? [`${name(blocks[i])} / ${name(block)}`] : [],
         ),
       ),
-      // The ratings wrap in rows, so no two may share any area.
-      ...ratings.flatMap((a, i) =>
-        ratings.slice(i + 1).flatMap((b) => {
-          const [p, q] = [box(a), box(b)]
-          const apart = p.right <= q.left + 1 || q.right <= p.left + 1 || p.bottom <= q.top + 1 || q.bottom <= p.top + 1
-          return apart ? [] : [`${name(a)} / ${name(b)}`]
-        }),
+      ...groups.flatMap((items) =>
+        items.flatMap((a, i) =>
+          items.slice(i + 1).flatMap((b) => {
+            const [p, q] = [box(a), box(b)]
+            const apart = p.right <= q.left + 1 || q.right <= p.left + 1 || p.bottom <= q.top + 1 || q.bottom <= p.top + 1
+            return apart ? [] : [`${name(a)} / ${name(b)}`]
+          }),
+        ),
       ),
     ]
     // A word broken across lines leaves a line that starts or ends
@@ -755,96 +823,162 @@ const measureAssessment = (page: Page) =>
       for (let i = 0; i < text.textContent!.length; i++) {
         range.setStart(text, i)
         range.setEnd(text, i + 1)
-        const rect = range.getClientRects()[0]
-        if (!rect) continue
-        if (top !== null && Math.abs(rect.top - top) > 2) {
+        const r = range.getClientRects()[0]
+        if (!r) continue
+        if (top !== null && Math.abs(r.top - top) > 2) {
           lines.push(line)
           line = ''
         }
-        top = rect.top
+        top = r.top
         line += text.textContent![i]
       }
       lines.push(line)
       return lines.flatMap((l) => l.trim().split(/\s+/)).filter((word) => word && !words.has(word))
     }
+    const figureStyle = getComputedStyle(figure)
+    const traceStyle = getComputedStyle(trace)
+    const footerStyle = getComputedStyle(footer)
+    const bandStyle = getComputedStyle(band)
+    const tilesStyle = getComputedStyle(receive.lastElementChild!)
     return {
+      tokens,
       section: section_,
       paper,
       background: getComputedStyle(section).backgroundColor,
-      figureBackground: getComputedStyle(figure).backgroundColor,
       paddingTop: parseFloat(getComputedStyle(section).paddingTop),
       positioningPaddingBottom: parseFloat(getComputedStyle(positioning).paddingBottom),
       paddingBottom: parseFloat(getComputedStyle(section).paddingBottom),
       servicesPaddingTop: parseFloat(getComputedStyle(document.getElementById('services')!).paddingTop),
-      gapAbove: box(copy.firstElementChild!).top - problemBottom,
-      // The copy column's first three elements (#79): the eyebrow, the
-      // engagement name and the h2.
-      intro: [...copy.children].slice(0, 3).map((element) => {
-        const style = getComputedStyle(element)
-        return {
-          tag: element.tagName,
-          className: element.className,
-          text: (element as HTMLElement).innerText,
-          size: parseFloat(style.fontSize),
-          weight: style.fontWeight,
-          color: style.color,
-          transform: style.textTransform,
-          tracking: parseFloat(style.letterSpacing) / parseFloat(style.fontSize),
-        }
-      }),
+      gapAbove: box(eyebrow).top - problemBottom,
       gapBelow: box(servicesFirst).top - box(container).bottom,
-      copy: box(copy).toJSON() as DOMRect,
-      figure: box(figure).toJSON() as DOMRect,
-      caption: figure.querySelector('figcaption')!.textContent,
-      metrics: [...metrics.children].map((item) => item.textContent),
-      ratings: ratings.map((item) => {
-        const style = getComputedStyle(item)
+      rows: [intro, figure, receive, band].map((element) => element.className),
+      intro: rect(intro),
+      figure: rect(figure),
+      receive: rect(receive),
+      band: rect(band),
+      eyebrow: { ...look(eyebrow), text: (eyebrow as HTMLElement).innerText, className: eyebrow.className, box: rect(eyebrow) },
+      tag: {
+        ...look(tag),
+        tagName: tag.tagName,
+        text: (tag as HTMLElement).innerText,
+        box: rect(tag),
+        radius: getComputedStyle(tag).borderTopLeftRadius,
+        padding: [getComputedStyle(tag).paddingTop, getComputedStyle(tag).paddingLeft].map(parseFloat),
+        borders: borders(getComputedStyle(tag)),
+      },
+      h2: { ...look(h2), tagName: h2.tagName, text: (h2 as HTMLElement).innerText },
+      figureBackground: figureStyle.backgroundColor,
+      figureContent: {
+        left: box(figure).left + parseFloat(figureStyle.borderLeftWidth) + parseFloat(figureStyle.paddingLeft),
+        right: box(figure).right - parseFloat(figureStyle.borderRightWidth) - parseFloat(figureStyle.paddingRight),
+      },
+      metrics: metrics.map((chip) => {
+        const style = getComputedStyle(chip)
         return {
-          text: item.textContent,
-          border: `${style.borderTopWidth} ${style.borderTopStyle} ${style.borderTopColor} ${style.borderRightColor} ${style.borderBottomColor} ${style.borderLeftColor}`,
-          background: style.backgroundColor,
-          color: style.color,
-          weight: style.fontWeight,
+          text: chip.textContent,
+          box: rect(chip),
+          borders: borders(style),
+          ...look(chip),
+          radius: style.borderTopLeftRadius,
           cursor: style.cursor,
+          tabIndex: (chip as HTMLElement).tabIndex,
         }
       }),
-      steps: stepItems.map((item) => {
-        const ring = getComputedStyle(item, '::before')
-        const label = box(item.firstElementChild!)
-        const itemBox = box(item)
-        // The arrowhead (#79), on the step's label: a square of two
-        // borders turned 45 degrees, positioned against the step.
-        const arrow = getComputedStyle(item.firstElementChild!, '::after')
-        const arrowTop = itemBox.top + parseFloat(arrow.top)
+      trace: {
+        box: rect(trace),
+        rule: [traceStyle.borderLeftWidth, traceStyle.borderLeftStyle, traceStyle.borderLeftColor],
+        animation: traceStyle.animationName,
+        label: { box: rect(stepsLabel), ...look(stepsLabel) },
+      },
+      steps: steps.map((step) => {
+        const ring = getComputedStyle(step, '::before')
+        const stepBox = box(step)
+        const range = document.createRange()
+        range.selectNodeContents(step)
+        const textBox = range.getClientRects()[0]
+        const ringTop = stepBox.top + parseFloat(ring.top)
         return {
-          text: item.firstElementChild!.textContent,
-          ringColor: ring.borderTopColor,
-          ringBottom: itemBox.top + parseFloat(ring.top) + parseFloat(ring.height),
-          arrow: {
-            content: arrow.content,
-            position: arrow.position,
-            top: arrowTop,
-            bottom: arrowTop + parseFloat(arrow.height),
-            centre: itemBox.left + parseFloat(arrow.left) + parseFloat(arrow.width) / 2,
-            ringCentre: itemBox.left + parseFloat(ring.left) + parseFloat(ring.width) / 2,
-            width: parseFloat(arrow.width),
-            borders: [arrow.borderTopStyle, arrow.borderRightStyle, arrow.borderBottomStyle, arrow.borderLeftStyle],
-            color: arrow.borderRightColor,
-            bottomColor: arrow.borderBottomColor,
-            background: arrow.backgroundColor,
-            transform: arrow.transform,
-            animation: arrow.animationName,
+          text: step.textContent,
+          box: rect(step),
+          ...look(step),
+          ring: {
+            content: ring.content,
+            left: stepBox.left + parseFloat(ring.left),
+            right: stepBox.left + parseFloat(ring.left) + parseFloat(ring.width),
+            width: parseFloat(ring.width),
+            height: parseFloat(ring.height),
+            centre: ringTop + parseFloat(ring.height) / 2,
+            border: [ring.borderTopWidth, ring.borderTopStyle, ring.borderTopColor],
+            background: ring.backgroundColor,
           },
-          top: itemBox.top,
-          bottom: itemBox.bottom,
-          left: itemBox.left,
-          ringTop: itemBox.top + parseFloat(ring.top),
-          ringRight: itemBox.left + parseFloat(ring.left) + parseFloat(ring.width),
-          labelLeft: label.left,
-          labelTop: label.top,
-          labelBottom: label.bottom,
+          textLeft: textBox.left,
+          textTop: textBox.top,
+          textBottom: textBox.bottom,
         }
       }),
+      footer: {
+        box: rect(footer),
+        hairline: [footerStyle.borderTopWidth, footerStyle.borderTopStyle, footerStyle.borderTopColor],
+        marginTop: parseFloat(footerStyle.marginTop),
+        paddingTop: parseFloat(footerStyle.paddingTop),
+        above: box(footer).top - box(trace).bottom,
+        rows: footerRows.map((row) => {
+          const [dt, dd] = [...row.children]
+          return { dt: { box: rect(dt), ...look(dt), text: dt.textContent }, dd: { box: rect(dd), ...look(dd) } }
+        }),
+      },
+      ratings: ratings.map((chip) => {
+        const style = getComputedStyle(chip)
+        const marker = getComputedStyle(chip, '::before')
+        return {
+          text: chip.textContent,
+          borders: borders(style),
+          ...look(chip),
+          gap: style.columnGap,
+          cursor: style.cursor,
+          marker: {
+            content: marker.content,
+            width: parseFloat(marker.width),
+            height: parseFloat(marker.height),
+            borderWidth: parseFloat(marker.borderTopWidth),
+            borderStyle: marker.borderTopStyle,
+            borderColor: marker.borderTopColor,
+            background: marker.backgroundColor,
+            radius: marker.borderTopLeftRadius,
+          },
+        }
+      }),
+      receiveHeading: { ...look(receive.firstElementChild!), tagName: receive.firstElementChild!.tagName },
+      receiveGap: box(receive.lastElementChild!).top - box(receive.firstElementChild!).bottom,
+      tilesGap: [tilesStyle.rowGap, tilesStyle.columnGap].map(parseFloat),
+      tiles: tiles.map((tile) => {
+        const rule = getComputedStyle(tile, '::before')
+        const [label, text] = [...tile.children]
+        return {
+          box: rect(tile),
+          background: getComputedStyle(tile).backgroundColor,
+          borders: borders(getComputedStyle(tile)),
+          rule: {
+            width: parseFloat(rule.width),
+            border: [rule.borderTopWidth, rule.borderTopStyle, rule.borderTopColor],
+            marginBottom: parseFloat(rule.marginBottom),
+          },
+          ruleToLabel: box(label).top - box(tile).top - parseFloat(getComputedStyle(tile).paddingTop) - parseFloat(rule.height) - parseFloat(rule.borderTopWidth),
+          label: { ...look(label), text: label.textContent },
+          text: { ...look(text), text: text.textContent },
+        }
+      }),
+      bandBackground: bandStyle.backgroundColor,
+      bandBorders: borders(bandStyle),
+      bandPadding: [bandStyle.paddingTop, bandStyle.paddingRight, bandStyle.paddingBottom, bandStyle.paddingLeft].map(parseFloat),
+      bandChildren: [...band.children].map((child) => child.tagName),
+      bandTextChildren: [...bandText.children].map((child) => child.tagName),
+      bandText: rect(bandText),
+      bandLabel: { ...look(bandLabel), tagName: bandLabel.tagName, box: rect(bandLabel) },
+      statement: { ...look(statement), box: rect(statement) },
+      supporting: { ...look(supporting), box: rect(supporting), maxWidth: parseFloat(getComputedStyle(supporting).maxWidth) },
+      button: { box: rect(button), href: button.getAttribute('href'), text: button.textContent },
+      weights: [...section.querySelectorAll('*')].map((element) => getComputedStyle(element).fontWeight),
       overlaps,
       outside: all
         .filter((element) => box(element).left < inner.left - 1 || box(element).right > inner.right + 1)
@@ -1630,12 +1764,15 @@ for (const width of WIDTHS) {
 
     // The Data Trust Assessment (#71), on paper between the problem
     // block and Services: one --space-section gap above and below its
-    // content, never doubled or zero; the eyebrow and engagement name
-    // small above the dominant h2 (#79); the copy then the example stacked
-    // below 64em, side by side from it; the example's seven steps stacked
-    // at every width, each but the last with its arrowhead (#79); and
-    // nothing overflowing, clipped or overlapping, at the default page
-    // text size and at 200%.
+    // content, never doubled or zero. Laid out by W11 (#81) in three rows:
+    // the intro, with the eyebrow and the engagement name's tag in one
+    // row over the dominant h2, and the card, side by side from 64em; the
+    // four tiles; the band with the button. Its chips wrap, the trace's
+    // rule and rings, the footer's hairline and rows, and nothing
+    // overflowing, clipped, overlapping or broken mid-word, at the default
+    // page text size and at 200%. A media query in em follows the
+    // browser's text size, not page text, so with 200% page text the
+    // columns stay as at 100%.
     for (const text of ['100%', '200%'] as const) {
       test(`Data Trust Assessment layout, spacing and wrapping with ${text} text at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
@@ -1647,115 +1784,247 @@ for (const width of WIDTHS) {
           await waitForFonts(page)
         }
         const m = await measureAssessment(page)
+        const t = m.tokens
         const detail = JSON.stringify(m)
+        const near = (a: number, b: number, tolerance = 1) => Math.abs(a - b) <= tolerance
 
         expect(m.background, detail).toBe(m.paper)
-        expect(m.figureBackground, detail).toBe('rgb(255, 255, 255)')
         // One section gap above, split between the problem block's bottom
-        // padding and this section's own top padding, so its heading
+        // padding and this section's own top padding, so its eyebrow
         // lands clear of the header; and one below (this section's).
         expect(m.paddingTop, detail).toBeGreaterThan(0)
         expect(m.paddingTop, detail).toBeLessThan(m.section)
-        expect(Math.abs(m.positioningPaddingBottom + m.paddingTop - m.section), detail).toBeLessThanOrEqual(1)
+        expect(near(m.positioningPaddingBottom + m.paddingTop, m.section), detail).toBe(true)
         expect(m.servicesPaddingTop, detail).toBe(0)
-        expect(Math.abs(m.paddingBottom - m.section), detail).toBeLessThanOrEqual(1)
-        expect(Math.abs(m.gapAbove - m.section), `gap above: ${detail}`).toBeLessThanOrEqual(1)
-        expect(Math.abs(m.gapBelow - m.section), `gap below: ${detail}`).toBeLessThanOrEqual(1)
+        expect(near(m.paddingBottom, m.section), detail).toBe(true)
+        expect(near(m.gapAbove, m.section), `gap above: ${detail}`).toBe(true)
+        expect(near(m.gapBelow, m.section), `gap below: ${detail}`).toBe(true)
         expect(m.section, detail).toBeGreaterThanOrEqual(64)
-        // Two columns from 64em. A media query in em follows the browser's
-        // text size, not page text, so with 200% page text the columns
-        // stay at 1024 and 1440px.
+
+        // The rows, in DOM and visual order: intro and card, tiles, band.
+        expect(m.rows, detail).toEqual([
+          'trust-assessment__intro',
+          'lineage-example',
+          'trust-assessment__receive',
+          'trust-assessment__band',
+        ])
+        const rowGap = width >= 1024 ? t.space16 : t.space12
         if (width >= 1024) {
-          expect(m.figure.left, detail).toBeGreaterThan(m.copy.right)
-          expect(Math.abs(m.figure.top - m.copy.top), detail).toBeLessThanOrEqual(1)
+          // Two columns, --space-16 apart, tops level. The intro is the
+          // wider, as in the owner's reference image (8 : 7).
+          expect(near(m.figure.left - m.intro.right, t.space16), detail).toBe(true)
+          expect(near(m.figure.top, m.intro.top), detail).toBe(true)
+          expect(m.intro.width / m.figure.width, detail).toBeCloseTo(8 / 7, 1)
+          // The intro no longer runs far past the card.
+          if (text === '100%') expect(m.intro.bottom - m.figure.bottom, detail).toBeLessThanOrEqual(t.space12)
+          expect(near(m.receive.top - Math.max(m.intro.bottom, m.figure.bottom), rowGap), detail).toBe(true)
+          expect(near(m.receive.left, m.intro.left) && near(m.receive.right, m.figure.right), detail).toBe(true)
         } else {
-          expect(m.figure.top, detail).toBeGreaterThan(m.copy.bottom)
-          expect(Math.abs(m.figure.left - m.copy.left), detail).toBeLessThanOrEqual(1)
+          expect(near(m.figure.top - m.intro.bottom, t.space12), detail).toBe(true)
+          expect(near(m.figure.left, m.intro.left), detail).toBe(true)
+          expect(near(m.receive.top - m.figure.bottom, rowGap), detail).toBe(true)
         }
-        // START WITH TRUST, then DATA TRUST ASSESSMENT, then the h2 (#79):
-        // the eyebrow in its own style, the name a step larger and darker,
-        // both paragraphs, and the h2 at least twice the size of either.
-        const [eyebrow, name, h2] = m.intro
-        expect([eyebrow.tag, eyebrow.className, eyebrow.text], detail).toEqual(['P', 'section-eyebrow', 'START WITH TRUST'])
-        expect([name.tag, name.text], detail).toEqual(['P', 'DATA TRUST ASSESSMENT'])
-        expect([h2.tag, h2.text.replace(/\s+/g, ' ')], detail).toEqual(['H2', 'Know where every number comes from.'])
-        expect(eyebrow.weight, detail).toBe('500')
-        expect(name.weight, detail).toBe('500')
-        expect(h2.weight, detail).toBe('300')
-        for (const label of [eyebrow, name]) {
+        expect(near(m.band.top - m.receive.bottom, rowGap), detail).toBe(true)
+        expect(near(m.band.left, m.receive.left) && near(m.band.right, m.receive.right), detail).toBe(true)
+
+        // START WITH TRUST with the DATA TRUST ASSESSMENT tag beside it
+        // (or below it when the two do not fit), then the h2, at least
+        // twice the size of either.
+        expect([m.eyebrow.className, m.eyebrow.text], detail).toEqual(['section-eyebrow', 'START WITH TRUST'])
+        expect([m.tag.tagName, m.tag.text], detail).toEqual(['P', 'DATA TRUST ASSESSMENT'])
+        expect([m.h2.tagName, m.h2.text.replace(/\s+/g, ' ')], detail).toEqual(['H2', 'Know where every number comes from.'])
+        expect(m.tag.color, detail).toBe('rgb(15, 90, 82)')
+        expect(m.tag.background, detail).toBe('rgb(214, 244, 240)')
+        expect([m.tag.color, m.tag.background], detail).toEqual([t.tagText, t.tagBg])
+        expect(m.tag.size, detail).toBe(t.eyebrow)
+        expect(m.tag.radius, detail).toBe('9999px')
+        expect(m.tag.padding, detail).toEqual([t.space2 / 2, t.space3])
+        expect(m.tag.borders, detail).toBe(Array(4).fill('1px solid rgba(0, 0, 0, 0)').join(' | '))
+        for (const label of [m.eyebrow, m.tag]) {
+          expect(label.weight, detail).toBe('500')
           expect(label.transform, detail).toBe('uppercase')
           expect(label.tracking, detail).toBeCloseTo(0.08, 2)
-          expect(h2.size, detail).toBeGreaterThanOrEqual(2 * label.size)
+          expect(m.h2.size, detail).toBeGreaterThanOrEqual(2 * label.size)
         }
-        expect(name.size, detail).toBeGreaterThan(eyebrow.size)
-        expect(name.color, detail).toBe(h2.color)
-        expect(name.color, detail).not.toBe(eyebrow.color)
-        // The seven steps stack, in order, each below the last, level at
-        // the inline start, and each ring beside its label.
-        expect(m.steps.map((step) => step.text), detail).toEqual([
-          'Report',
-          'Definition',
-          'Calculation',
-          'Data model',
-          'Source system',
-          'Owner',
-          'Trust rating',
-        ])
-        expect(m.steps, detail).toHaveLength(7)
-        for (let i = 1; i < m.steps.length; i++) {
-          expect(m.steps[i].top, `step ${i + 1}: ${detail}`).toBeGreaterThanOrEqual(m.steps[i - 1].bottom - 1)
-          expect(Math.abs(m.steps[i].left - m.steps[0].left), `step ${i + 1}: ${detail}`).toBeLessThanOrEqual(1)
+        expect(m.h2.weight, detail).toBe('300')
+        const eyebrowCentre = m.eyebrow.box.top + m.eyebrow.box.height / 2
+        const tagCentre = m.tag.box.top + m.tag.box.height / 2
+        if (m.tag.box.left > m.eyebrow.box.right) {
+          expect(near(eyebrowCentre, tagCentre, 2), detail).toBe(true)
+          expect(near(m.tag.box.left - m.eyebrow.box.right, t.space3), detail).toBe(true)
+        } else {
+          expect(m.tag.box.top, detail).toBeGreaterThanOrEqual(m.eyebrow.box.bottom)
+          expect(near(m.tag.box.left, m.eyebrow.box.left), detail).toBe(true)
         }
-        // Each step but the last has its arrowhead (#79): two solid
-        // borders in the rings' colour, no fill, turned to point down,
-        // centred on the line, between this ring and the next, and still.
+
+        // The card: white, and its metric chips wrap without overlapping.
+        // The first, Revenue, is selected: a border twice as thick in teal
+        // 600 and the teal tint of the tag, as in the reference; the others
+        // a graphite 200 hairline, all alike, none a button.
+        expect(m.figureBackground, detail).toBe('rgb(255, 255, 255)')
+        expect(m.metrics.map((chip) => chip.text), detail).toEqual(['Revenue', 'Active Customers', 'Portfolio at Risk', 'Programme Outcomes', 'Cost per Customer'])
+        const [revenue, ...others] = m.metrics
+        expect(revenue.borders, detail).toBe(Array(4).fill(`2px solid ${t.accent}`).join(' | '))
+        expect([revenue.color, revenue.background], detail).toEqual([t.tagText, t.tagBg])
+        for (const chip of m.metrics) {
+          expect([chip.size, chip.weight, chip.radius, chip.cursor, chip.tabIndex], detail).toEqual([t.sm, '500', '9999px', 'auto', -1])
+          expect(chip.box.left, detail).toBeGreaterThanOrEqual(m.figureContent.left - 1)
+          expect(chip.box.right, detail).toBeLessThanOrEqual(m.figureContent.right + 1)
+        }
+        for (const chip of others) {
+          expect(chip.borders, detail).toBe(Array(4).fill(`1px solid ${t.border}`).join(' | '))
+          expect([chip.color, chip.background], detail).toEqual([t.heading, t.surface])
+          // No shorter than the selected chip: the thicker border takes
+          // the hairline's place (a chip may wrap to two lines at 200%).
+          expect(chip.box.height, detail).toBeGreaterThanOrEqual(revenue.box.height - 1)
+          if (text === '100%') expect(near(chip.box.height, revenue.box.height), detail).toBe(true)
+        }
+
+        // The trace: a continuous teal rule, 2px and still, from the
+        // label's top to the last step; the label and the five steps share
+        // one inline-start edge to its right, each step a hollow ring level
+        // with its text, the first in full ink, the rest muted.
+        expect(m.trace.rule, detail).toEqual(['2px', 'solid', t.accent])
+        expect(m.trace.animation, detail).toBe('none')
+        expect(near(m.trace.box.top, m.trace.label.box.top), detail).toBe(true)
+        expect(near(m.trace.box.bottom, m.steps[4].box.bottom), detail).toBe(true)
+        expect(m.trace.label.color, detail).toBe(t.muted)
+        expect(m.steps.map((step) => step.text), detail).toEqual(['Report', 'Definition', 'Calculation', 'Data model', 'Source system'])
         m.steps.forEach((step, i) => {
           const where = `step ${i + 1}: ${detail}`
-          if (i === m.steps.length - 1) {
-            expect(step.arrow.content, where).toBe('none')
-            return
-          }
-          expect(step.arrow.content, where).toBe('""')
-          expect(step.arrow.position, where).toBe('absolute')
-          expect(step.arrow.width, where).toBeGreaterThan(0)
-          expect(step.arrow.borders, where).toEqual(['none', 'solid', 'solid', 'none'])
-          expect(step.arrow.color, where).toBe(step.ringColor)
-          expect(step.arrow.bottomColor, where).toBe(step.ringColor)
-          expect(step.arrow.background, where).toBe('rgba(0, 0, 0, 0)')
-          expect(step.arrow.transform, where).not.toBe('none')
-          expect(step.arrow.animation, where).toBe('none')
-          expect(Math.abs(step.arrow.centre - step.arrow.ringCentre), where).toBeLessThanOrEqual(1)
-          expect(step.arrow.top, where).toBeGreaterThan(step.ringBottom)
-          expect(step.arrow.bottom, where).toBeLessThan(m.steps[i + 1].ringTop)
+          expect(near(step.box.left, m.trace.label.box.left), where).toBe(true)
+          expect(step.box.left, where).toBeGreaterThan(m.trace.box.left + 2)
+          if (i > 0) expect(step.box.top, where).toBeGreaterThanOrEqual(m.steps[i - 1].box.bottom - 1)
+          expect(step.ring.content, where).toBe('""')
+          expect(near(step.ring.left, step.box.left), where).toBe(true)
+          expect(step.ring.right, where).toBeLessThanOrEqual(step.textLeft)
+          // --space-4 at the default text size, and no larger with 200%.
+          const ring = Math.min(t.space4, 16)
+          expect([step.ring.width, step.ring.height], where).toEqual([ring, ring])
+          expect(step.ring.background, where).toBe(t.surface)
+          expect(step.ring.border, where).toEqual(['2px', 'solid', i === 0 ? t.heading : t.muted])
+          expect(step.color, where).toBe(i === 0 ? t.heading : t.muted)
+          expect(step.ring.centre, where).toBeGreaterThan(step.textTop)
+          expect(step.ring.centre, where).toBeLessThan(step.textBottom)
         })
-        for (const step of m.steps) {
-          expect(step.ringRight, detail).toBeLessThanOrEqual(step.labelLeft)
-          expect(step.ringTop, detail).toBeGreaterThanOrEqual(step.labelTop - 1)
-          expect(step.ringTop, detail).toBeLessThanOrEqual(step.labelBottom)
+
+        // The footer: a graphite 200 hairline across the card's content
+        // width, --space-6 above and below, then Owner and Trust rating,
+        // each label beside its value when they fit, above it otherwise.
+        expect(m.footer.hairline, detail).toEqual(['1px', 'solid', t.border])
+        expect(near(m.footer.above, t.space6) && near(m.footer.paddingTop, t.space6), detail).toBe(true)
+        expect(near(m.footer.box.left, m.figureContent.left) && near(m.footer.box.right, m.figureContent.right), detail).toBe(true)
+        expect(m.footer.rows.map((row) => row.dt.text), detail).toEqual(['Owner', 'Trust rating'])
+        for (const { dt, dd } of m.footer.rows) {
+          expect([dt.size, dt.weight, dt.color], detail).toEqual([t.sm, '500', t.heading])
+          if (dd.box.left > dt.box.right) {
+            expect(dd.box.top, detail).toBeLessThan(dt.box.bottom)
+          } else {
+            expect(dd.box.top, detail).toBeGreaterThanOrEqual(dt.box.bottom)
+          }
         }
-        // The metric names and the three rating categories (#77), the
-        // ratings all alike and not styled as buttons.
-        expect(m.metrics, detail).toEqual(['Revenue', 'Active Customers', 'Portfolio at Risk', 'Programme Outcomes', 'Cost per Customer'])
+        const ownerRole = m.footer.rows[0].dd
+        expect([ownerRole.size, ownerRole.weight, ownerRole.color], detail).toEqual([t.sm, '400', t.muted])
+
+        // The three rating chips: alike but for their markers, a teal dot,
+        // an amber dot and a hollow ring, --space-2 from the text.
         expect(m.ratings.map((rating) => rating.text), detail).toEqual(['Trusted', 'Trusted with caveats', 'Not yet trusted'])
-        for (const { border, background, color, weight, cursor } of m.ratings) {
-          expect({ border, background, color, weight }, detail).toEqual({
-            border: m.ratings[0].border,
-            background: m.ratings[0].background,
-            color: m.ratings[0].color,
-            weight: m.ratings[0].weight,
+        for (const rating of m.ratings) {
+          const { borders, background, color, weight, size } = rating
+          expect({ borders, background, color, weight, size }, detail).toEqual({
+            borders: Array(4).fill(`1px solid ${t.border}`).join(' | '),
+            background: t.surface,
+            color: t.heading,
+            weight: '500',
+            size: t.sm,
           })
-          expect(cursor, detail).not.toBe('pointer')
+          expect(rating.cursor, detail).not.toBe('pointer')
+          expect(parseFloat(rating.gap), detail).toBe(t.space2)
+          expect([rating.marker.content, rating.marker.width, rating.marker.height, rating.marker.borderStyle, rating.marker.radius], detail).toEqual(['""', t.space2, t.space2, 'solid', '9999px'])
+          expect(rating.marker.background, detail).toBe('rgba(0, 0, 0, 0)')
         }
-        expect(m.ratings[0].weight, detail).toBe('500')
+        expect(m.ratings.map((rating) => [rating.marker.borderWidth, rating.marker.borderColor]), detail).toEqual([
+          [t.space2 / 2, t.accent],
+          [t.space2 / 2, t.warning],
+          [2, t.muted],
+        ])
+
+        // What you receive: the h3, then the tiles, --space-6 apart, 4 per
+        // row from 64em, 2 from 48em and 1 below, equal and level in each
+        // row. With 200% page text a row holds fewer when a tile would be
+        // narrower than 12rem, so no word breaks.
+        expect(m.receiveHeading.tagName, detail).toBe('H3')
+        expect(m.receiveHeading.transform, detail).toBe('none')
+        expect(near(m.receiveGap, t.space6), detail).toBe(true)
+        expect(m.tilesGap, detail).toEqual([t.space6, t.space6])
+        const target = width >= 1024 ? 4 : width >= 768 ? 2 : 1
+        const perRow = m.tiles.filter((tile) => near(tile.box.top, m.tiles[0].box.top)).length
+        if (text === '100%') expect(perRow, detail).toBe(target)
+        else expect(perRow, detail).toBeLessThanOrEqual(target)
+        for (let start = 0; start < m.tiles.length; start += perRow) {
+          const row = m.tiles.slice(start, start + perRow)
+          for (const tile of row) {
+            expect(near(tile.box.top, row[0].box.top), detail).toBe(true)
+            expect(near(tile.box.width, row[0].box.width), detail).toBe(true)
+            expect(near(tile.box.height, row[0].box.height), detail).toBe(true)
+          }
+          for (let i = 1; i < row.length; i++) expect(near(row[i].box.left - row[i - 1].box.right, t.space6), detail).toBe(true)
+          if (start > 0) expect(near(row[0].box.top - m.tiles[start - 1].box.bottom, t.space6), detail).toBe(true)
+        }
+        expect(m.tiles.map((tile) => tile.label.text), detail).toEqual(['Lineage map', 'Trust scorecard', 'Shared definitions', 'Fix list'])
+        for (const tile of m.tiles) {
+          expect(tile.background, detail).toBe(t.surface)
+          expect(tile.borders, detail).toBe(Array(4).fill(`1px solid ${t.border}`).join(' | '))
+          expect([tile.rule.width, ...tile.rule.border], detail).toEqual([t.space8, '2px', 'solid', t.accent])
+          expect(tile.rule.marginBottom, detail).toBe(t.space4)
+          expect([tile.label.size, tile.label.weight, tile.label.color], detail).toEqual([t.base, '500', t.heading])
+          expect([tile.text.size, tile.text.weight, tile.text.color], detail).toEqual([t.sm, '400', t.muted])
+        }
+
+        // The band: its label, the statement, the supporting copy, then
+        // the button, on the right and centred from 48em, below the copy
+        // otherwise.
+        expect(m.bandChildren, detail).toEqual(['DIV', 'DIV'])
+        expect(m.bandTextChildren, detail).toEqual(['H3', 'P', 'P'])
+        expect(m.bandBackground, detail).toBe(t.surface)
+        expect(m.bandBorders, detail).toBe(Array(4).fill(`1px solid ${t.border}`).join(' | '))
+        // Below 48em its inline padding is --space-6 at the default text
+        // size, shrinking to 8px with 200% page text, so the button's
+        // label still fits at 320px.
+        const inline = Math.min(Math.max(8, 48 - t.space6), t.space6)
+        expect(m.bandPadding, detail).toEqual(width >= 768 ? Array(4).fill(t.space8) : [t.space6, inline, t.space6, inline])
+        expect([m.bandLabel.size, m.bandLabel.weight, m.bandLabel.color, m.bandLabel.transform], detail).toEqual([t.sm, '500', t.muted, 'none'])
+        expect([m.statement.size, m.statement.weight, m.statement.color], detail).toEqual([t.xl, '400', t.heading])
+        expect(m.statement.lineHeight, detail).toBeCloseTo(1.3, 2)
+        expect(m.bandLabel.size, detail).toBeLessThan(m.statement.size)
+        expect([m.supporting.size, m.supporting.color], detail).toEqual([t.base, t.muted])
+        expect(m.supporting.box.width, detail).toBeLessThanOrEqual(t.measure + 1)
+        expect([m.button.href, m.button.text], detail).toEqual(['#contact', 'Book a data trust assessment→'])
+        // From 48em the button is on the right, within the text group's
+        // height; with 200% page text it wraps below when the two do not
+        // fit.
+        const beside = m.button.box.top < m.bandText.bottom
+        if (width >= 768 && text === '100%') expect(beside, detail).toBe(true)
+        if (beside) {
+          expect(width, detail).toBeGreaterThanOrEqual(768)
+          expect(m.button.box.left, detail).toBeGreaterThan(m.bandText.right)
+          expect(m.button.box.top, detail).toBeGreaterThanOrEqual(m.bandText.top)
+          expect(m.button.box.bottom, detail).toBeLessThanOrEqual(m.bandText.bottom)
+        } else {
+          expect(m.button.box.top - m.supporting.box.bottom, detail).toBeGreaterThanOrEqual(t.space6 - 1)
+          expect(near(m.button.box.left, m.supporting.box.left), detail).toBe(true)
+        }
+
+        // Weights 300, 400 and 500 only.
+        for (const weight of m.weights) expect(['300', '400', '500'], detail).toContain(weight)
         // Each block below the one before it, never over it, and no two
-        // ratings over each other.
+        // chips, tiles or footer cells over each other.
         expect(m.overlaps, detail).toEqual([])
         // Every element inside the container's content box, none wider
         // than its own box, and no word broken mid-word.
         expect(m.outside, detail).toEqual([])
         expect(m.clipped, detail).toEqual([])
         expect(m.broken, detail).toEqual([])
-        expect(m.caption, detail).toBe('Illustrative example')
         expect(m.sectionScroll, detail).toBeLessThanOrEqual(m.sectionWidth)
         // At 1024px with 200% page text the header's inline navigation,
         // which starts at 64em of the browser's text size, is wider than
@@ -1766,29 +2035,29 @@ for (const width of WIDTHS) {
     }
 
     if (width === 1440) {
-      // The Data Trust Assessment's rating categories (#77) are labels,
-      // not buttons: hovering one changes nothing about it.
-      test(`Data Trust Assessment ratings do not change on hover at ${width}px`, async ({ page }, testInfo) => {
+      // The Data Trust Assessment's chips (#77, #81), the five metrics and
+      // the three ratings, are labels, not buttons: hovering one changes
+      // nothing about any of them.
+      test(`Data Trust Assessment chips do not change on hover at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
-        const ratings = page
-          .locator('#data-trust-assessment figure')
-          .getByRole('list', { name: 'Trust rating' })
-          .getByRole('listitem')
-        await expect(ratings).toHaveCount(3)
+        const figure = page.locator('#data-trust-assessment figure')
+        const chips = figure.locator('ul > li')
+        await expect(chips).toHaveCount(8)
+        await expect(figure.getByRole('list', { name: 'Trust rating' }).getByRole('listitem')).toHaveCount(3)
         const look = () =>
-          ratings.evaluateAll((items) =>
+          chips.evaluateAll((items) =>
             items.map((item) => {
               const style = getComputedStyle(item)
-              return [style.borderTopColor, style.backgroundColor, style.color, style.fontWeight, style.cursor, style.transform, style.boxShadow, style.textDecorationLine]
+              return [style.borderTopColor, style.borderTopWidth, style.backgroundColor, style.color, style.fontWeight, style.cursor, style.transform, style.boxShadow, style.textDecorationLine, style.outlineStyle]
             }),
           )
-        await ratings.first().scrollIntoViewIfNeeded()
+        await chips.first().scrollIntoViewIfNeeded()
         const resting = await look()
-        for (let i = 0; i < 3; i++) {
-          await ratings.nth(i).hover()
+        for (let i = 0; i < 8; i++) {
+          await chips.nth(i).hover()
           expect(await look()).toEqual(resting)
         }
-        expect(resting.every((style) => style[4] !== 'pointer')).toBe(true)
+        expect(resting.every((style) => style[5] !== 'pointer')).toBe(true)
       })
 
       // The card hover (#56): with motion allowed, hovering a card's list
