@@ -37,7 +37,6 @@ const SECTIONS = [
 ] as const
 const INSIDE = ['#about-heading', '#data-quality-and-reliability-heading'] as const
 
-const disclosures = services.map((service) => `Typical engagements for ${service.name}`)
 // The Solutions rows' buttons (#59), named by the sector titles: the
 // homepage's three sectors since #73.
 const sectors = homepageSolutions.map((solution) => solution.title)
@@ -202,22 +201,27 @@ test.describe('hashes that name nothing visible', () => {
       })
     }
 
-    test(`a hidden disclosure panel stays at the top, with every disclosure closed, at ${width}px`, async ({
-      page,
-    }) => {
-      const hash = `#${services[0].id}-typical-engagements`
-      await openPath(page, `/${hash}`, width)
+    // The service cards' disclosure panels and the old #services id left
+    // with the open grid (#83), with no alias: a link to either names
+    // nothing and opens the page at the top, opening nothing.
+    for (const hash of [`#${services[0].id}-typical-engagements`, '#services'] as const) {
+      test(`the retired ${hash.startsWith('#services') ? '#services id' : 'disclosure panel id'} names nothing and stays at the top, at ${width}px`, async ({
+        page,
+      }) => {
+        await openPath(page, `/${hash}`, width)
 
-      await expectTop(page)
-      expect(await page.evaluate(() => location.hash)).toBe(hash)
-      await expect(page.locator(hash)).toBeHidden()
-      for (const name of disclosures) {
-        await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute(
-          'aria-expanded',
-          'false',
-        )
-      }
-    })
+        await expectTop(page)
+        expect(await page.evaluate(() => location.hash)).toBe(hash)
+        await expect(page.locator(hash)).toHaveCount(0)
+        await expect(page.getByRole('button', { name: /^Typical engagements/ })).toHaveCount(0)
+        for (const name of sectors) {
+          await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute(
+            'aria-expanded',
+            'false',
+          )
+        }
+      })
+    }
 
     // A row opens only on interaction (#59; a hash opening one is #44's
     // question), so a hidden Solutions panel's id lands nowhere.

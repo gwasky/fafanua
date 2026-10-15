@@ -1,7 +1,8 @@
 import { expect } from '@playwright/test'
 import { openPage, test, waitForScrollSettle } from './fixtures.ts'
 
-// The hero's one call to action (#68) on the first screen below 64em, and its
+// The hero's one call to action (#68) on the first screen below 64em,
+// followed by its text link to the capabilities (#83), and its
 // desktop spacing and type unchanged (owner decision on #63, which
 // tightened the hero below 64em only, for the longer refinement-plan
 // supporting copy). Runs in the chromium and webkit projects.
@@ -12,8 +13,9 @@ const HEADING = 'Trusted Data. Better Decisions.'
 async function ctas(page: import('@playwright/test').Page) {
   const hero = page.getByRole('region', { name: HEADING })
   const links = hero.getByRole('link')
-  await expect(links).toHaveCount(1)
-  await expect(links).toHaveAccessibleName('Book a data trust assessment')
+  await expect(links).toHaveCount(2)
+  await expect(links.first()).toHaveAccessibleName('Book a data trust assessment')
+  await expect(links.last()).toHaveAccessibleName('Explore our capabilities')
   return page.evaluate(() => {
     const section = document.querySelector('main > [data-header-overlay]')!
     const [primary] = [...section.querySelectorAll('a')].map((link) => {

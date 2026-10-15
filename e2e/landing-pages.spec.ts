@@ -117,7 +117,7 @@ test.describe('one call to action', () => {
     await expect(links).toHaveCount(4)
     await expect(page.getByRole('banner').getByRole('link', { name, exact: true })).toHaveAttribute('href', '#contact')
     await expect(
-      page.getByRole('region', { name: 'Trusted Data. Better Decisions.' }).getByRole('link'),
+      page.getByRole('region', { name: 'Trusted Data. Better Decisions.' }).getByRole('link', { name, exact: true }),
     ).toHaveAttribute('href', '#contact')
     // The Data Trust Assessment's one link, its button (#71).
     await expect(
@@ -127,9 +127,17 @@ test.describe('one call to action', () => {
       'href',
       'mailto:info@fafanua.tech',
     )
-    for (const retired of ['Discuss a project', 'Discuss your data needs', 'Explore our capabilities']) {
+    for (const retired of ['Discuss a project', 'Discuss your data needs']) {
       await expect(page.getByText(retired)).toHaveCount(0)
     }
+    // Restored on #83 as the hero's text link: once on the homepage, in
+    // the hero, to #capabilities.
+    await expect(page.getByText('Explore our capabilities')).toHaveCount(1)
+    await expect(
+      page
+        .getByRole('region', { name: 'Trusted Data. Better Decisions.' })
+        .getByRole('link', { name: 'Explore our capabilities', exact: true }),
+    ).toHaveAttribute('href', '#capabilities')
   })
 })
 

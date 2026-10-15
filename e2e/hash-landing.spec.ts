@@ -185,6 +185,25 @@ async function scrollAwayBeforeFont(
         return original.apply(this, args)
       }
     }, hash.slice(1))
+    // WebKit renders no frame, so runs no animation frame, until a page
+    // counts as visually non-empty: text in a font that is still loading
+    // does not count, only enough image or SVG pixels do. The service
+    // cards' six chevron icons used to be enough; since the open grid
+    // (#83) the page has too few before the font loads. A test-only
+    // 40 x 40 SVG, out of the way and hidden from assistive technology,
+    // restores the precondition this test needs: a page shown in the
+    // fallback font, which the visitor can scroll.
+    await page.addInitScript(() => {
+      document.addEventListener('DOMContentLoaded', () => {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+        svg.setAttribute('width', '40')
+        svg.setAttribute('height', '40')
+        svg.setAttribute('aria-hidden', 'true')
+        svg.setAttribute('style', 'position: fixed; inset-inline-end: 0; inset-block-end: 0; pointer-events: none')
+        svg.innerHTML = '<rect width="40" height="40" fill="gray" />'
+        document.body.append(svg)
+      })
+    })
     let release = () => {}
     const held = new Promise<void>((resolve) => (release = resolve))
     await page.route(/\.woff2$/, async (route) => {

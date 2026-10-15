@@ -37,6 +37,8 @@ function boxes(page: Page) {
       hero: box(section),
       heading: box(section.querySelector('h1')!),
       primary: box(links[0]),
+      secondary: links[1] ? box(links[1]) : null,
+      secondaryClass: links[1]?.className ?? null,
       links: links.length,
       header: box(document.querySelector('header')!),
       viewport: { width: window.innerWidth, height: window.innerHeight },
@@ -340,18 +342,27 @@ test.describe('wrapping', () => {
 
 test.describe('call to action', () => {
   for (const width of [320, 360, 768, 1024, 1440]) {
-    test(`one link, at least 44 x 44px and inside the viewport, at ${width}px`, async ({ page }) => {
+    test(`two links, the button then the text link, each at least 44px tall and inside the viewport, at ${width}px`, async ({ page }) => {
       await openAt(page, width, 800)
       const m = await boxes(page)
       const detail = JSON.stringify(m)
 
-      // The hero's only link (#68): the secondary button was removed.
-      expect(m.links, detail).toBe(1)
+      // The one call to action button (#68), then the text link to the
+      // capabilities the owner restored on #83, not a button.
+      expect(m.links, detail).toBe(2)
       expect(m.primary.width, detail).toBeGreaterThanOrEqual(44)
       expect(m.primary.height, detail).toBeGreaterThanOrEqual(44)
       expect(m.primary.left, detail).toBeGreaterThanOrEqual(0)
       expect(m.primary.right, detail).toBeLessThanOrEqual(m.viewport.width)
       await expect(primary(page)).toHaveText('Book a data trust assessment→')
+      const secondary = m.secondary!
+      expect(m.secondaryClass, detail).toBe('hero__link')
+      expect(secondary.height, detail).toBeGreaterThanOrEqual(44)
+      expect(secondary.left, detail).toBeGreaterThanOrEqual(0)
+      expect(secondary.right, detail).toBeLessThanOrEqual(m.viewport.width)
+      expect(secondary.top, detail).toBeGreaterThanOrEqual(m.primary.top - 1)
+      expect(secondary.bottom, detail).toBeLessThanOrEqual(m.viewport.height)
+      await expect(hero(page).locator('.button')).toHaveCount(1)
     })
   }
 

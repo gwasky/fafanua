@@ -61,14 +61,14 @@ test.describe('no italic or oblique text', () => {
     await expectNoSlantedText(page)
   })
 
-  test('all six Typical engagements disclosures open at 1440px', async ({ page }) => {
+  // The disclosures this opened left with the open grid (#83).
+  test('a hovered capability cell, its arrow shown, at 1440px', async ({ page }) => {
     await openPage(page, 1440)
-    const buttons = page.getByRole('button', { name: /^Typical engagements for / })
-    await expect(buttons).toHaveCount(6)
-    for (const button of await buttons.all()) {
-      await button.click()
-      await expect(button).toHaveAttribute('aria-expanded', 'true')
-    }
+    await expect(page.getByRole('button', { name: /^Typical engagements/ })).toHaveCount(0)
+    const cell = page.locator('#capabilities .services__list > li').nth(4)
+    await cell.scrollIntoViewIfNeeded()
+    await cell.hover()
+    await expect.poll(() => cell.evaluate((li) => getComputedStyle(li.querySelector('a [aria-hidden="true"]')!).opacity)).toBe('1')
 
     await expectNoSlantedText(page)
   })

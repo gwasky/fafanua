@@ -377,24 +377,26 @@ test.describe('How We Work', () => {
   }
 
   // Plan V2 §13: the timeline answers how Fafanua delivers an engagement
-  // and must not read as the Services lifecycle rail. Both are saved at
-  // 1440px for review; here the measurable differences are checked: the
-  // rail's labels are --text-sm with filled service-colour markers and no
-  // descriptions, the timeline's names are --text-service with teal rings
-  // and a description under each.
-  test('does not look like the Services lifecycle rail, at 1440px', async ({ page }, testInfo) => {
+  // and must not read as the Services lifecycle. The lifecycle rail left
+  // with the open grid (#83), so there is no rail; the capabilities'
+  // stages are now each cell's stage line. Both are saved at 1440px for
+  // review; here the measurable differences are checked: a stage line is
+  // --text-sm text with a teal number and no marker or description, the
+  // timeline's names are --text-service with teal rings and a description
+  // under each.
+  test('does not look like the capability stage lines, and there is no lifecycle rail, at 1440px', async ({ page }, testInfo) => {
     await openPage(page, 1440)
-    const rail = page.getByRole('region', { name: servicesIntro.heading }).getByRole('list').first()
+    const region = page.getByRole('region', { name: servicesIntro.heading })
+    await expect(region.locator('.lifecycle-rail, .lifecycle-rail-frame')).toHaveCount(0)
+    const grid = region.getByRole('list').first()
     const timeline = processRegion(page).getByRole('list')
 
-    const railLook = await rail.evaluate((list) => {
-      const item = list.querySelector('li')!
-      const marker = getComputedStyle(item.querySelector('[aria-hidden="true"]')!)
+    const stageLook = await grid.evaluate((list) => {
+      const line = list.querySelector('li > p')!
       return {
-        label: parseFloat(getComputedStyle(item).fontSize),
-        markerBorder: parseFloat(marker.borderTopWidth),
-        markerWidth: parseFloat(marker.width),
-        paragraphs: list.querySelectorAll('p').length,
+        label: parseFloat(getComputedStyle(line).fontSize),
+        marker: getComputedStyle(line.querySelector('[aria-hidden="true"]')!).borderTopWidth,
+        paragraphs: line.querySelectorAll('p').length,
       }
     })
     const timelineLook = await timeline.evaluate((list) => {
@@ -407,17 +409,17 @@ test.describe('How We Work', () => {
       }
     })
 
-    expect(timelineLook.name).toBeGreaterThan(railLook.label * 1.5)
-    // The rail's marker is a filled dot (its border fills it); the
-    // timeline's node is a ring.
-    expect(railLook.markerBorder * 2).toBeGreaterThanOrEqual(railLook.markerWidth)
+    expect(timelineLook.name).toBeGreaterThan(stageLook.label * 1.5)
+    // The stage number is plain text, with no ring or dot; the timeline's
+    // node is a ring.
+    expect(stageLook.marker).toBe('0px')
     expect(timelineLook.nodeBorder * 2).toBeLessThan(timelineLook.nodeWidth)
-    expect(railLook.paragraphs).toBe(0)
+    expect(stageLook.paragraphs).toBe(0)
     // A description and an output (#63) per stage.
     expect(timelineLook.paragraphs).toBe(8)
 
     const dir = `${testInfo.project.outputDir}/screenshots`
-    await rail.screenshot({ path: `${dir}/lifecycle-rail-1440.png` })
+    await grid.screenshot({ path: `${dir}/capability-grid-1440.png` })
     await processRegion(page).screenshot({ path: `${dir}/process-timeline-1440.png` })
   })
 })
