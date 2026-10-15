@@ -169,6 +169,9 @@ async function scrollAwayBeforeFont(
     viewport: { width, height: 800 },
     reducedMotion: motion,
   })
+  // Released in the finally too, so a failed check never leaves the font
+  // held while the context closes.
+  let release = () => {}
   try {
     const page = await context.newPage()
     const errors: string[] = []
@@ -185,28 +188,16 @@ async function scrollAwayBeforeFont(
         return original.apply(this, args)
       }
     }, hash.slice(1))
-    // WebKit renders no frame, so runs no animation frame, until a page
-    // counts as visually non-empty: text in a font that is still loading
-    // does not count, only enough image or SVG pixels do. The service
-    // cards' six chevron icons used to be enough; since the open grid
-    // (#83) the page has too few before the font loads. A test-only
-    // 40 x 40 SVG, out of the way and hidden from assistive technology,
-    // restores the precondition this test needs: a page shown in the
-    // fallback font, which the visitor can scroll.
-    await page.addInitScript(() => {
-      document.addEventListener('DOMContentLoaded', () => {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-        svg.setAttribute('width', '40')
-        svg.setAttribute('height', '40')
-        svg.setAttribute('aria-hidden', 'true')
-        svg.setAttribute('style', 'position: fixed; inset-inline-end: 0; inset-block-end: 0; pointer-events: none')
-        svg.innerHTML = '<rect width="40" height="40" fill="gray" />'
-        document.body.append(svg)
-      })
-    })
-    let release = () => {}
+    // No image is needed for WebKit to paint before the font arrives:
+    // under font-display: fallback the page paints in the fallback face
+    // after the 100ms block period (#84). The font must then arrive within
+    // the swap period, about 3s, or Inter is never swapped in and the test
+    // would check a page with no swap, so the time from the font's request
+    // to its release is checked below.
     const held = new Promise<void>((resolve) => (release = resolve))
+    let requestedAt: number | undefined
     await page.route(/\.woff2$/, async (route) => {
+      requestedAt ??= Date.now()
       await held
       await route.continue()
     })
@@ -229,6 +220,8 @@ async function scrollAwayBeforeFont(
     await away(page)
     expect(await page.evaluate(() => document.fonts.status), 'font still held').toBe('loading')
     const before = await page.evaluate(() => window.scrollY)
+    expect(requestedAt, 'the woff2 was requested').toBeDefined()
+    expect(Date.now() - requestedAt!, 'ms from the font request to its release').toBeLessThan(2_500)
     release()
     await waitForLanding(page, hash)
 
@@ -241,6 +234,7 @@ async function scrollAwayBeforeFont(
     expect(errors).toEqual([])
     return { landed, before, ...after }
   } finally {
+    release()
     await context.close()
   }
 }
