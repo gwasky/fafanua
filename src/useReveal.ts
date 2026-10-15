@@ -5,12 +5,14 @@ import { hashTarget } from './landOnHash.ts'
  * The one-time reveals (plan V2 §18, #61). An element marked
  * data-reveal="section" (each main section after the positioning block)
  * has its content rise and fade in the first time it scrolls into view;
- * one marked data-reveal="line" (the lifecycle rail) has its connector
- * drawn the first time it is at least half in view.
+ * one marked data-reveal="line" has its connector drawn the first time it
+ * is at least half in view. No element uses the line mode today: the
+ * lifecycle rail it was made for left the page with the open grid (#83).
+ * The mode is kept as a generic, unit-tested part of the hook.
  *
  * Nothing is hidden by the markup or by CSS alone: content is hidden only
  * while this sets data-reveal-state="hidden" on it, and the CSS that
- * hides it (components.css, LifecycleRail.css) applies only on screen
+ * hides it (components.css, and a line's own stylesheet) applies only on screen
  * with motion allowed. So without this script, without
  * IntersectionObserver, under reduced motion and in print, everything
  * shows in its final state.
@@ -26,9 +28,9 @@ import { hashTarget } from './landOnHash.ts'
  *   shows it in its final state at once, during the focus event, so the
  *   browser scrolls the focused element into view at its final place,
  *   clear of the header.
- * - The rail's line waits for its section's own reveal to end before it
- *   draws, so the stage labels and markers are fully shown, at rest, for
- *   the whole of the draw.
+ * - A line waits for its section's own reveal to end before it draws, so
+ *   whatever sits along it is fully shown, at rest, for the whole of the
+ *   draw.
  * - A hash change (a typed hash, or a link to an element inside a
  *   section) whose target is inside a section that is hidden or still
  *   revealing shows that section in its final state at once and scrolls
@@ -43,7 +45,7 @@ import { hashTarget } from './landOnHash.ts'
 export const REVEAL_ATTRIBUTE = 'data-reveal'
 export const REVEAL_STATE = 'data-reveal-state'
 
-/** The share of the rail that must be in view before its line draws. */
+/** The share of a line element that must be in view before it draws. */
 export const LINE_THRESHOLD = 0.5
 
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)'

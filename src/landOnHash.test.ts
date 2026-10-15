@@ -8,8 +8,8 @@ describe('hashIds', () => {
   })
 
   it('names the raw fragment, without the #', () => {
-    expect(hashIds('#services')).toEqual(['services'])
-    expect(hashIds('#Services')).toEqual(['Services'])
+    expect(hashIds('#capabilities')).toEqual(['capabilities'])
+    expect(hashIds('#Capabilities')).toEqual(['Capabilities'])
     expect(hashIds('#a.b')).toEqual(['a.b'])
     expect(hashIds('#1')).toEqual(['1'])
   })
@@ -78,9 +78,9 @@ describe('hashTarget', () => {
 
   it('finds nothing for ids that match no element, without throwing', () => {
     rendered()
-    add('services')
+    add('capabilities')
 
-    for (const hash of ['', '#', '#nope', '#Services', '#a.b', '#1', '#%E0%A4%A', '#contact%20']) {
+    for (const hash of ['', '#', '#nope', '#Capabilities', '#a.b', '#1', '#%E0%A4%A', '#contact%20']) {
       expect(hashTarget(document, hash), hash).toBeNull()
     }
   })

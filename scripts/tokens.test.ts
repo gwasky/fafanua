@@ -67,9 +67,15 @@ describe('V2 tokens', () => {
       '--duration-reveal': 'var(--duration-slow)',
       '--duration-reveal-stagger': 'var(--duration-fast)',
       '--duration-grid-fade': 'var(--duration-slow)',
-      '--duration-rail-draw': 'calc(var(--duration-slow) * 2)',
-      '--ease-linear': 'linear',
     })
+  })
+
+  // The lifecycle rail's draw and the compact card titles left with the
+  // open grid (#83), and nothing else used their tokens.
+  it('no longer has the rail-draw and compact-title tokens', () => {
+    for (const name of ['--duration-rail-draw', '--ease-linear', '--text-service-compact', '--tracking-tight']) {
+      expect(tokens, name).not.toHaveProperty(name)
+    }
   })
 
   // Plan §7's suggested desktop ranges, in px.
@@ -178,19 +184,16 @@ describe('content breakpoints', () => {
 
   // The exceptions are container queries in rem: a media query in em does
   // not move with page text (html { font-size }), so a layout that needs
-  // more room checks its own box as well. The lifecycle rail's (#56)
-  // checks its box is wide enough for six stages on one row, inside its
-  // (min-width: 48em) media query; the system diagram's (#66) check its
+  // more room checks its own box as well. The system diagram's (#66) check its
   // box is wide enough for two columns, inside its 48em media query, and
   // for three, inside its 64em one. They are taken out before the check
-  // below, and only these exact queries are.
-  const RAIL_QUERY = '@container lifecycle-rail (min-width: 42.5rem)'
+  // below, and only these exact queries are. (The lifecycle rail's, #56,
+  // left with the rail, #83.)
   const FLOW_QUERIES = [
     ['@media (min-width: 48em) {', '@container system-flow (min-width: 40rem)'],
     ['@media (min-width: 64em) {', '@container system-flow (min-width: 56rem)'],
   ] as const
-  const withoutRailQuery = (file: string, css: string) => {
-    if (file === 'components/LifecycleRail.css') return css.replace(RAIL_QUERY, '')
+  const withoutFlowQueries = (file: string, css: string) => {
     if (file === 'components/SystemFlow.css') {
       return FLOW_QUERIES.reduce((rest, [, query]) => rest.replace(query, ''), css)
     }
@@ -198,27 +201,23 @@ describe('content breakpoints', () => {
   }
 
   it.each(files)('%s uses only (min-width: 48em) and (min-width: 64em)', (file) => {
-    const css = withoutRailQuery(file, read(file))
+    const css = withoutFlowQueries(file, read(file))
     const widths = [...css.matchAll(/\((?:min|max)-width:\s*([^)]+)\)/g)].map(
       (match) => match[1].trim(),
     )
     for (const width of widths) expect(['48em', '64em']).toContain(width)
   })
 
-  it('has three container queries, the rail\'s and the system diagram\'s, each inside its media query', () => {
+  it('has two container queries, the system diagram\'s, each inside its media query, and no lifecycle rail query (#83)', () => {
     const queries = files.flatMap((file) =>
       [...read(file).matchAll(/@container[^{]*/g)].map((match) => `${file}: ${match[0].trim()}`),
     )
     expect(queries.sort()).toEqual(
-      [
-        `components/LifecycleRail.css: ${RAIL_QUERY}`,
-        ...FLOW_QUERIES.map(([, query]) => `components/SystemFlow.css: ${query}`),
-      ].sort(),
+      FLOW_QUERIES.map(([, query]) => `components/SystemFlow.css: ${query}`).sort(),
     )
-    const rail = read('components/LifecycleRail.css')
-    const media = rail.indexOf('@media (min-width: 48em) {')
-    expect(media).toBeGreaterThan(-1)
-    expect(rail.indexOf(RAIL_QUERY)).toBeGreaterThan(media)
+    expect(queries).toHaveLength(2)
+    expect(files).not.toContain('components/LifecycleRail.css')
+    expect(queries.join('\n')).not.toContain('lifecycle-rail')
     // Each diagram query directly inside its own media query.
     const flow = read('components/SystemFlow.css')
     for (const [mediaQuery, query] of FLOW_QUERIES) {

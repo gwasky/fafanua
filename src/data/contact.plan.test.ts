@@ -212,10 +212,28 @@ describe('retired call to action labels (#68)', () => {
     }),
   ).filter(([file]) => !/\.test\.tsx?$/.test(file))
 
-  it.each(w1Retired)('"%s" appears in no source file', (retired) => {
+  // The owner's update to W1 on #83 restores "Explore our capabilities"
+  // as the hero's text link, its label in hero.ts; the other two stay
+  // retired everywhere.
+  const restored = 'Explore our capabilities'
+
+  it('records the owner update that restores the hero link (#83)', () => {
+    expect(w1).toContain(
+      `Owner update (2026-10-15, #83): the Capabilities Open Grid plan restores the hero's secondary link, ${restored}, as a text link to #capabilities.`,
+    )
+  })
+
+  it.each(w1Retired.filter((label) => label !== restored))('"%s" appears in no source file', (retired) => {
     expect(sources.length).toBeGreaterThan(0)
     for (const [file, source] of sources) {
       expect(source.includes(retired), `${file} has "${retired}"`).toBe(false)
+    }
+  })
+
+  it(`"${restored}" appears only in hero.ts (#83)`, () => {
+    expect(w1Retired).toContain(restored)
+    for (const [file, source] of sources) {
+      expect(source.includes(restored), `${file} has "${restored}"`).toBe(file === '/src/data/hero.ts')
     }
   })
 })

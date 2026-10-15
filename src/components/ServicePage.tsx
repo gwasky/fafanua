@@ -29,7 +29,7 @@ function ServicePage({ page }: { page: ServicePageCopy }) {
           <Breadcrumbs
             trail={[
               { label: 'Home', href: '/' },
-              { label: 'Services', href: '/#services' },
+              { label: 'Services', href: '/#capabilities' },
             ]}
             current={name}
           />

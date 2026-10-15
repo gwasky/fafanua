@@ -86,7 +86,7 @@ describe('Header', () => {
     const links = within(nav).getAllByRole('link')
 
     expect(navigation.map((item) => [item.label, item.id])).toEqual([
-      ['Services', 'services'],
+      ['Services', 'capabilities'],
       ['Solutions', 'solutions'],
       ['How We Work', 'how-we-work'],
       ['About', 'about'],

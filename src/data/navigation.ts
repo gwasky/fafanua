@@ -1,5 +1,7 @@
 // The site navigation. Each id is the id of the section a link points to,
-// so sections must use these ids.
+// so sections must use these ids. "Services" lands on the capabilities
+// section, whose id is capabilities since the open grid plan (#83); the
+// label stays "Services" (plan V2 §6).
 //
 // - navigation: the four section links, in the order the header and the
 //   footer show them.
@@ -20,7 +22,7 @@ export type NavItem = {
 }
 
 export const navigation: readonly NavItem[] = [
-  { label: 'Services', id: 'services' },
+  { label: 'Services', id: 'capabilities' },
   { label: 'Solutions', id: 'solutions' },
   { label: 'How We Work', id: 'how-we-work' },
   { label: 'About', id: 'about' },

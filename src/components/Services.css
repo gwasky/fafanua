@@ -1,17 +1,22 @@
 /*
- * Services: the eyebrow and the display heading (plan V2 §9), with no
- * intro paragraphs since #70, the lifecycle rail (LifecycleRail.css) and a
- * grid of service cards on the page background. The intro (eyebrow and
- * heading) is plain text, lighter than the grid: no card, border or fill.
- * The grid is one column by default, two from 768px and three from 1024px
- * (literal breakpoints; see the note in tokens.css).
+ * The capabilities section (Capabilities Open Grid plan §4, #83): a
+ * left-aligned header (eyebrow, the h2 with its teal highlight, the
+ * promise line) and an open hairline grid of six cells on paper, with no
+ * cards, radius, shadow or fill at rest. The grid is one column below
+ * 48em, two from 48em and three from 64em (literal breakpoints; see the
+ * note in tokens.css), so enlarged text drops columns.
  *
- * From 768px, where the browser supports subgrid, each card lines up with
- * the others in its row (#53). Every item spans six shared row tracks:
- * title, label, description, tags, button and the open list. The item and
- * the card inside it are subgrids of those tracks (see ServiceCard.css),
- * so the tracks size to the tallest content in the row. Without subgrid,
- * and below 768px, cards keep their natural height.
+ * Hairlines are --color-border (graphite 200), decorative dividers as
+ * everywhere else. In two and three columns: one above the grid, one
+ * under every row, the last included, and one between columns, none on
+ * the outer sides. In one column, between cells only. Every cell in a
+ * row is as tall as the tallest (the grid's default stretch), and the
+ * tags are pinned to the bottom of each cell (ServiceCard.css), so the
+ * tag lines align across the row.
+ *
+ * Teal is the section's only accent: the highlight, the stage numbers and
+ * the hover and focus treatment, all --color-accent-text (teal 800, 7.3:1
+ * on paper and 6.9:1 on the graphite 100 tint), and the focus ring.
  */
 
 .services {
@@ -33,8 +38,7 @@
 }
 
 /* Graphite 900 on paper (14.9:1), weight 300 from the global heading
-   styles. The last thing in the intro, so the intro's own margin alone
-   sets the gap to the rail. */
+   styles. */
 .services__heading {
   max-width: var(--measure-display);
   margin-block-end: 0;
@@ -45,11 +49,32 @@
   overflow-wrap: break-word;
 }
 
+/* "can trace": teal 800 at the heading's size and weight 300, with no
+   other styling. */
+.services__highlight {
+  color: var(--color-accent-text);
+}
+
+/* The promise line: graphite 600 on paper (6.0:1). */
+.services__promise {
+  max-width: var(--measure);
+  margin-block: var(--space-4) 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-normal);
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
 /* From 64em the heading is a restrained section title rather than a
    display line (V2 visual enhancement plan §9, #66): --text-3xl (35 to
-   36px), one line at full measure, so the cards stay the section's main
-   content. Below 64em it keeps the display scale. */
+   36px), one line at full measure. Below 64em it keeps the display
+   scale. The header sits --space-16 above the grid there. */
 @media (min-width: 64em) {
+  .services__intro {
+    margin-block-end: var(--space-16);
+  }
+
   .services__heading {
     max-width: none;
     font-size: var(--text-3xl);
@@ -60,98 +85,98 @@
 .services__list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-6);
-  /* An open card grows on its own without stretching its neighbours. */
-  align-items: start;
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/* A cell: the hover tint's box and the stretched link's containing block
+   (ServiceCard.css). One column: no inline padding, so the text lines up
+   with the heading, and hairlines between cells only. */
+.services__cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-8) 0;
+}
+
+.services__cell + .services__cell {
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
 @media (min-width: 48em) {
   .services__list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-block-start: var(--border-width) solid var(--color-border);
   }
 
-  @supports (grid-template-rows: subgrid) {
-    /* A row gap would also fall between the six tracks of each item, so
-       the space between card rows is a top margin on every item after
-       the first row instead. */
-    .services__list {
-      row-gap: 0;
-      align-items: stretch;
-    }
+  .services__cell {
+    padding: var(--space-8);
+    border-block-end: var(--border-width) solid var(--color-border);
+  }
 
-    .services__list > li {
-      display: grid;
-      grid-row: span 6;
-      grid-template-rows: subgrid;
-      row-gap: 0;
-    }
+  .services__cell + .services__cell {
+    border-block-start: 0;
+  }
 
-    .services__list > li:nth-child(n + 3) {
-      margin-block-start: var(--space-6);
-    }
+  /* The first cell of each row starts flush with the heading; the others
+     have a hairline before them. */
+  .services__cell:nth-child(2n + 1) {
+    padding-inline-start: 0;
+  }
+
+  .services__cell:nth-child(2n + 2) {
+    border-inline-start: var(--border-width) solid var(--color-border);
   }
 }
 
 @media (min-width: 64em) {
-  /* A --space-4 column gap leaves each title room for one line at full
-     container width (#66); rows stay --space-6 apart. */
   .services__list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    column-gap: var(--space-4);
   }
 
-  /* Three columns: the first row is the first three items. */
-  @supports (grid-template-rows: subgrid) {
-    .services__list > li:nth-child(3) {
-      margin-block-start: 0;
-    }
+  .services__cell {
+    padding: var(--space-10);
+  }
+
+  .services__cell:nth-child(2n + 1),
+  .services__cell:nth-child(2n + 2) {
+    padding-inline-start: var(--space-10);
+    border-inline-start: 0;
+  }
+
+  .services__cell:nth-child(3n + 1) {
+    padding-inline-start: 0;
+  }
+
+  .services__cell:not(:nth-child(3n + 1)) {
+    border-inline-start: var(--border-width) solid var(--color-border);
   }
 }
 
 /*
- * The active card (V2 visual enhancement plan §11, #66): on hover, with a
- * pointer that can hover, or while anything in it has focus
- * (:focus-within, so keyboard and touch get the same highlight). Its
- * border turns its stage's service-line colour (--marker, ServiceCard.css)
- * and doubles to 2px with a ring, a soft glow of the same colour rises
- * under it, and its stage marker strengthens (ServiceCard.css). The
- * border width, glow and marker change, not colour alone, mark it. On
- * hover the card also lifts --space-2 (8px). The hover is on the list
- * item, which does not move, so the card cannot slide out from under a
- * resting cursor and flicker. Focus moves nothing. Under reduced motion
- * the card does not move and nothing transitions; the border, glow and
- * marker still change. Forced-colours mode drops the shadows and keeps
- * the border and the focus ring.
+ * Hover (with a pointer that can hover) and keyboard focus on the title
+ * link: the cell takes the graphite 100 tint (--color-surface-alt, set
+ * directly, not the .surface-alt class: no link-coloured text is in the
+ * cell, and every text colour in it is verified on graphite 100), and the
+ * title's underline and arrow appear (ServiceCard.css). Nothing moves.
+ * :focus-visible, so a mouse click leaves no tint behind. The tint is
+ * never the only sign: the underline and the arrow always go with it.
+ * Forced-colours mode drops the tint and keeps the rest.
  */
-.services__list > li:focus-within > .service-card {
-  border-color: var(--marker);
-  box-shadow:
-    0 0 0 var(--border-width) var(--marker),
-    0 var(--space-1) var(--space-6) color-mix(in srgb, var(--marker) 20%, transparent);
+@media (hover: hover) {
+  .services__cell:hover {
+    background-color: var(--color-surface-alt);
+  }
 }
 
-@media (hover: hover) {
-  .services__list > li:hover > .service-card {
-    border-color: var(--marker);
-    box-shadow:
-      0 0 0 var(--border-width) var(--marker),
-      0 var(--space-1) var(--space-6) color-mix(in srgb, var(--marker) 20%, transparent);
-  }
+.services__cell:has(.service-card__link:focus-visible) {
+  background-color: var(--color-surface-alt);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .services__list > li > .service-card {
-    transition-duration: var(--duration-card-hover);
-    transition-property: transform, border-color, box-shadow;
-    transition-timing-function: var(--ease-standard);
-  }
-}
-
-@media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  .services__list > li:hover > .service-card {
-    transform: translateY(calc(-1 * var(--space-2)));
+  .services__cell {
+    transition: background-color var(--duration-card-hover) var(--ease-standard);
   }
 }

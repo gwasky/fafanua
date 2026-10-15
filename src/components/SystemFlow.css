@@ -27,8 +27,7 @@
  *
  * Enlarged page text (html { font-size: 200% }) does not move an em media
  * query, so each layout also needs the diagram's box, a size container
- * measured in rem, to be wide enough, as the lifecycle rail does
- * (LifecycleRail.css): with enlarged page text the diagram keeps a
+ * measured in rem, to be wide enough: with enlarged page text the diagram keeps a
  * narrower layout instead of squeezing columns.
  *
  * The flow from layer to layer is a chevron in the gap below each layer

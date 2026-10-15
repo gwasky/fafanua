@@ -16,7 +16,7 @@ describe('render', () => {
       expect(head).toContain(`href="https://fafanua.tech${page.path}"`)
       expect(html.match(/<h1\b/g)).toHaveLength(1)
       expect(html).toContain('<main id="main"')
-      expect(html).toContain('href="/#services"')
+      expect(html).toContain('href="/#capabilities"')
       expect(html).toContain('Let’s build a data foundation your organisation can trust.')
       // The closing section's W9 supporting line (#74), and not the line
       // it replaces.

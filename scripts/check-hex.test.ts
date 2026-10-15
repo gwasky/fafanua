@@ -39,6 +39,7 @@ describe('findColours', () => {
   it.each([
     'href="#top"',
     'href="#main"',
+    'href="#capabilities"',
     'href="#services"',
     'href="#how-we-work"',
     'href="#about"',

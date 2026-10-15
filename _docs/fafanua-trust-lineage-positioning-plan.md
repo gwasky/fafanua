@@ -41,6 +41,7 @@ These were decided by the owner and need no further approval.
 - Use the label **Book a data trust assessment** on the nav button, the hero primary button and the closing section button.
 - The link stays `mailto:info@fafanua.tech`. Adding `?subject=Data%20trust%20assessment` is allowed.
 - Remove the hero secondary button ("Explore our capabilities"). The capabilities content must stay reachable through the nav.
+  Owner update (2026-10-15, #83): the Capabilities Open Grid plan restores the hero's secondary link, Explore our capabilities, as a text link to #capabilities. The other two labels stay retired, and the hero keeps one button.
 - Retire the labels "Discuss a project" and "Discuss your data needs".
 
 **Acceptance:** exactly one call-to-action label appears across the nav, hero and closing section. No contact form, Turnstile or form endpoint is added.

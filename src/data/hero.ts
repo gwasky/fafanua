@@ -8,7 +8,10 @@
 // from contact.ts and without its arrow, which Hero.tsx draws. The
 // headline and the brand promise are protected positioning: they stay
 // visible in the hero and are not removed or reworded without the owner's
-// approval (AGENTS.md).
+// approval (AGENTS.md). The secondary link's label, which W1 removed in
+// #68, is back as a quiet text link to the capabilities section: the
+// owner's decision on #83 (Capabilities Open Grid plan §4) reverses that
+// one bullet of W1; the call to action stays the hero's only button.
 // hero.plan.test.ts checks every line against the plans. Hero.tsx reads
 // this copy from here and nowhere else.
 
@@ -22,3 +25,5 @@ export const heroSupporting =
   'Fafanua helps organisations in Africa trace their key numbers to the source, so reporting, operations and finance can rely on their data, and analytics and AI have something solid to stand on.'
 
 export const heroPrimaryLabel = ctaLabel
+
+export const heroSecondaryLabel = 'Explore our capabilities'

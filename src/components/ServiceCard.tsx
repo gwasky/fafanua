@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { services, stages, type Service } from '../data/services.ts'
 import { servicePath } from '../paths.ts'
 import './ServiceCard.css'
@@ -7,80 +6,39 @@ type ServiceCardProps = {
   service: Service
 }
 
-// One service: name, lifecycle label with its numbered stage marker,
-// description, capability tags (always shown) and a disclosure for the
-// typical-engagements list. All copy comes from the service passed in.
-// The stage number is the service's position in `services`, as in the
-// lifecycle rail (LifecycleRail.tsx), shown inside a ring in the stage's
-// service-line colour (#66); the marker is hidden from screen readers, so
-// the label reads as the stage alone. The ring colour is chosen in
-// ServiceCard.css from the stage modifier class. The open modifier lets ServiceCard.css give an open card the
-// extra grid track its list sits in.
+// The content of one capability cell in the open grid (Capabilities Open
+// Grid plan §4, #83), top to bottom: the stage line, the title as the
+// cell's one link, to the service's own page (#67), the description and
+// the tags as one line of plain text. All copy comes from the service
+// passed in. The stage number is the service's position in `services`,
+// hidden from screen readers (the list announces the position), so the
+// line reads as the stage alone. The arrow after the title is decorative
+// and shows on hover and focus; the link's name is the service's name.
+// The cell itself (the list item, styled in Services.css) carries the
+// hover and focus tint and the stretched link's overlay.
 function ServiceCard({ service }: ServiceCardProps) {
-  const [open, setOpen] = useState(false)
   const position = (services as readonly Service[]).indexOf(service) + 1
   const number = String(position).padStart(2, '0')
-  const headingId = `${service.id}-heading`
-  const panelId = `${service.id}-typical-engagements`
 
   return (
-    <div
-      className={`service-card service-card--${service.stage}${open ? ' service-card--open' : ''}`}
-    >
-      <h3 id={headingId} className="service-card__title">
-        {/* The service's own page (#67), named by the service. */}
-        <a className="service-card__link" href={servicePath(service.id)}>
-          {service.name}
-        </a>
-      </h3>
-      <p className="service-card__line">
-        <span className="service-card__marker" aria-hidden="true">
+    <>
+      <p className="service-card__stage">
+        <span className="service-card__number" aria-hidden="true">
           {number}
         </span>
         {stages[service.stage]}
       </p>
+      <h3 id={`${service.id}-heading`} className="service-card__title">
+        <a className="service-card__link" href={servicePath(service.id)}>
+          {service.name}
+          <span className="service-card__arrow" aria-hidden="true">
+            {' →'}
+          </span>
+        </a>
+      </h3>
       <p className="service-card__summary">{service.description}</p>
-      <ul className="service-card__tags" role="list">
-        {service.tags.map((tag) => (
-          <li key={tag}>{tag}</li>
-        ))}
-      </ul>
-      <button
-        type="button"
-        className="button button--secondary service-card__toggle"
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen((isOpen) => !isOpen)}
-      >
-        Typical engagements{' '}
-        <span className="visually-hidden">for {service.name}</span>
-        <svg
-          className="service-card__chevron"
-          viewBox="0 0 16 16"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path
-            d="M3.5 6 8 10.5 12.5 6"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-      <ul
-        id={panelId}
-        className="service-card__work"
-        role="list"
-        hidden={!open}
-      >
-        {service.engagements.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-    </div>
+      <p className="service-card__tags">{service.tags.join(' · ')}</p>
+    </>
   )
 }
 

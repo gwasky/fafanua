@@ -4,9 +4,9 @@
  * also makes --color-link teal 800 there). The line is graphite 200 and
  * each stage's node is a teal 600 ring (--color-accent, graphics only),
  * filled with the section's background so the line stops at its edge. No
- * service-line colours, so it does not read as the Services lifecycle
- * rail (LifecycleRail.css), whose stages are filled colour dots with
- * small labels; here each stage has its full description.
+ * service-line colours, so it does not read as the capability grid's
+ * stage lines (ServiceCard.css), which are a teal number, a stage name
+ * and a hairline; here each stage has its full description.
  *
  * Below 64em a vertical timeline: the line runs down the inline-start
  * edge through each node, and each stage's number, name and description

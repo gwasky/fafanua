@@ -64,11 +64,11 @@ describe('Hero', () => {
     expect(hero.textContent).not.toMatch(/business intelligence/)
   })
 
-  it('has exactly one link, the primary call to action, to #contact (#68)', () => {
+  it('has two links: the one call to action button to #contact (#68), then the text link to #capabilities (#83)', () => {
     const hero = renderHero()
     const links = within(hero).getAllByRole('link')
 
-    expect(links).toHaveLength(1)
+    expect(links).toHaveLength(2)
     expect(links[0]).toHaveAccessibleName('Book a data trust assessment')
     expect(links[0]).toHaveAttribute('href', '#contact')
     expect(links[0]).toHaveClass('button')
@@ -76,6 +76,17 @@ describe('Hero', () => {
     expect(hero.querySelector('.button--secondary')).toBeNull()
     expect(links[0]).not.toHaveAttribute('target')
     expect(links[0]).not.toHaveAttribute('aria-label')
+    // The second is a quiet text link, not a button: the hero keeps
+    // exactly one button.
+    expect(links[1]).toHaveAccessibleName('Explore our capabilities')
+    expect(links[1]).toHaveAttribute('href', '#capabilities')
+    expect(links[1]).toHaveClass('hero__link')
+    expect(links[1]).not.toHaveClass('button')
+    expect(links[1]).not.toHaveAttribute('target')
+    expect(links[1]).not.toHaveAttribute('aria-label')
+    expect(links[1].children).toHaveLength(0)
+    expect(hero.querySelectorAll('.button')).toHaveLength(1)
+    expect(within(hero).queryAllByRole('button')).toHaveLength(0)
   })
 
   it('ends the call to action with a hidden arrow', () => {
@@ -90,21 +101,26 @@ describe('Hero', () => {
     expect(primary.lastElementChild).toBe(arrow)
   })
 
-  it('shows none of the retired labels (#68)', () => {
+  it('shows none of the retired labels (#68), and the restored link label once (#83)', () => {
     const hero = renderHero()
 
-    for (const retired of ['Explore our capabilities', 'Discuss your data needs', 'Discuss a project']) {
+    for (const retired of ['Discuss your data needs', 'Discuss a project']) {
       expect(hero.textContent).not.toContain(retired)
     }
+    expect(hero.textContent!.split('Explore our capabilities')).toHaveLength(2)
+    expect(within(hero).getByText('Explore our capabilities')).toBe(
+      within(hero).getByRole('link', { name: 'Explore our capabilities' }),
+    )
   })
 
-  it('keeps the order heading, brand promise, supporting copy, call to action', () => {
+  it('keeps the order heading, brand promise, supporting copy, call to action, capabilities link', () => {
     const hero = renderHero()
     const order = [
       within(hero).getByRole('heading', { level: 1 }),
       within(hero).getByText(PROMISE),
       within(hero).getByText(SUPPORTING),
-      ...within(hero).getAllByRole('link'),
+      within(hero).getByRole('link', { name: 'Book a data trust assessment' }),
+      within(hero).getByRole('link', { name: 'Explore our capabilities' }),
     ]
 
     for (let i = 1; i < order.length; i++) {
@@ -129,15 +145,16 @@ describe('Hero', () => {
     expect(hero.children).toHaveLength(2)
   })
 
-  it('has only the heading, the brand promise, the supporting copy and the one link', () => {
+  it('has only the heading, the brand promise, the supporting copy and the two links', () => {
     const hero = renderHero()
     const container = hero.querySelector('.container')!
 
     expect([...container.children].map((child) => child.tagName)).toEqual(['H1', 'P', 'P', 'DIV'])
     expect(hero.querySelectorAll('p')).toHaveLength(2)
     expect(hero.textContent).toBe(
-      `${HEADING}${PROMISE}${SUPPORTING}Book a data trust assessment→`,
+      `${HEADING}${PROMISE}${SUPPORTING}Book a data trust assessment→Explore our capabilities`,
     )
+    expect([...container.lastElementChild!.children].map((child) => child.tagName)).toEqual(['A', 'A'])
   })
 
   it('contains no other landmark, and no line breaks, images or emphasis', () => {

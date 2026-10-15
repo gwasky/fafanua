@@ -177,23 +177,25 @@ describe('App', () => {
   // The inline SVG illustrations the design system allows are the system
   // diagram's return loop (owner decision on #63) and the decorative
   // contour lines in the assessment's dark panel (#82); the
-  // only other inline SVGs are the disclosure chevron icons of the service
-  // cards and the Solutions rows. No canvas anywhere, and the only images
+  // only other inline SVGs are the disclosure chevron icons of the
+  // Solutions rows; the capability cells have none since the open grid
+  // (#83). No canvas anywhere, and the only images
   // are the two logos.
-  it('has no inline SVG but the disclosure chevrons, the diagram\'s loop and the assessment\'s contours, and no canvas', () => {
+  it('has no inline SVG but the Solutions chevrons, the diagram\'s loop and the assessment\'s contours, and no canvas', () => {
     render(<App />)
     const svgs = [...document.querySelectorAll('svg')]
     const count = (name: string) => svgs.filter((svg) => svg.getAttribute('class') === name).length
 
     expect(count('system-flow__loop')).toBe(1)
     expect(document.querySelector('.system-flow svg')).toHaveClass('system-flow__loop')
-    expect(count('service-card__chevron')).toBe(services.length)
+    expect(count('service-card__chevron')).toBe(0)
+    expect(document.querySelector('#capabilities .services__list svg')).toBeNull()
     // One chevron per homepage Solutions row, not per sector (#73).
     expect(count('solution-row__chevron')).toBe(homepageSolutions.length)
     expect(count('solution-row__chevron')).toBe(3)
     expect(count('trust-assessment__contours')).toBe(1)
     expect(document.querySelector('#data-trust-assessment svg')).toHaveClass('trust-assessment__contours')
-    expect(svgs).toHaveLength(1 + 1 + services.length + homepageSolutions.length)
+    expect(svgs).toHaveLength(1 + 1 + homepageSolutions.length)
     for (const svg of svgs) expect(svg).toHaveAttribute('aria-hidden', 'true')
     expect(document.querySelectorAll('canvas')).toHaveLength(0)
     expect([...document.querySelectorAll('img')].map((img) => img.closest('header, footer')?.tagName)).toEqual([
@@ -218,19 +220,22 @@ describe('App', () => {
     // The hero paragraph is the only text about tracing numbers to their
     // source, apart from the problem block's transition into the
     // assessment, the owner's bridge (#79), and the lead of the
-    // Data Trust Assessment, W4's own description of the offer (#71): no
-    // other paragraph in main repeats it. ("Traceable" and "traceability" in the
+    // Data Trust Assessment, W4's own description of the offer (#71), and
+    // the capabilities section's promise line, the open grid plan's one
+    // new string (#83): no other paragraph in main repeats it. ("Traceable" and "traceability" in the
     // process stages and the diagram's terms are not the hero's claim.)
     const hero = screen.getByRole('region', { name: HERO })
     const tracing = [...screen.getByRole('main').querySelectorAll('p')].filter((p) =>
       /\btrace\b|to the source|back to (its|their) source/i.test(p.textContent!),
     )
-    expect(tracing).toHaveLength(3)
+    expect(tracing).toHaveLength(4)
     expect(hero).toContainElement(tracing[0])
     expect(tracing[1]).toBe(screen.getByText(positioningTransition))
     expect(tracing[1].closest('.positioning')).toBe(hero.nextElementSibling)
     expect(tracing[2]).toBe(screen.getByText(assessmentLead))
     expect(screen.getByRole('region', { name: ASSESSMENT })).toContainElement(tracing[2])
+    expect(tracing[3]).toBe(screen.getByText(servicesIntro.promise))
+    expect(screen.getByRole('region', { name: SERVICES })).toContainElement(tracing[3])
   })
 
   it('has the Services h2 W3 names, and no h2 that says "business intelligence" (#70)', () => {
@@ -240,7 +245,7 @@ describe('App', () => {
     expect(SERVICES).toMatch(/^From fragmented data to numbers you can /)
     expect(screen.getByRole('heading', { level: 2, name: SERVICES })).toHaveAttribute(
       'id',
-      'services-heading',
+      'capabilities-heading',
     )
     for (const h2 of h2s) expect(h2.textContent).not.toMatch(/business intelligence/i)
     // The card h3 is service copy and stays (read from the data, as service
@@ -309,7 +314,7 @@ describe('App', () => {
     )
   })
 
-  it('lands the header and footer Services links on the services section, the hero having no Services link (#68)', () => {
+  it('lands the header and footer Services links and the hero\'s capabilities link on the capabilities section (#68, #83)', () => {
     render(<App />)
     const services = screen.getByRole('region', { name: SERVICES })
     const targets = [
@@ -321,13 +326,19 @@ describe('App', () => {
       }),
     ]
 
-    for (const link of targets) {
+    const heroLink = within(screen.getByRole('region', { name: HERO })).getByRole('link', {
+      name: 'Explore our capabilities',
+    })
+    const nav = navigation.find((item) => item.label === 'Services')!
+
+    expect(services.id).toBe('capabilities')
+    expect(nav.id).toBe(services.id)
+    for (const link of [...targets, heroLink]) {
       expect(link).toHaveAttribute('href', `#${services.id}`)
     }
+    // The hero has no "Services" link of its own.
     expect(
-      within(screen.getByRole('region', { name: HERO })).queryByRole('link', {
-        name: 'Explore our capabilities',
-      }),
+      within(screen.getByRole('region', { name: HERO })).queryByRole('link', { name: 'Services' }),
     ).not.toBeInTheDocument()
   })
 
@@ -549,9 +560,19 @@ describe('App', () => {
       expect(button.lastElementChild).toHaveAttribute('aria-hidden', 'true')
     }
     expect(screen.getAllByRole('link', { name: navigationCta.label })).toHaveLength(4)
-    for (const retired of ['Discuss a project', 'Discuss your data needs', 'Explore our capabilities']) {
+    for (const retired of ['Discuss a project', 'Discuss your data needs']) {
       expect(document.body.textContent).not.toContain(retired)
     }
+    // Restored on #83 as the hero's text link, not a button: once on the
+    // page.
+    expect(document.body.textContent!.split('Explore our capabilities')).toHaveLength(2)
+    const heroLinks = within(screen.getByRole('region', { name: HERO })).getAllByRole('link')
+    expect(heroLinks.map((link) => link.textContent)).toEqual([
+      'Book a data trust assessment→',
+      'Explore our capabilities',
+    ])
+    expect(heroLinks[1]).not.toHaveClass('button')
+    expect(screen.getByRole('region', { name: HERO }).querySelectorAll('.button')).toHaveLength(1)
   })
 
   it('has no form, iframe or Turnstile script', () => {
@@ -656,7 +677,7 @@ describe('App', () => {
     render(<App />)
     // Every child of main (the positioning block is not a section).
     const sections = [...screen.getByRole('main').children].filter(
-      (section) => !['services', 'managed-services'].includes(section.id),
+      (section) => !['capabilities', 'managed-services'].includes(section.id),
     )
 
     expect(sections).toHaveLength(8)
@@ -702,7 +723,8 @@ describe('App', () => {
       assessmentNextStatement,
     ])
     expect(headings[4].textContent).toBe(servicesIntro.heading)
-    expect(headings.slice(5, 11).map((heading) => heading.textContent)).toEqual(
+    // Each title's arrow is aria-hidden; its text is the service's name.
+    expect(headings.slice(5, 11).map((heading) => heading.textContent!.replace(/ →$/, ''))).toEqual(
       services.map((service) => service.name),
     )
     expect(headings[11].textContent).toBe(systemFlow.heading)

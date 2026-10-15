@@ -8,7 +8,7 @@ import {
 } from './services.ts'
 
 const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
-const NAV_ANCHORS = ['services', 'how-we-work', 'future-ready', 'about', 'contact']
+const NAV_ANCHORS = ['services', 'capabilities', 'how-we-work', 'future-ready', 'about', 'contact']
 
 // Every string in the module: ids, names, descriptions, engagements, tags,
 // the intro and the Managed Services section.
@@ -32,6 +32,8 @@ const allStrings = [
     ...service.tags,
   ]),
   servicesIntro.heading,
+  servicesIntro.highlight,
+  servicesIntro.promise,
   ...managedStrings,
 ]
 
@@ -96,9 +98,25 @@ describe('services', () => {
   })
 
   // W3 in the trust and lineage plan (#70) removed the two paragraphs.
-  it('has an intro heading and no paragraphs', () => {
+  // The open grid plan (#83) adds the highlight and the one promise line.
+  it('has an intro heading, its highlight and the promise line, and no paragraphs', () => {
     expect(servicesIntro.heading).toMatch(/^From fragmented data to numbers you can /)
-    expect(Object.keys(servicesIntro)).toEqual(['heading'])
+    expect(Object.keys(servicesIntro)).toEqual(['heading', 'highlight', 'promise'])
+  })
+
+  it('names a highlight found exactly once in the heading (#83)', () => {
+    const { heading, highlight } = servicesIntro
+    expect(highlight).not.toBe('')
+    expect(heading.split(highlight)).toHaveLength(2)
+  })
+
+  // The open grid plan takes "Typical engagements" off the homepage but
+  // keeps it on each service page, so the data stays (#83).
+  it('still holds a non-empty engagements list for every service (#83)', () => {
+    for (const service of services) {
+      expect(service.engagements.length, service.id).toBeGreaterThan(0)
+      for (const item of service.engagements) expect(item).not.toBe('')
+    }
   })
 
   // The em dash is the one exception to plain ASCII.

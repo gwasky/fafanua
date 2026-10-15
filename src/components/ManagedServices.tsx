@@ -4,8 +4,8 @@ import SectionEyebrow from './SectionEyebrow.tsx'
 import './ManagedServices.css'
 
 // The Managed Services section (plan V2 §10), directly after Services: an
-// ongoing engagement model, not a seventh service card, so it has no stage
-// label, marker, tags or disclosure. On paper, it holds one graphite 900
+// ongoing engagement model, not a seventh capability, so it has no stage
+// line or tags. On paper, it holds one graphite 900
 // panel (.surface-dark) inset within the container. The eyebrow and the
 // V2 heading (the section's h2) come first, then the approved eyebrow,
 // h3 and description, the capability rail, the capabilities in data order

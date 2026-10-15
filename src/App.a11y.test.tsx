@@ -22,7 +22,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-const disclosureName = (name: string) => `Typical engagements for ${name}`
 
 describe('App accessibility (axe)', () => {
   it('has no axe violations as rendered', async () => {
@@ -40,15 +39,16 @@ describe('App accessibility (axe)', () => {
     await expectNoAxeViolations(container)
   })
 
-  it('has no axe violations with all six Typical engagements disclosures open', async () => {
+  // The disclosures this test opened left with the open grid (#83); it
+  // now checks the grid with focus on a capability title.
+  it('has no axe violations with focus on a capability title link', async () => {
     const { container } = render(<App />)
-    const buttons = screen.getAllByRole('button', { name: /^Typical engagements for / })
-    for (const button of buttons) fireEvent.click(button)
+    const region = screen.getByRole('region', { name: /^From fragmented data/ })
+    const link = within(region).getByRole('link', { name: services[4].name })
+    link.focus()
 
-    expect(buttons).toHaveLength(6)
-    for (const button of buttons) {
-      expect(button).toHaveAttribute('aria-expanded', 'true')
-    }
+    expect(link).toHaveFocus()
+    expect(screen.queryAllByRole('button', { name: /^Typical engagements/ })).toHaveLength(0)
     await expectNoAxeViolations(container)
   })
 
@@ -169,42 +169,33 @@ describe('App links and buttons', () => {
     for (const { href } of links) expect(href).toBe(`mailto:${email}`)
   })
 
-  it('has three kinds of button: the Menu toggle, six disclosures and three Solutions rows', () => {
+  it('has two kinds of button: the Menu toggle and three Solutions rows (#83)', () => {
     render(<App />)
     const buttons = controls().filter(({ element }) => element.tagName === 'BUTTON')
 
     expect(buttons.map(({ name }) => name)).toEqual([
       'Menu',
-      ...services.map((service) => disclosureName(service.name)),
       ...homepageSolutions.map((solution) => solution.title),
     ])
   })
 
-  it('names the six disclosures Typical engagements for each service, starting with the visible label', () => {
+  it('shows no Typical engagements on the homepage, and names each capability title link by its service (#83)', () => {
     render(<App />)
-    // The service cards' disclosure buttons.
-    const disclosures = controls().filter(
-      ({ element }) =>
-        element.tagName === 'BUTTON' && element.closest('.service-card') !== null,
-    )
-    const names = disclosures.map(({ name }) => name)
+    const region = screen.getByRole('region', { name: /^From fragmented data/ })
+    const titles = controls().filter(({ element }) => region.contains(element))
 
-    expect(names).toEqual(
-      services.map((service) => disclosureName(service.name)),
-    )
-    expect(new Set(names).size).toBe(6)
-    for (const { element, name } of disclosures) {
-      // WCAG 2.5.3: the visible text starts the accessible name.
+    expect(document.body.textContent).not.toContain('Typical engagements')
+    expect(titles.map(({ element }) => element.tagName)).toEqual(services.map(() => 'A'))
+    expect(titles.map(({ name }) => name)).toEqual(services.map((service) => service.name))
+    expect(new Set(titles.map(({ name }) => name)).size).toBe(6)
+    for (const { element } of titles) {
+      // WCAG 2.5.3: the visible text, without the hidden arrow, is the name.
       const visible = [...element.childNodes]
-        .filter(
-          (node) =>
-            !(node instanceof Element && node.matches('.visually-hidden, svg')),
-        )
+        .filter((node) => !(node instanceof Element && node.getAttribute('aria-hidden') === 'true'))
         .map((node) => node.textContent)
         .join('')
-        .trim()
-      expect(visible).toBe('Typical engagements')
-      expect(name.startsWith(visible)).toBe(true)
+      expect(services.map((service) => service.name)).toContain(visible)
+      expect(element.closest('h3')).not.toBeNull()
     }
   })
 })

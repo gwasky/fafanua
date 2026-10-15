@@ -72,7 +72,38 @@
 .hero__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+}
+
+/*
+ * The text link to the capabilities section (owner decision on #83):
+ * paper on graphite 900 (--color-heading, 14.9:1), weight 500, with a
+ * graphite 700 hairline underline (--color-border here) that turns paper
+ * on hover, as the Managed Services heading link does. No arrow and no
+ * teal, so the button stays the hero's one accent. As tall as the
+ * button (--space-12, 48px), so its target is over 44px;
+ * it wraps below the button when the row has no room for it.
+ */
+.hero__link,
+.hero__link:visited,
+.hero__link:hover {
+  color: var(--color-heading);
+}
+
+.hero__link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--space-12);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  text-decoration-color: var(--color-border);
+  text-decoration-thickness: var(--border-width);
+  text-underline-offset: 0.2em;
+}
+
+.hero__link:hover {
+  text-decoration-color: currentColor;
 }
 
 @media (min-width: 64em) {

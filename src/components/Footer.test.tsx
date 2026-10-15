@@ -99,7 +99,7 @@ describe('Footer', () => {
     )
     for (const link of links) expect(link).not.toHaveClass('button')
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
-      '#services',
+      '#capabilities',
       '#solutions',
       '#how-we-work',
       '#about',

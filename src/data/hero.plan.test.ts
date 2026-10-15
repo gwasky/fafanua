@@ -15,12 +15,14 @@ import plan from '../../_docs/plan.md?raw'
 import planV2 from '../../_docs/fafanua-v2-visual-upgrade-plan.md?raw'
 import refinement from '../../_docs/fafanua-v2-refinement-plan.md?raw'
 import trustPlan from '../../_docs/fafanua-trust-lineage-positioning-plan.md?raw'
+import openGridPlan from '../../_docs/fafanua-capabilities-open-grid-plan.md?raw'
 import { ctaLabel } from './contact.ts'
 import heroSource from './hero.ts?raw'
 import {
   heroHeadingLines,
   heroPrimaryLabel,
   heroPromise,
+  heroSecondaryLabel,
   heroSupporting,
 } from './hero.ts'
 import * as hero from './hero.ts'
@@ -126,10 +128,23 @@ describe('hero wording', () => {
     expect(w1).toContain(`Use the label **${heroPrimaryLabel}** on the nav button, the hero primary button`)
   })
 
-  it('has no secondary call to action, which W1 removes (#68)', () => {
+  it('has the secondary link the open grid plan §4 restores, a link and not a second call to action (#83)', () => {
+    // W1 removed it (#68); the owner's update on #83 brings it back.
     expect(w1).toContain('Remove the hero secondary button ("Explore our capabilities")')
-    expect(Object.keys(hero)).not.toContain('heroSecondaryLabel')
-    expect(Object.values(hero).flat()).not.toContain('Explore our capabilities')
+    expect(w1).toContain(
+      "Owner update (2026-10-15, #83): the Capabilities Open Grid plan restores the hero's secondary link, Explore our capabilities, as a text link to #capabilities. The other two labels stay retired, and the hero keeps one button.",
+    )
+    expect(heroSecondaryLabel).toBe('Explore our capabilities')
+    expect(openGridPlan).toContain(`It is the target of the hero's "${heroSecondaryLabel}" link`)
+    // The call to action label is still the only one: the hero exports
+    // the two labels and no other.
+    expect(Object.keys(hero).filter((key) => /Label$/.test(key)).sort()).toEqual([
+      'heroPrimaryLabel',
+      'heroSecondaryLabel',
+    ])
+    expect(heroSecondaryLabel).not.toBe(heroPrimaryLabel)
+    expect(Object.values(hero).flat()).not.toContain('Discuss a project')
+    expect(Object.values(hero).flat()).not.toContain('Discuss your data needs')
   })
 })
 

@@ -3,12 +3,15 @@
 // wording on the site cannot drift from it. The one exception is the intro:
 // W3 in _docs/fafanua-trust-lineage-positioning-plan.md (#70) replaced the
 // Section 11 heading and removed its two paragraphs, so the heading is
-// checked against W3 and the paragraphs as absent. The ?raw imports
+// checked against W3 and the paragraphs as absent; the highlight and the
+// promise line are checked against the Capabilities Open Grid plan (#83).
+// The ?raw imports
 // resolve relative to this file and are never part of the production
 // bundle.
 import { describe, expect, it } from 'vitest'
 import positioning from '../../_docs/plan-fafanua-services-positioning.md?raw'
 import trustPlan from '../../_docs/fafanua-trust-lineage-positioning-plan.md?raw'
+import openGridPlan from '../../_docs/fafanua-capabilities-open-grid-plan.md?raw'
 import servicesSource from './services.ts?raw'
 import { managedServices, services, servicesIntro, stages } from './services.ts'
 
@@ -202,7 +205,23 @@ describe('services wording', () => {
     expect(servicesIntro.heading).toEqual(w3Intro.heading)
     expect(servicesIntro.heading).not.toEqual(docIntro.heading)
     expect(servicesIntro.heading).not.toMatch(/business intelligence/i)
-    expect(Object.keys(servicesIntro)).toEqual(['heading'])
+    expect(Object.keys(servicesIntro)).toEqual(['heading', 'highlight', 'promise'])
+  })
+
+  it('uses the open grid plan §3 promise line and §4 highlight, character for character (#83)', () => {
+    const grid = openGridPlan.replace(/\r\n/g, '\n')
+    const start = grid.indexOf('\n### New, approved by the owner\n')
+    const section = grid.slice(start, grid.indexOf('\n### ', start + 1))
+    const rows = [...section.matchAll(/^\| Promise line \| (.+?) \|$/gm)].map((match) => match[1])
+
+    expect(start).toBeGreaterThan(-1)
+    expect(rows).toHaveLength(1)
+    expect(servicesIntro.promise).toBe(rows[0])
+    expect(servicesIntro.promise).toBe(
+      'Six capabilities, one path: from scattered systems to numbers your leadership can trace and trust.',
+    )
+    expect(grid).toContain(`In the heading, "${servicesIntro.highlight}" is in the teal accent token`)
+    expect(servicesIntro.heading.endsWith(servicesIntro.highlight)).toBe(true)
   })
 
   it('lists Reverse ETL under Data Engineering & Integration, without the Section 6 examples', () => {

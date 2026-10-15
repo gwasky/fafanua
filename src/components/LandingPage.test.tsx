@@ -70,7 +70,7 @@ describe.each(pages.map((page) => [page.path, page] as const))('%s', (_path, pag
     renderPage(page)
     const banner = screen.getByRole('banner')
     expect(within(banner).getByRole('link', { name: 'Fafanua Technologies' })).toHaveAttribute('href', '/')
-    expect(within(banner).getByRole('link', { name: 'Services' })).toHaveAttribute('href', '/#services')
+    expect(within(banner).getByRole('link', { name: 'Services' })).toHaveAttribute('href', '/#capabilities')
     expect(within(banner).getByRole('link', { name: 'Book a data trust assessment' })).toHaveAttribute('href', '#contact')
     const footer = screen.getByRole('contentinfo')
     expect(within(footer).getByRole('link', { name: 'Solutions' })).toHaveAttribute('href', '/#solutions')
@@ -166,7 +166,7 @@ describe('service pages', () => {
       'Services',
       services[4].name,
     ])
-    expect(within(trail).getByRole('link', { name: 'Services' })).toHaveAttribute('href', '/#services')
+    expect(within(trail).getByRole('link', { name: 'Services' })).toHaveAttribute('href', '/#capabilities')
   })
 
   it('explains Reverse ETL on the engineering page only', () => {

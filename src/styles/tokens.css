@@ -139,11 +139,6 @@
   --text-section: clamp(2rem, 1.2rem + 3.2vw, 3.5rem);
   --text-service: clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem);
   --text-body-lg: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
-  /* Service titles in the three-column card grid, from 64em (V2 visual
-     enhancement plan §10, #66): 17px at weight 500 with --tracking-tight,
-     so all six names fit on one line once the container reaches its full
-     width (about 1216px); between 1024 and 1216px the longest wrap. */
-  --text-service-compact: 1.0625rem;
   --text-eyebrow: 0.8125rem;
   /* The problem block's statement (W10 in the trust and lineage plan,
      #80): 32 / 41 / 52px at 390 / 1024 / 1440px, and at least 64px with
@@ -164,8 +159,6 @@
 
   /* Eyebrows (SectionEyebrow): uppercase, slightly spaced. */
   --tracking-eyebrow: 0.08em;
-  /* Slightly tightened medium-weight titles (--text-service-compact). */
-  --tracking-tight: -0.025em;
 
   /* Spacing (4px steps) */
   --space-1: 0.25rem;
@@ -274,7 +267,7 @@
   --duration-header: var(--duration-base); /* header solid <-> transparent */
   --duration-cta-arrow: var(--duration-fast); /* CTA arrow nudge */
   --cta-arrow-shift: var(--space-1);
-  --duration-card-hover: var(--duration-base); /* service-card hover lift */
+  --duration-card-hover: var(--duration-base); /* capability cell hover */
   /* One-time reveals (#61): the hero's copy and CTA row on load, and each
      main section after the positioning block the first time it scrolls
      into view (useReveal.ts). None of them runs under reduced motion. */
@@ -282,10 +275,6 @@
   --duration-reveal: var(--duration-slow);
   --duration-reveal-stagger: var(--duration-fast); /* hero CTA row after the copy */
   --duration-grid-fade: var(--duration-slow); /* the hero's grid on load */
-  /* The lifecycle rail's line, drawn from the first stage to the last at
-     an even pace. */
-  --duration-rail-draw: calc(var(--duration-slow) * 2);
-  --ease-linear: linear;
 }
 
 /*

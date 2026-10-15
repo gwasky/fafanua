@@ -2,13 +2,16 @@ import {
   heroHeadingLines,
   heroPrimaryLabel,
   heroPromise,
+  heroSecondaryLabel,
   heroSupporting,
 } from '../data/hero.ts'
 import TechnicalGrid from './TechnicalGrid.tsx'
 import './Hero.css'
 
 // The hero's copy is in src/data/hero.ts: the headline, the core brand
-// promise, the supporting copy and the one call to action (#68). Each sentence
+// promise, the supporting copy, the one call to action (#68) and, after
+// it, a quiet text link to the capabilities section, which the owner
+// restored on #83: a link, not a second button. Each sentence
 // of the headline is a block-level span, so it starts on its own line at
 // every width; the space between them keeps a space between the sentences
 // in the heading's accessible name. The brand promise is a paragraph, not
@@ -40,6 +43,9 @@ function Hero() {
             <span className="button__arrow" aria-hidden="true">
               →
             </span>
+          </a>
+          <a className="hero__link" href="#capabilities">
+            {heroSecondaryLabel}
           </a>
         </div>
       </div>

@@ -1,9 +1,11 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { services, stages, type Service } from '../data/services.ts'
+import { servicePath } from '../paths.ts'
 import ServiceCard from './ServiceCard.tsx'
 
-// The governance card has the longest engagements list (ten items).
+// The governance service has the longest engagements list (ten items),
+// none of which the cell shows since the open grid plan (#83).
 const governance = services.find(
   (service) => service.id === 'data-governance-and-metadata',
 )!
@@ -16,163 +18,114 @@ function spokenText(element: Element) {
   return copy.textContent
 }
 
-// The lifecycle line: the paragraph right after the title.
-const lifecycleLine = () =>
-  screen.getByRole('heading', { level: 3 }).nextElementSibling as HTMLElement
-
-// The tag list: the card's one list that the button does not control.
-const tagList = () =>
-  screen
-    .getAllByRole('list')
-    .find((list) => !list.id) as HTMLElement
-
-// The engagements panel, found by the id the button controls.
-const panelOf = (button: HTMLElement) =>
-  document.getElementById(button.getAttribute('aria-controls')!)!
-
-function renderCard(service: Service = governance) {
-  render(<ServiceCard service={service} />)
-  return {
-    heading: screen.getByRole('heading', { level: 3 }),
-    button: screen.getByRole('button', {
-      name: `Typical engagements for ${service.name}`,
-    }),
-  }
+// One cell, rendered in a list item as Services.tsx does.
+function renderCell(service: Service = governance) {
+  const { container } = render(
+    <ol>
+      <li>
+        <ServiceCard service={service} />
+      </li>
+    </ol>,
+  )
+  const cell = container.querySelector('li')!
+  const heading = within(cell).getByRole('heading', { level: 3 })
+  const [stage, , description, tags] = [...cell.children] as HTMLElement[]
+  return { cell, heading, stage, description, tags }
 }
 
 describe('ServiceCard', () => {
-  it('shows the name, label, description, tags and button in that order', () => {
-    const { heading, button } = renderCard()
-    const label = lifecycleLine()
-    const description = screen.getByText(governance.description)
+  it('shows the stage line, title, description and tags, in that order and nothing else', () => {
+    const { cell, heading, stage, description, tags } = renderCell()
 
-    expect(heading).toHaveTextContent(governance.name)
-    expect(spokenText(label)).toBe('Govern')
+    expect([...cell.children].map((child) => child.tagName)).toEqual(['P', 'H3', 'P', 'P'])
+    expect(cell.children[1]).toBe(heading)
+    expect(spokenText(stage)).toBe('Govern')
+    expect(spokenText(heading)).toBe(governance.name)
     expect(description.textContent).toBe(governance.description)
-    const order = [heading, label, description, tagList(), button, panelOf(button)]
-    for (let i = 1; i < order.length; i++) {
-      expect(
-        order[i - 1].compareDocumentPosition(order[i]) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy()
-    }
+    expect(tags.textContent).toBe(governance.tags.join(' · '))
   })
 
   it.each(services.map((service, index) => [service.stage, service, index]))(
-    'shows the %s stage as visible text after its hidden numbered marker',
+    'shows the %s stage as visible text after its hidden number',
     (_stage, service, index) => {
-      renderCard(service)
-      const label = lifecycleLine()
-      const [marker] = label.querySelectorAll('[aria-hidden="true"]')
+      const { stage } = renderCell(service)
+      const [number] = stage.querySelectorAll('[aria-hidden="true"]')
       const stageNumber = String(index + 1).padStart(2, '0')
 
-      expect(label.tagName).toBe('P')
-      // Seen as "01 Design", read as "Design" (#66: the number sits in
-      // the marker's ring).
-      expect(label.textContent).toBe(`${stageNumber}${stages[service.stage]}`)
-      expect(spokenText(label)).toBe(stages[service.stage])
-      expect(marker).toHaveClass('service-card__marker')
-      expect(marker.textContent).toBe(stageNumber)
-      expect(label.firstElementChild).toBe(marker)
-      expect(label.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1)
-      expect(label.lastChild?.nodeType).toBe(Node.TEXT_NODE)
+      expect(stage.tagName).toBe('P')
+      // Seen as "01 Design", read as "Design".
+      expect(stage.textContent).toBe(`${stageNumber}${stages[service.stage]}`)
+      expect(spokenText(stage)).toBe(stages[service.stage])
+      expect(number.textContent).toBe(stageNumber)
+      expect(stage.firstElementChild).toBe(number)
+      expect(stage.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1)
+      expect(stage.lastChild?.nodeType).toBe(Node.TEXT_NODE)
+      // Plain text: no link, button or tab stop.
+      expect(stage.querySelector('a, button, [tabindex]')).toBeNull()
     },
   )
 
   it.each(services.map((service) => [service.name, service]))(
-    'shows the tags for %s in order, outside the panel, while it is closed',
+    'shows the tags for %s as one paragraph, in order, joined with " · "',
     (_name, service) => {
-      const { button } = renderCard(service)
-      const list = tagList()
-      const items = within(list).getAllByRole('listitem')
+      const { tags } = renderCell(service)
 
-      expect(button).toHaveAttribute('aria-expanded', 'false')
-      expect(list.tagName).toBe('UL')
-      expect(items.map((item) => item.textContent)).toEqual(service.tags)
-      for (const item of items) expect(item).toBeVisible()
-      expect(panelOf(button)).not.toContainElement(list)
-      expect(list).not.toContainElement(button)
+      expect(tags.tagName).toBe('P')
+      expect(tags.textContent).toBe(service.tags.join(' · '))
+      expect(tags.children).toHaveLength(0)
+      expect(tags).toBeVisible()
     },
   )
 
-  it('gives the tags no links, buttons, names or tab stops', () => {
-    renderCard()
-    const list = tagList()
+  it('gives the tags no list, links, buttons, names or tab stops', () => {
+    const { cell, tags } = renderCell()
 
-    expect(within(list).queryAllByRole('link')).toHaveLength(0)
-    expect(within(list).queryAllByRole('button')).toHaveLength(0)
-    expect(list.querySelector('a, button, [tabindex], [aria-label]')).toBeNull()
-    expect(list).not.toHaveAttribute('aria-label')
-    expect(screen.getAllByRole('button')).toHaveLength(1)
+    expect(within(cell).queryAllByRole('list')).toHaveLength(0)
+    expect(within(tags).queryAllByRole('link')).toHaveLength(0)
+    expect(within(tags).queryAllByRole('button')).toHaveLength(0)
+    expect(tags.querySelector('a, button, [tabindex], [aria-label]')).toBeNull()
+    expect(tags).not.toHaveAttribute('aria-label')
   })
 
   it('adds no other headings', () => {
-    renderCard()
+    renderCell()
     expect(screen.getAllByRole('heading')).toHaveLength(1)
   })
 
-  it('starts collapsed, with the list hidden', () => {
-    const { button } = renderCard()
+  it('has one link, in the title, named by the service, with a hidden arrow', () => {
+    const { cell, heading } = renderCell()
+    const links = within(cell).getAllByRole('link')
+    const arrow = links[0].querySelector('[aria-hidden="true"]')!
 
-    expect(button).toHaveAttribute('type', 'button')
-    expect(button).toHaveAttribute('aria-expanded', 'false')
-    // Only the tag list is shown.
-    expect(screen.getAllByRole('list')).toEqual([tagList()])
-    const panel = panelOf(button)
-    expect(panel).toHaveAttribute('hidden')
+    expect(links).toHaveLength(1)
+    expect(heading).toContainElement(links[0])
+    expect(links[0]).toHaveAccessibleName(governance.name)
+    expect(links[0]).toHaveAttribute('href', servicePath(governance.id))
+    expect(arrow.textContent!.trim()).toBe('→')
+    expect(links[0].lastElementChild).toBe(arrow)
+    expect(cell.querySelectorAll('a, button, [tabindex]')).toHaveLength(1)
+  })
+
+  it('has no button, disclosure or Typical engagements (#83)', () => {
+    const { cell } = renderCell()
+
+    expect(within(cell).queryAllByRole('button')).toHaveLength(0)
+    expect(cell.querySelector('[aria-expanded], [aria-controls], [hidden], svg')).toBeNull()
+    expect(cell.textContent).not.toContain('Typical engagements')
     for (const item of governance.engagements) {
-      expect(screen.queryByText(item)).not.toBeVisible()
+      expect(screen.queryByText(item)).toBeNull()
     }
+    expect(document.getElementById(`${governance.id}-typical-engagements`)).toBeNull()
   })
 
-  it('shows every engagement in order when opened, and hides them again', () => {
-    const { button } = renderCard()
-
-    fireEvent.click(button)
-    expect(button).toHaveAttribute('aria-expanded', 'true')
-    const list = panelOf(button)
-    expect(screen.getAllByRole('list')).toEqual([tagList(), list])
-    expect(list).not.toHaveAttribute('hidden')
-    const items = within(list).getAllByRole('listitem')
-    expect(items.map((item) => item.textContent)).toEqual(
-      governance.engagements,
-    )
-    expect(items).toHaveLength(10)
-
-    fireEvent.click(button)
-    expect(button).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.getAllByRole('list')).toEqual([tagList()])
+  it('has no stage colour classes', () => {
+    const { cell } = renderCell()
+    expect(cell.querySelector('[class*="--design"], [class*="--govern"], [class*="--open"]')).toBeNull()
+    expect(cell.innerHTML).not.toContain('--marker')
   })
 
-  it('marks the card as open while the list is shown', () => {
-    const { heading, button } = renderCard()
-    const card = heading.parentElement!
-
-    expect(card).not.toHaveClass('service-card--open')
-    fireEvent.click(button)
-    expect(button).toHaveAttribute('aria-expanded', 'true')
-    expect(card).toHaveClass('service-card--open')
-    fireEvent.click(button)
-    expect(button).toHaveAttribute('aria-expanded', 'false')
-    expect(card).not.toHaveClass('service-card--open')
-  })
-
-  it('names the button with its visible text, then the service name', () => {
-    const { button } = renderCard()
-
-    expect(button).toHaveAccessibleName(
-      `Typical engagements for ${governance.name}`,
-    )
-    expect(button).not.toHaveAttribute('aria-label')
-  })
-
-  it('builds ids from the service id', () => {
-    const { heading, button } = renderCard()
-
+  it('builds the title id from the service id', () => {
+    const { heading } = renderCell()
     expect(heading).toHaveAttribute('id', `${governance.id}-heading`)
-    expect(button).toHaveAttribute(
-      'aria-controls',
-      `${governance.id}-typical-engagements`,
-    )
   })
 })

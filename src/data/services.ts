@@ -9,8 +9,10 @@
 // services.tags.plan.test.ts, and the Managed Services section's heading,
 // eyebrow label and rail are from plan V2 Section 10, checked by
 // services.managed.plan.test.ts. Components read service copy from here and
-// nowhere else: the lifecycle rail (LifecycleRail.tsx) and the cards
-// number the stages from each service's position in `services`.
+// nowhere else: the capability grid's cells number the stages from each
+// service's position in `services`. Since the Capabilities Open Grid plan
+// (#83) the homepage no longer shows `engagements`; each service page
+// does (ServicePage.tsx), so they stay here.
 
 export type Stage = 'design' | 'connect' | 'model' | 'trust' | 'govern' | 'decide'
 
@@ -22,12 +24,11 @@ export type Service = {
   description: string
   engagements: readonly string[]
   stage: Stage
-  /** Capability tags, always shown on the card: 3 to 5, in plan order. */
+  /** Capability tags, shown as one line of text in the cell: 3 to 5, in plan order. */
   tags: readonly string[]
 }
 
-// Lifecycle labels shown beside each card's colour marker and in the
-// lifecycle rail above the cards.
+// Lifecycle labels shown on each capability cell's stage line.
 export const stages: Readonly<Record<Stage, string>> = {
   design: 'Design',
   connect: 'Connect',
@@ -37,13 +38,20 @@ export const stages: Readonly<Record<Stage, string>> = {
   decide: 'Decide',
 }
 
-// The Services section's h2, above the lifecycle rail and the cards. W3
-// in _docs/fafanua-trust-lineage-positioning-plan.md (#70) replaced the
-// services-positioning doc's intro heading with this one and removed the
-// two intro paragraphs beneath it, which restated the hero; the rest of
-// the service copy here still follows the services-positioning doc.
+// The capabilities section's header, above the open grid (#83). The h2:
+// W3 in _docs/fafanua-trust-lineage-positioning-plan.md (#70) replaced
+// the services-positioning doc's intro heading with this one and removed
+// the two intro paragraphs beneath it, which restated the hero; the rest
+// of the service copy here still follows the services-positioning doc.
+// The highlight is the phrase of the heading shown in teal, found in the
+// heading at render so the heading stays one string; the promise is the
+// line beneath it. Both are from the Capabilities Open Grid plan §3/§4
+// (_docs/fafanua-capabilities-open-grid-plan.md).
 export const servicesIntro = {
   heading: 'From fragmented data to numbers you can trace',
+  highlight: 'can trace',
+  promise:
+    'Six capabilities, one path: from scattered systems to numbers your leadership can trace and trust.',
 } as const
 
 export const services = [
