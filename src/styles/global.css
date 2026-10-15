@@ -197,6 +197,8 @@ a:hover {
   --color-button-secondary-bg-hover: var(--color-button-secondary-bg-hover-on-dark);
   --color-button-secondary-border-hover: var(--color-button-secondary-border-hover-on-dark);
   --color-grid-line: var(--color-grid-line-on-dark);
+  --color-tag-bg: var(--color-tag-bg-on-dark);
+  --color-tag-text: var(--color-tag-text-on-dark);
 }
 
 .surface-dark {

@@ -94,6 +94,11 @@
      blended over its surface each stays at or below 1.25:1, which
      scripts/contrast.test.ts checks. */
   --color-grid-line: color-mix(in srgb, var(--graphite-900) 7%, transparent);
+  /* A small tag in the teal tint (W11, #81: the Data Trust Assessment's
+     engagement name, and its selected metric chip): teal 800 on teal 100,
+     6.9:1. Teal 700 on teal 100 is 4.47:1 and fails AA. */
+  --color-tag-bg: var(--teal-100);
+  --color-tag-text: var(--teal-800);
 
   /* Links on --color-surface-alt. Teal 700 on graphite 100 is 4.46:1 and
      fails AA, so links there use teal 800 (6.9:1), hovering to teal 900
@@ -133,6 +138,9 @@
   --color-button-secondary-bg-hover-on-dark: var(--graphite-800);
   --color-button-secondary-border-hover-on-dark: var(--graphite-400);
   --color-grid-line-on-dark: color-mix(in srgb, var(--paper) 7%, transparent);
+  /* Unused on dark today: teal 200 on teal 900, 8.7:1. */
+  --color-tag-bg-on-dark: var(--teal-900);
+  --color-tag-text-on-dark: var(--teal-200);
 
   /* Typography. "Inter Variable" and "Inter Fallback" (Arial with
      metric overrides, so the swap does not move the layout) are defined

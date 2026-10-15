@@ -10,8 +10,10 @@
 // eyebrow and name are stored in sentence and title case, as every eyebrow
 // is, and CSS shows them in capitals. The button reads the site's one call
 // to action label from contact.ts (W1, #68). assessment.plan.test.ts
-// checks the wording against both plans. TrustAssessment.tsx reads this
-// copy from here and nowhere else.
+// checks the wording against both plans. W11 in the trust and lineage plan
+// (#81) lays the section out in three rows and adds five labels, the only
+// new copy: the four deliverable tiles' labels and the example's owner row
+// value. TrustAssessment.tsx reads this copy from here and nowhere else.
 
 import { ctaLabel } from './contact.ts'
 
@@ -31,6 +33,15 @@ export const assessmentDeliverables: readonly string[] = [
   'A trust scorecard rating each number as trusted, trusted with caveats, or not yet trusted, with the reasons',
   'Shared definitions for the terms your teams or branches use differently',
   'A prioritised fix list, ranked by impact and effort',
+]
+
+// The four tiles' labels (W11, #81), index-aligned with the deliverables:
+// each tile shows its label above the deliverable it names.
+export const assessmentDeliverableLabels: readonly string[] = [
+  'Lineage map',
+  'Trust scorecard',
+  'Shared definitions',
+  'Fix list',
 ]
 
 export const assessmentAfterHeading = 'After the assessment'
@@ -53,24 +64,32 @@ export const exampleMetrics: readonly string[] = [
   'Cost per Customer',
 ]
 
-// The illustrative example (#77, #79): its caption, the example metric
-// names under their label, the seven trace steps each is traced through,
-// in this order, from the report back to its source and on to a rating,
-// and the scorecard's three rating categories, nested under the last
-// step. Labels only: no figure, value, rating or finding is given for any
-// metric.
+// The illustrative example (#77, #79, laid out by W11 in #81): its
+// caption, the example metric names under their label, the five trace
+// steps each is traced through, in order from the report back to its
+// source, then the footer's two rows: the owner label with its value, a
+// role and never a name, and the trust rating label over the scorecard's
+// three rating categories. The steps, then the two footer labels, are
+// still the enhancement plan's seven-step sequence (§9). Labels only: no
+// figure, value, rating or finding is given for any metric.
 export const lineageExample: {
   readonly caption: string
   readonly metricsLabel: string
   readonly metrics: readonly string[]
   readonly stepsLabel: string
   readonly steps: readonly string[]
+  readonly ownerLabel: string
+  readonly ownerRole: string
+  readonly ratingLabel: string
   readonly ratings: readonly string[]
 } = {
   caption: 'Illustrative example',
   metricsLabel: 'Example leadership metrics',
   metrics: exampleMetrics,
   stepsLabel: 'Each traced through',
-  steps: ['Report', 'Definition', 'Calculation', 'Data model', 'Source system', 'Owner', 'Trust rating'],
+  steps: ['Report', 'Definition', 'Calculation', 'Data model', 'Source system'],
+  ownerLabel: 'Owner',
+  ownerRole: 'One role per metric',
+  ratingLabel: 'Trust rating',
   ratings: ['Trusted', 'Trusted with caveats', 'Not yet trusted'],
 }

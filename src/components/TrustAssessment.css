@@ -1,43 +1,32 @@
 /*
  * The Data Trust Assessment (W4 in the trust and lineage plan, #71): on
- * the page background, between the problem block and Services. The homepage
- * enhancement plan (#79) puts the unnumbered eyebrow START WITH TRUST and
- * the engagement name DATA TRUST ASSESSMENT above the h2, both small
- * beside it: the name is the eyebrow's uppercase tracking at --text-sm,
- * weight 500, a step larger than the eyebrow and in graphite 900 rather
- * than 600, so it reads as the offer's name under its context label.
+ * the page background, between the problem block and Services, laid out
+ * by W11 (#81) after the owner's reference image
+ * (_docs/design-references/data-trust-assessment-layout.png) in three
+ * rows, every one a child of the container: the intro and the example
+ * card, side by side from 64em; the four deliverable tiles; and the band
+ * with the after-assessment copy and the button.
+ *
  * Every text pairing is a verified light one: graphite 900 and graphite
- * 600 on paper (14.9:1, 6.0:1) in the copy column, and on white (16.4:1,
- * 6.6:1) in the example; the button is the primary button on light
- * (white on teal 700, 5.2:1).
+ * 600 on paper (14.9:1, 6.0:1) in the intro and the tiles' heading, and on
+ * white (16.4:1, 6.6:1) in the card, the tiles and the band; the tag and
+ * the first metric chip teal 800 on teal 100 (6.9:1); the button the
+ * primary button on light (white on teal 700, 5.2:1).
  *
  * Its padding: the gap from the problem statement above is one
  * --space-section, split so that --space-8 of it is this section's own
  * top padding and the rest the problem block's bottom padding. So a link
- * or hash landing on the section puts its heading --space-8 below the
+ * or hash landing on the section puts its eyebrow --space-8 below the
  * header rather than against it. Services drops its top padding after
  * this section (Services.css). Each gap, problem to assessment and
  * assessment to Services, is one --space-section.
  *
- * Stacked by default: the copy, then the example. From 64em (literal
- * breakpoint, see the note in tokens.css) two top-aligned columns, the
- * copy at the start and the example at the end, so the visual order is
- * the DOM order.
- *
- * The example is a white card with a graphite 200 hairline, as the system
- * diagram's cards, of labels only (#77): its caption, the example metric
- * names under their label, then the seven trace steps (#79) under theirs
- * as a vertical list at every width, the last holding the three rating
- * categories. A ring marks each step at the inline start, and a line
- * joins each ring to the next, ending in a downward arrowhead just above
- * it, so the trace reads as a direction, from the report to its rating.
- * All three are drawn with borders on pseudo-elements (the arrowhead a
- * chevron of two borders, turned 45 degrees, never a transparent border,
- * which forced-colours mode would fill in), so they have no text, are
- * never announced and stay drawn in forced-colours mode. The last ring is
- * filled, as the end of the trace. No colour carries meaning, and the
- * ratings look alike: none is given to a metric. Nothing here moves
- * beyond the section reveal.
+ * Every rule, ring and marker is a border on a pseudo-element or on the
+ * element itself, never a transparent border standing for a shape (which
+ * forced-colours mode would fill in), so they have no text, are never
+ * announced and stay drawn in forced-colours mode. Nothing here is
+ * interactive but the button: the chips have no hover, pointer or focus.
+ * Nothing moves beyond the section reveal.
  */
 
 .trust-assessment {
@@ -45,7 +34,7 @@
   background-color: var(--color-bg);
 }
 
-/* One --space-section between the problem statement and the heading,
+/* One --space-section between the problem statement and the eyebrow,
    --space-8 of it here. Without :has() the gap is --space-8 larger, never
    doubled. */
 .positioning:has(+ .trust-assessment) {
@@ -56,6 +45,9 @@
   padding-block-start: var(--space-8);
 }
 
+/* The rows: stacked, --space-12 apart, below 64em; from it the intro and
+   the card share the first row, the intro the wider (as in the reference),
+   and the tiles and the band span both columns, --space-16 apart. */
 .trust-assessment__layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -66,16 +58,34 @@
   overflow-wrap: break-word;
 }
 
-/* The eyebrow sits close above the engagement name, so the two read as
-   one label group over the h2. */
-.trust-assessment__copy > .section-eyebrow {
-  margin-block-end: var(--space-2);
+/* Row 1: the intro. */
+
+/* The eyebrow, with the tag beside it, or below it when the two do not
+   fit on one line. The tag's padding and border reach outside the row
+   (its negative block margin), so the row is the eyebrow's height and the
+   eyebrow its first content: the gap from the problem block is measured
+   to it. */
+.trust-assessment__labels {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-block-end: var(--space-6);
 }
 
-.trust-assessment__name {
-  margin-block: 0 var(--space-4);
-  color: var(--color-heading);
-  font-size: var(--text-sm);
+.trust-assessment__labels > .section-eyebrow {
+  margin-block: 0;
+}
+
+.trust-assessment__tag {
+  margin-block: calc(-1 * (var(--space-1) + var(--border-width)));
+  padding: var(--space-1) var(--space-3);
+  /* Transparent, so forced-colours mode draws the tag's outline. */
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-full);
+  background-color: var(--color-tag-bg);
+  color: var(--color-tag-text);
+  font-size: var(--text-eyebrow);
   font-weight: var(--weight-medium);
   line-height: var(--leading-snug);
   letter-spacing: var(--tracking-eyebrow);
@@ -93,71 +103,22 @@
 .trust-assessment__lead {
   max-width: var(--measure);
   margin-block: 0;
-  color: var(--color-text);
+  color: var(--color-text-muted);
   font-size: var(--text-body-lg);
   text-wrap: pretty;
 }
 
-/* --text-2xl at weight 300 from the global h3 styles. */
-.trust-assessment__subheading {
-  margin-block: var(--space-10) var(--space-4);
-}
-
-/* Plain items, each above a hairline, and one below the last. */
-.trust-assessment__deliverables {
-  max-width: var(--measure);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-block-end: var(--border-width) solid var(--color-border);
-}
-
-.trust-assessment__deliverables > li {
-  padding-block: var(--space-3);
-  border-block-start: var(--border-width) solid var(--color-border);
-}
-
-/* After the assessment: the statement, between the h3 and the body text
-   in size, then its supporting copy at body size. */
-.trust-assessment__after-statement {
-  max-width: var(--measure);
-  margin-block: 0 var(--space-3);
-  color: var(--color-heading);
-  font-size: var(--text-xl);
-  font-weight: var(--weight-regular);
-  line-height: var(--leading-snug);
-  text-wrap: pretty;
-}
-
-.trust-assessment__after {
-  max-width: var(--measure);
-  margin-block: 0;
-  color: var(--color-text);
-  font-size: var(--text-base);
-  text-wrap: pretty;
-}
-
-.trust-assessment__actions {
-  margin-block-start: var(--space-8);
-}
+/* Row 1: the card. */
 
 .lineage-example {
-  /* The ring and the column it sits in. */
-  --step-ring: var(--space-3);
-  --step-indent: var(--space-6);
-  /* The ring's top, centred on the label's line. */
-  --step-ring-top: calc((var(--text-sm) * var(--leading-snug) - var(--step-ring)) / 2);
-  /* The arrowhead: a square of two borders turned 45 degrees, so its
-     lower corner points down. Its half-diagonal (s / sqrt 2) less its
-     half-side is how far that corner reaches below the square's box. */
-  --step-arrow: calc(var(--space-3) / 2);
-  --step-arrow-reach: calc(var(--step-arrow) * 0.2071);
-  /* The space between the arrowhead's point, where the line ends, and the
-     next ring. */
-  --step-arrow-gap: var(--space-1);
+  /* The trace's rings, and the line their labels sit on. */
+  --step-ring: var(--space-4);
+  --step-line: calc(var(--text-base) * var(--leading-normal));
+  /* The rating markers. */
+  --rating-dot: var(--space-2);
 
   margin: 0;
-  padding-block: var(--space-6);
+  padding-block: var(--space-8);
   padding-inline: var(--example-inset);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-md);
@@ -172,122 +133,297 @@
   line-height: var(--leading-snug);
 }
 
-/* The two list labels, each above the list it names. */
-.lineage-example > .lineage-example__label {
-  margin-block-end: var(--space-3);
-}
-
-/* The metric names, one per row, each above a hairline and one below the
-   last, as the deliverables. */
-.lineage-example__metrics {
-  margin: 0 0 var(--space-6);
-  padding: 0;
-  list-style: none;
-  border-block-end: var(--border-width) solid var(--color-border);
-}
-
-.lineage-example__metrics > li {
-  padding-block: var(--space-3);
-  border-block-start: var(--border-width) solid var(--color-border);
-  color: var(--color-heading);
-  font-weight: var(--weight-regular);
-}
-
-.lineage-example__steps {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.lineage-example__step {
-  position: relative;
-  padding-inline-start: var(--step-indent);
-  padding-block-end: var(--space-6);
-}
-
-.lineage-example__step:last-child {
-  padding-block-end: 0;
-}
-
-/* The ring, at the inline start, level with the label. */
-.lineage-example__step::before {
-  position: absolute;
-  inset-block-start: var(--step-ring-top);
-  inset-inline-start: 0;
-  box-sizing: border-box;
-  inline-size: var(--step-ring);
-  block-size: var(--step-ring);
-  border: calc(2 * var(--border-width)) solid var(--color-text-muted);
-  border-radius: var(--radius-full);
-  background-color: var(--color-surface);
-  content: '';
-}
-
-.lineage-example__step:last-child::before {
-  background-color: var(--color-text-muted);
-}
-
-/* The line from this ring down to the arrowhead's point, just above the
-   next ring. */
-.lineage-example__step:not(:last-child)::after {
-  position: absolute;
-  inset-block: calc(var(--step-ring-top) + var(--step-ring)) calc(var(--step-arrow-gap) - var(--step-ring-top));
-  inset-inline-start: calc((var(--step-ring) - var(--border-width)) / 2);
-  border-inline-start: var(--border-width) solid var(--color-text-muted);
-  content: '';
-}
-
-/* The arrowhead at the line's end, its point just above the next ring,
-   on the step's label (the step's own two pseudo-elements are the ring
-   and the line). The step is its containing block: the label is not
-   positioned. */
-.lineage-example__step:not(:last-child) > .lineage-example__label::after {
-  position: absolute;
-  inset-block-end: calc(var(--step-arrow-gap) + var(--step-arrow-reach) - var(--step-ring-top));
-  inset-inline-start: calc((var(--step-ring) - var(--step-arrow)) / 2);
-  box-sizing: border-box;
-  inline-size: var(--step-arrow);
-  block-size: var(--step-arrow);
-  border-right: calc(2 * var(--border-width)) solid var(--color-text-muted);
-  border-bottom: calc(2 * var(--border-width)) solid var(--color-text-muted);
-  transform: rotate(45deg);
-  content: '';
-}
-
 .lineage-example__label {
-  margin-block: 0;
+  margin-block: 0 var(--space-3);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   line-height: var(--leading-snug);
 }
 
-/* The scorecard's three rating categories, under the last step, as small
-   labels in a hairline outline, all alike, so none reads as given to a
-   metric. They wrap rather than overflow, and are not buttons: no hover
-   and no pointer. */
-.lineage-example__ratings {
+/* The metric names as chips that wrap rather than overflow. They are not
+   buttons: no hover, no pointer and no focus. The first is shown as
+   selected, by a thicker teal border as well as its tint, so not by
+   colour alone; it is presentational and announces nothing, since the
+   trace applies to every metric. */
+.lineage-example__metrics {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin: var(--space-2) 0 0;
+  margin: 0 0 var(--space-8);
   padding: 0;
   list-style: none;
 }
 
-.lineage-example__rating {
-  padding: var(--space-1) var(--space-2);
+.lineage-example__metrics > li {
+  padding: var(--space-2) var(--space-4);
   border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
   color: var(--color-heading);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   line-height: var(--leading-snug);
 }
 
+/* The thicker border takes the hairline's place, so the chip keeps its
+   size. */
+.lineage-example__metrics > li:first-child {
+  padding: calc(var(--space-2) - var(--border-width)) calc(var(--space-4) - var(--border-width));
+  border: calc(2 * var(--border-width)) solid var(--color-accent);
+  background-color: var(--color-tag-bg);
+  color: var(--color-tag-text);
+}
+
+/* The trace: a continuous teal rule at the inline start, from the label's
+   top to the last step, and beside it the label and the five steps, each
+   with a hollow ring level with its text. The first step, the report, is
+   in full ink. */
+.lineage-example__trace {
+  padding-inline-start: var(--space-5);
+  border-inline-start: calc(2 * var(--border-width)) solid var(--color-accent);
+}
+
+.lineage-example__steps {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lineage-example__steps > li {
+  position: relative;
+  padding-inline-start: calc(var(--step-ring) + var(--space-3));
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+}
+
+.lineage-example__steps > li::before {
+  position: absolute;
+  inset-block-start: calc((var(--step-line) - var(--step-ring)) / 2);
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  inline-size: var(--step-ring);
+  block-size: var(--step-ring);
+  border: calc(2 * var(--border-width)) solid currentColor;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  content: '';
+}
+
+.lineage-example__steps > li:first-child {
+  color: var(--color-heading);
+}
+
+/* The footer, after a hairline: each label beside its value when they
+   fit, above it when they do not. */
+.lineage-example__footer {
+  display: grid;
+  gap: var(--space-4);
+  margin: var(--space-6) 0 0;
+  padding-block-start: var(--space-6);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.lineage-example__footer > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-6);
+}
+
+.lineage-example__footer dt {
+  flex: 0 0 8em;
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+}
+
+.lineage-example__footer dd {
+  flex: 1 1 14em;
+  min-inline-size: 0;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+/* The scorecard's three rating categories, a legend, never a rating
+   given to a metric: alike but for their markers, a teal dot, an amber
+   dot and a hollow ring, each beside its text, so meaning never relies on
+   colour alone. The amber is a state colour on a status label (see the
+   design system). The solid dots are all border, so forced-colours mode
+   still draws them, and the ring stays hollow. */
+.lineage-example__ratings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lineage-example__ratings > li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+}
+
+.lineage-example__ratings > li::before {
+  flex: none;
+  box-sizing: border-box;
+  inline-size: var(--rating-dot);
+  block-size: var(--rating-dot);
+  border: calc(var(--rating-dot) / 2) solid var(--color-accent);
+  border-radius: var(--radius-full);
+  content: '';
+}
+
+.lineage-example__ratings > li:nth-child(2)::before {
+  border-color: var(--state-warning);
+}
+
+.lineage-example__ratings > li:nth-child(3)::before {
+  border: calc(2 * var(--border-width)) solid var(--color-text-muted);
+}
+
+/* Row 2: what you receive, as four tiles: one per row, two from 48em and
+   four from 64em, equal in each row. */
+.trust-assessment__receive-heading {
+  margin-block: 0 var(--space-6);
+}
+
+.trust-assessment__tiles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trust-assessment__tiles > li {
+  padding: var(--space-6);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}
+
+/* The tile's short teal rule, --space-4 above its label. */
+.trust-assessment__tiles > li::before {
+  display: block;
+  inline-size: var(--space-8);
+  margin-block-end: var(--space-4);
+  border-block-start: calc(2 * var(--border-width)) solid var(--color-accent);
+  content: '';
+}
+
+.trust-assessment__tile-label {
+  margin-block: 0 var(--space-2);
+  color: var(--color-heading);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+}
+
+.trust-assessment__tile-text {
+  margin-block: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  text-wrap: pretty;
+}
+
+/* Row 3: the band. Stacked below 48em, the button --space-6 under the
+   supporting copy; from 48em the text on the left and the button on the
+   right, centred against it. */
+.trust-assessment__band {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: var(--space-6);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}
+
+.trust-assessment__band-label {
+  margin-block: 0 var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  text-transform: none;
+}
+
+/* The statement, larger than the label and the body text. */
+.trust-assessment__after-statement {
+  max-width: var(--measure);
+  margin-block: 0 var(--space-3);
+  color: var(--color-heading);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-snug);
+  text-wrap: pretty;
+}
+
+.trust-assessment__after {
+  max-width: var(--measure);
+  margin-block: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
+  text-wrap: pretty;
+}
+
+.trust-assessment__actions {
+  margin-block-start: var(--space-6);
+}
+
+@media (min-width: 48em) {
+  .trust-assessment__tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .trust-assessment__band {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-12);
+    align-items: center;
+    padding: var(--space-8);
+  }
+
+  .trust-assessment__band > :not(.trust-assessment__actions) {
+    grid-column: 1;
+  }
+
+  .trust-assessment__actions {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    margin-block-start: 0;
+  }
+}
+
 @media (min-width: 64em) {
   .trust-assessment__layout {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 8fr) minmax(0, 7fr);
     column-gap: var(--space-16);
+    row-gap: var(--space-16);
+  }
+
+  .trust-assessment__receive,
+  .trust-assessment__band {
+    grid-column: 1 / -1;
+  }
+
+  .trust-assessment__tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
