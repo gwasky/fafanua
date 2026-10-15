@@ -154,6 +154,28 @@ describe('Services', () => {
     )
   })
 
+  it('makes each title an h3 whose only link, named by the service, goes to its SEO plan §16 route (#83)', () => {
+    const { cards } = renderServices()
+    // The literal routes in the SEO plan's §16 table, in data order.
+    const routes = [
+      '/services/data-strategy-platform-architecture',
+      '/services/data-engineering-integration',
+      '/services/data-warehousing-analytics-modelling',
+      '/services/data-quality-reliability',
+      '/services/data-governance-metadata',
+      '/services/business-intelligence-analytics',
+    ]
+
+    expect(cards).toHaveLength(routes.length)
+    cards.forEach((card, index) => {
+      const heading = within(card).getByRole('heading', { level: 3 })
+      const links = within(heading).getAllByRole('link')
+      expect(links).toHaveLength(1)
+      expect(links[0]).toHaveAccessibleName(services[index].name)
+      expect(links[0]).toHaveAttribute('href', routes[index])
+    })
+  })
+
   it('labels the cards 01 Design to 06 Decide, read as the label alone', () => {
     const { cards } = renderServices()
     const lines = cards.map(
