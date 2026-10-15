@@ -174,14 +174,17 @@ test.describe('axe, Data Trust Assessment in view (#71)', () => {
   }
 })
 
-test.describe('axe, Data Trust Assessment in forced colours (#81)', () => {
+test.describe('axe, Data Trust Assessment in forced colours (#81, #82)', () => {
   // Every rule but color-contrast, as for the Managed Services panel
   // below (owner decision on #58: Chromium's emulation leaves
   // -webkit-text-fill-color authored, which axe pairs with the forced
-  // background). Then every drawing W11 adds is checked as still drawn:
-  // the trace's rule, its rings, the rating markers, the tiles' rules, the
-  // selected chip's border and the tag's outline, each a non-zero solid
-  // border in a visible colour, and the hollow marker still hollow.
+  // background). Then every drawing in the dark panel (#82) is checked as
+  // still drawn: the seven steps' rings and dots, the line joining them,
+  // the rating markers, the tiles' rules, the eyebrow row's and the closing
+  // strip's hairlines, the facts pill's outline, and the card's and the
+  // Trusted chip's transparent borders, each a non-zero solid border in a
+  // visible colour; the hollow marker still hollow; and the contour lines
+  // not drawn at all.
   for (const width of [390, 1440]) {
     test(`example in view, forced colours, at ${width}px`, async ({ page }, testInfo) => {
       await page.emulateMedia({ forcedColors: 'active' })
@@ -212,21 +215,46 @@ test.describe('axe, Data Trust Assessment in forced colours (#81)', () => {
           }
         }
         const figure = root.querySelector('figure')!
+        const names = [...figure.querySelectorAll('ol > li > p:first-child')]
         return {
-          rule: border(figure.querySelector(':scope > div')!, null, 'Left'),
-          rings: [...figure.querySelectorAll('ol > li')].map((step) => border(step, '::before', 'Top')),
-          markers: [...figure.querySelectorAll('dl li')].map((chip) => border(chip, '::before', 'Top')),
+          rings: names.map((name) => border(name, '::before', 'Top')),
+          dots: names.map((name) => border(name, '::after', 'Top')),
+          line: [...figure.querySelectorAll('ol > li:not(:last-child)')].map((step) =>
+            border(step, '::before', 'Left'),
+          ),
+          markers: [...figure.querySelectorAll(':scope > ul:last-child > li')].map((chip) =>
+            border(chip, '::before', 'Top'),
+          ),
           tileRules: [...root.querySelectorAll('h3 + ul > li')].map((tile) => border(tile, '::before', 'Top')),
-          selected: border(figure.querySelector(':scope > ul > li')!, null, 'Top'),
-          tag: border(root.querySelector('.section-eyebrow + p')!, null, 'Top'),
+          eyebrowRule: border(root.querySelector('.section-eyebrow')!.parentElement!, '::after', 'Top'),
+          stripRule: border(root.querySelector('.button')!.parentElement!.parentElement!, null, 'Top'),
+          pill: border(root.querySelector('h2 + p + p')!, null, 'Top'),
+          card: border(figure, null, 'Top'),
+          trusted: border(figure.querySelector(':scope > ul:last-child > li')!, null, 'Top'),
+          contours: getComputedStyle(root.querySelector('svg')!).display,
           canvas: getComputedStyle(root).backgroundColor,
         }
       })
       const detail = JSON.stringify(drawn)
-      const all = [drawn.rule, ...drawn.rings, ...drawn.markers, ...drawn.tileRules, drawn.selected, drawn.tag]
-      expect(drawn.rings, detail).toHaveLength(5)
+      const all = [
+        ...drawn.rings,
+        ...drawn.dots,
+        ...drawn.line,
+        ...drawn.markers,
+        ...drawn.tileRules,
+        drawn.eyebrowRule,
+        drawn.stripRule,
+        drawn.pill,
+        drawn.card,
+        drawn.trusted,
+      ]
+      expect(drawn.rings, detail).toHaveLength(7)
+      expect(drawn.dots, detail).toHaveLength(7)
+      // Six segments join the seven markers into one line.
+      expect(drawn.line, detail).toHaveLength(6)
       expect(drawn.markers, detail).toHaveLength(3)
       expect(drawn.tileRules, detail).toHaveLength(4)
+      expect(drawn.contours, detail).toBe('none')
       for (const line of all) {
         expect(line.content, detail).toBe('""')
         expect(line.width, detail).toBeGreaterThan(0)
@@ -234,7 +262,9 @@ test.describe('axe, Data Trust Assessment in forced colours (#81)', () => {
         expect(line.color, detail).not.toBe('rgba(0, 0, 0, 0)')
         expect(line.color, detail).not.toBe(drawn.canvas)
       }
-      expect(drawn.selected.width, detail).toBe(2)
+      for (const ring of drawn.rings) expect(ring.width, detail).toBe(2)
+      // The dots are solid: all border.
+      for (const dot of drawn.dots) expect(dot.width, detail).toBe(3)
       // The hollow marker is a ring narrower than its half-width, so its
       // centre stays empty.
       const hollow = drawn.markers[2]

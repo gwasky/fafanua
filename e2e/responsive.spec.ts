@@ -120,6 +120,8 @@ async function checkProblemBlock(page: Page, w: number, text: '100%' | '200%') {
     const row = framing.parentElement!
     const spans = [...statement.children]
     const next = document.querySelector('#data-trust-assessment .section-eyebrow')!
+    // The assessment's panel (#82): the gap is to its top edge.
+    const nextPanel = document.querySelector('#data-trust-assessment .surface-dark')!
     const box = (element: Element) => element.getBoundingClientRect().toJSON() as DOMRect
     // A fresh probe for each token: the page's content security
     // policy keeps a reused probe's style attribute from resetting.
@@ -244,7 +246,7 @@ async function checkProblemBlock(page: Page, w: number, text: '100%' | '200%') {
       eyebrowTracking: parseFloat(getComputedStyle(eyebrow).letterSpacing) / parseFloat(getComputedStyle(eyebrow).fontSize),
       media: block.querySelectorAll('img, picture, svg, canvas, video').length,
       backgroundImages: [block, ...block.querySelectorAll('*')].map((e) => getComputedStyle(e).backgroundImage).filter((b) => b !== 'none'),
-      nextTop: box(next).top,
+      nextTop: box(nextPanel).top,
       nextText: next.textContent,
       blockPadding: parseFloat(getComputedStyle(block).paddingBottom),
       nextPadding: parseFloat(getComputedStyle(block.nextElementSibling!).paddingTop),
@@ -375,7 +377,7 @@ async function checkProblemBlock(page: Page, w: number, text: '100%' | '200%') {
   }
 
   // One section padding from the block's lowest content to the
-  // assessment's eyebrow, split between this block's bottom padding and
+  // assessment's panel (#82), whose first content is its eyebrow, split between this block's bottom padding and
   // the section's top padding (#71): not doubled, not zero.
   expect(m.nextText, detail).toBe('Start with trust')
   expect(Math.abs(m.blockPadding + m.nextPadding - m.tokens.section), detail).toBeLessThanOrEqual(1)
@@ -684,53 +686,77 @@ const sectorOverflow = (page: Page) =>
   })
 
 /**
- * The Data Trust Assessment's layout (#71, laid out by W11 in #81): its
- * padding and the gaps to its neighbours' content, its three rows, the
- * intro's labels, the card's chips, trace and footer, the tiles, the band,
- * and anything overlapping, outside the container, overflowing or broken
+ * The Data Trust Assessment's layout (#71, laid out by the dark panel
+ * plan in #82): its padding and the gaps from its neighbours' content to
+ * the panel, the panel's padding and three rows, the intro's eyebrow row,
+ * name, h2, lead, facts pill and contour lines, the card's chips, seven
+ * steps and ratings, the tiles, the closing strip, and anything
+ * overlapping, outside the panel's content box, overflowing or broken
  * mid-word.
  */
 const measureAssessment = (page: Page) =>
   page.evaluate(() => {
     const section = document.getElementById('data-trust-assessment')!
     const container = section.querySelector(':scope > .container')!
-    const [intro, figure, receive, band] = [...container.children]
+    const panel = container.firstElementChild!
+    const [intro, figure, receive, next] = [...panel.children]
     const box = (element: Element) => element.getBoundingClientRect()
     const rect = (element: Element) => box(element).toJSON() as DOMRect
-    // A fresh probe for each token: the page's content security policy
+    // A fresh probe for each token, in the given parent (the page, the
+    // dark panel or the light card): the page's content security policy
     // keeps a reused probe's style attribute from resetting.
-    const token = (property: string, value: string) => {
+    const tokenIn = (parent: Element, property: string, value: string) => {
       const element = document.createElement('div')
-      document.body.append(element)
+      parent.append(element)
       element.style.setProperty(property, value)
       const result = getComputedStyle(element).getPropertyValue(property)
       element.remove()
       return result
     }
+    const token = (property: string, value: string) => tokenIn(document.body, property, value)
     const px = (value: string) => parseFloat(token('padding-top', value))
-    const colour = (value: string) => token('color', value)
+    const dark = (value: string) => tokenIn(panel, 'color', value)
+    const light = (value: string) => tokenIn(figure, 'color', value)
     const tokens = {
       space2: px('var(--space-2)'),
       space3: px('var(--space-3)'),
       space4: px('var(--space-4)'),
       space6: px('var(--space-6)'),
       space8: px('var(--space-8)'),
+      space10: px('var(--space-10)'),
       space12: px('var(--space-12)'),
       space16: px('var(--space-16)'),
+      space24: px('var(--space-24)'),
       measure: px('var(--measure)'),
-      heading: colour('var(--color-heading)'),
-      muted: colour('var(--color-text-muted)'),
-      text: colour('var(--color-text)'),
-      border: colour('var(--color-border)'),
-      accent: colour('var(--color-accent)'),
-      warning: colour('var(--state-warning)'),
-      surface: colour('var(--color-surface)'),
-      tagText: colour('var(--color-tag-text)'),
-      tagBg: colour('var(--color-tag-bg)'),
       sm: parseFloat(token('font-size', 'var(--text-sm)')),
       base: parseFloat(token('font-size', 'var(--text-base)')),
-      xl: parseFloat(token('font-size', 'var(--text-xl)')),
+      xl2: parseFloat(token('font-size', 'var(--text-2xl)')),
       eyebrow: parseFloat(token('font-size', 'var(--text-eyebrow)')),
+      // Inside the panel (.surface-dark).
+      dark: {
+        bg: dark('var(--color-bg)'),
+        surface: dark('var(--color-surface)'),
+        heading: dark('var(--color-heading)'),
+        text: dark('var(--color-text)'),
+        muted: dark('var(--color-text-muted)'),
+        border: dark('var(--color-border)'),
+        accent: dark('var(--color-accent)'),
+        accentText: dark('var(--color-accent-text)'),
+        buttonBg: dark('var(--color-button-bg)'),
+        buttonText: dark('var(--color-button-text)'),
+      },
+      // Inside the card (.surface-light).
+      light: {
+        surface: light('var(--color-surface)'),
+        heading: light('var(--color-heading)'),
+        text: light('var(--color-text)'),
+        muted: light('var(--color-text-muted)'),
+        border: light('var(--color-border)'),
+        accent: light('var(--color-accent)'),
+        warning: light('var(--state-warning)'),
+        tagText: light('var(--color-tag-text)'),
+        tagBg: light('var(--color-tag-bg)'),
+      },
     }
     // One --space-section: the problem block's top padding, measured
     // where it is used.
@@ -743,24 +769,25 @@ const measureAssessment = (page: Page) =>
       ...[...positioning.querySelectorAll('p')].map((p) => p.getBoundingClientRect().bottom),
     )
     const servicesFirst = document.querySelector('#services > .container')!.firstElementChild!
-    const containerStyle = getComputedStyle(container)
+    const panelStyle = getComputedStyle(panel)
     const inner = {
-      left: box(container).left + parseFloat(containerStyle.paddingLeft),
-      right: box(container).right - parseFloat(containerStyle.paddingRight),
+      left: box(panel).left + parseFloat(panelStyle.paddingLeft),
+      right: box(panel).right - parseFloat(panelStyle.paddingRight),
+      top: box(panel).top + parseFloat(panelStyle.paddingTop),
+      bottom: box(panel).bottom - parseFloat(panelStyle.paddingBottom),
     }
-    const all = [...container.querySelectorAll('*')]
-    const [labels, h2, lead] = [...intro.children]
-    const [eyebrow, tag] = [...labels.children]
-    const metrics = [...figure.querySelectorAll(':scope > ul > li')]
+    const all = [...panel.querySelectorAll('*')]
+    const [eyebrowRow, nameLine, h2, lead, facts, contours] = [...intro.children]
+    const eyebrow = eyebrowRow.firstElementChild!
+    const metrics = [...figure.querySelectorAll(':scope > ul:first-of-type > li')]
     const trace = figure.querySelector(':scope > div')!
     const [stepsLabel, stepsList] = [...trace.children]
     const steps = [...stepsList.children]
-    const footer = figure.querySelector(':scope > dl')!
-    const footerRows = [...footer.children]
-    const ratings = [...footer.querySelectorAll('li')]
+    const ratingsList = figure.lastElementChild!
+    const ratings = [...ratingsList.children]
     const tiles = [...receive.querySelectorAll(':scope > ul > li')]
-    const [bandText, actions] = [...band.children]
-    const [bandLabel, statement, supporting] = [...bandText.children]
+    const [nextText, actions] = [...next.children]
+    const [nextEyebrow, statement, supporting] = [...nextText.children]
     const button = actions.querySelector('a')!
     const name = (element: Element) => element.textContent?.slice(0, 30)
     const borders = (style: CSSStyleDeclaration) =>
@@ -783,17 +810,24 @@ const measureAssessment = (page: Page) =>
         lineHeight: parseFloat(style.lineHeight) / parseFloat(style.fontSize),
       }
     }
+    // The first line of an element's text.
+    const firstLine = (element: Element) => {
+      const range = document.createRange()
+      range.selectNodeContents(element)
+      return range.getClientRects()[0].toJSON() as DOMRect
+    }
     // Blocks in reading order that must stack, each below the one before.
     const sequences = [
-      [labels, h2, lead],
+      [eyebrowRow, nameLine, h2, lead, facts],
       [...figure.children],
       [stepsLabel, ...steps],
-      [...footerRows],
+      ...steps.map((step) => [...step.children]),
       [receive.firstElementChild!, receive.lastElementChild!],
       ...tiles.map((tile) => [...tile.children]),
+      [nextEyebrow, statement, supporting],
     ]
     // Items that wrap in rows: no two may share any area.
-    const groups = [[eyebrow, tag], metrics, ratings, tiles, ...footerRows.map((row) => [...row.children])]
+    const groups = [metrics, ratings, tiles]
     const overlaps = [
       ...sequences.flatMap((blocks) =>
         blocks.slice(1).flatMap((block, i) =>
@@ -836,10 +870,15 @@ const measureAssessment = (page: Page) =>
       return lines.flatMap((l) => l.trim().split(/\s+/)).filter((word) => word && !words.has(word))
     }
     const figureStyle = getComputedStyle(figure)
-    const traceStyle = getComputedStyle(trace)
-    const footerStyle = getComputedStyle(footer)
-    const bandStyle = getComputedStyle(band)
+    const nextStyle = getComputedStyle(next)
     const tilesStyle = getComputedStyle(receive.lastElementChild!)
+    const hairline = getComputedStyle(eyebrowRow, '::after')
+    const hairlineLeft = box(eyebrow).right + parseFloat(getComputedStyle(eyebrowRow).columnGap)
+    const contoursStyle = getComputedStyle(contours)
+    // Every text box in the panel, for the contours to stay clear of.
+    const texts = all.filter(
+      (element) => element.firstChild instanceof Text && element.textContent!.trim() !== '' && box(element).width > 0,
+    )
     return {
       tokens,
       section: section_,
@@ -849,25 +888,98 @@ const measureAssessment = (page: Page) =>
       positioningPaddingBottom: parseFloat(getComputedStyle(positioning).paddingBottom),
       paddingBottom: parseFloat(getComputedStyle(section).paddingBottom),
       servicesPaddingTop: parseFloat(getComputedStyle(document.getElementById('services')!).paddingTop),
-      gapAbove: box(eyebrow).top - problemBottom,
-      gapBelow: box(servicesFirst).top - box(container).bottom,
-      rows: [intro, figure, receive, band].map((element) => element.className),
+      gapAbove: box(panel).top - problemBottom,
+      gapBelow: box(servicesFirst).top - box(panel).bottom,
+      containerChildren: container.children.length,
+      containerBottom: box(container).bottom,
+      panel: {
+        box: rect(panel),
+        className: panel.className,
+        background: panelStyle.backgroundColor,
+        radius: panelStyle.borderTopLeftRadius,
+        borders: borders(panelStyle),
+        shadow: panelStyle.boxShadow,
+        image: panelStyle.backgroundImage,
+        padding: [panelStyle.paddingTop, panelStyle.paddingRight, panelStyle.paddingBottom, panelStyle.paddingLeft].map(parseFloat),
+      },
+      inner,
+      rows: [intro, figure, receive, next].map((element) => element.classList[0]),
       intro: rect(intro),
       figure: rect(figure),
       receive: rect(receive),
-      band: rect(band),
-      eyebrow: { ...look(eyebrow), text: (eyebrow as HTMLElement).innerText, className: eyebrow.className, box: rect(eyebrow) },
-      tag: {
-        ...look(tag),
-        tagName: tag.tagName,
-        text: (tag as HTMLElement).innerText,
-        box: rect(tag),
-        radius: getComputedStyle(tag).borderTopLeftRadius,
-        padding: [getComputedStyle(tag).paddingTop, getComputedStyle(tag).paddingLeft].map(parseFloat),
-        borders: borders(getComputedStyle(tag)),
+      next: rect(next),
+      eyebrowRow: {
+        box: rect(eyebrowRow),
+        tagName: eyebrowRow.tagName,
+        hairline: {
+          content: hairline.content,
+          width: parseFloat(hairline.width),
+          border: [hairline.borderTopWidth, hairline.borderTopStyle, hairline.borderTopColor],
+          gap: hairlineLeft - box(eyebrow).right,
+          right: hairlineLeft + parseFloat(hairline.width),
+        },
+        alignItems: getComputedStyle(eyebrowRow).alignItems,
       },
-      h2: { ...look(h2), tagName: h2.tagName, text: (h2 as HTMLElement).innerText },
-      figureBackground: figureStyle.backgroundColor,
+      eyebrow: {
+        ...look(eyebrow),
+        text: (eyebrow as HTMLElement).innerText,
+        className: eyebrow.className,
+        box: rect(eyebrow),
+        before: getComputedStyle(eyebrow, '::before').content,
+        after: getComputedStyle(eyebrow, '::after').content,
+      },
+      nameLine: {
+        ...look(nameLine),
+        tagName: nameLine.tagName,
+        text: (nameLine as HTMLElement).innerText,
+        box: rect(nameLine),
+        borders: borders(getComputedStyle(nameLine)),
+        padding: parseFloat(getComputedStyle(nameLine).paddingLeft),
+      },
+      h2: { ...look(h2), tagName: h2.tagName, text: (h2 as HTMLElement).innerText, box: rect(h2) },
+      lead: { ...look(lead), box: rect(lead) },
+      facts: {
+        ...look(facts),
+        tagName: facts.tagName,
+        text: facts.textContent,
+        box: rect(facts),
+        borders: borders(getComputedStyle(facts)),
+        radius: getComputedStyle(facts).borderTopLeftRadius,
+        // Its text's own width, plus padding and border: the pill is as
+        // wide as its text.
+        fit: (() => {
+          const range = document.createRange()
+          range.selectNodeContents(facts)
+          const style = getComputedStyle(facts)
+          return (
+            range.getBoundingClientRect().width +
+            parseFloat(style.paddingLeft) +
+            parseFloat(style.paddingRight) +
+            parseFloat(style.borderLeftWidth) +
+            parseFloat(style.borderRightWidth)
+          )
+        })(),
+      },
+      contours: {
+        tagName: contours.tagName.toLowerCase(),
+        display: contoursStyle.display,
+        opacity: contoursStyle.opacity,
+        color: contoursStyle.color,
+        box: rect(contours),
+        crossing: texts
+          .filter((element) => {
+            const [p, q] = [box(contours), box(element)]
+            return p.height > 0 && !(p.right <= q.left || q.right <= p.left || p.bottom <= q.top || q.bottom <= p.top)
+          })
+          .map(name),
+      },
+      figureStyle: {
+        background: figureStyle.backgroundColor,
+        borders: borders(figureStyle),
+        radius: figureStyle.borderTopLeftRadius,
+        shadow: figureStyle.boxShadow,
+        color: figureStyle.color,
+      },
       figureContent: {
         left: box(figure).left + parseFloat(figureStyle.borderLeftWidth) + parseFloat(figureStyle.paddingLeft),
         right: box(figure).right - parseFloat(figureStyle.borderRightWidth) - parseFloat(figureStyle.paddingRight),
@@ -884,54 +996,61 @@ const measureAssessment = (page: Page) =>
           tabIndex: (chip as HTMLElement).tabIndex,
         }
       }),
-      trace: {
-        box: rect(trace),
-        rule: [traceStyle.borderLeftWidth, traceStyle.borderLeftStyle, traceStyle.borderLeftColor],
-        animation: traceStyle.animationName,
-        label: { box: rect(stepsLabel), ...look(stepsLabel) },
-      },
-      steps: steps.map((step) => {
-        const ring = getComputedStyle(step, '::before')
+      stepsLabel: { box: rect(stepsLabel), ...look(stepsLabel) },
+      steps: steps.map((step, i) => {
+        const [stepName, description] = [...step.children]
+        const ring = getComputedStyle(stepName, '::before')
+        const dot = getComputedStyle(stepName, '::after')
+        const segment = getComputedStyle(step, '::before')
         const stepBox = box(step)
-        const range = document.createRange()
-        range.selectNodeContents(step)
-        const textBox = range.getClientRects()[0]
+        const line = firstLine(stepName)
         const ringTop = stepBox.top + parseFloat(ring.top)
+        const ringLeft = stepBox.left + parseFloat(ring.left)
+        const dotTop = stepBox.top + parseFloat(dot.top)
+        const dotLeft = stepBox.left + parseFloat(dot.left)
         return {
-          text: step.textContent,
+          index: i,
           box: rect(step),
-          ...look(step),
+          name: { ...look(stepName), text: stepName.textContent, box: rect(stepName) },
+          description: { ...look(description), text: description.textContent, box: rect(description) },
           ring: {
             content: ring.content,
-            left: stepBox.left + parseFloat(ring.left),
-            right: stepBox.left + parseFloat(ring.left) + parseFloat(ring.width),
+            left: ringLeft,
+            right: ringLeft + parseFloat(ring.width),
             width: parseFloat(ring.width),
             height: parseFloat(ring.height),
             centre: ringTop + parseFloat(ring.height) / 2,
+            middle: ringLeft + parseFloat(ring.width) / 2,
             border: [ring.borderTopWidth, ring.borderTopStyle, ring.borderTopColor],
             background: ring.backgroundColor,
           },
-          textLeft: textBox.left,
-          textTop: textBox.top,
-          textBottom: textBox.bottom,
+          dot: {
+            content: dot.content,
+            width: parseFloat(dot.width),
+            height: parseFloat(dot.height),
+            centre: dotTop + parseFloat(dot.height) / 2,
+            middle: dotLeft + parseFloat(dot.width) / 2,
+            border: [dot.borderTopWidth, dot.borderTopStyle, dot.borderTopColor],
+          },
+          segment: {
+            content: segment.content,
+            top: stepBox.top + parseFloat(segment.top),
+            bottom: stepBox.top + parseFloat(segment.top) + parseFloat(segment.height),
+            middle: stepBox.left + parseFloat(segment.left) + parseFloat(segment.borderLeftWidth) / 2,
+            border: [segment.borderLeftWidth, segment.borderLeftStyle, segment.borderLeftColor],
+          },
+          textLeft: line.left,
+          textTop: line.top,
+          textBottom: line.bottom,
         }
       }),
-      footer: {
-        box: rect(footer),
-        hairline: [footerStyle.borderTopWidth, footerStyle.borderTopStyle, footerStyle.borderTopColor],
-        marginTop: parseFloat(footerStyle.marginTop),
-        paddingTop: parseFloat(footerStyle.paddingTop),
-        above: box(footer).top - box(trace).bottom,
-        rows: footerRows.map((row) => {
-          const [dt, dd] = [...row.children]
-          return { dt: { box: rect(dt), ...look(dt), text: dt.textContent }, dd: { box: rect(dd), ...look(dd) } }
-        }),
-      },
+      ratingsTop: box(ratingsList).top,
       ratings: ratings.map((chip) => {
         const style = getComputedStyle(chip)
         const marker = getComputedStyle(chip, '::before')
         return {
           text: chip.textContent,
+          box: rect(chip),
           borders: borders(style),
           ...look(chip),
           gap: style.columnGap,
@@ -958,34 +1077,52 @@ const measureAssessment = (page: Page) =>
           box: rect(tile),
           background: getComputedStyle(tile).backgroundColor,
           borders: borders(getComputedStyle(tile)),
+          radius: getComputedStyle(tile).borderTopLeftRadius,
           rule: {
             width: parseFloat(rule.width),
             border: [rule.borderTopWidth, rule.borderTopStyle, rule.borderTopColor],
             marginBottom: parseFloat(rule.marginBottom),
           },
-          ruleToLabel: box(label).top - box(tile).top - parseFloat(getComputedStyle(tile).paddingTop) - parseFloat(rule.height) - parseFloat(rule.borderTopWidth),
           label: { ...look(label), text: label.textContent },
           text: { ...look(text), text: text.textContent },
         }
       }),
-      bandBackground: bandStyle.backgroundColor,
-      bandBorders: borders(bandStyle),
-      bandPadding: [bandStyle.paddingTop, bandStyle.paddingRight, bandStyle.paddingBottom, bandStyle.paddingLeft].map(parseFloat),
-      bandChildren: [...band.children].map((child) => child.tagName),
-      bandTextChildren: [...bandText.children].map((child) => child.tagName),
-      bandText: rect(bandText),
-      bandLabel: { ...look(bandLabel), tagName: bandLabel.tagName, box: rect(bandLabel) },
-      statement: { ...look(statement), box: rect(statement) },
-      supporting: { ...look(supporting), box: rect(supporting), maxWidth: parseFloat(getComputedStyle(supporting).maxWidth) },
-      button: { box: rect(button), href: button.getAttribute('href'), text: button.textContent },
+      nextStyle: {
+        hairline: [nextStyle.borderTopWidth, nextStyle.borderTopStyle, nextStyle.borderTopColor],
+        otherBorders: [nextStyle.borderRightStyle, nextStyle.borderBottomStyle, nextStyle.borderLeftStyle],
+        paddingTop: parseFloat(nextStyle.paddingTop),
+        background: nextStyle.backgroundColor,
+      },
+      nextChildren: [...next.children].map((child) => child.tagName),
+      nextTextChildren: [...nextText.children].map((child) => child.tagName),
+      nextText: rect(nextText),
+      nextEyebrow: {
+        ...look(nextEyebrow),
+        text: (nextEyebrow as HTMLElement).innerText,
+        className: nextEyebrow.className,
+        box: rect(nextEyebrow),
+      },
+      statement: { ...look(statement), tagName: statement.tagName, box: rect(statement) },
+      supporting: { ...look(supporting), box: rect(supporting) },
+      button: {
+        box: rect(button),
+        href: button.getAttribute('href'),
+        text: button.textContent,
+        color: getComputedStyle(button).color,
+        background: getComputedStyle(button).backgroundColor,
+      },
       weights: [...section.querySelectorAll('*')].map((element) => getComputedStyle(element).fontWeight),
       overlaps,
       outside: all
-        .filter((element) => box(element).left < inner.left - 1 || box(element).right > inner.right + 1)
-        .map((element) => `${element.tagName}.${element.className}`),
+        .filter((element) => {
+          const b = box(element)
+          if (b.width === 0 && b.height === 0) return false
+          return b.left < inner.left - 1 || b.right > inner.right + 1
+        })
+        .map((element) => `${element.tagName}.${element.getAttribute('class')}`),
       clipped: all
         .filter((element) => element.scrollWidth > element.clientWidth + 1 && getComputedStyle(element).display !== 'inline')
-        .map((element) => `${element.tagName}.${element.className}`),
+        .map((element) => `${element.tagName}.${element.getAttribute('class')}`),
       broken: all.flatMap(brokenWords),
       sectionScroll: section.scrollWidth,
       sectionWidth: section.clientWidth,
@@ -1764,15 +1901,16 @@ for (const width of WIDTHS) {
 
     // The Data Trust Assessment (#71), on paper between the problem
     // block and Services: one --space-section gap above and below its
-    // content, never doubled or zero. Laid out by W11 (#81) in three rows:
-    // the intro, with the eyebrow and the engagement name's tag in one
-    // row over the dominant h2, and the card, side by side from 64em; the
-    // four tiles; the band with the button. Its chips wrap, the trace's
-    // rule and rings, the footer's hairline and rows, and nothing
-    // overflowing, clipped, overlapping or broken mid-word, at the default
-    // page text size and at 200%. A media query in em follows the
-    // browser's text size, not page text, so with 200% page text the
-    // columns stay as at 100%.
+    // panel, never doubled or zero. Laid out by the dark panel plan (#82)
+    // as one graphite 900 panel inset in the container, in three rows:
+    // the intro (the eyebrow row with its hairline, the name, the h2, the
+    // lead, the facts pill and, from 64em, the contour lines) and the white
+    // card, side by side from 64em; the four tiles; and, after a hairline,
+    // the closing strip with the button. The card's chips wrap, its seven
+    // steps have rings, dots and one joining line, and nothing overflows,
+    // clips, overlaps or breaks mid-word, at the default page text size
+    // and at 200%. A media query in em follows the browser's text size,
+    // not page text, so with 200% page text the columns stay as at 100%.
     for (const text of ['100%', '200%'] as const) {
       test(`Data Trust Assessment layout, spacing and wrapping with ${text} text at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)
@@ -1785,175 +1923,254 @@ for (const width of WIDTHS) {
         }
         const m = await measureAssessment(page)
         const t = m.tokens
+        const d = t.dark
+        const l = t.light
         const detail = JSON.stringify(m)
         const near = (a: number, b: number, tolerance = 1) => Math.abs(a - b) <= tolerance
 
+        // The section on paper; the panel graphite 900, with --radius-lg
+        // corners and no border, shadow, grid or image, the container's
+        // only child.
         expect(m.background, detail).toBe(m.paper)
+        expect(m.containerChildren, detail).toBe(1)
+        expect(m.panel.className, detail).toContain('surface-dark')
+        expect(m.panel.background, detail).toBe('rgb(28, 32, 36)')
+        expect(m.panel.background, detail).toBe(d.bg)
+        expect(m.panel.radius, detail).toBe('12px')
+        expect(m.panel.borders, detail).toMatch(/^0px none/)
+        expect([m.panel.shadow, m.panel.image], detail).toEqual(['none', 'none'])
+        expect(near(m.containerBottom, m.panel.box.bottom), detail).toBe(true)
         // One section gap above, split between the problem block's bottom
-        // padding and this section's own top padding, so its eyebrow
-        // lands clear of the header; and one below (this section's).
+        // padding and this section's own top padding, so the panel lands
+        // clear of the header; and one below (this section's).
         expect(m.paddingTop, detail).toBeGreaterThan(0)
         expect(m.paddingTop, detail).toBeLessThan(m.section)
+        expect(near(m.paddingTop, t.space8), detail).toBe(true)
         expect(near(m.positioningPaddingBottom + m.paddingTop, m.section), detail).toBe(true)
         expect(m.servicesPaddingTop, detail).toBe(0)
         expect(near(m.paddingBottom, m.section), detail).toBe(true)
         expect(near(m.gapAbove, m.section), `gap above: ${detail}`).toBe(true)
         expect(near(m.gapBelow, m.section), `gap below: ${detail}`).toBe(true)
         expect(m.section, detail).toBeGreaterThanOrEqual(64)
+        // The panel's padding: --space-8 and the 8 to 24px inset below
+        // 48em, --space-10 from it and --space-16 from 64em.
+        const inset = Math.min(Math.max(8, 48 - t.space6), t.space6)
+        const padding = width >= 1024 ? Array(4).fill(t.space16) : width >= 768 ? Array(4).fill(t.space10) : [t.space8, inset, t.space8, inset]
+        m.panel.padding.forEach((value, i) => expect(near(value, padding[i], 0.5), detail).toBe(true))
 
-        // The rows, in DOM and visual order: intro and card, tiles, band.
+        // The rows, in DOM and visual order: intro and card, tiles, strip.
         expect(m.rows, detail).toEqual([
           'trust-assessment__intro',
           'lineage-example',
           'trust-assessment__receive',
-          'trust-assessment__band',
+          'trust-assessment__next',
         ])
         const rowGap = width >= 1024 ? t.space16 : t.space12
+        expect(near(m.intro.top, m.inner.top), detail).toBe(true)
         if (width >= 1024) {
           // Two columns, --space-16 apart, tops level. The intro is the
           // wider, as in the owner's reference image (8 : 7).
           expect(near(m.figure.left - m.intro.right, t.space16), detail).toBe(true)
           expect(near(m.figure.top, m.intro.top), detail).toBe(true)
           expect(m.intro.width / m.figure.width, detail).toBeCloseTo(8 / 7, 1)
-          // The intro no longer runs far past the card.
+          // The intro does not run far past the card.
           if (text === '100%') expect(m.intro.bottom - m.figure.bottom, detail).toBeLessThanOrEqual(t.space12)
           expect(near(m.receive.top - Math.max(m.intro.bottom, m.figure.bottom), rowGap), detail).toBe(true)
           expect(near(m.receive.left, m.intro.left) && near(m.receive.right, m.figure.right), detail).toBe(true)
         } else {
+          // The card below the intro, at the panel's full content width.
           expect(near(m.figure.top - m.intro.bottom, t.space12), detail).toBe(true)
-          expect(near(m.figure.left, m.intro.left), detail).toBe(true)
+          expect(near(m.figure.left, m.inner.left) && near(m.figure.right, m.inner.right), detail).toBe(true)
           expect(near(m.receive.top - m.figure.bottom, rowGap), detail).toBe(true)
         }
-        expect(near(m.band.top - m.receive.bottom, rowGap), detail).toBe(true)
-        expect(near(m.band.left, m.receive.left) && near(m.band.right, m.receive.right), detail).toBe(true)
+        expect(near(m.receive.left, m.inner.left) && near(m.receive.right, m.inner.right), detail).toBe(true)
+        // The strip: a graphite 700 hairline across the panel's content
+        // width, --space-12 above its eyebrow from 64em, --space-8 below.
+        expect(near(m.next.top - m.receive.bottom, rowGap), detail).toBe(true)
+        expect(near(m.next.left, m.inner.left) && near(m.next.right, m.inner.right), detail).toBe(true)
+        expect(near(m.next.bottom, m.inner.bottom), detail).toBe(true)
+        expect(m.nextStyle.hairline, detail).toEqual(['1px', 'solid', d.border])
+        expect(m.nextStyle.otherBorders, detail).toEqual(['none', 'none', 'none'])
+        expect(m.nextStyle.background, detail).toBe('rgba(0, 0, 0, 0)')
+        expect(near(m.nextStyle.paddingTop, width >= 1024 ? t.space12 : t.space8), detail).toBe(true)
+        expect(near(m.nextEyebrow.box.top - m.next.top - 1, m.nextStyle.paddingTop), detail).toBe(true)
 
-        // START WITH TRUST with the DATA TRUST ASSESSMENT tag beside it
-        // (or below it when the two do not fit), then the h2, at least
-        // twice the size of either.
+        // START WITH TRUST in teal 400, a short graphite 700 hairline after
+        // it (drawn by its row, so the eyebrow has no ::before or ::after),
+        // then DATA TRUST ASSESSMENT in paper as plain text, then the h2.
+        expect(m.eyebrowRow.tagName, detail).toBe('DIV')
         expect([m.eyebrow.className, m.eyebrow.text], detail).toEqual(['section-eyebrow', 'START WITH TRUST'])
-        expect([m.tag.tagName, m.tag.text], detail).toEqual(['P', 'DATA TRUST ASSESSMENT'])
-        expect([m.h2.tagName, m.h2.text.replace(/\s+/g, ' ')], detail).toEqual(['H2', 'Know where every number comes from.'])
-        expect(m.tag.color, detail).toBe('rgb(15, 90, 82)')
-        expect(m.tag.background, detail).toBe('rgb(214, 244, 240)')
-        expect([m.tag.color, m.tag.background], detail).toEqual([t.tagText, t.tagBg])
-        expect(m.tag.size, detail).toBe(t.eyebrow)
-        expect(m.tag.radius, detail).toBe('9999px')
-        expect(m.tag.padding, detail).toEqual([t.space2 / 2, t.space3])
-        expect(m.tag.borders, detail).toBe(Array(4).fill('1px solid rgba(0, 0, 0, 0)').join(' | '))
-        for (const label of [m.eyebrow, m.tag]) {
+        expect([m.eyebrow.before, m.eyebrow.after], detail).toEqual(['none', 'none'])
+        expect(m.eyebrow.color, detail).toBe('rgb(60, 194, 180)')
+        expect(m.eyebrow.color, detail).toBe(d.accentText)
+        expect(m.eyebrowRow.alignItems, detail).toBe('center')
+        expect(m.eyebrowRow.hairline.content, detail).toBe('""')
+        expect(m.eyebrowRow.hairline.border, detail).toEqual(['1px', 'solid', d.border])
+        expect(near(m.eyebrowRow.hairline.gap, t.space3), detail).toBe(true)
+        expect(m.eyebrowRow.hairline.width, detail).toBeLessThanOrEqual(t.space24 + 0.5)
+        expect(m.eyebrowRow.hairline.right, detail).toBeLessThanOrEqual(m.intro.right + 1)
+        if (text === '100%') expect(m.eyebrowRow.hairline.width, detail).toBeGreaterThan(0)
+        expect([m.nameLine.tagName, m.nameLine.text], detail).toEqual(['P', 'DATA TRUST ASSESSMENT'])
+        expect([m.nameLine.color, m.nameLine.background], detail).toEqual([d.heading, 'rgba(0, 0, 0, 0)'])
+        expect(m.nameLine.borders, detail).toMatch(/^0px none/)
+        expect(m.nameLine.padding, detail).toBe(0)
+        expect(near(m.nameLine.box.top - m.eyebrowRow.box.bottom, t.space2), detail).toBe(true)
+        for (const label of [m.eyebrow, m.nameLine]) {
+          expect(label.size, detail).toBe(t.eyebrow)
           expect(label.weight, detail).toBe('500')
           expect(label.transform, detail).toBe('uppercase')
           expect(label.tracking, detail).toBeCloseTo(0.08, 2)
           expect(m.h2.size, detail).toBeGreaterThanOrEqual(2 * label.size)
         }
-        expect(m.h2.weight, detail).toBe('300')
-        const eyebrowCentre = m.eyebrow.box.top + m.eyebrow.box.height / 2
-        const tagCentre = m.tag.box.top + m.tag.box.height / 2
-        if (m.tag.box.left > m.eyebrow.box.right) {
-          expect(near(eyebrowCentre, tagCentre, 2), detail).toBe(true)
-          expect(near(m.tag.box.left - m.eyebrow.box.right, t.space3), detail).toBe(true)
+        expect([m.h2.tagName, m.h2.text.replace(/\s+/g, ' ')], detail).toEqual(['H2', 'Know where every number comes from.'])
+        expect([m.h2.weight, m.h2.color], detail).toEqual(['300', d.heading])
+        expect(near(m.h2.box.top - m.nameLine.box.bottom, t.space6), detail).toBe(true)
+        // The lead in graphite 400, no wider than --measure.
+        expect([m.lead.color, m.lead.weight], detail).toEqual([d.muted, '400'])
+        expect(m.lead.color, detail).toBe('rgb(147, 157, 167)')
+        expect(near(m.lead.box.top - m.h2.box.bottom, t.space6), detail).toBe(true)
+        expect(m.lead.box.width, detail).toBeLessThanOrEqual(t.measure + 1)
+        // The facts pill: paper text in a thin graphite 700 outline, as
+        // wide as its text.
+        expect([m.facts.tagName, m.facts.text], detail).toEqual(['P', '3 weeks · fixed fee'])
+        expect([m.facts.size, m.facts.weight, m.facts.color], detail).toEqual([t.sm, '400', d.heading])
+        expect(m.facts.borders, detail).toBe(Array(4).fill(`1px solid ${d.border}`).join(' | '))
+        expect(m.facts.radius, detail).toBe('9999px')
+        expect(near(m.facts.box.top - m.lead.box.bottom, t.space8), detail).toBe(true)
+        if (text === '100%') expect(near(m.facts.box.width, m.facts.fit, 1.5), detail).toBe(true)
+        // The contour lines: from 64em, faint teal 400 below the pill,
+        // within the intro and crossing no text; not drawn below it.
+        expect(m.contours.tagName, detail).toBe('svg')
+        if (width >= 1024) {
+          expect(m.contours.display, detail).toBe('block')
+          expect(m.contours.color, detail).toBe(d.accent)
+          expect(Number(m.contours.opacity), detail).toBeCloseTo(0.4, 2)
+          expect(m.contours.box.top - m.facts.box.bottom, detail).toBeGreaterThanOrEqual(t.space8 - 1)
+          expect(m.contours.box.left, detail).toBeGreaterThanOrEqual(m.intro.left - 1)
+          expect(m.contours.box.right, detail).toBeLessThanOrEqual(m.intro.right + 1)
+          expect(m.contours.box.bottom, detail).toBeLessThanOrEqual(m.intro.bottom + 1)
+          expect(m.contours.box.bottom, detail).toBeLessThanOrEqual(m.receive.top)
+          if (text === '100%') expect(m.contours.box.height, detail).toBeGreaterThan(0)
+          expect(m.contours.crossing, detail).toEqual([])
         } else {
-          expect(m.tag.box.top, detail).toBeGreaterThanOrEqual(m.eyebrow.box.bottom)
-          expect(near(m.tag.box.left, m.eyebrow.box.left), detail).toBe(true)
+          expect(m.contours.display, detail).toBe('none')
         }
 
-        // The card: white, and its metric chips wrap without overlapping.
-        // The first, Revenue, is selected: a border twice as thick in teal
-        // 600 and the teal tint of the tag, as in the reference; the others
-        // a graphite 200 hairline, all alike, none a button.
-        expect(m.figureBackground, detail).toBe('rgb(255, 255, 255)')
+        // The card: white, --radius-lg, a transparent border and no
+        // shadow; its text resets to graphite 900.
+        expect(m.figureStyle.background, detail).toBe('rgb(255, 255, 255)')
+        expect(m.figureStyle.background, detail).toBe(l.surface)
+        expect(m.figureStyle.borders, detail).toBe(Array(4).fill('1px solid rgba(0, 0, 0, 0)').join(' | '))
+        expect([m.figureStyle.radius, m.figureStyle.shadow, m.figureStyle.color], detail).toEqual(['12px', 'none', l.text])
+        // The five metric chips, all alike: a graphite 200 outline on
+        // white, graphite 900 text, none selected and none a button.
         expect(m.metrics.map((chip) => chip.text), detail).toEqual(['Revenue', 'Active Customers', 'Portfolio at Risk', 'Programme Outcomes', 'Cost per Customer'])
-        const [revenue, ...others] = m.metrics
-        expect(revenue.borders, detail).toBe(Array(4).fill(`2px solid ${t.accent}`).join(' | '))
-        expect([revenue.color, revenue.background], detail).toEqual([t.tagText, t.tagBg])
         for (const chip of m.metrics) {
           expect([chip.size, chip.weight, chip.radius, chip.cursor, chip.tabIndex], detail).toEqual([t.sm, '500', '9999px', 'auto', -1])
+          expect(chip.borders, detail).toBe(Array(4).fill(`1px solid ${l.border}`).join(' | '))
+          expect([chip.color, chip.background], detail).toEqual([l.heading, l.surface])
           expect(chip.box.left, detail).toBeGreaterThanOrEqual(m.figureContent.left - 1)
           expect(chip.box.right, detail).toBeLessThanOrEqual(m.figureContent.right + 1)
-        }
-        for (const chip of others) {
-          expect(chip.borders, detail).toBe(Array(4).fill(`1px solid ${t.border}`).join(' | '))
-          expect([chip.color, chip.background], detail).toEqual([t.heading, t.surface])
-          // No shorter than the selected chip: the thicker border takes
-          // the hairline's place (a chip may wrap to two lines at 200%).
-          expect(chip.box.height, detail).toBeGreaterThanOrEqual(revenue.box.height - 1)
-          if (text === '100%') expect(near(chip.box.height, revenue.box.height), detail).toBe(true)
+          if (text === '100%') expect(near(chip.box.height, m.metrics[0].box.height), detail).toBe(true)
         }
 
-        // The trace: a continuous teal rule, 2px and still, from the
-        // label's top to the last step; the label and the five steps share
-        // one inline-start edge to its right, each step a hollow ring level
-        // with its text, the first in full ink, the rest muted.
-        expect(m.trace.rule, detail).toEqual(['2px', 'solid', t.accent])
-        expect(m.trace.animation, detail).toBe('none')
-        expect(near(m.trace.box.top, m.trace.label.box.top), detail).toBe(true)
-        expect(near(m.trace.box.bottom, m.steps[4].box.bottom), detail).toBe(true)
-        expect(m.trace.label.color, detail).toBe(t.muted)
-        expect(m.steps.map((step) => step.text), detail).toEqual(['Report', 'Definition', 'Calculation', 'Data model', 'Source system'])
+        // The trace: its label, then the seven steps, each a ringed
+        // marker level with its name's first line and the description
+        // below the name. Report to Source system teal, Owner and Trust
+        // rating ink with a muted name. One graphite 200 line joins the
+        // markers' centres.
+        expect([m.stepsLabel.color, m.stepsLabel.size, m.stepsLabel.weight], detail).toEqual([l.muted, t.sm, '500'])
+        expect(m.steps.map((step) => step.name.text), detail).toEqual([
+          'Report',
+          'Definition',
+          'Calculation',
+          'Data model',
+          'Source system',
+          'Owner',
+          'Trust rating',
+        ])
+        expect(m.steps.map((step) => step.description.text), detail).toEqual([
+          'The leadership report where the number appears',
+          'How the number is defined',
+          'The logic and rules that produce it',
+          'The tables the calculation reads from',
+          'Where the data is first recorded',
+          'Who is accountable for the number',
+          'How far the number can be trusted, and why',
+        ])
+        const ring = Math.min(t.space4, 16)
         m.steps.forEach((step, i) => {
           const where = `step ${i + 1}: ${detail}`
-          expect(near(step.box.left, m.trace.label.box.left), where).toBe(true)
-          expect(step.box.left, where).toBeGreaterThan(m.trace.box.left + 2)
+          const attribute = i >= 5
+          const marker = attribute ? l.heading : l.accent
+          expect(near(step.box.left, m.stepsLabel.box.left), where).toBe(true)
           if (i > 0) expect(step.box.top, where).toBeGreaterThanOrEqual(m.steps[i - 1].box.bottom - 1)
+          expect([step.name.size, step.name.weight, step.name.color], where).toEqual([t.base, '400', attribute ? l.muted : l.heading])
+          expect(step.name.lineHeight, where).toBeCloseTo(1.3, 2)
+          expect([step.description.size, step.description.weight, step.description.color], where).toEqual([t.sm, '400', l.muted])
+          expect(step.description.box.top, where).toBeGreaterThanOrEqual(step.name.box.bottom - 1)
+          expect(near(step.description.box.left, step.name.box.left), where).toBe(true)
+          // The ring: --space-4 at the default text size, no larger with
+          // 200%, filled white, at the step's inline start.
           expect(step.ring.content, where).toBe('""')
           expect(near(step.ring.left, step.box.left), where).toBe(true)
           expect(step.ring.right, where).toBeLessThanOrEqual(step.textLeft)
-          // --space-4 at the default text size, and no larger with 200%.
-          const ring = Math.min(t.space4, 16)
           expect([step.ring.width, step.ring.height], where).toEqual([ring, ring])
-          expect(step.ring.background, where).toBe(t.surface)
-          expect(step.ring.border, where).toEqual(['2px', 'solid', i === 0 ? t.heading : t.muted])
-          expect(step.color, where).toBe(i === 0 ? t.heading : t.muted)
+          expect(step.ring.background, where).toBe(l.surface)
+          expect(step.ring.border, where).toEqual(['2px', 'solid', marker])
           expect(step.ring.centre, where).toBeGreaterThan(step.textTop)
           expect(step.ring.centre, where).toBeLessThan(step.textBottom)
+          // The solid dot, 6px, centred in the ring.
+          expect(step.dot.content, where).toBe('""')
+          expect([step.dot.width, step.dot.height], where).toEqual([6, 6])
+          expect(step.dot.border, where).toEqual(['3px', 'solid', marker])
+          expect(near(step.dot.centre, step.ring.centre) && near(step.dot.middle, step.ring.middle), where).toBe(true)
+          // The line: each step but the last draws the segment from its
+          // marker's centre to the next one's, so the segments join.
+          if (i < m.steps.length - 1) {
+            expect(step.segment.content, where).toBe('""')
+            expect(step.segment.border, where).toEqual(['1px', 'solid', l.border])
+            expect(near(step.segment.middle, step.ring.middle), where).toBe(true)
+            expect(near(step.segment.top, step.ring.centre), where).toBe(true)
+            expect(near(step.segment.bottom, m.steps[i + 1].ring.centre, 1.5), where).toBe(true)
+          } else {
+            expect(step.segment.content, where).toBe('none')
+          }
         })
 
-        // The footer: a graphite 200 hairline across the card's content
-        // width, --space-6 above and below, then Owner and Trust rating,
-        // each label beside its value when they fit, above it otherwise.
-        expect(m.footer.hairline, detail).toEqual(['1px', 'solid', t.border])
-        expect(near(m.footer.above, t.space6) && near(m.footer.paddingTop, t.space6), detail).toBe(true)
-        expect(near(m.footer.box.left, m.figureContent.left) && near(m.footer.box.right, m.figureContent.right), detail).toBe(true)
-        expect(m.footer.rows.map((row) => row.dt.text), detail).toEqual(['Owner', 'Trust rating'])
-        for (const { dt, dd } of m.footer.rows) {
-          expect([dt.size, dt.weight, dt.color], detail).toEqual([t.sm, '500', t.heading])
-          if (dd.box.left > dt.box.right) {
-            expect(dd.box.top, detail).toBeLessThan(dt.box.bottom)
-          } else {
-            expect(dd.box.top, detail).toBeGreaterThanOrEqual(dt.box.bottom)
-          }
-        }
-        const ownerRole = m.footer.rows[0].dd
-        expect([ownerRole.size, ownerRole.weight, ownerRole.color], detail).toEqual([t.sm, '400', t.muted])
-
-        // The three rating chips: alike but for their markers, a teal dot,
-        // an amber dot and a hollow ring, --space-2 from the text.
+        // The three rating chips, --space-6 below the last step: Trusted
+        // in the teal tint with a teal dot, Trusted with caveats with an
+        // amber dot and Not yet trusted with a hollow ring, each beside
+        // its text, --space-2 from it.
+        expect(near(m.ratingsTop - m.steps[6].box.bottom, t.space6), detail).toBe(true)
         expect(m.ratings.map((rating) => rating.text), detail).toEqual(['Trusted', 'Trusted with caveats', 'Not yet trusted'])
+        expect(m.ratings.map(({ borders, background, color }) => ({ borders, background, color })), detail).toEqual([
+          { borders: Array(4).fill('1px solid rgba(0, 0, 0, 0)').join(' | '), background: l.tagBg, color: l.tagText },
+          { borders: Array(4).fill(`1px solid ${l.border}`).join(' | '), background: l.surface, color: l.heading },
+          { borders: Array(4).fill(`1px solid ${l.border}`).join(' | '), background: l.surface, color: l.heading },
+        ])
+        expect([m.ratings[0].color, m.ratings[0].background], detail).toEqual(['rgb(15, 90, 82)', 'rgb(214, 244, 240)'])
         for (const rating of m.ratings) {
-          const { borders, background, color, weight, size } = rating
-          expect({ borders, background, color, weight, size }, detail).toEqual({
-            borders: Array(4).fill(`1px solid ${t.border}`).join(' | '),
-            background: t.surface,
-            color: t.heading,
-            weight: '500',
-            size: t.sm,
-          })
+          expect([rating.weight, rating.size], detail).toEqual(['500', t.sm])
           expect(rating.cursor, detail).not.toBe('pointer')
           expect(parseFloat(rating.gap), detail).toBe(t.space2)
           expect([rating.marker.content, rating.marker.width, rating.marker.height, rating.marker.borderStyle, rating.marker.radius], detail).toEqual(['""', t.space2, t.space2, 'solid', '9999px'])
           expect(rating.marker.background, detail).toBe('rgba(0, 0, 0, 0)')
+          expect(rating.box.left, detail).toBeGreaterThanOrEqual(m.figureContent.left - 1)
+          expect(rating.box.right, detail).toBeLessThanOrEqual(m.figureContent.right + 1)
         }
         expect(m.ratings.map((rating) => [rating.marker.borderWidth, rating.marker.borderColor]), detail).toEqual([
-          [t.space2 / 2, t.accent],
-          [t.space2 / 2, t.warning],
-          [2, t.muted],
+          [t.space2 / 2, l.accent],
+          [t.space2 / 2, l.warning],
+          [2, l.muted],
         ])
 
-        // What you receive: the h3, then the tiles, --space-6 apart, 4 per
-        // row from 64em, 2 from 48em and 1 below, equal and level in each
-        // row. With 200% page text a row holds fewer when a tile would be
-        // narrower than 12rem, so no word breaks.
+        // What you receive: the h3 at weight 300 in paper, then the
+        // tiles, --space-6 apart, 4 per row from 64em, 2 from 48em and 1
+        // below, equal and level in each row. With 200% page text a row
+        // holds fewer when a tile would be too narrow, so no word breaks.
         expect(m.receiveHeading.tagName, detail).toBe('H3')
+        expect([m.receiveHeading.weight, m.receiveHeading.color, m.receiveHeading.size], detail).toEqual(['300', d.heading, t.xl2])
         expect(m.receiveHeading.transform, detail).toBe('none')
         expect(near(m.receiveGap, t.space6), detail).toBe(true)
         expect(m.tilesGap, detail).toEqual([t.space6, t.space6])
@@ -1973,55 +2190,57 @@ for (const width of WIDTHS) {
         }
         expect(m.tiles.map((tile) => tile.label.text), detail).toEqual(['Lineage map', 'Trust scorecard', 'Shared definitions', 'Fix list'])
         for (const tile of m.tiles) {
-          expect(tile.background, detail).toBe(t.surface)
-          expect(tile.borders, detail).toBe(Array(4).fill(`1px solid ${t.border}`).join(' | '))
-          expect([tile.rule.width, ...tile.rule.border], detail).toEqual([t.space8, '2px', 'solid', t.accent])
+          // Graphite 800 with a graphite 700 outline, --radius-md.
+          expect(tile.background, detail).toBe('rgb(42, 48, 54)')
+          expect(tile.background, detail).toBe(d.surface)
+          expect(tile.borders, detail).toBe(Array(4).fill(`1px solid ${d.border}`).join(' | '))
+          expect(tile.radius, detail).toBe('8px')
+          expect([tile.rule.width, ...tile.rule.border], detail).toEqual([t.space8, '2px', 'solid', d.accent])
           expect(tile.rule.marginBottom, detail).toBe(t.space4)
-          expect([tile.label.size, tile.label.weight, tile.label.color], detail).toEqual([t.base, '500', t.heading])
-          expect([tile.text.size, tile.text.weight, tile.text.color], detail).toEqual([t.sm, '400', t.muted])
+          expect([tile.label.size, tile.label.weight, tile.label.color], detail).toEqual([t.base, '500', d.heading])
+          expect([tile.text.size, tile.text.weight, tile.text.color], detail).toEqual([t.sm, '400', d.muted])
         }
 
-        // The band: its label, the statement, the supporting copy, then
-        // the button, on the right and centred from 48em, below the copy
-        // otherwise.
-        expect(m.bandChildren, detail).toEqual(['DIV', 'DIV'])
-        expect(m.bandTextChildren, detail).toEqual(['H3', 'P', 'P'])
-        expect(m.bandBackground, detail).toBe(t.surface)
-        expect(m.bandBorders, detail).toBe(Array(4).fill(`1px solid ${t.border}`).join(' | '))
-        // Below 48em its inline padding is --space-6 at the default text
-        // size, shrinking to 8px with 200% page text, so the button's
-        // label still fits at 320px.
-        const inline = Math.min(Math.max(8, 48 - t.space6), t.space6)
-        expect(m.bandPadding, detail).toEqual(width >= 768 ? Array(4).fill(t.space8) : [t.space6, inline, t.space6, inline])
-        expect([m.bandLabel.size, m.bandLabel.weight, m.bandLabel.color, m.bandLabel.transform], detail).toEqual([t.sm, '500', t.muted, 'none'])
-        expect([m.statement.size, m.statement.weight, m.statement.color], detail).toEqual([t.xl, '400', t.heading])
-        expect(m.statement.lineHeight, detail).toBeCloseTo(1.3, 2)
-        expect(m.bandLabel.size, detail).toBeLessThan(m.statement.size)
-        expect([m.supporting.size, m.supporting.color], detail).toEqual([t.base, t.muted])
+        // The closing strip: WHAT HAPPENS NEXT in the eyebrow's teal, the
+        // statement h3 at weight 300 in paper, the paragraph in graphite
+        // 400, each --space-3 apart; then the primary button on dark,
+        // on the right and centred from 48em, full width below the
+        // paragraph below it.
+        expect(m.nextChildren, detail).toEqual(['DIV', 'DIV'])
+        expect(m.nextTextChildren, detail).toEqual(['P', 'H3', 'P'])
+        expect([m.nextEyebrow.className, m.nextEyebrow.text], detail).toEqual(['section-eyebrow', 'WHAT HAPPENS NEXT'])
+        expect([m.nextEyebrow.color, m.nextEyebrow.size, m.nextEyebrow.weight, m.nextEyebrow.transform], detail).toEqual([d.accentText, t.eyebrow, '500', 'uppercase'])
+        expect([m.statement.tagName, m.statement.weight, m.statement.color, m.statement.size], detail).toEqual(['H3', '300', d.heading, t.xl2])
+        expect(near(m.statement.box.top - m.nextEyebrow.box.bottom, t.space3), detail).toBe(true)
+        expect([m.supporting.size, m.supporting.weight, m.supporting.color], detail).toEqual([t.base, '400', d.muted])
+        expect(near(m.supporting.box.top - m.statement.box.bottom, t.space3), detail).toBe(true)
         expect(m.supporting.box.width, detail).toBeLessThanOrEqual(t.measure + 1)
         expect([m.button.href, m.button.text], detail).toEqual(['#contact', 'Book a data trust assessment→'])
-        // From 48em the button is on the right, within the text group's
-        // height; with 200% page text it wraps below when the two do not
-        // fit.
-        const beside = m.button.box.top < m.bandText.bottom
+        expect([m.button.color, m.button.background], detail).toEqual([d.buttonText, d.buttonBg])
+        expect(m.button.background, detail).toBe('rgb(60, 194, 180)')
+        // From 48em the button is on the right, centred against the text
+        // group; with 200% page text it wraps below when the two do not
+        // fit. Below 48em it is full width under the paragraph.
+        const beside = m.button.box.top < m.nextText.bottom
         if (width >= 768 && text === '100%') expect(beside, detail).toBe(true)
         if (beside) {
           expect(width, detail).toBeGreaterThanOrEqual(768)
-          expect(m.button.box.left, detail).toBeGreaterThan(m.bandText.right)
-          expect(m.button.box.top, detail).toBeGreaterThanOrEqual(m.bandText.top)
-          expect(m.button.box.bottom, detail).toBeLessThanOrEqual(m.bandText.bottom)
+          expect(m.button.box.left, detail).toBeGreaterThan(m.nextText.right)
+          const centre = (b: { top: number; height: number }) => b.top + b.height / 2
+          expect(near(centre(m.button.box), centre(m.nextText), 1.5), detail).toBe(true)
         } else {
           expect(m.button.box.top - m.supporting.box.bottom, detail).toBeGreaterThanOrEqual(t.space6 - 1)
           expect(near(m.button.box.left, m.supporting.box.left), detail).toBe(true)
         }
+        if (width < 768) expect(near(m.button.box.width, m.next.width), detail).toBe(true)
 
         // Weights 300, 400 and 500 only.
         for (const weight of m.weights) expect(['300', '400', '500'], detail).toContain(weight)
         // Each block below the one before it, never over it, and no two
-        // chips, tiles or footer cells over each other.
+        // chips or tiles over each other.
         expect(m.overlaps, detail).toEqual([])
-        // Every element inside the container's content box, none wider
-        // than its own box, and no word broken mid-word.
+        // Every element inside the panel's content box, none wider than
+        // its own box, and no word broken mid-word.
         expect(m.outside, detail).toEqual([])
         expect(m.clipped, detail).toEqual([])
         expect(m.broken, detail).toEqual([])
