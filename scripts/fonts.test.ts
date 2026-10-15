@@ -58,8 +58,8 @@ describe('"Inter Variable" @font-face', () => {
 
   const [inter] = interFaces
 
-  it('swaps in when loaded, so text is never invisible', () => {
-    expect(inter['font-display']).toBe('swap')
+  it('shows the fallback after at most 100ms, and swaps Inter in only within the swap period', () => {
+    expect(inter['font-display']).toBe('fallback')
   })
 
   it('covers the whole weight axis in normal style', () => {
