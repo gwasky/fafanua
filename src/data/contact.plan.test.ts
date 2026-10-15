@@ -53,10 +53,12 @@ const w1 = markdownTrust.slice(w1Start, markdownTrust.indexOf('\n### ', w1Start 
 const w1Labels = [...w1.matchAll(/\*\*(.+?)\*\*/g)].map((match) => match[1])
 const w1Retired = [...w1.matchAll(/"([^"]+)"/g)].map((match) => match[1])
 
-// W9 in the trust and lineage plan, up to the next `### ` item: its bold
-// supporting line, then the bold "Acceptance:".
+// W9 in the trust and lineage plan, up to the next `### ` item or `## `
+// section, whichever comes first (W10 follows it): its bold supporting
+// line, then the bold "Acceptance:".
 const w9Start = markdownTrust.indexOf('\n### W9. Closing section\n')
-const w9 = markdownTrust.slice(w9Start, markdownTrust.indexOf('\n## ', w9Start + 1))
+const w9End = markdownTrust.slice(w9Start + 1).search(/\n##+ /)
+const w9 = markdownTrust.slice(w9Start, w9Start + 1 + w9End)
 const w9Bold = [...w9.matchAll(/\*\*(.+?)\*\*/g)].map((match) => match[1])
 
 // The supporting line W9 retires (#74): the second Section 11 suggestion,

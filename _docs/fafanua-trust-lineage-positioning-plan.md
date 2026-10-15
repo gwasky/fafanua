@@ -140,6 +140,27 @@ Add a short founder block. This item has an input dependency.
 
 **Acceptance:** only the supporting line and the button label changed.
 
+### W10. Problem section layout (centred)
+
+Added by the owner on 2026-10-15. Layout only: no copy, data, section order or link changes. Design tokens only, no new dependency, no hex colours, no heavy gradients or glassmorphism. This replaces the two-column problem composition from `_docs/fafanua-data-trust-assessment-homepage-enhancement.md` §5 (#79); the copy that plan added (the eyebrow, the framing paragraph and the bridge line) stays word for word.
+
+- **Order, top to bottom:** eyebrow, statement, then a two-column row with the framing paragraph on the left and the bridge line on the right.
+- **Eyebrow:** centred, with a short teal hairline on each side. Keep its text and casing. Check its contrast against the design system's verified pairings.
+- **Statement:** centred, weight 300 throughout, about `clamp(2rem, 4vw, 3.25rem)` with a line height of about 1.15. Use a tight measure and `text-wrap: balance` where supported. The first sentence is in the muted ink token, and "The challenge is…" in the full ink token.
+- **Two-column row:** centred under the statement and about the same width. The paragraph is in the secondary text token; the bridge line is in the full ink token and slightly larger. A 1px vertical hairline sits between them. Both columns are left-aligned.
+- **Spacing:** from the token scale, with about 96 to 120px of padding on desktop.
+- **Below 768px:** stack eyebrow, statement, paragraph, bridge line. The hairline turns horizontal, and the statement is smaller.
+- The tagline and the image in the design concept are not part of this item and must not be added.
+
+**Acceptance:**
+
+- [ ] Every string in the section is unchanged, and no copy, link or section order changed.
+- [ ] The eyebrow and the statement are centred, with a teal hairline either side of the eyebrow, and every text colour is a verified pairing.
+- [ ] The statement is weight 300, its first sentence in the muted ink token and its second in the full ink token, wrapping in balanced lines where supported.
+- [ ] From 768px the paragraph and bridge line sit side by side, centred under the statement, left-aligned, with a 1px vertical hairline between them; below 768px they stack in that order with a horizontal hairline between them.
+- [ ] Desktop padding is about 96 to 120px from the token scale, and nothing overflows at 320 to 1440px or with 200% text.
+- [ ] No tagline and no image are added. The hero `h1`, the promise and the SEO plan's protected phrases are unchanged.
+
 ## 5. Owner decisions (gated)
 
 Each item below touches an area an earlier plan or a protected rule governs. **Do not implement an item unless its box is ticked** (`[x]`). The owner ticks a box by editing this file. Recommendations are marked as such.
@@ -211,7 +232,7 @@ Add this line to the assessment copy: "You also get a working view where you pic
 Items marked with a G-number depend on that approval. Without it, keep the current position.
 
 1. Hero (W1, W2)
-2. Problem statement (W3)
+2. Problem statement (W3, laid out per W10)
 3. Data Trust Assessment (W4)
 4. AI readiness (W5, moves here only with G8)
 5. How we work (G2)
