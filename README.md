@@ -13,7 +13,7 @@ The site is built with React, Vite and TypeScript and runs on Cloudflare Workers
   npx playwright install chromium webkit
   ```
 
-  Both browsers are needed because `playwright.config.ts` has Chromium projects (`chromium` and `width-*`) and WebKit projects (`webkit` and `webkit-width-*`). Without WebKit, the `webkit*` projects fail with Playwright's "Executable doesn't exist" message, which asks you to run `npx playwright install`. Run this after `npm ci`, so it installs the browsers for the Playwright version in `package-lock.json`.
+  Both browsers are needed because `playwright.config.ts` has Chromium projects (`chromium`, `width-*` and `font-stall-chromium`) and WebKit projects (`webkit`, `webkit-width-*` and `font-stall-webkit`). The two `font-stall-*` projects run the specs that hold the web font back, one test at a time after every other project (#84). Without WebKit, the WebKit projects fail with Playwright's "Executable doesn't exist" message, which asks you to run `npx playwright install`. Run this after `npm ci`, so it installs the browsers for the Playwright version in `package-lock.json`.
 - **A Cloudflare account and `npx wrangler login`**, for deploying only. You do not need either to run, test or build the site.
 
 ## Getting started
