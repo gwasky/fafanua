@@ -62,6 +62,8 @@ const surfaceDarkBlock = customProperties(globalCss, '.surface-dark')
 const surfaceDark = { ...root, ...surfaceDarkBlock }
 // The transparent header over a dark section makes the same reassignment.
 const onDarkBlock = customProperties(globalCss, '.on-dark')
+// A light card inside a dark panel (#82) declares the light values again.
+const surfaceLightBlock = customProperties(tokensCss, '.surface-light')
 
 /**
  * A translucent token, written color-mix(in srgb, var(--x) N%,
@@ -88,6 +90,8 @@ const textTokens = [
   '--color-text-muted',
   '--color-link',
   '--color-link-hover',
+  // Accent-coloured small text: the Data Trust Assessment's eyebrows (#82).
+  '--color-accent-text',
 ]
 
 // Each background, with the tokens in effect on it.
@@ -108,8 +112,8 @@ const pairs: [string, string, Declarations][] = [
   ['--color-button-secondary-text', '--color-bg', root],
   ['--color-button-secondary-text', '--color-surface', root],
   ['--color-button-secondary-text', '--color-button-secondary-bg-hover', root],
-  // The tag in the teal tint (W11, #81): the Data Trust Assessment's
-  // engagement name and its selected metric chip.
+  // The tag in the teal tint (added by W11, #81): the Data Trust
+  // Assessment's Trusted rating chip's tint (#82).
   ['--color-tag-text', '--color-tag-bg', root],
   // Inside .surface-dark (graphite 900, with graphite 800 raised surfaces).
   ...textTokens.map((text): [string, string, Declarations] => [
@@ -206,6 +210,34 @@ describe('semantic colour tokens', () => {
 
   it('makes .on-dark the same reassignment as .surface-dark', () => {
     expect(onDarkBlock).toEqual(surfaceDarkBlock)
+  })
+
+  it('declares exactly the light semantic colour set inside .surface-light (#82)', () => {
+    const lightSemantic = Object.fromEntries(
+      Object.entries(root).filter(
+        ([name]) =>
+          name.startsWith('--color-') &&
+          !name.endsWith('-on-surface-alt') &&
+          !name.endsWith('-on-dark'),
+      ),
+    )
+
+    expect(Object.keys(lightSemantic).length).toBeGreaterThan(0)
+    expect(surfaceLightBlock).toEqual(lightSemantic)
+    // Every token .surface-dark reassigns is set back inside the card.
+    expect(Object.keys(surfaceLightBlock).sort()).toEqual(Object.keys(surfaceDarkBlock).sort())
+    // It resets the text colour inherited from the panel and paints no
+    // background, and holds no other surface.
+    const rule = globalCss.match(/\n\.surface-light \{([^}]*)\}/)?.[1] ?? ''
+    expect(rule).toMatch(/color: var\(--color-text\);/)
+    expect(rule).not.toMatch(/background/)
+  })
+
+  it('gives the accent text teal 800 on light and teal 400 on dark (#82)', () => {
+    expect(resolve('--color-accent-text', root)).toBe(resolve('--teal-800', root))
+    expect(resolve('--color-accent-text', surfaceDark)).toBe(resolve('--teal-400', root))
+    expect(contrast(resolve('--color-accent-text', surfaceDark), resolve('--graphite-900', root))).toBeCloseTo(7.47, 1)
+    expect(contrast(resolve('--color-accent-text', surfaceDark), resolve('--graphite-800', root))).toBeCloseTo(6.08, 1)
   })
 })
 

@@ -67,39 +67,6 @@
   --state-info: #3E7CB1;
   --state-info-text: #2E6C9E;
 
-  /* Semantic colours (light). Every text and background pairing these
-     imply is in the design system's verified list and is checked by
-     scripts/contrast.test.ts. */
-  --color-bg: var(--paper);
-  --color-surface: var(--white);
-  --color-surface-alt: var(--graphite-100);
-  --color-text: var(--graphite-900);
-  --color-heading: var(--graphite-900);
-  --color-text-muted: var(--graphite-600);
-  --color-border: var(--graphite-200);
-  --color-link: var(--teal-700);
-  --color-link-hover: var(--teal-800);
-  --color-accent: var(--teal-600); /* graphics only */
-  --color-focus: var(--teal-600);
-  --color-button-bg: var(--teal-700);
-  --color-button-bg-hover: var(--teal-800);
-  --color-button-text: var(--white);
-  --color-button-secondary-text: var(--graphite-900);
-  --color-button-secondary-border: var(--graphite-200);
-  /* Secondary hover: a white fill and a darker border, so the change does
-     not rely on the text colour (graphite 900 on white is 16.4:1). */
-  --color-button-secondary-bg-hover: var(--white);
-  --color-button-secondary-border-hover: var(--graphite-600);
-  /* Technical grid lines (TechnicalGrid). Graphics only, never text:
-     blended over its surface each stays at or below 1.25:1, which
-     scripts/contrast.test.ts checks. */
-  --color-grid-line: color-mix(in srgb, var(--graphite-900) 7%, transparent);
-  /* A small tag in the teal tint (W11, #81: the Data Trust Assessment's
-     engagement name, and its selected metric chip): teal 800 on teal 100,
-     6.9:1. Teal 700 on teal 100 is 4.47:1 and fails AA. */
-  --color-tag-bg: var(--teal-100);
-  --color-tag-text: var(--teal-800);
-
   /* Links on --color-surface-alt. Teal 700 on graphite 100 is 4.46:1 and
      fails AA, so links there use teal 800 (6.9:1), hovering to teal 900
      (10.4:1). Do not use these directly: put the .surface-alt class
@@ -128,6 +95,8 @@
   --color-link-on-dark: var(--teal-400);
   --color-link-hover-on-dark: var(--teal-300);
   --color-accent-on-dark: var(--teal-400); /* graphics only */
+  /* Teal 400 on graphite 900 7.5:1, on graphite 800 6.1:1. */
+  --color-accent-text-on-dark: var(--teal-400);
   --color-focus-on-dark: var(--teal-400);
   --color-button-bg-on-dark: var(--teal-400);
   --color-button-bg-hover-on-dark: var(--teal-300);
@@ -138,7 +107,8 @@
   --color-button-secondary-bg-hover-on-dark: var(--graphite-800);
   --color-button-secondary-border-hover-on-dark: var(--graphite-400);
   --color-grid-line-on-dark: color-mix(in srgb, var(--paper) 7%, transparent);
-  /* Unused on dark today: teal 200 on teal 900, 8.7:1. */
+  /* Unused on dark today (the Trusted chip is on the light card, #82):
+     teal 200 on teal 900, 8.7:1. */
   --color-tag-bg-on-dark: var(--teal-900);
   --color-tag-text-on-dark: var(--teal-200);
 
@@ -286,6 +256,10 @@
      margins keep it in view (global.css). */
   --focus-ring-extent: calc(var(--focus-ring-width) + var(--focus-ring-offset));
 
+  /* The Data Trust Assessment's decorative contour lines (#82), drawn in
+     --color-accent: graphics only, faint. */
+  --opacity-contour: 0.4;
+
   /* Technical grid (TechnicalGrid): a rem pitch and whole-pixel lines,
      so the pattern stays even at any width and pixel ratio. */
   --grid-size: 4rem;
@@ -312,4 +286,52 @@
      an even pace. */
   --duration-rail-draw: calc(var(--duration-slow) * 2);
   --ease-linear: linear;
+}
+
+/*
+ * Semantic colours (light), on the page and inside .surface-light: a
+ * light card drawn inside a .surface-dark panel (the Data Trust
+ * Assessment's illustrative example, #82) puts this class on itself, so
+ * every token inside it resolves to its light value again. global.css
+ * resets its text colour. Do not put .surface-alt or .surface-dark inside
+ * .surface-light.
+ */
+:root,
+.surface-light {
+  /* Every text and background pairing these imply is in the design
+     system's verified list and is checked by scripts/contrast.test.ts. */
+  --color-bg: var(--paper);
+  --color-surface: var(--white);
+  --color-surface-alt: var(--graphite-100);
+  --color-text: var(--graphite-900);
+  --color-heading: var(--graphite-900);
+  --color-text-muted: var(--graphite-600);
+  --color-border: var(--graphite-200);
+  --color-link: var(--teal-700);
+  --color-link-hover: var(--teal-800);
+  --color-accent: var(--teal-600); /* graphics only */
+  /* Accent-coloured small text: the Data Trust Assessment's two eyebrows
+     (#82). Teal 800 on paper 7.3:1, white 8.1:1, graphite 100 6.9:1; on
+     dark teal 400. --color-accent is graphics only, and --color-link
+     would make the text look like a link. */
+  --color-accent-text: var(--teal-800);
+  --color-focus: var(--teal-600);
+  --color-button-bg: var(--teal-700);
+  --color-button-bg-hover: var(--teal-800);
+  --color-button-text: var(--white);
+  --color-button-secondary-text: var(--graphite-900);
+  --color-button-secondary-border: var(--graphite-200);
+  /* Secondary hover: a white fill and a darker border, so the change does
+     not rely on the text colour (graphite 900 on white is 16.4:1). */
+  --color-button-secondary-bg-hover: var(--white);
+  --color-button-secondary-border-hover: var(--graphite-600);
+  /* Technical grid lines (TechnicalGrid). Graphics only, never text:
+     blended over its surface each stays at or below 1.25:1, which
+     scripts/contrast.test.ts checks. */
+  --color-grid-line: color-mix(in srgb, var(--graphite-900) 7%, transparent);
+  /* A small tag in the teal tint: the Data Trust Assessment's Trusted
+     rating chip's tint (#82; added by W11 in #81). Teal 800 on teal 100,
+     6.9:1. Teal 700 on teal 100 is 4.47:1 and fails AA. */
+  --color-tag-bg: var(--teal-100);
+  --color-tag-text: var(--teal-800);
 }

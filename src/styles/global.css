@@ -188,6 +188,7 @@ a:hover {
   --color-link: var(--color-link-on-dark);
   --color-link-hover: var(--color-link-hover-on-dark);
   --color-accent: var(--color-accent-on-dark);
+  --color-accent-text: var(--color-accent-text-on-dark);
   --color-focus: var(--color-focus-on-dark);
   --color-button-bg: var(--color-button-bg-on-dark);
   --color-button-bg-hover: var(--color-button-bg-hover-on-dark);
@@ -203,6 +204,18 @@ a:hover {
 
 .surface-dark {
   background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/*
+ * A light card inside a .surface-dark panel (the Data Trust Assessment's
+ * illustrative example, #82). tokens.css gives it the light value of every
+ * semantic colour token, as on :root; this resets the text colour, which
+ * it would otherwise inherit from the panel (graphite 300). It paints no
+ * background: the card sets its own. Do not put .surface-alt or
+ * .surface-dark inside it.
+ */
+.surface-light {
   color: var(--color-text);
 }
 
