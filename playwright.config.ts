@@ -29,7 +29,9 @@ const BASE_URL = process.env.BASE_URL || LOCAL_URL
 // and its safety rules (motion.spec.ts, #61), and the hero's calls to
 // action on the first screen (hero-fold.spec.ts, #63), and the capability
 // grid's titles and hover and focus state (service-cards.spec.ts,
-// #66, #83), and the SEO landing pages (landing-pages.spec.ts, #67). They use the Desktop
+// #66, #83), and the SEO landing pages (landing-pages.spec.ts, #67), and
+// the homepage's first paint with the web font stalled (font-stall.spec.ts,
+// #84). They use the Desktop
 // Safari preset with its deviceScaleFactor of 2: assertions are in CSS
 // pixels, so only the screenshot size changes. The a11y, italics, fonts,
 // hash and forced-colours logo specs run in chromium only, as Playwright
@@ -74,6 +76,7 @@ export default defineConfig({
         'hero-fold.spec.ts',
         'service-cards.spec.ts',
         'landing-pages.spec.ts',
+        'font-stall.spec.ts',
       ],
     },
     ...WIDTHS.map((width) => ({
