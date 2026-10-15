@@ -8,7 +8,10 @@ import { test, waitForFonts } from './fixtures.ts'
 // count towards its first paint, and since the open grid (#83) the page
 // has too few image or SVG pixels to count instead. Under fallback, the
 // 100ms block period ends with a layout in the fallback face, which does
-// count. Runs in the chromium and webkit projects.
+// count. Runs in the font-stall-chromium and font-stall-webkit projects,
+// after every other project and one test at a time: under heavy CPU load
+// WebKit can still hold the first paint until the swap period ends
+// (playwright.config.ts).
 
 const HEADING = 'Trusted Data. Better Decisions.'
 const PROMISE = 'Build a data foundation you can trust.'

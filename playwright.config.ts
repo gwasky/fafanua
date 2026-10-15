@@ -10,6 +10,15 @@ const LOCAL_URL = `http://localhost:${PORT}`
 // such as a Cloudflare preview URL (#19). Playwright then starts no server.
 const BASE_URL = process.env.BASE_URL || LOCAL_URL
 
+// Runs on its own, after every other project (see below).
+const FONT_STALL = 'font-stall.spec.ts'
+const MAIN_PROJECTS = [
+  'chromium',
+  ...WIDTHS.map((width) => `width-${width}`),
+  'webkit',
+  ...WIDTHS.map((width) => `webkit-width-${width}`),
+]
+
 // The chromium project runs the specs that set their own viewport, or
 // need no particular one, once each. The width projects run only
 // responsive.spec.ts, each at its own width with reduced motion, so
@@ -29,13 +38,21 @@ const BASE_URL = process.env.BASE_URL || LOCAL_URL
 // and its safety rules (motion.spec.ts, #61), and the hero's calls to
 // action on the first screen (hero-fold.spec.ts, #63), and the capability
 // grid's titles and hover and focus state (service-cards.spec.ts,
-// #66, #83), and the SEO landing pages (landing-pages.spec.ts, #67), and
-// the homepage's first paint with the web font stalled (font-stall.spec.ts,
-// #84). They use the Desktop
-// Safari preset with its deviceScaleFactor of 2: assertions are in CSS
-// pixels, so only the screenshot size changes. The a11y, italics, fonts,
-// hash and forced-colours logo specs run in chromium only, as Playwright
-// emulates forced colours only there.
+// #66, #83), and the SEO landing pages (landing-pages.spec.ts, #67). They
+// use the Desktop Safari preset with its deviceScaleFactor of 2:
+// assertions are in CSS pixels, so only the screenshot size changes. The
+// a11y, italics, fonts, hash and forced-colours logo specs run in chromium
+// only, as Playwright emulates forced colours only there.
+//
+// The homepage's first paint with the web font stalled
+// (font-stall.spec.ts, #84) runs in none of the projects above, but in
+// font-stall-chromium and font-stall-webkit, after all of them and one
+// test at a time. Under heavy CPU load from other workers, WebKit can
+// still hold the first paint until the font's swap period ends (about
+// 3.2s), so the spec runs on its own, without that load (owner decision
+// on #84). Playwright skips a project whose dependencies had a failure:
+// the run has then failed already, and the spec is run on its own with
+// npx playwright test --project='font-stall-*' --no-deps.
 // WebKit is installed with npx playwright install webkit.
 export default defineConfig({
   testDir: 'e2e',
@@ -51,7 +68,7 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: 'responsive.spec.ts',
+      testIgnore: ['responsive.spec.ts', FONT_STALL],
     },
     ...WIDTHS.map((width) => ({
       name: `width-${width}`,
@@ -76,7 +93,6 @@ export default defineConfig({
         'hero-fold.spec.ts',
         'service-cards.spec.ts',
         'landing-pages.spec.ts',
-        'font-stall.spec.ts',
       ],
     },
     ...WIDTHS.map((width) => ({
@@ -88,6 +104,15 @@ export default defineConfig({
       },
       testMatch: 'responsive.spec.ts',
       grep: new RegExp(` at ${width}px$`),
+    })),
+    ...[
+      { name: 'font-stall-chromium', use: { ...devices['Desktop Chrome'] } },
+      { name: 'font-stall-webkit', use: { ...devices['Desktop Safari'] } },
+    ].map((project) => ({
+      ...project,
+      testMatch: FONT_STALL,
+      workers: 1,
+      dependencies: MAIN_PROJECTS,
     })),
   ],
   webServer: process.env.BASE_URL
