@@ -58,9 +58,13 @@
   position: relative;
 }
 
-/* The open menu's containing block (see .site-nav__list[data-open]). */
+/* The open menu's containing block (see .site-nav__list[data-open]), and
+   the container whose width the logo shrinks to (100cqi). Its width comes
+   from the header, never from its content, so inline-size containment
+   changes nothing else. */
 .site-header__inner {
   position: relative;
+  container-type: inline-size;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -114,18 +118,28 @@ main:focus {
 
 /* The logo (Logo.tsx, #86): an inline SVG that uses the sprite each page
    carries. 160px wide at every width at the default text size: above the
-   120px minimum and small enough not to dominate. The global max-width:
-   100% lets it shrink with its link; the narrowest case, 320px at 200%
-   text, still leaves it 256px wide. The height follows from the width and
-   height attributes and the viewBox, so its box is set before anything
-   loads. Its fills are --color-logo-mark and --color-logo-wordmark, which
+   120px minimum and small enough not to dominate. Where the line is
+   narrower than that, as at 320px with 200% text, it shrinks to the
+   line's width (100cqi of .site-header__inner, as the link fills the
+   line there), still 256px wide.
+
+   Both sides are lengths, and the height is the width times the 42:296 of
+   the width and height attributes, so the box is the one the <img> it
+   replaced had, in every case. Neither may be auto: WebKit counts an SVG
+   towards its first paint by its laid-out area only when its height is
+   set; with height: auto it counted nothing, and the page stayed blank
+   until the held font arrived (#86).
+
+   Its fills are --color-logo-mark and --color-logo-wordmark, which
    .on-dark and a light forced-colours theme switch (tokens.css,
    global.css). forced-color-adjust: none keeps a forced theme from
-   repainting them, as it never repainted the <img> this replaced; it
-   inherits into the <use> shadow tree. */
+   repainting them, as it never repainted the <img>; it inherits into the
+   <use> shadow tree. */
 .site-header__logo-art {
-  width: calc(var(--space-20) * 2);
-  height: auto;
+  --logo-width: min(calc(var(--space-20) * 2), 100cqi);
+
+  width: var(--logo-width);
+  height: calc(var(--logo-width) * 42 / 296);
   forced-color-adjust: none;
 }
 

@@ -1,10 +1,12 @@
 import { expect, type Locator, type Page } from '@playwright/test'
-import { openPage, test } from './fixtures.ts'
+import { headerLogoArtwork, openPage, test } from './fixtures.ts'
 
 // The reversed logo under forced colours (#60). A light forced theme paints
 // the footer and the hero behind the transparent header white, where the
 // reversed logo's paper wordmark would vanish, so both take the positive
-// logo there through a <picture> source. A dark forced theme and the normal
+// logo there: the footer through a <picture> source, and the header's
+// inline SVG (#86) through its tokens, which a rule in tokens.css sets to
+// the positive colours for that theme. A dark forced theme and the normal
 // colours keep the reversed logo. Each case is checked as painted: the
 // logo's screenshot is decoded and the wordmark, right of the F symbol, has
 // to stand out from the background the surface paints. Runs in the
@@ -81,13 +83,24 @@ async function wordmarkContrast(page: Page, logo: Locator, surface: Locator) {
   )
 }
 
-/** The logo's chosen file and its box. */
-function logoState(logo: Locator) {
-  return logo.evaluate((img: HTMLImageElement) => {
-    const box = img.getBoundingClientRect()
-    return { file: new URL(img.currentSrc).pathname, width: box.width, height: box.height }
+/**
+ * The logo's artwork and its box: for the footer's <img>, the file it
+ * chose; for the header's inline SVG, "positive" or "reversed", from its
+ * tokens (headerLogoArtwork).
+ */
+async function logoState(page: Page, target: Target, logo: Locator) {
+  const { file, width, height } = await logo.evaluate((element) => {
+    const box = element.getBoundingClientRect()
+    const file = element instanceof HTMLImageElement ? new URL(element.currentSrc).pathname : null
+    return { file, width: box.width, height: box.height }
   })
+  if (target === 'footer') return { artwork: file, width, height }
+  return { artwork: await headerLogoArtwork(page), width, height }
 }
+
+/** The artwork expected for a target: a file for the footer. */
+const artwork = (target: Target, art: 'positive' | 'reversed') =>
+  target === 'header' ? art : art === 'positive' ? POSITIVE : REVERSED
 
 for (const width of [360, 1440]) {
   for (const target of ['header', 'footer'] as const) {
@@ -96,8 +109,8 @@ for (const width of [360, 1440]) {
       await openPage(page, width)
       const { logo } = await show(page, target)
       await expect(logo).toBeVisible()
-      const { width: w, height: h, file } = await logoState(logo)
-      expect(file).toBe(REVERSED)
+      const { width: w, height: h, artwork: art } = await logoState(page, target, logo)
+      expect(art).toBe(artwork(target, 'reversed'))
       return { width: w, height: h }
     }
 
@@ -115,11 +128,12 @@ for (const width of [360, 1440]) {
         // Light: the positive logo, graphite on the forced white. Dark: the
         // reversed one, paper on the forced black, as before.
         await expect
-          .poll(async () => (await logoState(logo)).file)
-          .toBe(theme === 'light' ? POSITIVE : REVERSED)
-        const state = await logoState(logo)
-        // Same alt and same box, so swapping the file shifts nothing.
-        await expect(logo).toHaveAttribute('alt', 'Fafanua Technologies')
+          .poll(async () => (await logoState(page, target, logo)).artwork)
+          .toBe(artwork(target, theme === 'light' ? 'positive' : 'reversed'))
+        const state = await logoState(page, target, logo)
+        // Same name and same box, so swapping the artwork shifts nothing.
+        await expect(logo).toHaveAccessibleName('Fafanua Technologies')
+        if (target === 'footer') await expect(logo).toHaveAttribute('alt', 'Fafanua Technologies')
         expect({ width: state.width, height: state.height }).toEqual(box)
 
         const painted = await wordmarkContrast(page, logo, surface)

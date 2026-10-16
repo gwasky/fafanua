@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test'
-import { openPage, pressTab, test, waitForScrollSettle } from './fixtures.ts'
+import { headerLogoArtwork, openPage, pressTab, test, waitForScrollSettle } from './fixtures.ts'
 
 // The header over the real dark hero (#55), the visual check #54
 // deferred: transparent at the top, solid from 8px of scroll and with the
@@ -21,9 +21,13 @@ function token(page: Page, name: string) {
   }, name)
 }
 
-/** The header's fill, bottom border, logo and controls' colours. */
-function headerLook(page: Page) {
-  return page.evaluate(() => {
+/**
+ * The header's fill, bottom border, logo artwork ("positive" or
+ * "reversed", #86) and controls' colours.
+ */
+async function headerLook(page: Page) {
+  const logo = await headerLogoArtwork(page)
+  const look = await page.evaluate(() => {
     const header = document.querySelector('header')!
     const style = getComputedStyle(header)
     const colour = (selector: string) => {
@@ -36,12 +40,12 @@ function headerLook(page: Page) {
       transparent: header.classList.contains('on-dark'),
       background: style.backgroundColor,
       border: style.borderBottomColor,
-      logo: header.querySelector('img')!.getAttribute('src'),
       link: colour('.site-nav__link'),
       cta: colour('.site-nav__cta .button'),
       toggle: colour('.menu-toggle'),
     }
   })
+  return { ...look, logo }
 }
 
 /** Waits for the header's colour transition, if any, to finish. */
@@ -79,7 +83,7 @@ test.describe('transparent over the hero at the top of the page', () => {
       expect(look.transparent).toBe(true)
       expect(look.background).toBe('rgba(0, 0, 0, 0)')
       expect(look.border).toBe('rgba(0, 0, 0, 0)')
-      expect(look.logo).toBe('/fafanua-logo-reversed.svg')
+      expect(look.logo).toBe('reversed')
       // The hero's top is the page's top, under the header.
       expect(
         await page.getByRole('region', { name: HERO }).evaluate((element) => element.getBoundingClientRect().top),
@@ -307,12 +311,12 @@ test.describe('scrolling', () => {
         await settleHeader(page)
         const look = await headerLook(page)
         if (solid) {
-          expect(look, `at ${y}`).toMatchObject({ background: paper, border, logo: '/fafanua-logo.svg' })
+          expect(look, `at ${y}`).toMatchObject({ background: paper, border, logo: 'positive' })
         } else {
           expect(look, `at ${y}`).toMatchObject({
             background: 'rgba(0, 0, 0, 0)',
             border: 'rgba(0, 0, 0, 0)',
-            logo: '/fafanua-logo-reversed.svg',
+            logo: 'reversed',
           })
         }
       }
@@ -321,6 +325,67 @@ test.describe('scrolling', () => {
       const duration = await banner(page).evaluate((element) => getComputedStyle(element).transitionDuration)
       if (motion === 'reduce') expect(parseFloat(duration)).toBeLessThanOrEqual(0.00001)
       else expect(parseFloat(duration)).toBeGreaterThan(0)
+    })
+  }
+})
+
+// The logo's colours as painted (#86): its fills come from tokens, so
+// check the pixels, not only the tokens. The wordmark, right of the F
+// symbol, is paper over the hero and graphite 900 on the solid header.
+test.describe('logo wordmark as painted', () => {
+  test.use({ reducedMotion: 'reduce' })
+
+  /** The share of the wordmark region's pixels that are `colour` (rgb()). */
+  async function wordmarkShare(page: Page, colour: string) {
+    const png = (await banner(page).getByRole('img', { name: 'Fafanua Technologies' }).screenshot()).toString('base64')
+    return page.evaluate(
+      async ({ png, colour }) => {
+        const target = colour.match(/\d+/g)!.slice(0, 3).map(Number)
+        const image = new Image()
+        image.src = `data:image/png;base64,${png}`
+        await image.decode()
+        const canvas = document.createElement('canvas')
+        canvas.width = image.naturalWidth
+        canvas.height = image.naturalHeight
+        const context = canvas.getContext('2d')!
+        context.drawImage(image, 0, 0)
+        // The F symbol takes the left of the logo; the wordmark starts
+        // after it, as in forced-colours-logo.spec.ts.
+        const x0 = Math.floor(canvas.width * 0.25)
+        const { data } = context.getImageData(x0, 0, canvas.width - x0, canvas.height)
+        let match = 0
+        for (let i = 0; i < data.length; i += 4) {
+          if ([0, 1, 2].every((c) => Math.abs(data[i + c] - target[c]) <= 2)) match += 1
+        }
+        return match / (data.length / 4)
+      },
+      { png, colour },
+    )
+  }
+
+  for (const width of [360, 1440]) {
+    test(`paper over the hero and graphite 900 on the solid header at ${width}px`, async ({ page }) => {
+      await openPage(page, width, 800)
+      await page.mouse.move(width / 2, 799)
+      const [paper, graphite900] = await Promise.all(['--paper', '--graphite-900'].map((name) => token(page, name)))
+
+      await expect(banner(page)).toHaveClass(/\bon-dark\b/)
+      await settleHeader(page)
+      const overHero = { paper: await wordmarkShare(page, paper), graphite900: await wordmarkShare(page, graphite900) }
+
+      await page.evaluate(() => window.scrollTo(0, 600))
+      await waitForScrollSettle(page)
+      await expect(banner(page)).toHaveClass(/^site-header$/)
+      await settleHeader(page)
+      const solid = { paper: await wordmarkShare(page, paper), graphite900: await wordmarkShare(page, graphite900) }
+
+      // Over the hero the wordmark is paper and the background graphite
+      // 900; on the solid header the wordmark is graphite 900 and the
+      // background paper. Either way a real share of the region is the
+      // wordmark's solid colour.
+      const detail = JSON.stringify({ overHero, solid })
+      expect(overHero.paper, detail).toBeGreaterThan(0.1)
+      expect(solid.graphite900, detail).toBeGreaterThan(0.1)
     })
   }
 })
@@ -342,7 +407,7 @@ test.describe('Menu at 360 x 800, scroll 0', () => {
 
     await expect(banner(page)).not.toHaveClass(/\bon-dark\b/)
     await settleHeader(page)
-    expect((await headerLook(page)).logo).toBe('/fafanua-logo.svg')
+    expect((await headerLook(page)).logo).toBe('positive')
     // The open list is readable over the hero: an opaque paper fill, and
     // dark link text.
     const list = await page.locator('#main-nav-list').evaluate((element) => ({
@@ -356,7 +421,7 @@ test.describe('Menu at 360 x 800, scroll 0', () => {
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
     await expect(toggle).toBeFocused()
     await expect(banner(page)).toHaveClass(/\bon-dark\b/)
-    expect((await headerLook(page)).logo).toBe('/fafanua-logo-reversed.svg')
+    expect((await headerLook(page)).logo).toBe('reversed')
   })
 })
 

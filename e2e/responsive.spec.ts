@@ -5,6 +5,7 @@ import { footerSolutions, homepageSolutions } from '../src/data/solutions.ts'
 import {
   WIDTHS,
   expectLanded,
+  headerLogoArtwork,
   linkName,
   pressTab,
   test,
@@ -1273,15 +1274,17 @@ for (const width of WIDTHS) {
       await open(page, testInfo, width)
       // The dark hero is the overlay section (#55).
       await expect(page.locator('main > [data-header-overlay]')).toHaveCount(1)
-      const look = () =>
-        page.getByRole('banner').evaluate((header) => {
+      // The logo is "positive" or "reversed", from its tokens (#86).
+      const look = async () => ({
+        ...(await page.getByRole('banner').evaluate((header) => {
           const style = getComputedStyle(header)
           return {
             background: style.backgroundColor,
             border: `${style.borderBottomWidth} ${style.borderBottomStyle} ${style.borderBottomColor}`,
-            logo: header.querySelector('img')?.getAttribute('src'),
           }
-        })
+        })),
+        logo: await headerLogoArtwork(page),
+      })
       const expected = await page.evaluate(() => {
         const probe = document.createElement('div')
         probe.style.backgroundColor = 'var(--color-bg)'
@@ -1291,7 +1294,7 @@ for (const width of WIDTHS) {
         const value = {
           background: style.backgroundColor,
           border: `${style.borderBottomWidth} ${style.borderBottomStyle} ${style.borderBottomColor}`,
-          logo: '/fafanua-logo.svg',
+          logo: 'positive',
         }
         probe.remove()
         return value
@@ -1300,7 +1303,7 @@ for (const width of WIDTHS) {
       const transparent = {
         background: 'rgba(0, 0, 0, 0)',
         border: `${expected.border.split(' ').slice(0, 2).join(' ')} rgba(0, 0, 0, 0)`,
-        logo: '/fafanua-logo-reversed.svg',
+        logo: 'reversed',
       }
 
       // Below the 8px threshold transparent, from it solid, and
@@ -2774,9 +2777,9 @@ for (const width of WIDTHS) {
         logoWidth: 160,
         grids: 0,
       })
-      // The logo picture's <source> takes no box, in the header or the
-      // footer (#61).
-      expect(m.footerLayout.sources, detail).toEqual(['none', 'none'])
+      // The footer logo picture's <source> takes no box (#61). It is the
+      // page's only one: the header logo is an inline SVG (#86).
+      expect(m.footerLayout.sources, detail).toEqual(['none'])
       const [logo, nav, contact, copyright, sectors] = m.footerLayout.items
       if (width >= 1024) {
         // Two rows: the logo at the start with the nav at the end, then

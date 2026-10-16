@@ -3,15 +3,17 @@ import { test, waitForFonts } from './fixtures.ts'
 
 // With only the web font stalled, the homepage paints in the "Inter
 // Fallback" face well before the font arrives, in Chromium and WebKit
-// (#84). Under font-display: swap, WebKit painted nothing until the
-// preloaded font arrived: text in a font that is still loading does not
-// count towards its first paint, and since the open grid (#83) the page
-// has too few image or SVG pixels to count instead. Under fallback, the
-// 100ms block period ends with a layout in the fallback face, which does
-// count. Runs in the font-stall-chromium and font-stall-webkit projects,
-// after every other project and one test at a time: under heavy CPU load
-// WebKit can still hold the first paint until the swap period ends
-// (playwright.config.ts).
+// (#84, #86). WebKit holds its first paint until the page is visually
+// non-empty, and text in a font that is still loading does not count
+// towards it (under font-display: swap it painted nothing until the
+// preloaded font arrived). Under fallback, the 100ms block period ends
+// with a layout in the fallback face, but the homepage's first render
+// has too few characters to count, and a logo image counted only if it
+// had loaded by then (#85). The header logo is an inline, fixed-size SVG
+// (#86), which counts as soon as it is laid out, so the page paints
+// whenever the logo files arrive. Runs in the font-stall-chromium and
+// font-stall-webkit projects, after every other project and one test at
+// a time, with no retries (playwright.config.ts).
 
 const HEADING = 'Trusted Data. Better Decisions.'
 const PROMISE = 'Build a data foundation you can trust.'
@@ -96,5 +98,74 @@ for (const width of [360, 1440] as const) {
 
     // Released within the swap period, so Inter is swapped in.
     await waitForFonts(page)
+  })
+}
+
+// The logo files delayed by 1s on top of the held font (#86): the header
+// logo is the inline SVG, which needs no file, so the page still paints
+// early. Only the footer's <img> asks for a logo file, the reversed one.
+for (const width of [360, 1440] as const) {
+  test(`the homepage paints early with the font held and the logo files delayed, at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 800 })
+
+    // Hold every woff2 request until release(), at the latest 2s after
+    // the first, as above.
+    let held = true
+    let requestedAt: number | undefined
+    let release = () => {}
+    const gate = new Promise<void>((resolve) => {
+      release = () => {
+        held = false
+        resolve()
+      }
+    })
+    await page.route(/\.woff2$/, async (route) => {
+      if (requestedAt === undefined) {
+        requestedAt = Date.now()
+        setTimeout(release, 2_000)
+      }
+      await gate
+      await route.continue()
+    })
+    const logoRequests: string[] = []
+    await page.route(/\/fafanua-logo[^/]*\.svg$/, async (route) => {
+      logoRequests.push(new URL(route.request().url()).pathname)
+      await new Promise((resolve) => setTimeout(resolve, 1_000))
+      await route.continue()
+    })
+
+    try {
+      await page.goto('/', { waitUntil: 'domcontentloaded' })
+      expect(requestedAt, 'the woff2 was requested').toBeDefined()
+      const timeout = Math.min(2_000, requestedAt! + 1_900 - Date.now())
+      const fcp = await page
+        .waitForFunction(
+          () => performance.getEntriesByName('first-contentful-paint')[0]?.startTime,
+          undefined,
+          { timeout, polling: 50 },
+        )
+        .then((handle) => handle.jsonValue() as Promise<number>)
+      expect(fcp, 'first-contentful-paint, in ms').toBeLessThan(1_000)
+      expect(held, 'font still held').toBe(true)
+      expect(await interStatuses(page)).not.toContain('loaded')
+
+      // The banner's logo is the inline SVG, with no image.
+      const banner = page.getByRole('banner')
+      await expect(banner.locator('img')).toHaveCount(0)
+      const logo = banner.getByRole('img', { name: 'Fafanua Technologies' })
+      await expect(logo).toBeVisible()
+      expect(await logo.evaluate((element) => element.tagName.toLowerCase())).toBe('svg')
+      expect(held, 'font still held after the checks').toBe(true)
+    } finally {
+      release()
+    }
+
+    await waitForFonts(page)
+    await page.waitForLoadState('load')
+    // Only the footer's reversed logo was requested, never the positive.
+    expect(logoRequests).not.toContain('/fafanua-logo.svg')
+    expect(logoRequests).toEqual(['/fafanua-logo-reversed.svg'])
   })
 }

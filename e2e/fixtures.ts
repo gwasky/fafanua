@@ -340,3 +340,36 @@ export function focusAndHeaderBoxes(page: Page) {
 // or without the arrow.
 export const linkName = (label: string) =>
   new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?: →)?$`)
+
+/**
+ * Which artwork the header logo shows (#86): "positive" (teal 600 symbol,
+ * graphite 900 wordmark), "reversed" (teal 400 and paper), or the two
+ * colours it has otherwise. It is an inline SVG whose fills are the
+ * --color-logo-mark and --color-logo-wordmark tokens, read here as
+ * computed on the logo and compared with the primitives. The probes opt
+ * out of forced colours, as the logo does, so a forced theme does not
+ * replace the colours read.
+ */
+export function headerLogoArtwork(page: Page) {
+  return page.evaluate(() => {
+    const logo = document.querySelector('header .site-header__logo-art')
+    if (!(logo instanceof SVGSVGElement)) return null
+    const rgb = (value: string) => {
+      const probe = document.createElement('div')
+      probe.style.forcedColorAdjust = 'none'
+      probe.style.color = value
+      document.body.append(probe)
+      const colour = getComputedStyle(probe).color
+      probe.remove()
+      return colour
+    }
+    const style = getComputedStyle(logo)
+    const fills = ['--color-logo-mark', '--color-logo-wordmark']
+      .map((name) => rgb(style.getPropertyValue(name).trim()))
+      .join(' ')
+    const artwork = (mark: string, wordmark: string) => `${rgb(`var(${mark})`)} ${rgb(`var(${wordmark})`)}`
+    if (fills === artwork('--teal-600', '--graphite-900')) return 'positive'
+    if (fills === artwork('--teal-400', '--paper')) return 'reversed'
+    return fills
+  })
+}
