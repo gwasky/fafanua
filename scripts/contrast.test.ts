@@ -262,6 +262,8 @@ describe('logo tokens (#86)', () => {
   const LOGO = ['--color-logo-mark', '--color-logo-wordmark']
   const FORCED_LIGHT = '(forced-colors: active) and (prefers-color-scheme: light)'
   const forcedLight = mediaCustomProperties(tokensCss, FORCED_LIGHT, ':root')
+  const FORCED_DARK = '(forced-colors: active) and (prefers-color-scheme: dark)'
+  const forcedDark = mediaCustomProperties(tokensCss, FORCED_DARK, ':root')
 
   it('gives the header logo the positive file\'s colours on light: teal 600 and graphite 900', () => {
     expect(LOGO.map((name) => root[name])).toEqual(['var(--teal-600)', 'var(--graphite-900)'])
@@ -298,8 +300,27 @@ describe('logo tokens (#86)', () => {
     })
     const forced = { ...root, ...forcedLight, ...surfaceDarkBlock }
     expect(LOGO.map((name) => resolve(name, forced))).toEqual(LOGO.map((name) => resolve(name, root)))
-    // The one @media rule in tokens.css.
-    expect([...tokensCss.matchAll(/@media([^{]+)\{/g)].map(([, query]) => query.trim())).toEqual([FORCED_LIGHT])
+  })
+
+  it('makes the header logo the reversed one under a dark forced-colours theme, and sets nothing else (#87)', () => {
+    expect(forcedDark).toEqual({
+      '--color-logo-mark': 'var(--teal-400)',
+      '--color-logo-wordmark': 'var(--paper)',
+    })
+    const reversed = [...readFileSync(new URL('../public/fafanua-logo-reversed.svg', import.meta.url), 'utf8').matchAll(
+      /fill="(#[0-9a-f]{6})"/gi,
+    )].map(([, hex]) => hex.toUpperCase())
+    const forced = { ...root, ...forcedDark }
+    expect(LOGO.map((name) => resolve(name, forced).toUpperCase())).toEqual(reversed)
+    // .surface-dark and .on-dark keep the reversed logo there.
+    expect(LOGO.map((name) => resolve(name, { ...forced, ...surfaceDarkBlock }).toUpperCase())).toEqual(reversed)
+  })
+
+  it('has only the two forced-colours rules as @media rules in tokens.css, light then dark', () => {
+    expect([...tokensCss.matchAll(/@media([^{]+)\{/g)].map(([, query]) => query.trim())).toEqual([
+      FORCED_LIGHT,
+      FORCED_DARK,
+    ])
   })
 })
 

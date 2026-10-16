@@ -8,7 +8,7 @@ const LOGO_SYMBOL = 'fafanua-logo-art'
 // because WebKit counts it towards the first paint as soon as it is laid
 // out, where an image only counted once it had loaded (#85). Its fills
 // come from --color-logo-mark and --color-logo-wordmark, which .on-dark
-// and a light forced-colours theme switch (tokens.css, global.css), so
+// and a forced-colours theme switch (tokens.css, global.css; #87), so
 // the positive and reversed artwork need no script. The size and the
 // accessible name are those of the <img> it replaces.
 function Logo({ className }: { className: string }) {

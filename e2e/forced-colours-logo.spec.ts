@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test'
-import { headerLogoArtwork, openPage, test } from './fixtures.ts'
+import { headerLogoArtwork, openPage, openPath, test } from './fixtures.ts'
 
 // The reversed logo under forced colours (#60). A light forced theme paints
 // the footer and the hero behind the transparent header white, where the
@@ -7,7 +7,10 @@ import { headerLogoArtwork, openPage, test } from './fixtures.ts'
 // logo there: the footer through a <picture> source, and the header's
 // inline SVG (#86) through its tokens, which a rule in tokens.css sets to
 // the positive colours for that theme. A dark forced theme and the normal
-// colours keep the reversed logo. Each case is checked as painted: the
+// colours keep the reversed logo. The solid header (#87) shows the
+// positive logo with normal colours and in a light forced theme; in a dark
+// forced theme, which paints it black, a second rule in tokens.css gives
+// it the reversed colours. Each case is checked as painted: the
 // logo's screenshot is decoded and the wordmark, right of the F symbol, has
 // to stand out from the background the surface paints. Runs in the
 // chromium project only, as Playwright emulates forced colours only there.
@@ -156,5 +159,82 @@ for (const width of [360, 1440]) {
       expect(painted.best).toBeGreaterThanOrEqual(4.5)
       expect(painted.share).toBeGreaterThan(0.1)
     })
+  }
+}
+
+// The solid header (#87): the homepage scrolled past the hero, a service
+// landing page, and the homepage with the menu open (360px only, as the
+// Menu button is not shown at 1440px).
+type Solid = 'scrolled' | 'landing page' | 'menu open'
+
+/** Opens a solid-header case; returns the logo and the banner behind it. */
+async function showSolid(page: Page, solid: Solid, width: number) {
+  if (solid === 'landing page') {
+    await openPath(page, '/services/data-quality-reliability', width)
+  } else {
+    await openPage(page, width)
+    if (solid === 'scrolled') {
+      await page.evaluate(() => window.scrollTo({ top: 600, behavior: 'instant' }))
+    } else {
+      const toggle = page.getByRole('button', { name: 'Menu' })
+      await toggle.click()
+      await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    }
+  }
+  const banner = page.getByRole('banner')
+  await expect(banner).not.toHaveClass(/\bon-dark\b/)
+  // Let the header's background transition finish before it is measured.
+  await banner.evaluate((element) =>
+    Promise.all(
+      [element, ...element.querySelectorAll('*')].flatMap((child) =>
+        child.getAnimations().map((animation) => animation.finished),
+      ),
+    ),
+  )
+  return { logo: banner.getByRole('img', { name: 'Fafanua Technologies' }), surface: banner }
+}
+
+for (const width of [360, 1440]) {
+  const cases: Solid[] = width === 360 ? ['scrolled', 'landing page', 'menu open'] : ['scrolled', 'landing page']
+  for (const solid of cases) {
+    // The box with normal colours, which forced colours must not change.
+    const normalBox = async (page: Page) => {
+      const { logo } = await showSolid(page, solid, width)
+      await expect(logo).toBeVisible()
+      const { width: w, height: h } = await logoState(page, 'header', logo)
+      return { width: w, height: h }
+    }
+
+    for (const theme of ['light', 'dark', 'normal'] as const) {
+      test(`solid header logo wordmark visible, ${solid}, ${theme === 'normal' ? 'normal colours' : `forced colours, ${theme} theme`}, at ${width}px`, async ({
+        page,
+      }, testInfo) => {
+        const box = await normalBox(page)
+
+        if (theme !== 'normal') await page.emulateMedia({ forcedColors: 'active', colorScheme: theme })
+        const { logo, surface } = await showSolid(page, solid, width)
+        await expect(logo).toBeVisible()
+
+        // Reversed on the forced black; positive on the forced white and
+        // on paper with normal colours.
+        await expect
+          .poll(async () => (await logoState(page, 'header', logo)).artwork)
+          .toBe(theme === 'dark' ? 'reversed' : 'positive')
+        const state = await logoState(page, 'header', logo)
+        await expect(logo).toHaveAccessibleName('Fafanua Technologies')
+        expect({ width: state.width, height: state.height }).toEqual(box)
+
+        const painted = await wordmarkContrast(page, logo, surface)
+        if (theme !== 'normal') {
+          expect(painted.background).toBe(theme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(0, 0, 0)')
+        }
+        expect(painted.best).toBeGreaterThanOrEqual(4.5)
+        expect(painted.share).toBeGreaterThan(0.1)
+
+        await logo.screenshot({
+          path: `${testInfo.project.outputDir}/screenshots/solid-header-logo-${solid.replace(' ', '-')}-${theme}-${width}.png`,
+        })
+      })
+    }
   }
 }

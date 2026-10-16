@@ -335,15 +335,27 @@
 }
 
 /*
- * A light forced-colours theme paints every dark surface white, where the
- * reversed logo's paper wordmark would vanish, so the logo's on-dark
- * colours become the positive logo's (#86; the footer's <picture> uses
- * the same query, #60). Custom properties are never forced, and the logo
- * opts out of forced colours, so these are the colours it paints.
+ * A forced-colours theme repaints every surface in its own background.
+ * A light one paints the dark surfaces white, where the reversed logo's
+ * paper wordmark would vanish, so the logo's on-dark colours become the
+ * positive logo's (#86; the footer's <picture> uses the same query, #60).
+ * A dark one paints the light surfaces, such as the solid header, black,
+ * where the positive logo's graphite wordmark would vanish, so the logo's
+ * colours become the reversed logo's (#87). In a forced theme the colour
+ * scheme follows the forced background. Custom properties are never
+ * forced, and the logo opts out of forced colours, so these are the
+ * colours it paints.
  */
 @media (forced-colors: active) and (prefers-color-scheme: light) {
   :root {
     --color-logo-mark-on-dark: var(--teal-600);
     --color-logo-wordmark-on-dark: var(--graphite-900);
+  }
+}
+
+@media (forced-colors: active) and (prefers-color-scheme: dark) {
+  :root {
+    --color-logo-mark: var(--teal-400);
+    --color-logo-wordmark: var(--paper);
   }
 }

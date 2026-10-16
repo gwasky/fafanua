@@ -131,8 +131,8 @@ main:focus {
    until the held font arrived (#86).
 
    Its fills are --color-logo-mark and --color-logo-wordmark, which
-   .on-dark and a light forced-colours theme switch (tokens.css,
-   global.css). forced-color-adjust: none keeps a forced theme from
+   .on-dark and a forced-colours theme switch (tokens.css,
+   global.css; #87). forced-color-adjust: none keeps a forced theme from
    repainting them, as it never repainted the <img>; it inherits into the
    <use> shadow tree. */
 .site-header__logo-art {
