@@ -143,32 +143,29 @@ describe('Header', () => {
     })
 
     expect(logo).toHaveAttribute('href', '#top')
-    const img = within(logo).getByRole('img', { name: 'Fafanua Technologies' })
-    // The page opens at the top over the dark hero (#55), so the header is
-    // transparent with the reversed logo; once scrolled it is the positive.
-    expect(img).toHaveAttribute('src', '/fafanua-logo-reversed.svg')
-    setScrollY(8)
-    expect(img).toHaveAttribute('src', '/fafanua-logo.svg')
-    // 296:42 is the SVG's 5046:714 ratio.
-    expect(img).toHaveAttribute('width', '296')
-    expect(img).toHaveAttribute('height', '42')
+    // An inline SVG that uses the sprite each page carries (#86), at the
+    // size of the image it replaced. 296:42 is the artwork's 5046:714.
+    const art = within(logo).getByRole('img', { name: 'Fafanua Technologies' })
+    expect(art.tagName.toLowerCase()).toBe('svg')
+    expect(art).toHaveAttribute('width', '296')
+    expect(art).toHaveAttribute('height', '42')
+    expect(art).toHaveAttribute('viewBox', '0 0 5046 714')
+    expect(art).toHaveAttribute('focusable', 'false')
+    expect(art).not.toHaveAttribute('aria-hidden')
+    expect(art.querySelector('title')).toBeNull()
+    const uses = art.querySelectorAll('use')
+    expect(uses).toHaveLength(1)
+    expect(uses[0]).toHaveAttribute('href', '#fafanua-logo-art')
+    expect(art.children).toHaveLength(1)
   })
 
-  // A light forced-colours theme paints the hero white, where the reversed
-  // wordmark would vanish (#60): only there, the positive logo, whether
-  // the header is transparent or solid.
-  it('offers the positive logo only under a light forced-colours theme', () => {
+  // The positive and reversed artwork, and the light forced-colours
+  // theme's, come from tokens (#86): no image, <picture> or <source>.
+  it('has no image, picture or source in the header', () => {
     const { banner } = renderPage()
-    const img = within(banner).getByRole('img', { name: 'Fafanua Technologies' })
-    const sources = banner.querySelectorAll('source')
 
-    expect(img.parentElement?.tagName).toBe('PICTURE')
-    expect(sources).toHaveLength(1)
-    expect(sources[0]).toHaveAttribute(
-      'media',
-      '(forced-colors: active) and (prefers-color-scheme: light)',
-    )
-    expect(sources[0]).toHaveAttribute('srcset', '/fafanua-logo.svg')
+    expect(banner.querySelectorAll('img, picture, source')).toHaveLength(0)
+    expect(within(banner).getAllByRole('img')).toHaveLength(1)
   })
 
   it('starts with a skip link to main', () => {
@@ -371,9 +368,6 @@ describe('Header', () => {
 })
 
 describe('Header over a [data-header-overlay] section', () => {
-  const POSITIVE = '/fafanua-logo.svg'
-  const REVERSED = '/fafanua-logo-reversed.svg'
-
   /** The header, followed by a marked section when `overlay` is set. */
   function renderHeader({ overlay }: { overlay: boolean }) {
     render(
@@ -384,18 +378,31 @@ describe('Header over a [data-header-overlay] section', () => {
     )
     const banner = screen.getByRole('banner')
     const logo = within(banner).getByRole('img', { name: 'Fafanua Technologies' })
+    renderedLogo = logo.outerHTML
     const toggle = screen.getByRole('button', { name: 'Menu' })
     return { banner, logo, toggle }
+  }
+  let renderedLogo = ''
+
+  // The logo's colours follow .on-dark through the tokens (#86), so the
+  // logo itself never changes between the states: the same element, with
+  // the same markup and size as when it was rendered.
+  // e2e/header-overlay.spec.ts checks the colours as painted.
+  const expectSameLogo = (banner: HTMLElement, logo: HTMLElement) => {
+    expect(within(banner).getByRole('img', { name: 'Fafanua Technologies' })).toBe(logo)
+    expect(logo.outerHTML).toBe(renderedLogo)
+    expect(logo).toHaveAttribute('width', '296')
+    expect(logo).toHaveAttribute('height', '42')
   }
 
   const expectSolid = (banner: HTMLElement, logo: HTMLElement) => {
     expect(banner).not.toHaveClass('on-dark')
-    expect(logo).toHaveAttribute('src', POSITIVE)
+    expectSameLogo(banner, logo)
   }
 
   const expectTransparent = (banner: HTMLElement, logo: HTMLElement) => {
     expect(banner).toHaveClass('on-dark')
-    expect(logo).toHaveAttribute('src', REVERSED)
+    expectSameLogo(banner, logo)
   }
 
   it('is solid at scroll 0 with no marker on the page', () => {
@@ -420,7 +427,10 @@ describe('Header over a [data-header-overlay] section', () => {
     const html = renderToStaticMarkup(<Header overlay />)
 
     expect(html).toContain('class="site-header on-dark"')
-    expect(html).toContain(`src="${REVERSED}"`)
+    // The logo is the same markup in both states; .on-dark recolours it.
+    const logo = (markup: string) => /<svg class="site-header__logo-art"[\s\S]*?<\/svg>/.exec(markup)?.[0]
+    expect(logo(html)).toBeDefined()
+    expect(logo(html)).toBe(logo(renderToStaticMarkup(<Header />)))
     expect(renderToStaticMarkup(<Header />)).toContain('class="site-header"')
   })
 

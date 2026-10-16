@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { flushSync } from 'react-dom'
 import { navigation, navigationCta } from '../data/navigation.ts'
+import Logo from './Logo.tsx'
 import './Header.css'
 
 // The width at which the inline nav replaces the menu toggle: 64em, which
@@ -51,22 +52,15 @@ const MAX_STICKY_SHARE = 0.25
 // margins that keep content clear of it (Header.css, global.css).
 const STATIC_CLASS = 'header-static'
 
-const LOGO = '/fafanua-logo.svg'
-const LOGO_REVERSED = '/fafanua-logo-reversed.svg'
-
-// A forced-colours theme with a light background (Windows contrast themes,
-// #60). Footer.tsx holds the same query.
-const FORCED_LIGHT = '(forced-colors: active) and (prefers-color-scheme: light)'
-
 // The sticky site header. Solid (paper, with a bottom border) by default.
 // When `overlay` is set (App.tsx renders the dark hero, a
 // [data-header-overlay] section, under it), the page is at the top and
 // the menu is closed, it is transparent and takes the dark tokens
-// (.on-dark) and the reversed logo, so it reads over the dark section
-// pulled up beneath it (global.css). It publishes its height as
-// --header-height on :root, which the scroll margins and the overlay
-// pull-up use, and stops sticking when it would take more than
-// MAX_STICKY_SHARE of the viewport's height.
+// (.on-dark), which also give the logo its reversed colours (Logo.tsx),
+// so it reads over the dark section pulled up beneath it (global.css).
+// It publishes its height as --header-height on :root, which the scroll
+// margins and the overlay pull-up use, and stops sticking when it would
+// take more than MAX_STICKY_SHARE of the viewport's height.
 //
 // `overlay` is a prop, set by the page that renders the overlay section,
 // rather than read from the DOM: the header renders before the section, so
@@ -158,19 +152,7 @@ function Header({ overlay = false, home }: HeaderProps) {
       </a>
       <div className="container site-header__inner">
         <a className="site-header__logo" href={home ?? '#top'}>
-          {/* A light forced-colours theme paints the hero white, where the
-              reversed logo's paper wordmark disappears, so it takes the
-              positive logo there. The source matches only then, so the
-              normal colours and a dark forced theme are unchanged. */}
-          <picture>
-            <source media={FORCED_LIGHT} srcSet={LOGO} />
-            <img
-              src={transparent ? LOGO_REVERSED : LOGO}
-              alt="Fafanua Technologies"
-              width="296"
-              height="42"
-            />
-          </picture>
+          <Logo className="site-header__logo-art" />
         </a>
         <button
           ref={toggleRef}

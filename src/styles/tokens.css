@@ -107,6 +107,9 @@
   --color-button-secondary-bg-hover-on-dark: var(--graphite-800);
   --color-button-secondary-border-hover-on-dark: var(--graphite-400);
   --color-grid-line-on-dark: color-mix(in srgb, var(--paper) 7%, transparent);
+  /* The reversed logo's colours (#86): teal 400 symbol, paper wordmark. */
+  --color-logo-mark-on-dark: var(--teal-400);
+  --color-logo-wordmark-on-dark: var(--paper);
   /* Unused on dark today (the Trusted chip is on the light card, #82):
      teal 200 on teal 900, 8.7:1. */
   --color-tag-bg-on-dark: var(--teal-900);
@@ -323,4 +326,24 @@
      6.9:1. Teal 700 on teal 100 is 4.47:1 and fails AA. */
   --color-tag-bg: var(--teal-100);
   --color-tag-text: var(--teal-800);
+  /* The header logo's colours (#86), the positive logo's: teal 600 for
+     the F symbol and graphite 900 for the wordmark. Graphics only, and
+     only the logo's; they are aliases of the colours in
+     public/fafanua-logo.svg, never a new pairing. */
+  --color-logo-mark: var(--teal-600);
+  --color-logo-wordmark: var(--graphite-900);
+}
+
+/*
+ * A light forced-colours theme paints every dark surface white, where the
+ * reversed logo's paper wordmark would vanish, so the logo's on-dark
+ * colours become the positive logo's (#86; the footer's <picture> uses
+ * the same query, #60). Custom properties are never forced, and the logo
+ * opts out of forced colours, so these are the colours it paints.
+ */
+@media (forced-colors: active) and (prefers-color-scheme: light) {
+  :root {
+    --color-logo-mark-on-dark: var(--teal-600);
+    --color-logo-wordmark-on-dark: var(--graphite-900);
+  }
 }

@@ -112,27 +112,21 @@ main:focus {
   min-height: var(--space-12);
 }
 
-/* The <picture> that swaps in the positive logo under a light forced-
-   colours theme (Header.tsx) generates no box, so the image stays the
-   link's flex item and the layout is the same as a bare <img>. */
-.site-header__logo picture {
-  display: contents;
-}
-
-/* Its <source> is display: block by default, which would make it an empty
-   flex item of the link's own (#61). */
-.site-header__logo picture > source {
-  display: none;
-}
-
-/* 160px wide at every width at the default text size: above the 120px
-   minimum and small enough not to dominate. The global max-width: 100%
-   lets it shrink with its link; the narrowest case, 320px at 200% text,
-   still leaves it 256px wide. The height follows from the width and
-   height attributes, so the space is reserved before the SVG loads. */
-.site-header__logo img {
+/* The logo (Logo.tsx, #86): an inline SVG that uses the sprite each page
+   carries. 160px wide at every width at the default text size: above the
+   120px minimum and small enough not to dominate. The global max-width:
+   100% lets it shrink with its link; the narrowest case, 320px at 200%
+   text, still leaves it 256px wide. The height follows from the width and
+   height attributes and the viewBox, so its box is set before anything
+   loads. Its fills are --color-logo-mark and --color-logo-wordmark, which
+   .on-dark and a light forced-colours theme switch (tokens.css,
+   global.css). forced-color-adjust: none keeps a forced theme from
+   repainting them, as it never repainted the <img> this replaced; it
+   inherits into the <use> shadow tree. */
+.site-header__logo-art {
   width: calc(var(--space-20) * 2);
   height: auto;
+  forced-color-adjust: none;
 }
 
 /* The look comes from .button .button--secondary (components.css); this

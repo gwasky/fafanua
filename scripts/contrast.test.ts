@@ -13,12 +13,29 @@ const globalCss = read('global.css')
 
 type Declarations = Record<string, string>
 
-// Custom property declarations inside the blocks whose selector list
-// includes `selector`.
+// An @media rule and its blocks, as written in tokens.css.
+const MEDIA_RULE = /@media([^{]+)\{((?:[^{}]*\{[^{}]*\})*[^{}]*)\}/g
+
+// Custom property declarations inside the top-level blocks whose selector
+// list includes `selector`. Blocks inside an @media rule are left out:
+// mediaCustomProperties() reads those.
 function customProperties(css: string, selector: string): Declarations {
-  const withoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '')
+  return declarationsIn(css.replace(/\/\*[\s\S]*?\*\//g, '').replace(MEDIA_RULE, ''), selector)
+}
+
+// The same, for the blocks inside the @media rules whose condition is
+// exactly `condition`.
+function mediaCustomProperties(css: string, condition: string, selector: string): Declarations {
+  const rules = [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(MEDIA_RULE)]
+  return Object.assign(
+    {},
+    ...rules.filter(([, query]) => query.trim() === condition).map(([, , body]) => declarationsIn(body, selector)),
+  )
+}
+
+function declarationsIn(css: string, selector: string): Declarations {
   const declarations: Declarations = {}
-  for (const block of withoutComments.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+  for (const block of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     if (!block[1].split(',').some((part) => part.trim() === selector)) continue
     for (const [, name, value] of block[2].matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
       declarations[name] = value.trim()
@@ -238,6 +255,51 @@ describe('semantic colour tokens', () => {
     expect(resolve('--color-accent-text', surfaceDark)).toBe(resolve('--teal-400', root))
     expect(contrast(resolve('--color-accent-text', surfaceDark), resolve('--graphite-900', root))).toBeCloseTo(7.47, 1)
     expect(contrast(resolve('--color-accent-text', surfaceDark), resolve('--graphite-800', root))).toBeCloseTo(6.08, 1)
+  })
+})
+
+describe('logo tokens (#86)', () => {
+  const LOGO = ['--color-logo-mark', '--color-logo-wordmark']
+  const FORCED_LIGHT = '(forced-colors: active) and (prefers-color-scheme: light)'
+  const forcedLight = mediaCustomProperties(tokensCss, FORCED_LIGHT, ':root')
+
+  it('gives the header logo the positive file\'s colours on light: teal 600 and graphite 900', () => {
+    expect(LOGO.map((name) => root[name])).toEqual(['var(--teal-600)', 'var(--graphite-900)'])
+    expect(LOGO.map((name) => surfaceLightBlock[name])).toEqual(['var(--teal-600)', 'var(--graphite-900)'])
+  })
+
+  it('gives it the reversed file\'s colours on dark: teal 400 and paper', () => {
+    expect(LOGO.map((name) => root[`${name}-on-dark`])).toEqual(['var(--teal-400)', 'var(--paper)'])
+  })
+
+  it('reassigns both inside .surface-dark and .on-dark', () => {
+    for (const block of [surfaceDarkBlock, onDarkBlock]) {
+      for (const name of LOGO) expect(block[name]).toBe(`var(${name}-on-dark)`)
+    }
+    expect(LOGO.map((name) => resolve(name, surfaceDark))).toEqual([
+      resolve('--teal-400', root),
+      resolve('--paper', root),
+    ])
+  })
+
+  it('aliases only the colours in the logo files, so they add no colour', () => {
+    const fills = (file: string) =>
+      [...readFileSync(new URL(`../public/${file}`, import.meta.url), 'utf8').matchAll(/fill="(#[0-9a-f]{6})"/gi)].map(
+        ([, hex]) => hex.toUpperCase(),
+      )
+    expect(LOGO.map((name) => resolve(name, root).toUpperCase())).toEqual(fills('fafanua-logo.svg'))
+    expect(LOGO.map((name) => resolve(name, surfaceDark).toUpperCase())).toEqual(fills('fafanua-logo-reversed.svg'))
+  })
+
+  it('makes the on-dark logo the positive one under a light forced-colours theme, and sets nothing else', () => {
+    expect(forcedLight).toEqual({
+      '--color-logo-mark-on-dark': 'var(--teal-600)',
+      '--color-logo-wordmark-on-dark': 'var(--graphite-900)',
+    })
+    const forced = { ...root, ...forcedLight, ...surfaceDarkBlock }
+    expect(LOGO.map((name) => resolve(name, forced))).toEqual(LOGO.map((name) => resolve(name, root)))
+    // The one @media rule in tokens.css.
+    expect([...tokensCss.matchAll(/@media([^{]+)\{/g)].map(([, query]) => query.trim())).toEqual([FORCED_LIGHT])
   })
 })
 

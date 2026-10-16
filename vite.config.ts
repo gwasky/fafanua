@@ -157,6 +157,72 @@ export function checkOrder(): Plugin {
   }
 }
 
+// The header logo's artwork (#86), and the id of the <symbol> that holds
+// it on every page. The path data lives only in the logo file.
+export const LOGO_FILE = 'public/fafanua-logo.svg'
+export const LOGO_SYMBOL_ID = 'fafanua-logo-art'
+const LOGO_VIEWBOX = '0 0 5046 714'
+// The tokens that fill the F symbol and the wordmark, in the file's order.
+const LOGO_FILLS = ['--color-logo-mark', '--color-logo-wordmark']
+
+/**
+ * Builds the hidden sprite the header logo uses (#86) from the logo file:
+ * one aria-hidden <svg> that takes no box, holding a <symbol> with the
+ * file's two paths, their transform and d copied byte for byte. The
+ * fills and the <title> are dropped; each path is filled from a token
+ * through an inline style, as a custom property inherits into a <use>
+ * shadow tree in every engine but document selectors do not reliably
+ * reach it. Throws if the file is not the expected two-path logo.
+ */
+export function logoSprite(svg: string) {
+  const fail = (problem: string): never => {
+    throw new Error(`${LOGO_FILE} is not the expected logo: ${problem}`)
+  }
+  const root = /^\s*<svg\b([^>]*)>([\s\S]*)<\/svg>\s*$/.exec(svg) ?? fail('no <svg> root')
+  if (tags(`<svg${root[1]}>`, 'svg')[0].viewbox !== LOGO_VIEWBOX) fail(`its viewBox is not ${LOGO_VIEWBOX}`)
+  const body = root[2].replace(/^<title\b[^>]*>[^<]*<\/title>/, '')
+  const paths = [...body.matchAll(/<path\b([^>]*?)\s*\/>/g)]
+  if (paths.length !== LOGO_FILLS.length) fail(`expected ${LOGO_FILLS.length} <path>s, found ${paths.length}`)
+  if (body.replace(/<path\b[^>]*?\/>/g, '').trim() !== '') fail('it holds more than a <title> and two <path>s')
+  const art = paths.map(([, attributes], index) => {
+    const names = [...attributes.matchAll(/([^\s=]+)="[^"]*"/g)].map(([, name]) => name).sort()
+    if (names.join() !== 'd,fill,transform') fail(`a <path> has the attributes ${names.join(', ')}`)
+    const value = (name: string) => new RegExp(`\\s${name}="([^"]*)"`).exec(attributes)![1]
+    return `<path style="fill: var(${LOGO_FILLS[index]})" transform="${value('transform')}" d="${value('d')}"/>`
+  })
+  return (
+    `<svg aria-hidden="true" style="display: none">` +
+    `<symbol id="${LOGO_SYMBOL_ID}" viewBox="${LOGO_VIEWBOX}">${art.join('')}</symbol></svg>`
+  )
+}
+
+/**
+ * Puts the logo sprite (logoSprite()) at the start of <body>, before
+ * #root, in index.html and page.html, so in every pre-rendered landing
+ * page and 404.html too, in dev and in the build. The header logo is an
+ * inline <svg> that uses it: WebKit counts a fixed-size <svg> towards its
+ * first paint as soon as it is laid out, where it waited for a logo
+ * image to load (#85).
+ */
+export function logoSymbol(): Plugin {
+  let root = import.meta.dirname
+  return {
+    name: 'fafanua:logo-symbol',
+    configResolved(config) {
+      root = config.root
+    },
+    transformIndexHtml: {
+      order: 'pre',
+      async handler(html) {
+        const sprite = logoSprite(await readFile(path.join(root, LOGO_FILE), 'utf8'))
+        const bodies = html.match(/<body\b[^>]*>/gi) ?? []
+        if (bodies.length !== 1) throw new Error(`Expected one <body> to put the logo sprite in, found ${bodies.length}`)
+        return html.replace(bodies[0], `${bodies[0]}\n    ${sprite}`)
+      },
+    },
+  }
+}
+
 // The production URL. Every absolute URL in the page's metadata, robots.txt
 // and sitemap.xml starts with it. src/seo.ts holds it, with the
 // organisation's @id, for the landing pages too.
@@ -513,6 +579,7 @@ export default defineConfig({
   plugins: [
     devPages(),
     react(),
+    logoSymbol(),
     preloadFont(),
     structuredData(),
     stylesheetFirst(),

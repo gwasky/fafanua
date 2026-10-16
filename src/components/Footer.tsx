@@ -6,7 +6,7 @@ import { useYear } from '../useYear.ts'
 import './Footer.css'
 
 // A forced-colours theme with a light background (Windows contrast themes).
-// Header.tsx holds the same query.
+// tokens.css holds the same query, for the header logo's colours (#86).
 const FORCED_LIGHT = '(forced-colors: active) and (prefers-color-scheme: light)'
 
 // The page footer, outside main, dark and minimal (plan V2 §17): the

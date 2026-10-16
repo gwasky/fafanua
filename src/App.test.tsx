@@ -176,12 +176,13 @@ describe('App', () => {
 
   // The inline SVG illustrations the design system allows are the system
   // diagram's return loop (owner decision on #63) and the decorative
-  // contour lines in the assessment's dark panel (#82); the
-  // only other inline SVGs are the disclosure chevron icons of the
-  // Solutions rows; the capability cells have none since the open grid
-  // (#83). No canvas anywhere, and the only images
-  // are the two logos.
-  it('has no inline SVG but the Solutions chevrons, the diagram\'s loop and the assessment\'s contours, and no canvas', () => {
+  // contour lines in the assessment's dark panel (#82); the other inline
+  // SVGs are the disclosure chevron icons of the Solutions rows (the
+  // capability cells have none since the open grid, #83) and the header
+  // logo (#86), the one SVG with role="img" and a name. Its sprite is in
+  // index.html, not rendered by App. No canvas anywhere, and the only
+  // image is the footer logo.
+  it('has no inline SVG but the header logo, the Solutions chevrons, the diagram\'s loop and the assessment\'s contours, and no canvas', () => {
     render(<App />)
     const svgs = [...document.querySelectorAll('svg')]
     const count = (name: string) => svgs.filter((svg) => svg.getAttribute('class') === name).length
@@ -195,11 +196,16 @@ describe('App', () => {
     expect(count('solution-row__chevron')).toBe(3)
     expect(count('trust-assessment__contours')).toBe(1)
     expect(document.querySelector('#data-trust-assessment svg')).toHaveClass('trust-assessment__contours')
-    expect(svgs).toHaveLength(1 + 1 + homepageSolutions.length)
-    for (const svg of svgs) expect(svg).toHaveAttribute('aria-hidden', 'true')
+    expect(count('site-header__logo-art')).toBe(1)
+    expect(svgs).toHaveLength(1 + 1 + 1 + homepageSolutions.length)
+    const logo = within(screen.getByRole('banner')).getByRole('img', { name: 'Fafanua Technologies' })
+    expect(logo).toHaveClass('site-header__logo-art')
+    for (const svg of svgs) {
+      if (svg === (logo as Element)) expect(svg).not.toHaveAttribute('aria-hidden')
+      else expect(svg).toHaveAttribute('aria-hidden', 'true')
+    }
     expect(document.querySelectorAll('canvas')).toHaveLength(0)
     expect([...document.querySelectorAll('img')].map((img) => img.closest('header, footer')?.tagName)).toEqual([
-      'HEADER',
       'FOOTER',
     ])
   })
