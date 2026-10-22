@@ -1,17 +1,19 @@
 import { expect, type Page } from '@playwright/test'
 import { processStages } from '../src/data/process.ts'
 import { servicesIntro } from '../src/data/services.ts'
-import { homepageSolutions } from '../src/data/solutions.ts'
-import { openPage, test } from './fixtures.ts'
+import { homepageSolutions, solutionsIntro } from '../src/data/solutions.ts'
+import { solutionPath } from '../src/paths.ts'
+import { centreOf, openPage, test } from './fixtures.ts'
 
-// The Solutions rows and the How We Work timeline (#59) in conditions the
-// width projects do not cover: their accessibility trees, colours, type,
-// hover, motion, forced colours, and the timeline beside the Services
+// The Solutions rows (#59, links since #89) and the How We Work timeline
+// (#59) in conditions the width projects do not cover: their accessibility
+// trees, colours, type, hover, motion, forced colours, and the timeline
+// beside the Services
 // lifecycle rail. Runs in the chromium project; the layout at each width,
 // in both engines, is in responsive.spec.ts, and the keyboard in
 // keyboard.spec.ts.
 
-const solutionsRegion = (page: Page) => page.getByRole('region', { name: 'Solutions' })
+const solutionsRegion = (page: Page) => page.getByRole('region', { name: solutionsIntro.heading })
 const processRegion = (page: Page) => page.getByRole('region', { name: 'How We Work' })
 
 /** Resolves a token to the computed colour a page would paint with it. */
@@ -37,31 +39,31 @@ const tokenPx = (page: Page, token: string) =>
   }, token)
 
 test.describe('Solutions', () => {
-  test('reads as the eyebrow, the h2 and three rows, each a heading button and its tag line', async ({ page }) => {
+  test('reads as the eyebrow, the h2, the intro line and three rows, each a heading link and its tag line', async ({ page }) => {
     await openPage(page, 1440)
 
     const snapshot = await solutionsRegion(page).ariaSnapshot()
     expect(snapshot).toBe(
       [
-        '- region "Solutions":',
+        `- region "${solutionsIntro.heading}":`,
         '  - paragraph: 03 — Solutions',
-        '  - heading "Solutions" [level=2]',
+        `  - heading "${solutionsIntro.heading}" [level=2]`,
+        `  - paragraph: ${solutionsIntro.intro}`,
         '  - list:',
         ...homepageSolutions.flatMap((solution) => [
           '    - listitem:',
           `      - heading "${solution.title}" [level=3]:`,
-          `        - button "${solution.title}"`,
-          '      - list:',
-          ...solution.summary.map((item) => `        - listitem: ${item}`),
+          `        - link "${solution.title}":`,
+          `          - /url: ${solutionPath(solution.id)}`,
+          `      - paragraph: ${solution.summary.join(' · ')}`,
         ]),
       ].join('\n'),
     )
-    // Below the eyebrow: no separator characters, row numbers or theme
-    // text while collapsed.
-    expect(snapshot.split('\n').slice(2).join('\n')).not.toMatch(/[·•]|\b0\d\b|Payment intelligence/)
+    // Below the eyebrow: no arrows, row numbers, theme text or "Lineage" (#89).
+    expect(snapshot.split('\n').slice(2).join('\n')).not.toMatch(/→|\b0\d\b|Payment intelligence|Lineage|button/)
     // W7 (#73): Health, Financial Services and Education, in that order;
     // the other sectors are linked from the footer, not listed here.
-    expect([...snapshot.matchAll(/button "(.+)"/g)].map((match) => match[1])).toEqual([
+    expect([...snapshot.matchAll(/link "(.+)"/g)].map((match) => match[1])).toEqual([
       'Health',
       'Financial Services',
       'Education',
@@ -69,14 +71,13 @@ test.describe('Solutions', () => {
     expect(snapshot).not.toMatch(/Retail|Development|Public Sector/)
   })
 
-  test('paints graphite on paper only, with graphite 200 hairlines', async ({ page }) => {
+  test('paints graphite on paper at rest, with graphite 200 hairlines', async ({ page }) => {
     await openPage(page, 1440)
     const [paper, g900, g600, g200] = await Promise.all(
       ['--paper', '--graphite-900', '--graphite-600', '--graphite-200'].map((token) =>
         tokenColour(page, token),
       ),
     )
-    await solutionsRegion(page).getByRole('button').first().locator('.solution-row__title').click()
     const m = await solutionsRegion(page).evaluate((root) => {
       const style = (selector: string, pseudo?: string) =>
         getComputedStyle(root.querySelector(selector)!, pseudo)
@@ -84,37 +85,126 @@ test.describe('Solutions', () => {
         section: getComputedStyle(root).backgroundColor,
         eyebrow: style('.section-eyebrow').color,
         h2: style('h2').color,
-        title: style('.solution-row__title').color,
-        number: style('.solution-row__number').color,
-        chevron: style('.solution-row__chevron').color,
-        summary: style('.solution-row__summary li').color,
-        separator: style('.solution-row__summary li', '::after').borderTopColor,
-        theme: style('.solution-row__themes li').color,
-        hairline: style('.solution-row').borderTopColor,
-        lastHairline: style('.solutions__list').borderBottomColor,
+        intro: style('.solutions__intro').color,
+        names: [...root.querySelectorAll('.solution-row__link')].map((link) => getComputedStyle(link).color),
+        tags: [...root.querySelectorAll('.solution-row__tags')].map((tags) => getComputedStyle(tags).color),
+        arrows: [...root.querySelectorAll('.solution-row__arrow')].map((arrow) => getComputedStyle(arrow).color),
+        tints: [...root.querySelectorAll('.solution-row')].map((row) => getComputedStyle(row, '::before').backgroundColor),
+        firstHairline: style('.solutions__list').borderTopColor,
+        hairlines: [...root.querySelectorAll('.solution-row')].map((row) => getComputedStyle(row).borderBottomColor),
         backgrounds: [...root.querySelectorAll('*')]
           .map((element) => getComputedStyle(element).backgroundColor)
           .filter((colour) => colour !== 'rgba(0, 0, 0, 0)'),
+        shadows: [...root.querySelectorAll('*')].map((element) => getComputedStyle(element).boxShadow),
+        radii: [...root.querySelectorAll('.solution-row')].map((row) => getComputedStyle(row).borderRadius),
       }
     })
 
     expect(m.section).toBe(paper)
     // Graphite 900 on paper (14.9:1) and graphite 600 on paper (6.0:1).
-    expect([m.h2, m.title, m.theme]).toEqual([g900, g900, g900])
-    expect([m.eyebrow, m.number, m.chevron, m.summary, m.separator]).toEqual([g600, g600, g600, g600, g600])
-    expect([m.hairline, m.lastHairline]).toEqual([g200, g200])
-    // Nothing inside the section has a fill of its own.
+    expect([m.h2, ...m.names]).toEqual(Array(4).fill(g900))
+    expect([m.eyebrow, m.intro, ...m.tags, ...m.arrows]).toEqual(Array(8).fill(g600))
+    expect([m.firstHairline, ...m.hairlines]).toEqual(Array(4).fill(g200))
+    // Nothing inside the section has a fill, shadow or radius at rest.
+    expect(m.tints).toEqual(Array(3).fill('rgba(0, 0, 0, 0)'))
     expect(m.backgrounds).toEqual([])
+    for (const shadow of m.shadows) expect(shadow).toBe('none')
+    expect(m.radii).toEqual(Array(3).fill('0px'))
   })
 
-  test('sets the h2, titles, numbers, summaries and themes type, and nothing above weight 500', async ({ page }) => {
+  for (const how of ['hover', 'keyboard focus'] as const) {
+    test(`${how} tints the row graphite 100, underlines the name 1px teal 800 and turns the arrow teal 800, moving nothing`, async ({ page }) => {
+      await openPage(page, 1440)
+      const [g100, teal800, g600, teal600] = await Promise.all(
+        ['--graphite-100', '--teal-800', '--graphite-600', '--teal-600'].map((token) => tokenColour(page, token)),
+      )
+      const rows = solutionsRegion(page).locator('.solution-row')
+      const state = (index: number) =>
+        rows.nth(index).evaluate((row) => {
+          const link = getComputedStyle(row.querySelector('.solution-row__link')!)
+          // Relative to the row, since hovering may scroll the page.
+          const origin = row.getBoundingClientRect()
+          const box = (selector: string) => {
+            const r = row.querySelector(selector)!.getBoundingClientRect()
+            return [r.x - origin.x, r.y - origin.y, r.width, r.height]
+          }
+          return {
+            tint: getComputedStyle(row, '::before').backgroundColor,
+            underline: link.textDecorationLine,
+            underlineColour: link.textDecorationColor,
+            thickness: link.textDecorationThickness,
+            arrow: getComputedStyle(row.querySelector('.solution-row__arrow')!).color,
+            outline: [link.outlineStyle, link.outlineWidth, link.outlineColor, link.outlineOffset],
+            boxes: [box('.solution-row__name'), box('.solution-row__tags'), box('.solution-row__arrow')],
+            shadow: getComputedStyle(row).boxShadow,
+          }
+        })
+      const before = await state(1)
+
+      if (how === 'hover') {
+        const { x, y } = await centreOf(rows.nth(1).locator('.solution-row__tags'))
+        await page.mouse.move(x, y)
+      }
+      else {
+        await solutionsRegion(page).getByRole('link', { name: homepageSolutions[0].title }).focus()
+        await page.keyboard.press('Tab')
+        await expect(solutionsRegion(page).getByRole('link', { name: homepageSolutions[1].title })).toBeFocused()
+      }
+      await expect.poll(async () => (await state(1)).tint).toBe(g100)
+      await expect.poll(async () => (await state(1)).arrow).toBe(teal800)
+      await expect.poll(async () => (await state(1)).underlineColour).toBe(teal800)
+      const after = await state(1)
+
+      expect(after.underline).toBe('underline')
+      expect(after.thickness).toBe('1px')
+      expect(after.boxes).toEqual(before.boxes)
+      expect(after.shadow).toBe('none')
+      if (how === 'keyboard focus') {
+        expect(after.outline).toEqual(['solid', '2px', teal600, '2px'])
+      } else {
+        expect(after.outline[0]).toBe('none')
+      }
+      // The other rows stay at rest.
+      for (const index of [0, 2]) {
+        const other = await state(index)
+        expect(other.tint).toBe('rgba(0, 0, 0, 0)')
+        expect(other.arrow).toBe(g600)
+      }
+    })
+  }
+
+  test('a click on a row\'s tags opens its page', async ({ page }) => {
     await openPage(page, 1440)
-    await solutionsRegion(page).getByRole('button').first().locator('.solution-row__title').click()
+    const row = solutionsRegion(page).locator('.solution-row').nth(0)
+
+    const { x, y } = await centreOf(row.locator('.solution-row__tags'))
+    await page.mouse.click(x, y)
+    await expect(page).toHaveURL(new RegExp(`${solutionPath(homepageSolutions[0].id)}$`))
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(homepageSolutions[0].heading)
+  })
+
+  test('a mouse click on a row\'s name leaves no focus tint', async ({ page }) => {
+    await openPage(page, 1440)
+    const link = solutionsRegion(page).getByRole('link', { name: homepageSolutions[2].title })
+    // Stop the navigation, so the clicked row stays on screen.
+    await link.evaluate((element) => element.addEventListener('click', (event) => event.preventDefault()))
+    await link.click()
+    await page.mouse.move(0, 0)
+
+    await expect(link).toBeFocused()
+    await expect
+      .poll(() => link.evaluate((element) => getComputedStyle(element.closest('.solution-row')!, '::before').backgroundColor))
+      .toBe('rgba(0, 0, 0, 0)')
+    expect(await link.evaluate((element) => element.matches(':focus-visible'))).toBe(false)
+  })
+
+  test('sets the h2, intro, names and tags type, and nothing above weight 500', async ({ page }) => {
+    await openPage(page, 1440)
     const sizes = {
       section: await tokenPx(page, '--text-section'),
+      bodyLg: await tokenPx(page, '--text-body-lg'),
       service: await tokenPx(page, '--text-service'),
       sm: await tokenPx(page, '--text-sm'),
-      base: await tokenPx(page, '--text-base'),
     }
     const m = await solutionsRegion(page).evaluate((root) => {
       const pick = (selector: string) => {
@@ -123,15 +213,13 @@ test.describe('Solutions', () => {
           size: parseFloat(s.fontSize),
           weight: s.fontWeight,
           lineHeight: parseFloat(s.lineHeight),
-          numeric: s.fontVariantNumeric,
         }
       }
       return {
         h2: pick('h2'),
-        title: pick('.solution-row__title'),
-        number: pick('.solution-row__number'),
-        summary: pick('.solution-row__summary li'),
-        theme: pick('.solution-row__themes li'),
+        intro: pick('.solutions__intro'),
+        name: pick('.solution-row__name'),
+        tags: pick('.solution-row__tags'),
         weights: [root, ...root.querySelectorAll('*')].map((element) =>
           Number(getComputedStyle(element).fontWeight),
         ),
@@ -141,37 +229,26 @@ test.describe('Solutions', () => {
     expect(m.h2.size).toBeCloseTo(sizes.section, 1)
     expect(m.h2.weight).toBe('300')
     expect(m.h2.lineHeight).toBeCloseTo(sizes.section * 1.05, 0)
-    expect(m.title.size).toBeCloseTo(sizes.service, 1)
-    expect(m.title.weight).toBe('300')
-    expect(m.number.size).toBeCloseTo(sizes.sm, 1)
-    expect(m.number.numeric).toBe('tabular-nums')
-    expect(m.summary.size).toBeCloseTo(sizes.sm, 1)
-    expect([sizes.sm, sizes.base]).toContain(m.theme.size)
+    expect(m.intro.size).toBeCloseTo(sizes.bodyLg, 1)
+    expect(m.intro.weight).toBe('400')
+    expect(m.name.size).toBeCloseTo(sizes.service, 1)
+    expect(m.name.weight).toBe('300')
+    expect(m.tags.size).toBeCloseTo(sizes.sm, 1)
+    expect(m.tags.weight).toBe('400')
     expect(Math.max(...m.weights)).toBeLessThanOrEqual(500)
   })
 
-  test('hover underlines the title and opens nothing; a click on the summary toggles nothing', async ({ page }) => {
+  test('puts "Built for the sectors we know" on one line at 1440px', async ({ page }) => {
     await openPage(page, 1440)
-    const button = solutionsRegion(page).getByRole('button').nth(2)
-    const decoration = () =>
-      button.evaluate((element) => getComputedStyle(element.querySelector('.solution-row__title')!).textDecorationLine)
-
-    expect(await decoration()).toBe('none')
-    await button.locator('.solution-row__number').hover()
-    await expect.poll(decoration).toBe('underline')
-    await expect(button).toHaveAttribute('aria-expanded', 'false')
-    // The summary sits over the middle of the button from 1024px.
-    const summary = button.locator('xpath=../following-sibling::ul[1]')
-    await summary.hover()
-    await expect.poll(decoration).toBe('none')
-    await summary.click()
-    await expect(button).toHaveAttribute('aria-expanded', 'false')
-    for (const other of await solutionsRegion(page).getByRole('button').all()) {
-      await expect(other).toHaveAttribute('aria-expanded', 'false')
-    }
+    const lines = await solutionsRegion(page).locator('h2').evaluate((h2) => {
+      const range = document.createRange()
+      range.selectNodeContents(h2)
+      return new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size
+    })
+    expect(lines).toBe(1)
   })
 
-  test('keeps its hairlines, separators and chevrons drawn in forced-colours mode', async ({ page }) => {
+  test('keeps its hairlines and arrows drawn in forced-colours mode, and the underline on hover and focus only', async ({ page }) => {
     await page.emulateMedia({ forcedColors: 'active' })
     await openPage(page, 1440)
     const m = await solutionsRegion(page).evaluate((root) => {
@@ -184,26 +261,41 @@ test.describe('Solutions', () => {
       return {
         background,
         lines: [
-          ...[...root.querySelectorAll('.solution-row')].map((row) => line(getComputedStyle(row), 'top')),
-          line(getComputedStyle(root.querySelector('.solutions__list')!), 'bottom'),
-          ...[...root.querySelectorAll('.solution-row__summary li:not(:last-child)')].map((item) =>
-            line(getComputedStyle(item, '::after'), 'top'),
-          ),
+          line(getComputedStyle(root.querySelector('.solutions__list')!), 'top'),
+          ...[...root.querySelectorAll('.solution-row')].map((row) => line(getComputedStyle(row), 'bottom')),
         ],
-        chevrons: [...root.querySelectorAll('.solution-row__chevron path')].map(
-          (path) => getComputedStyle(path).stroke,
-        ),
+        arrows: [...root.querySelectorAll('.solution-row__arrow')].map((arrow) => ({
+          colour: getComputedStyle(arrow).color,
+          text: arrow.textContent,
+        })),
       }
     })
 
-    expect(m.lines).toHaveLength(3 + 1 + 9)
+    expect(m.lines).toHaveLength(1 + 3)
     for (const line of m.lines) {
       expect(line.style).toBe('solid')
       expect(line.width).toBeGreaterThan(0)
       expect(line.colour).not.toBe('rgba(0, 0, 0, 0)')
       expect(line.colour).not.toBe(m.background)
     }
-    for (const stroke of m.chevrons) expect(stroke).not.toBe(m.background)
+    for (const arrow of m.arrows) {
+      expect(arrow.text).toBe('→')
+      expect(arrow.colour).not.toBe(m.background)
+    }
+
+    const links = solutionsRegion(page).getByRole('link')
+    const decoration = (index: number) =>
+      links.nth(index).evaluate((element) => getComputedStyle(element).textDecorationLine)
+    expect([await decoration(0), await decoration(1), await decoration(2)]).toEqual(['none', 'none', 'none'])
+    const { x, y } = await centreOf(solutionsRegion(page).locator('.solution-row__tags').nth(0))
+    await page.mouse.move(x, y)
+    await expect.poll(() => decoration(0)).toBe('underline')
+    await page.mouse.move(0, 0)
+    await expect.poll(() => decoration(0)).toBe('none')
+    await links.nth(0).focus()
+    await page.keyboard.press('Tab')
+    await expect(links.nth(1)).toBeFocused()
+    await expect.poll(() => decoration(1)).toBe('underline')
   })
 })
 

@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import {
   test as base,
   expect,
+  type Locator,
   type Page,
   type TestInfo,
 } from '@playwright/test'
@@ -372,4 +373,18 @@ export function headerLogoArtwork(page: Page) {
     if (fills === artwork('--teal-400', '--paper')) return 'reversed'
     return fills
   })
+}
+
+/**
+ * Scrolls an element to the middle of the viewport, clear of the sticky
+ * header, and returns its centre in viewport coordinates. For the parts
+ * of a row under a stretched link's overlay (the Solutions rows' tags and
+ * arrows, #89): Playwright's own hover, click and tap refuse them, since
+ * the link receives the pointer there, which is the point.
+ */
+export async function centreOf(locator: Locator) {
+  await locator.evaluate((element) => element.scrollIntoView({ block: 'center', inline: 'nearest' }))
+  await waitForScrollSettle(locator.page())
+  const box = (await locator.boundingBox())!
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
 }
