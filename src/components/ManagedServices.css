@@ -305,21 +305,21 @@
   }
 
   .managed-services__offers li + li {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-4);
     margin-block-start: 0;
   }
 
   /* The dot between the offers: an empty box drawn with a border, so it
-     has no text and stays drawn in forced-colours mode. */
+     has no text and stays drawn in forced-colours mode. Inline, so the
+     offers keep one baseline. */
   .managed-services__offers li + li::before {
     content: '';
-    flex: none;
+    display: inline-block;
     width: 0;
     height: 0;
+    margin-inline-end: var(--space-4);
     border: calc(var(--border-width) * 2) solid var(--color-text-muted);
     border-radius: var(--radius-full);
+    vertical-align: middle;
   }
 }
 
