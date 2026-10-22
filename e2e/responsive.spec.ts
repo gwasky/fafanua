@@ -52,6 +52,8 @@ const ANCHORS = [
   '#contact', // hero "Book a data trust assessment", its one call to action (#68)
   '#capabilities', // hero "Explore our capabilities", its text link (#83)
   '#contact', // the Data Trust Assessment's button (#71)
+  '#data-trust-assessment', // the Managed Services journey's first two steps (#88)
+  '#capabilities',
   '#capabilities', // footer nav
   '#solutions',
   '#how-we-work',
@@ -3044,7 +3046,7 @@ for (const width of WIDTHS) {
   })
 
   test.describe('in-page links', () => {
-    test(`exactly 14 in-page links, each naming one element, at ${width}px`, async ({ page }, testInfo) => {
+    test(`exactly 17 in-page links, each naming one element, at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       const anchors = await page.evaluate(() =>
         [...document.querySelectorAll('a[href^="#"]')].map((link) => {
@@ -3088,6 +3090,26 @@ for (const width of WIDTHS) {
 
         expect(await currentHash(page)).toBe(hash)
         await expectLanded(page, hash)
+      })
+    }
+
+    // The Managed Services journey's first two steps (#88) land on their
+    // sections and focus each one's h2.
+    for (const [index, hash] of [[0, '#data-trust-assessment'], [1, '#capabilities']] as const) {
+      const name = managedServices.journey[index]
+      test(`managed services "${name}" lands on ${hash} and focuses its h2 at ${width}px`, async ({ page }, testInfo) => {
+        await open(page, testInfo, width)
+        const link = managedRegion(page)
+          .getByRole('navigation', { name: managedServices.journeyLabel })
+          .getByRole('link', { name, exact: true })
+        await link.scrollIntoViewIfNeeded()
+        await waitForScrollSettle(page)
+
+        await link.click()
+
+        expect(await currentHash(page)).toBe(hash)
+        await expectLanded(page, hash)
+        await expect(page.locator(`${hash}-heading`)).toBeFocused()
       })
     }
 
