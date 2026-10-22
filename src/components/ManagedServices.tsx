@@ -12,8 +12,11 @@ const JOURNEY_TARGETS = ['data-trust-assessment', 'capabilities'] as const
 // heading (the Managed Services Regrouped plan §5). The browser still
 // follows the link, so the hash updates and the page scrolls: smoothly
 // only without a reduced-motion preference, below the sticky header
-// through the scroll margins (global.css). Modified and non-primary
-// clicks, which open a new tab or window, are left alone.
+// through the scroll margins (global.css). Chromium and WebKit clear focus
+// when they apply a fragment whose target cannot take focus, in the first
+// frame after the click, so the heading is focused after that frame has
+// rendered (a task queued from an animation frame callback). Modified and
+// non-primary clicks, which open a new tab or window, are left alone.
 function focusTarget(id: string) {
   return (event: MouseEvent<HTMLAnchorElement>) => {
     if (
@@ -26,7 +29,7 @@ function focusTarget(id: string) {
     ) {
       return
     }
-    focusSectionHeading(id)
+    requestAnimationFrame(() => setTimeout(() => focusSectionHeading(id)))
   }
 }
 

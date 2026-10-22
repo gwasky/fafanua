@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { managedServices, stages } from '../data/services.ts'
 import ManagedServices from './ManagedServices.tsx'
@@ -260,24 +260,27 @@ describe('ManagedServices', () => {
     )
   })
 
-  it('moves focus to the target section\'s heading on a plain click of a journey link', () => {
+  // The focus waits until the frame after the click has rendered, as the
+  // browser clears focus while it applies the fragment.
+  it('moves focus to the target section\'s heading after a plain click of a journey link', async () => {
     const { first, second, firstHeading, secondHeading } = renderWithTargets()
 
     fireEvent.click(first)
-    expect(document.activeElement).toBe(firstHeading)
+    await waitFor(() => expect(document.activeElement).toBe(firstHeading))
     expect(firstHeading).toHaveAttribute('tabindex', '-1')
 
     fireEvent.click(second)
-    expect(document.activeElement).toBe(secondHeading)
+    await waitFor(() => expect(document.activeElement).toBe(secondHeading))
     // The first heading lost focus, so it no longer has a tabindex.
     expect(firstHeading).not.toHaveAttribute('tabindex')
 
     // A second click on the same link focuses again.
+    first.focus()
     fireEvent.click(second)
-    expect(document.activeElement).toBe(secondHeading)
+    await waitFor(() => expect(document.activeElement).toBe(secondHeading))
   })
 
-  it('leaves focus alone on a modified or non-primary click', () => {
+  it('leaves focus alone on a modified or non-primary click', async () => {
     const { first, firstHeading } = renderWithTargets()
 
     for (const init of [
@@ -288,8 +291,14 @@ describe('ManagedServices', () => {
       { button: 1 },
     ]) {
       fireEvent.click(first, init)
-      expect(document.activeElement).not.toBe(firstHeading)
-      expect(firstHeading).not.toHaveAttribute('tabindex')
     }
+    // Longer than the frame and task a plain click waits for.
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(document.activeElement).not.toBe(firstHeading)
+    expect(firstHeading).not.toHaveAttribute('tabindex')
+
+    // A plain click then does move focus, so the wait was long enough.
+    fireEvent.click(first)
+    await waitFor(() => expect(document.activeElement).toBe(firstHeading))
   })
 })
