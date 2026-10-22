@@ -283,12 +283,18 @@ describe('Services', () => {
     // engagements, so only the block's own text is checked.
     for (const text of [
       managedServices.sectionHeading,
-      managedServices.eyebrow,
       managedServices.heading,
       managedServices.description,
+      managedServices.engagementLabel,
+      managedServices.offers[0],
     ]) {
       expect(section.textContent, text).not.toContain(text)
     }
+    // A verb heading is one word, which service copy may hold inside a
+    // longer word ("Monitoring"), so it is matched as a whole word.
+    expect(section.textContent).not.toMatch(
+      new RegExp(`\\b${managedServices.groups[0].heading}\\b`),
+    )
     expect(within(section).queryByText(managedServices.capabilities[0])).toBeNull()
     // No journey: the one unlabelled ordered list is the capability grid.
     expect([...section.querySelectorAll('ol:not([aria-labelledby])')]).toEqual([

@@ -168,7 +168,20 @@ describe('App', () => {
     for (const item of [...navigation, ...footerNavigation, navigationCta]) {
       expect(item.id).not.toBe(assessment.id)
     }
-    expect(document.querySelector(`a[href*="${assessment.id}"]`)).toBeNull()
+    // Exactly one link leads to it: the first step of the Managed Services
+    // journey (#88), outside the header and footer.
+    const toAssessment = [...document.querySelectorAll(`a[href*="${assessment.id}"]`)]
+    expect(toAssessment).toHaveLength(1)
+    expect(toAssessment[0]).toHaveAttribute('href', `#${assessment.id}`)
+    expect(toAssessment[0].textContent).toBe(managedServices.journey[0])
+    expect(
+      screen.getByRole('navigation', { name: managedServices.journeyLabel }),
+    ).toContainElement(toAssessment[0] as HTMLElement)
+    expect(screen.getByRole('region', { name: MANAGED })).toContainElement(
+      toAssessment[0] as HTMLElement,
+    )
+    expect(screen.getByRole('banner')).not.toContainElement(toAssessment[0] as HTMLElement)
+    expect(screen.getByRole('contentinfo')).not.toContainElement(toAssessment[0] as HTMLElement)
     expect(
       within(screen.getByRole('banner')).getAllByRole('link').map((link) => link.textContent),
     ).not.toContain(ASSESSMENT)
@@ -307,6 +320,12 @@ describe('App', () => {
       screen.getByRole('region', { name: 'Solutions' }),
     )
     expect(document.querySelectorAll('#managed-services')).toHaveLength(1)
+    // The capabilities section, on paper, separates the assessment's dark
+    // panel from this one (the Managed Services Regrouped plan §4, #88).
+    expect(services.id).toBe('capabilities')
+    expect(services.previousElementSibling?.id).toBe('data-trust-assessment')
+    expect(services).not.toHaveClass('surface-dark')
+    expect(services.querySelector('.surface-dark')).toBeNull()
   })
 
   it('has exactly two technical grids, in the hero and the future-ready section', () => {
@@ -710,13 +729,14 @@ describe('App', () => {
     expect(text.replace(/(business|payment) intelligence/gi, '')).not.toMatch(/intelligence/i)
   })
 
-  it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its h3, h2 Solutions, three h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
+  it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its four verb h3s, h2 Solutions, three h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
 
     expect(levels).toEqual([
-      1, 2, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 2, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2, 2,
+      1, 2, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2,
+      2,
     ])
     expect(levels.filter((level) => level === 1)).toHaveLength(1)
     // No level is skipped.
@@ -735,29 +755,36 @@ describe('App', () => {
     )
     expect(headings[11].textContent).toBe(systemFlow.heading)
     expect(headings[12].textContent).toBe(MANAGED)
-    expect(headings[13].textContent).toBe(managedServices.heading)
-    expect(headings[14].textContent).toBe('Solutions')
+    // Its four verb h3s (#88); the service link is no longer a heading.
+    expect(headings.slice(13, 17).map((heading) => heading.textContent)).toEqual([
+      'Monitor',
+      'Maintain',
+      'Improve',
+      'Activate',
+    ])
+    expect(headings.map((heading) => heading.textContent)).not.toContain(managedServices.heading)
+    expect(headings[17].textContent).toBe('Solutions')
     // Each sector h3 holds its row's button (the accordion header
     // pattern), and is named by the title alone: the number is aria-hidden.
     // The homepage's three sectors, in W7's order (#73).
-    expect(headings.slice(15, 18).map((heading) => heading.textContent)).toEqual([
+    expect(headings.slice(18, 21).map((heading) => heading.textContent)).toEqual([
       '01Health',
       '02Financial Services',
       '03Education',
     ])
-    headings.slice(15, 18).forEach((heading, index) => {
+    headings.slice(18, 21).forEach((heading, index) => {
       expect(heading).toHaveAccessibleName(homepageSolutions[index].title)
       expect(within(heading).getByRole('button')).toHaveAccessibleName(
         homepageSolutions[index].title,
       )
     })
-    expect(headings[18].textContent).toBe('How We Work')
-    expect(headings.slice(19, 23).map((heading) => heading.textContent)).toEqual(
+    expect(headings[21].textContent).toBe('How We Work')
+    expect(headings.slice(22, 26).map((heading) => heading.textContent)).toEqual(
       processStages.map((stage) => stage.name),
     )
-    expect(headings[23].textContent).toBe(FUTURE_READY)
-    expect(headings[24].textContent).toBe('About Fafanua')
-    expect(headings[25].textContent).toBe(CONTACT)
+    expect(headings[26].textContent).toBe(FUTURE_READY)
+    expect(headings[27].textContent).toBe('About Fafanua')
+    expect(headings[28].textContent).toBe(CONTACT)
     expect(
       within(screen.getByRole('contentinfo')).queryAllByRole('heading'),
     ).toHaveLength(0)

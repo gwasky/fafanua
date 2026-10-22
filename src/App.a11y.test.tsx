@@ -84,12 +84,12 @@ describe('App structure', () => {
     })
   })
 
-  it('names the two nav landmarks Main and Footer', () => {
+  it('names the three nav landmarks Main, How engagements progress (#88) and Footer', () => {
     render(<App />)
 
     expect(
       screen.getAllByRole('navigation').map((nav) => accessibleNames([nav])[0]),
-    ).toEqual(['Main', 'Footer'])
+    ).toEqual(['Main', 'How engagements progress', 'Footer'])
   })
 })
 
@@ -148,7 +148,8 @@ describe('App links and buttons', () => {
       const names = accessibleNames(found)
       return found.map((link, i) => [names[i], link.getAttribute('href')])
     }
-    const [main, footer] = screen.getAllByRole('navigation')
+    const main = screen.getByRole('navigation', { name: 'Main' })
+    const footer = screen.getByRole('navigation', { name: 'Footer' })
     const sections = navigation.map((item) => [item.label, `#${item.id}`])
 
     expect(links(main)).toEqual([

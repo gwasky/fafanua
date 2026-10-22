@@ -1,20 +1,23 @@
 /*
- * Managed Services (plan V2 §10): a section on paper holding one graphite
- * 900 panel inset within the container, so paper shows around it and it
- * is not a third full-bleed dark band. Every colour inside the panel comes
- * from the .surface-dark reassignment (global.css): paper headings
- * (14.9:1), graphite 300 body and capability text (8.9:1), graphite 400
- * eyebrows and journey arrows (5.9:1), graphite 700 capability dividers,
- * and teal 400 only on the rail's separators (and the focus ring). No
- * shadow, border, grid or image.
+ * Managed Services (plan V2 §10), laid out per the Managed Services
+ * Regrouped plan (#88): a section on paper holding one graphite 900 panel
+ * inset within the container, so paper shows around it and it is not a
+ * third full-bleed dark band. Every colour inside the panel comes from the
+ * .surface-dark reassignment (global.css), all verified pairs on graphite
+ * 900: paper (--color-heading, 14.9:1) for the h2, the current journey
+ * step, the service link, the services and the offers; graphite 400
+ * (--color-text-muted, 5.9:1) for the journey links and arrows, the
+ * description and the engagement label; teal 400 (--color-accent-text and
+ * --color-accent, 7.5:1) for the verb h3s, the link's arrow and the
+ * current step's underline (and the focus ring); graphite 700
+ * (--color-border) for the hairlines. No shadow, border, grid, image or
+ * motion of its own.
  *
- * From 64em the section eyebrow and h2 sit in one column and the approved
- * eyebrow, h3 and description in a second beside it; the rail,
- * capabilities and journey span the panel below. Below 64em everything
- * stacks in DOM order. The capabilities flow into two columns from 48em
- * and three from 64em, top to bottom, so they keep the data order. The
- * journey stacks with downward arrows and sits on one row from 48em
- * (literal breakpoints; see the note in tokens.css).
+ * Top to bottom at every width, in DOM order: the eyebrow, the journey, the
+ * intro (the h2 beside the description and link from 64em, stacked
+ * below), the four groups (four columns from 64em, two by two from 48em,
+ * one per row below) and the engagement line (literal breakpoints; see
+ * the note in tokens.css).
  */
 
 .managed-services {
@@ -37,11 +40,93 @@
   overflow-wrap: break-word;
 }
 
+/*
+ * The journey: an ordered list whose lines break only between steps. Each
+ * arrow sits in its step's item, after the link, so a line never starts
+ * with one. A step's name breaks between its words only when it cannot
+ * fit on a line of its own, and a word wider than the whole line (at
+ * 320px with 200% page text the panel's text box is 160px) breaks rather
+ * than overflowing: break-word would not let the flex items shrink below
+ * the word, so the journey uses anywhere, which only ever breaks a word
+ * that cannot fit on a line.
+ */
+.managed-services__journey {
+  margin-block: var(--space-6) var(--space-12);
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-snug);
+  overflow-wrap: anywhere;
+}
+
+.managed-services__journey ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.managed-services__step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* Graphite 400 at rest, with no underline; paper with a hairline
+   underline on hover and keyboard focus, which also has the global teal
+   400 ring. A 44px target, as the hero's text link. Its colour never
+   fades, so the panel keeps no motion of its own. */
+.managed-services__step-link,
+.managed-services__step-link:visited {
+  color: var(--color-text-muted);
+}
+
+.managed-services__step-link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: calc(var(--space-10) + var(--space-1));
+  min-width: 0;
+  transition: none;
+  text-decoration-line: none;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: var(--border-width);
+  text-underline-offset: 0.2em;
+}
+
+.managed-services__step-link:focus-visible {
+  color: var(--color-heading);
+  text-decoration-line: underline;
+}
+
+@media (hover: hover) {
+  .managed-services__step-link:hover {
+    color: var(--color-heading);
+    text-decoration-line: underline;
+  }
+}
+
+.managed-services__step-arrow {
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+/* The current step: paper with a 2px teal 400 underline, drawn as a
+   border so it stays drawn in forced-colours mode. */
+.managed-services__step-current {
+  min-width: 0;
+  padding-block-end: var(--space-1);
+  border-block-end: calc(var(--border-width) * 2) solid var(--color-accent);
+  color: var(--color-heading);
+}
+
 .managed-services__intro {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-8);
-  margin-block-end: var(--space-10);
+  gap: var(--space-6);
+  margin-block-end: var(--space-12);
 }
 
 /* Paper, weight 300 from the global heading styles. */
@@ -52,110 +137,122 @@
   line-height: var(--leading-display);
 }
 
-/* A small label: weight 500, graphite 400. */
-.managed-services__eyebrow {
-  margin-block: 0 var(--space-3);
+.managed-services__description {
+  max-width: var(--measure);
+  margin-block: 0 var(--space-4);
   color: var(--color-text-muted);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-normal);
+  text-wrap: pretty;
+}
+
+/* The link to the Managed Data & Analytics page (#67): paper, with no
+   underline at rest and a hairline one on hover and keyboard focus, and a
+   teal 400 arrow that does not move. Its colour never changes, so the
+   panel keeps no motion of its own. */
+.managed-services__link,
+.managed-services__link:visited,
+.managed-services__link:hover {
+  color: var(--color-heading);
+}
+
+.managed-services__link {
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  transition: none;
+  text-decoration-line: none;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: var(--border-width);
+  text-underline-offset: 0.2em;
+}
+
+.managed-services__link:focus-visible {
+  text-decoration-line: underline;
+}
+
+@media (hover: hover) {
+  .managed-services__link:hover {
+    text-decoration-line: underline;
+  }
+}
+
+.managed-services__arrow {
+  margin-inline-start: var(--space-2);
+  color: var(--color-accent-text);
+}
+
+/*
+ * The groups: a hairline above them, each group's content top-aligned, so
+ * Activate's single service sits at the top of its column, and the
+ * vertical hairlines run the full height of the row. Inside each group a
+ * hairline separates the services, with none above the first or below
+ * the last. One per row below 48em, with a hairline between groups.
+ */
+.managed-services__groups {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.managed-services__group {
+  padding-block: var(--space-8);
+}
+
+.managed-services__group + .managed-services__group {
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+/* Teal 400, weight 500, a small label. */
+.managed-services__verb {
+  margin-block: 0 var(--space-3);
+  color: var(--color-accent-text);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   line-height: var(--leading-snug);
 }
 
-/* Paper, weight 300 from the global heading styles. */
-.managed-services__heading {
-  margin-block-end: var(--space-4);
-  font-size: var(--text-service);
-  line-height: var(--leading-snug);
-}
-
-.managed-services__description {
-  max-width: var(--measure);
-  margin-block: 0;
-  font-size: var(--text-body-lg);
-  text-wrap: pretty;
-}
-
-/*
- * The capability rail: four words in paper, each but the last followed by
- * a small teal 400 dot. The dots are empty aria-hidden spans drawn with a
- * border, so they have no text and stay drawn in forced-colours mode. The
- * items wrap onto further lines when the row does not fit. A word wider
- * than the whole line (at 320px with 200% page text the panel's text box
- * is 160px) breaks rather than overflowing: break-word would not let the
- * flex items shrink below the word, so this list and the journey use
- * anywhere, which only ever breaks a word that cannot fit on a line.
- */
-.managed-services__rail {
-  display: flex;
-  flex-wrap: wrap;
-  overflow-wrap: anywhere;
-  gap: var(--space-2) var(--space-4);
-  margin: 0 0 var(--space-8);
+.managed-services__list,
+.managed-services__offers {
+  margin: 0;
   padding: 0;
   list-style: none;
   color: var(--color-heading);
-  font-size: var(--text-xl);
+  font-size: var(--text-base);
   font-weight: var(--weight-regular);
   line-height: var(--leading-snug);
 }
 
-.managed-services__rail-item {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-4);
+.managed-services__list li {
+  padding-block: var(--space-3);
 }
 
-.managed-services__rail-separator {
-  flex: none;
-  width: 0;
-  height: 0;
-  border: calc(var(--space-1) - var(--border-width)) solid var(--color-accent);
-  border-radius: var(--radius-full);
+.managed-services__list li:first-child {
+  padding-block-start: 0;
 }
 
-.managed-services__capabilities {
-  margin-block: 0 var(--space-8);
-  padding: 0;
-  list-style: none;
-  column-gap: var(--space-8);
-}
-
-.managed-services__capabilities li {
-  padding-block: var(--space-2);
+.managed-services__list li + li {
   border-block-start: var(--border-width) solid var(--color-border);
-  break-inside: avoid;
 }
 
-.managed-services__journey {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  overflow-wrap: anywhere;
+/* The engagement line: the label above the offers, one per line, below
+   48em; on one row from 48em, the offers joined by a dot. */
+.managed-services__engage {
+  padding-block-start: var(--space-8);
+  border-block-start: var(--border-width) solid var(--color-border);
 }
 
-.managed-services__step {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-3);
+.managed-services__engage-label {
+  margin-block: 0 var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-snug);
 }
 
-/* The arrow between steps: a chevron drawn with borders, so it has no text
-   for assistive technology to read and stays visible in forced-colours
-   mode. It points down while the steps stack. */
-.managed-services__step:not(:last-child)::after {
-  content: '';
-  flex: none;
-  width: var(--space-2);
-  height: var(--space-2);
-  margin-inline-start: var(--space-1);
-  border-block-end: calc(var(--border-width) * 2) solid var(--color-text-muted);
-  border-inline-end: calc(var(--border-width) * 2) solid var(--color-text-muted);
-  transform: rotate(45deg);
+.managed-services__offers li + li {
+  margin-block-start: var(--space-2);
 }
 
 @media (min-width: 48em) {
@@ -163,30 +260,66 @@
     padding: var(--space-10);
   }
 
-  .managed-services__capabilities {
-    columns: 2;
+  /* Two by two: vertical hairlines before groups 2 and 4, a hairline
+     between the rows, and no inline padding at the panel's edges. */
+  .managed-services__groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .managed-services__journey,
-  .managed-services__step {
-    flex-direction: row;
+  .managed-services__group {
+    padding-inline: var(--space-8);
+  }
+
+  .managed-services__group + .managed-services__group {
+    border-block-start: 0;
+  }
+
+  .managed-services__group:nth-child(odd) {
+    padding-inline-start: 0;
+  }
+
+  .managed-services__group:nth-child(even) {
+    border-inline-start: var(--border-width) solid var(--color-border);
+  }
+
+  .managed-services__group:nth-child(n + 3) {
+    border-block-start: var(--border-width) solid var(--color-border);
+  }
+
+  .managed-services__engage {
+    display: flex;
     flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2) var(--space-8);
+  }
+
+  .managed-services__engage-label {
+    margin-block-end: 0;
+  }
+
+  .managed-services__offers {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .managed-services__offers li + li {
+    display: inline-flex;
     align-items: center;
-  }
-
-  .managed-services__journey {
     gap: var(--space-4);
+    margin-block-start: 0;
   }
 
-  .managed-services__step {
-    gap: var(--space-4);
-  }
-
-  /* Points right while the steps sit in a row. The end margin keeps the
-     rotated corner inside the step's box. */
-  .managed-services__step:not(:last-child)::after {
-    margin-inline: 0 var(--space-1);
-    transform: rotate(-45deg);
+  /* The dot between the offers: an empty box drawn with a border, so it
+     has no text and stays drawn in forced-colours mode. */
+  .managed-services__offers li + li::before {
+    content: '';
+    flex: none;
+    width: 0;
+    height: 0;
+    border: calc(var(--border-width) * 2) solid var(--color-text-muted);
+    border-radius: var(--radius-full);
   }
 }
 
@@ -195,37 +328,27 @@
     padding: var(--space-16);
   }
 
-  /* Two top-aligned columns: the section eyebrow and h2, then the
-     approved eyebrow, h3 and description. */
+  /* The h2 beside the description and link, their bottoms aligned. */
   .managed-services__intro {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+    grid-template-columns: minmax(0, 11fr) minmax(0, 9fr);
+    align-items: end;
     gap: var(--space-12);
-    margin-block-end: var(--space-12);
+    margin-block-end: var(--space-16);
   }
 
-  .managed-services__capabilities {
-    columns: 3;
+  /* Four columns: vertical hairlines before groups 2 to 4. */
+  .managed-services__groups {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-}
 
-/* The approved heading links to the Managed Data & Analytics page (#67),
-   as the hero's capabilities link does: paper, with a graphite 700 hairline
-   underline that turns paper on hover. */
-.managed-services__link,
-.managed-services__link:visited,
-.managed-services__link:hover {
-  color: inherit;
-}
+  .managed-services__group:nth-child(n) {
+    padding-inline-start: var(--space-8);
+    border-block-start: 0;
+    border-inline-start: var(--border-width) solid var(--color-border);
+  }
 
-.managed-services__link {
-  /* Its colour never changes, so the panel keeps no motion of its own. */
-  transition: none;
-  text-decoration-color: var(--color-border);
-  text-decoration-thickness: var(--border-width);
-  text-underline-offset: 0.2em;
-}
-
-.managed-services__link:hover {
-  text-decoration-color: currentColor;
+  .managed-services__group:first-child {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
 }
