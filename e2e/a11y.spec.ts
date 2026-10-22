@@ -310,6 +310,33 @@ test.describe('axe, Managed Services panel in view', () => {
       await expectNoAxeViolations(page, testInfo)
     })
 
+    // A journey link (#88) focused from the keyboard, and hovered: paper
+    // text with an underline, and the focus ring.
+    for (const state of ['focused', 'hovered'] as const) {
+      test(`panel in view with a journey link ${state} at ${width}px`, async ({ page }, testInfo) => {
+        await openPage(page, width)
+        await showPanel(page)
+        const link = page
+          .getByRole('navigation', { name: managedServices.journeyLabel })
+          .getByRole('link', { name: managedServices.journey[1], exact: true })
+        if (state === 'focused') {
+          await page
+            .getByRole('navigation', { name: managedServices.journeyLabel })
+            .getByRole('link', { name: managedServices.journey[0], exact: true })
+            .focus()
+          await page.keyboard.press('Tab')
+          await expect(link).toBeFocused()
+          expect(await link.evaluate((element) => element.matches(':focus-visible'))).toBe(true)
+        } else {
+          await link.hover()
+        }
+        await expect(link).toBeInViewport()
+        expect(await link.evaluate((element) => getComputedStyle(element).textDecorationLine)).toBe('underline')
+
+        await expectNoAxeViolations(page, testInfo)
+      })
+    }
+
     // Forced colours: every rule but color-contrast. In Chromium's
     // emulation the forced text colour is in `color` but
     // -webkit-text-fill-color keeps the authored one, which axe reads, and

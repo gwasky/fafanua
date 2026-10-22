@@ -2106,16 +2106,22 @@ for (const width of WIDTHS) {
     // The Managed Services section (#58): its own section after Services,
     // holding one dark panel that spans the container's content width,
     // inset from the viewport with paper around it, its parts in DOM
-    // order, and its text inside it.
+    // order, and its text inside it. Laid out per the Managed Services
+    // Regrouped plan (#88): the journey, the intro, the four groups and
+    // the engagement line.
     test(`managed-services panel spans the container, stays inset, keeps its order and fits its text at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       const section = managedRegion(page)
       const panel = section.locator('.surface-dark')
-      const [rail, capabilities, journey] = [0, 1, 2].map((n) => section.getByRole('list').nth(n))
+      const journey = section.getByRole('navigation', { name: managedServices.journeyLabel })
       await expect(panel).toHaveCount(1)
-      await expect(rail.getByRole('listitem')).toHaveCount(4)
-      await expect(capabilities.getByRole('listitem')).toHaveCount(13)
       await expect(journey.getByRole('listitem')).toHaveCount(3)
+      await expect(section.locator('.managed-services__group')).toHaveCount(4)
+      await expect(section.locator('.managed-services__group li')).toHaveCount(11)
+      await expect(section.locator('.managed-services__offers li')).toHaveCount(2)
+      for (const item of await section.locator('.managed-services__group li, .managed-services__offers li').all()) {
+        await expect(item).toBeVisible()
+      }
 
       const m = await section.evaluate((root) => {
         const box = (element: Element) => element.getBoundingClientRect()
@@ -2126,6 +2132,8 @@ for (const width of WIDTHS) {
         const services = document.getElementById('capabilities')!
         const solutions = document.getElementById('solutions')!
         const pick = (selector: string) => box(panel.querySelector(selector)!)
+        const px = (style: CSSStyleDeclaration, property: string) =>
+          parseFloat(style.getPropertyValue(property))
         return {
           viewport: document.documentElement.clientWidth,
           section: box(root),
@@ -2141,17 +2149,43 @@ for (const width of WIDTHS) {
           servicesBottom: box(services).bottom,
           solutionsTop: box(solutions).top,
           eyebrow: pick('.section-eyebrow'),
-          h2: pick('h2'),
-          approved: pick('.managed-services__eyebrow'),
-          h3: pick('h3'),
-          description: pick('.managed-services__description'),
-          rail: pick('.managed-services__rail'),
-          railItems: [...panel.querySelectorAll('.managed-services__rail-item')].map((item) => {
-            const { top, left, right } = box(item)
-            return { top, left, right }
-          }),
-          capabilities: pick('.managed-services__capabilities'),
           journey: pick('.managed-services__journey'),
+          h2: pick('h2'),
+          description: pick('.managed-services__description'),
+          link: pick('.managed-services__link'),
+          proposition: pick('.managed-services__proposition'),
+          groupsBox: pick('.managed-services__groups'),
+          groupsTop: px(getComputedStyle(panel.querySelector('.managed-services__groups')!), 'border-top-width'),
+          engage: pick('.managed-services__engage'),
+          engageTop: px(getComputedStyle(panel.querySelector('.managed-services__engage')!), 'border-top-width'),
+          label: pick('.managed-services__engage-label'),
+          offers: [...panel.querySelectorAll('.managed-services__offers li')].map(box),
+          groups: [...panel.querySelectorAll('.managed-services__group')].map((group) => {
+            const style = getComputedStyle(group)
+            return {
+              box: box(group),
+              firstItem: box(group.querySelector('li')!),
+              borderTop: px(style, 'border-top-width'),
+              borderLeft: px(style, 'border-left-width'),
+              borderRight: px(style, 'border-right-width'),
+              paddingLeft: px(style, 'padding-left'),
+              paddingRight: px(style, 'padding-right'),
+              items: [...group.querySelectorAll('li')].map((item) => {
+                const itemStyle = getComputedStyle(item)
+                return { top: px(itemStyle, 'border-top-width'), bottom: px(itemStyle, 'border-bottom-width') }
+              }),
+            }
+          }),
+          steps: [...panel.querySelectorAll('.managed-services__journey li')].map((step) => {
+            const name = step.querySelector('a, [aria-current]')!
+            const arrow = step.querySelector('[aria-hidden="true"]')
+            return {
+              box: box(step),
+              lines: name.getClientRects().length,
+              name: box(name),
+              arrow: arrow ? box(arrow) : null,
+            }
+          }),
         }
       })
 
@@ -2184,83 +2218,94 @@ for (const width of WIDTHS) {
       }
       expect(m.panel.width - 2 * m.padding.inline, 'text box').toBeGreaterThanOrEqual(240)
 
-      // DOM order is visual order. From 1024px the eyebrow and h2 are one
-      // column and the approved eyebrow, h3 and description a second
-      // beside it, top-aligned; below it everything stacks.
+      // DOM order is visual order: the eyebrow, the journey, the intro, the
+      // groups, the engagement line.
       const below = (upper: DOMRect, lower: DOMRect) => lower.top >= upper.bottom - 1
-      expect(below(m.eyebrow, m.h2), 'h2 below the eyebrow').toBe(true)
-      expect(below(m.approved, m.h3), 'h3 below the approved eyebrow').toBe(true)
-      expect(below(m.h3, m.description), 'description below the h3').toBe(true)
+      const textLeft = m.panel.left + m.padding.inline
+      expect(below(m.eyebrow, m.journey), 'journey below the eyebrow').toBe(true)
+      expect(below(m.journey, m.h2), 'intro below the journey').toBe(true)
+      expect(below(m.description, m.link), 'link below the description').toBe(true)
+      const intro = Math.max(m.h2.bottom, m.link.bottom)
+      expect(m.groupsBox.top, 'groups below the intro').toBeGreaterThanOrEqual(intro - 1)
+      expect(below(m.groupsBox, m.engage), 'engagement line below the groups').toBe(true)
+      for (const part of [m.eyebrow, m.journey, m.h2, m.groupsBox, m.engage]) {
+        expect(Math.abs(part.left - textLeft), 'starts at the text box').toBeLessThanOrEqual(1)
+      }
+
+      // The intro: from 1024px the h2 beside the description and link,
+      // their bottoms aligned; below it, stacked.
       if (width >= 1024) {
-        expect(Math.abs(m.approved.top - m.eyebrow.top), 'columns top-aligned').toBeLessThanOrEqual(1)
-        expect(m.approved.left, 'second column right of the first').toBeGreaterThanOrEqual(
-          Math.max(m.eyebrow.right, m.h2.right),
-        )
+        expect(m.description.left, 'description right of the h2').toBeGreaterThanOrEqual(m.h2.right)
+        // The columns' bottom edges: the h2's, and the description and
+        // link's, which ends with the link's line.
+        expect(Math.abs(m.proposition.bottom - m.h2.bottom), 'bottoms aligned').toBeLessThanOrEqual(2)
+        expect(m.proposition.bottom - m.link.bottom, 'the link ends the column').toBeLessThanOrEqual(8)
       } else {
-        expect(below(m.h2, m.approved), 'approved eyebrow below the h2').toBe(true)
-        expect(Math.abs(m.approved.left - m.eyebrow.left), 'one column').toBeLessThanOrEqual(1)
-      }
-      const intro = Math.max(m.h2.bottom, m.description.bottom)
-      expect(m.rail.top, 'rail below both columns').toBeGreaterThanOrEqual(intro - 1)
-      expect(below(m.rail, m.capabilities), 'capabilities below the rail').toBe(true)
-      expect(below(m.capabilities, m.journey), 'journey below the capabilities').toBe(true)
-      for (const part of [m.rail, m.capabilities, m.journey]) {
-        expect(Math.abs(part.left - (m.panel.left + m.padding.inline)), 'spans the panel').toBeLessThanOrEqual(1)
+        expect(below(m.h2, m.description), 'description below the h2').toBe(true)
+        expect(Math.abs(m.description.left - m.h2.left), 'one column').toBeLessThanOrEqual(1)
       }
 
-      // The rail: one row from 768px; it may wrap below it.
-      for (let i = 1; i < m.railItems.length; i++) {
-        const [before, after] = [m.railItems[i - 1], m.railItems[i]]
-        if (width >= 768) {
-          expect(Math.abs(after.top - before.top), `rail item ${i + 1} on the row`).toBeLessThanOrEqual(1)
-        }
-        expect(
-          after.top > before.top + 1 || after.left >= before.right,
-          `rail item ${i + 1} follows rail item ${i}`,
-        ).toBe(true)
-      }
-
-      // Every capability is visible, one column below 768px, two from
-      // 768px and three from 1024px, flowing down each column in data
-      // order.
-      const boxes = await capabilities
-        .getByRole('listitem')
-        .evaluateAll((items) =>
-          items.map((item) => {
-            const box = item.getBoundingClientRect()
-            return { left: Math.round(box.left), top: Math.round(box.top) }
-          }),
+      // The groups: 4 columns from 1024px, two by two from 768px, one per
+      // row below, top-aligned within a row, with the hairlines of the
+      // layout table: above the grid, between columns and rows, and
+      // between items, but none above a group's first item.
+      const perRow = width >= 1024 ? 4 : width >= 768 ? 2 : 1
+      expect(new Set(m.groups.map((group) => Math.round(group.box.left))).size, 'columns').toBe(perRow)
+      expect(m.groupsTop, 'hairline above the groups').toBe(1)
+      m.groups.forEach((group, index) => {
+        const column = index % perRow
+        const row = Math.floor(index / perRow)
+        const rowStart = m.groups[row * perRow]
+        const detail = `group ${index + 1}`
+        expect(Math.abs(group.box.top - rowStart.box.top), `${detail} top-aligned in its row`).toBeLessThanOrEqual(1)
+        expect(group.borderLeft, `${detail} vertical hairline`).toBe(column > 0 ? 1 : 0)
+        expect(group.borderRight, `${detail} no outer side border`).toBe(0)
+        expect(group.borderTop, `${detail} hairline above`).toBe(perRow === 1 ? (index > 0 ? 1 : 0) : row > 0 ? 1 : 0)
+        expect(group.paddingLeft, `${detail} inline-start padding`).toBe(column === 0 ? 0 : 32)
+        expect(group.paddingRight, `${detail} inline-end padding`).toBe(perRow === 1 ? 0 : 32)
+        expect(group.items.map((item) => item.top), `${detail} item hairlines`).toEqual(
+          group.items.map((_, i) => (i === 0 ? 0 : 1)),
         )
-      for (const item of await capabilities.getByRole('listitem').all()) {
-        await expect(item).toBeVisible()
-      }
-      expect(new Set(boxes.map((box) => box.left)).size, 'capability columns')
-        .toBe(columns(width))
-      for (let i = 1; i < boxes.length; i++) {
-        const [before, after] = [boxes[i - 1], boxes[i]]
-        expect(
-          after.left > before.left || (after.left === before.left && after.top > before.top),
-          `capability ${i + 1} follows capability ${i}`,
-        ).toBe(true)
+        expect(group.items.every((item) => item.bottom === 0), `${detail} none below an item`).toBe(true)
+      })
+      if (width >= 1024) {
+        expect(Math.abs(m.groups[3].firstItem.top - m.groups[0].firstItem.top), 'Activate at the top').toBeLessThanOrEqual(1)
       }
 
-      // The journey stacks below 768px and sits on one row from 768px.
-      const stepBoxes = await journey.getByRole('listitem').evaluateAll((items) =>
-        items.map((item) => {
-          const box = item.getBoundingClientRect()
-          return { left: box.left, top: box.top, bottom: box.bottom }
-        }),
-      )
-      for (let i = 1; i < stepBoxes.length; i++) {
-        if (width < 768) {
-          expect(stepBoxes[i].top, `step ${i + 1} below step ${i}`)
-            .toBeGreaterThanOrEqual(stepBoxes[i - 1].bottom)
-        } else {
-          expect(Math.abs(stepBoxes[i].top - stepBoxes[0].top), `step ${i + 1} on the row`)
-            .toBeLessThanOrEqual(1)
-          expect(stepBoxes[i].left, `step ${i + 1} right of step ${i}`)
-            .toBeGreaterThan(stepBoxes[i - 1].left)
+      // The journey: on one row from 768px; no step's name is split
+      // across lines, and every arrow sits on its step's line, after its
+      // name, so no line begins with one.
+      for (const [index, step] of m.steps.entries()) {
+        expect(step.lines, `step ${index + 1} on one line`).toBe(1)
+        if (step.arrow) {
+          expect(step.arrow.left, `arrow ${index + 1} after its step`).toBeGreaterThanOrEqual(step.name.right)
+          expect(
+            step.arrow.top < step.name.bottom && step.arrow.bottom > step.name.top,
+            `arrow ${index + 1} on its step's line`,
+          ).toBe(true)
         }
+        if (index > 0 && width >= 768) {
+          // Centred on the row: the links are 44px targets, taller than
+          // the current step.
+          const middle = (box: DOMRect) => (box.top + box.bottom) / 2
+          expect(Math.abs(middle(step.box) - middle(m.steps[0].box)), `step ${index + 1} on the row`).toBeLessThanOrEqual(1)
+          expect(step.box.left, `step ${index + 1} right of step ${index}`).toBeGreaterThan(m.steps[index - 1].box.right - 1)
+        }
+      }
+      expect(m.steps[2].arrow, 'no arrow after the current step').toBeNull()
+
+      // The engagement line: a hairline above; the label and the offers on
+      // one row from 768px, stacked below.
+      expect(m.engageTop, 'hairline above the engagement line').toBe(1)
+      if (width >= 768) {
+        for (const offer of m.offers) {
+          expect(offer.top < m.label.bottom && offer.bottom > m.label.top, 'offer on the label\'s row').toBe(true)
+        }
+        expect(m.offers[0].left, 'offers after the label').toBeGreaterThanOrEqual(m.label.right)
+        expect(m.offers[1].left, 'second offer after the first').toBeGreaterThanOrEqual(m.offers[0].right)
+      } else {
+        expect(below(m.label, m.offers[0]), 'offers below the label').toBe(true)
+        expect(below(m.offers[0], m.offers[1]), 'one offer per line').toBe(true)
       }
 
       expect(await managedOverflow(page), 'overflowing or broken words').toEqual([])
@@ -2308,8 +2353,8 @@ for (const width of WIDTHS) {
       await expectLanded(page, '#managed-services')
     })
 
-    // 200% page text at 320px: the rail wraps or stacks, and nothing in
-    // the section overflows.
+    // 200% page text at 320px: the journey wraps, and nothing in the
+    // section overflows.
     if (width === 320) {
       test(`managed-services panel fits its text with 200% page text at ${width}px`, async ({ page }, testInfo) => {
         await open(page, testInfo, width)

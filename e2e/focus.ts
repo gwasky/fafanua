@@ -10,7 +10,8 @@ import { focusAndHeaderBoxes, focusedName, pressTab, waitForScrollSettle } from 
 
 // Each capability cell's title links to the service's page (#67), the
 // cell's one stop since the open grid (#83), named by the service; the
-// Managed Services heading links to its page.
+// Managed Services journey's first two steps link to the sections they
+// name, and its service link to its page (#88).
 export const cards = services.map((service) => service.name)
 // The Solutions rows' buttons (#59), each named by its sector title: the
 // homepage's three sectors, in W7's order (#73).
@@ -32,6 +33,8 @@ const fromHero = [
   'Explore our capabilities',
   'Book a data trust assessment',
   ...cards,
+  managedServices.journey[0],
+  managedServices.journey[1],
   managedServices.heading,
   ...sectors,
   // The closing call to action (#60): the button, which shares the hero

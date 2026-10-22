@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { assessmentHeading } from '../src/data/assessment.ts'
-import { managedServices, services } from '../src/data/services.ts'
+import { managedServices, services, servicesIntro } from '../src/data/services.ts'
 import { homepageSolutions } from '../src/data/solutions.ts'
 import { focusedName, focusStyle, openPage, pressTab, test, waitForFonts } from './fixtures.ts'
 import { cards, expectUnobscured, moreSectors, nav, sectors, SEQUENCE as FOCUS_ORDER, tabTo, walkFocus } from './focus.ts'
@@ -34,13 +34,14 @@ test.describe('Tab order', () => {
   // secondary button, so the hero has one stop; #71 adds the Data Trust
   // Assessment's button after it; #73 leaves three Solutions rows and
   // adds the footer's three "More sectors" links, so the count holds;
-  // #83 removes the six disclosures and restores the hero's text link.
-  test('1440 has 33 stops', () => {
-    expect(SEQUENCE[1440]).toHaveLength(33)
+  // #83 removes the six disclosures and restores the hero's text link;
+  // #88 adds the Managed Services journey's two links.
+  test('1440 has 35 stops', () => {
+    expect(SEQUENCE[1440]).toHaveLength(35)
   })
 
-  test('360 with the menu closed has 29 stops', () => {
-    expect(SEQUENCE[360]).toHaveLength(29)
+  test('360 with the menu closed has 31 stops', () => {
+    expect(SEQUENCE[360]).toHaveLength(31)
   })
 
   // #83: hero button, the hero link, the assessment's button, then the six
@@ -169,6 +170,33 @@ test.describe('focus after in-page links', () => {
     })
   }
 
+  // The Managed Services journey's first two steps (#88) also move focus
+  // to the target section's h2, so the next Tab goes to that section's
+  // first stop.
+  const journeyCases = [
+    { link: managedServices.journey[0], hash: '#data-trust-assessment', heading: assessmentHeading, next: 'Book a data trust assessment' },
+    { link: managedServices.journey[1], hash: '#capabilities', heading: servicesIntro.heading, next: firstTitle },
+  ] as const
+
+  for (const { link, hash, heading, next } of journeyCases) {
+    test(`managed services "${link}" focuses the section's h2, then Tab goes to "${next}" at 1440px`, async ({ page }) => {
+      await openPage(page, 1440)
+      const journey = page.getByRole('navigation', { name: managedServices.journeyLabel })
+      await journey.getByRole('link', { name: link, exact: true }).focus()
+      await page.keyboard.press('Enter')
+      await expect(page).toHaveURL(new RegExp(`${hash}$`))
+
+      const target = page.locator(hash).getByRole('heading', { level: 2, name: heading, exact: true })
+      await expect(target).toBeFocused()
+      await expect(target).toHaveAttribute('tabindex', '-1')
+      await expectUnobscured(page, heading)
+
+      await tabTo(page, next)
+      // Once the heading has lost focus, it keeps no tabindex.
+      await expect(target).not.toHaveAttribute('tabindex')
+    })
+  }
+
   test('menu "Services" closes the menu, then Tab goes to the first capability title at 360px', async ({ page }) => {
     await openPage(page, 360)
     const toggle = page.getByRole('button', { name: 'Menu' })
@@ -258,6 +286,10 @@ test.describe('capability titles', () => {
         await expectRing(page, name)
         await expectUnobscured(page, name)
       }
+      // Then the Managed Services journey's two links (#88) and its
+      // service link.
+      await tabTo(page, managedServices.journey[0])
+      await tabTo(page, managedServices.journey[1])
       await tabTo(page, managedServices.heading)
     })
   }

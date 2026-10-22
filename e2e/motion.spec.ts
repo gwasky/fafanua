@@ -551,6 +551,58 @@ test.describe('focus never lands on hidden content (no-preference)', () => {
   }
 })
 
+// The Managed Services journey's first step (#88) jumps to the Data Trust
+// Assessment with the global smooth scrolling only without a motion
+// preference, and lands in one step under reduce; either way focus ends
+// on the section's h2.
+test.describe('the Managed Services journey jump', () => {
+  for (const motion of ['no-preference', 'reduce'] as const) {
+    test(`scrolls ${motion === 'reduce' ? 'in one step' : 'smoothly'} to #data-trust-assessment and focuses its h2 (${motion})`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: motion })
+      await openPage(page, 1440)
+      const link = page
+        .getByRole('navigation', { name: managedServices.journeyLabel })
+        .getByRole('link', { name: managedServices.journey[0], exact: true })
+      await link.scrollIntoViewIfNeeded()
+      await waitForMotion(page)
+      await link.focus()
+
+      // Every frame's scroll position from the click until it has held
+      // still for ten frames.
+      const positions = await page.evaluate(async () => {
+        const anchor = document.querySelector<HTMLAnchorElement>(
+          '#managed-services a[href="#data-trust-assessment"]',
+        )!
+        const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
+        const start = window.scrollY
+        anchor.click()
+        const seen = [start]
+        let still = 0
+        for (let i = 0; i < 600 && still < 10; i++) {
+          await frame()
+          still = window.scrollY === seen.at(-1) ? still + 1 : 0
+          seen.push(window.scrollY)
+        }
+        return seen
+      })
+      const distinct = [...new Set(positions)]
+
+      expect(positions[0] - positions.at(-1)!, 'scrolled up').toBeGreaterThan(500)
+      if (motion === 'reduce') {
+        // The start, then the end from the first frame on.
+        expect(distinct).toHaveLength(2)
+        expect(positions[1]).toBe(positions.at(-1))
+      } else {
+        // A smooth scroll passes through positions between the two.
+        expect(distinct.length).toBeGreaterThan(3)
+      }
+      await expect(page).toHaveURL(/#data-trust-assessment$/)
+      await expectLanded(page, '#data-trust-assessment')
+      await expect(page.locator('#data-trust-assessment-heading')).toBeFocused()
+    })
+  }
+})
+
 // The motion from earlier phases, checked for consistency in both
 // engines (#61); a11y.spec.ts and hero.spec.ts check each in Chromium.
 test.describe('earlier motion, consistent (no-preference)', () => {
