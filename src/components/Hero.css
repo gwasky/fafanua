@@ -80,8 +80,8 @@
  * The text link to the capabilities section (owner decision on #83):
  * paper on graphite 900 (--color-heading, 14.9:1), weight 500, with a
  * graphite 700 hairline underline (--color-border here) that turns paper
- * on hover, as the Managed Services heading link does. No arrow and no
- * teal, so the button stays the hero's one accent. As tall as the
+ * on hover, as the Managed Services heading link did before #88. No
+ * arrow and no teal, so the button stays the hero's one accent. As tall as the
  * button (--space-12, 48px), so its target is over 44px;
  * it wraps below the button when the row has no room for it.
  */

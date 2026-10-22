@@ -217,6 +217,8 @@ Default: **keep** "Trusted Data. Better Decisions." If approved, set the `h1` to
 
 `Approved: [ ]`
 
+**Note (2026-10-15, #88):** the Monitor, Maintain, Improve and Activate group headings in the homepage Managed Services panel are out of G2's scope (the Managed Services Regrouped plan §2). If G2 is approved, it must not remove them from that panel.
+
 Replace the competing process models with one: **Assess, Build, Govern, Run.** This replaces How We Work's Assess, Design, Build, Govern, and retires the six-stage lifecycle labels and the Monitor / Maintain / Improve / Activate strip. Make each step's deliverable prominent text, not a small grey label. Recommended.
 
 ### G3. Consolidate the six capability cards
@@ -228,6 +230,8 @@ Remove the six cards and keep the connected diagram, or reduce the cards to thre
 ### G4. Compress Managed Services
 
 `Approved: [ ]`
+
+**Replaced (2026-10-15, #88):** by `_docs/fafanua-managed-services-regrouped-plan.md`. Do not implement G4.
 
 Reduce the Managed Services panel to two sentences and a promoted strip reading Assessment, Implementation, Managed service. Do not delete the fifteen-item list from the data. Collapse its presentation and link to the Managed Data & Analytics Services page. Any new summary text goes in `src/data/services.ts`. Recommended.
 
@@ -280,7 +284,7 @@ Items marked with a G-number depend on that approval. Without it, keep the curre
 5. How we work (G2)
 6. Connected diagram (G3 removes the cards above it)
 7. Sectors: Health, Financial services, Education (W7)
-8. What comes after: Managed Services (G4)
+8. What comes after: Managed Services (laid out per `_docs/fafanua-managed-services-regrouped-plan.md`, which replaces G4)
 9. About (W8)
 10. Closing section (W9)
 

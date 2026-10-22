@@ -307,7 +307,8 @@ test.describe('Solutions rows', () => {
   for (const width of [360, 1440]) {
     test(`Tab reaches each row closed, Enter and Space toggle it, and Shift+Tab goes back, at ${width}px`, async ({ page }) => {
       await openPage(page, width)
-      // The Managed Services heading link (#67), the stop before the rows.
+      // The Managed Services service link (#67, out of its heading since
+      // #88), the stop before the rows.
       await page.getByRole('link', { name: managedServices.heading, exact: true }).focus()
 
       for (const [index, name] of sectors.entries()) {
