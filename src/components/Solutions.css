@@ -189,6 +189,7 @@
 /* Under reduced motion nothing in a row transitions, not even the global
    0.01ms (global.css): the tint, underline and arrow just change. */
 @media (prefers-reduced-motion: reduce) {
+  .solution-row,
   .solution-row::before,
   .solution-row__link,
   .solution-row__arrow {

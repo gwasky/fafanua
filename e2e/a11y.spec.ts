@@ -5,21 +5,45 @@ import { SEQUENCE, walkFocus } from './focus.ts'
 import { AXE_TAGS, formatViolations } from '../src/test/axe.ts'
 import { assessmentHeading } from '../src/data/assessment.ts'
 import { managedServices, servicesIntro } from '../src/data/services.ts'
+import { solutionsIntro } from '../src/data/solutions.ts'
 
 // Axe on the production preview in a real browser, where contrast,
 // target size and reflow can be measured. Each state is its own test, so
 // a failure names the state and width that broke.
 
-/** Opens all three Solutions rows (#59; Health, Financial Services and
- * Education since #73) with the keyboard. */
-async function openAllSectors(page: Page) {
-  const buttons = page.getByRole('region', { name: 'Solutions' }).getByRole('button')
-  await expect(buttons).toHaveCount(3)
-  for (const button of await buttons.all()) {
-    await button.focus()
-    await page.keyboard.press('Enter')
-    await expect(button).toHaveAttribute('aria-expanded', 'true')
+// The Solutions section (#59; Health, Financial Services and Education
+// since #73), named by its h2, and its three rows, each one link (#89).
+const solutionsRegion = (page: Page) => page.getByRole('region', { name: solutionsIntro.heading })
+const solutionRows = (page: Page) => solutionsRegion(page).locator('.solution-row')
+
+/** A row's hover tint, drawn by its ::before (#89). */
+const rowTint = (row: ReturnType<Page['locator']>) =>
+  row.evaluate((element) => getComputedStyle(element, '::before').backgroundColor)
+
+/** Hovers a Solutions row and waits for its tint. */
+async function hoverSector(page: Page, index: number) {
+  const row = solutionRows(page).nth(index)
+  await row.scrollIntoViewIfNeeded()
+  await waitForScrollSettle(page)
+  await row.hover()
+  await expect.poll(() => rowTint(row)).not.toBe('rgba(0, 0, 0, 0)')
+}
+
+/** Moves keyboard focus to a Solutions row's link: Tab from the link
+ * before it, so the focus is :focus-visible, and waits for its tint. */
+async function focusSector(page: Page, index: number) {
+  const links = solutionsRegion(page).getByRole('link')
+  await expect(links).toHaveCount(3)
+  if (index === 0) {
+    await links.nth(1).focus()
+    await pressTab(page, { shift: true })
+  } else {
+    await links.nth(index - 1).focus()
+    await pressTab(page)
   }
+  await expect(links.nth(index)).toBeFocused()
+  await waitForScrollSettle(page)
+  await expect.poll(() => rowTint(solutionRows(page).nth(index))).not.toBe('rgba(0, 0, 0, 0)')
 }
 
 test.describe('axe, page as loaded', () => {
@@ -112,15 +136,27 @@ test.describe('axe, a hovered capability cell and a focused title', () => {
   }
 })
 
-test.describe('axe, all three Solutions rows open', () => {
+// The rows opened here became links (#89): a row hovered, and a row
+// focused, instead.
+test.describe('axe, a Solutions row hovered', () => {
   for (const width of [320, 768, 1440]) {
-    test(`three rows open at ${width}px`, async ({ page }, testInfo) => {
+    test(`a row hovered at ${width}px`, async ({ page }, testInfo) => {
       await openPage(page, width)
-      await openAllSectors(page)
-      // Focusing the first row smooth-scrolls past Services, which is tall
-      // at 320px (#66): let the scroll end, so any section it reveals has
-      // started its reveal before axe waits for motion and measures.
-      await waitForScrollSettle(page)
+      await hoverSector(page, 1)
+
+      await expectNoAxeViolations(page, testInfo)
+    })
+  }
+})
+
+test.describe('axe, a Solutions row focused', () => {
+  for (const width of [320, 768, 1440]) {
+    test(`a row focused at ${width}px`, async ({ page }, testInfo) => {
+      await openPage(page, width)
+      // Focusing a row smooth-scrolls past Services, which is tall at
+      // 320px (#66): focusSector lets the scroll end, so any section it
+      // reveals has started its reveal before axe waits for motion.
+      await focusSector(page, 1)
 
       await expectNoAxeViolations(page, testInfo)
     })
@@ -520,28 +556,47 @@ test.describe('reduced motion', () => {
     page.evaluate(() => {
       // The service cards' chevrons left with the open grid (#83).
       if (document.querySelector('.service-card__chevron')) throw new Error('A service card chevron is back')
-      const sector = document.querySelector('.solution-row__chevron')
-      if (!sector) throw new Error('No chevron found')
+      // The Solutions chevrons left with the rows' accordions (#89).
+      if (document.querySelector('.solution-row__chevron')) throw new Error('A Solutions chevron is back')
+      const row = document.querySelector('.solution-row')
+      const link = document.querySelector('.solution-row__link')
+      const arrow = document.querySelector('.solution-row__arrow')
+      if (!row || !link || !arrow) throw new Error('No Solutions row found')
+      const tint = getComputedStyle(row, '::before')
       const card = document.querySelector('.services__list > li')
       if (!card) throw new Error('No capability cell found')
       return {
         scroll: getComputedStyle(document.documentElement).scrollBehavior,
         cardProperty: getComputedStyle(card).transitionProperty,
-        sector: getComputedStyle(sector).transitionDuration,
-        sectorProperty: getComputedStyle(sector).transitionProperty,
-        sectorEasing: getComputedStyle(sector).transitionTimingFunction,
+        sector: tint.transitionDuration,
+        sectorProperty: tint.transitionProperty,
+        sectorEasing: tint.transitionTimingFunction,
+        sectorLink: [getComputedStyle(link).transitionProperty, getComputedStyle(link).transitionDuration],
+        sectorArrow: [getComputedStyle(arrow).transitionProperty, getComputedStyle(arrow).transitionDuration],
+        rowProperty: getComputedStyle(row).transitionProperty,
         card: getComputedStyle(card).transitionDuration,
         cardEasing: getComputedStyle(card).transitionTimingFunction,
       }
     })
 
-  // The first Solutions row's button and its chevron's nudge (#59).
-  const sector = (page: Page) =>
-    page.getByRole('region', { name: 'Solutions' }).getByRole('button').first()
-  // Its title: at 1440 the summary sits over the middle of the button.
-  const sectorTitle = (page: Page) => sector(page).locator('.solution-row__title')
-  const sectorShift = (page: Page) =>
-    sector(page).evaluate((button) => getComputedStyle(button.querySelector('svg')!).translate)
+  // The first Solutions row (#89) and its hover state: the tint, the
+  // underline's colour and the arrow's colour.
+  const sector = (page: Page) => solutionRows(page).first()
+  const sectorState = (page: Page) =>
+    sector(page).evaluate((row) => [
+      getComputedStyle(row, '::before').backgroundColor,
+      getComputedStyle(row.querySelector('.solution-row__link')!).textDecorationColor,
+      getComputedStyle(row.querySelector('.solution-row__arrow')!).color,
+    ])
+  const probeColour = (page: Page, token: string) =>
+    page.evaluate((name) => {
+      const probe = document.createElement('div')
+      probe.style.color = `var(${name})`
+      document.body.append(probe)
+      const value = getComputedStyle(probe).color
+      probe.remove()
+      return value
+    }, token)
 
   // One of each button style: the hero's one call to action (#68), the
   // primary, and the header's Menu toggle, the secondary, which shows
@@ -614,28 +669,19 @@ test.describe('reduced motion', () => {
     }
     // The capability cells transition nothing at all (#83).
     expect(result.cardProperty, 'capability cell').toBe('none')
-    expect(ms(result.sector), 'Solutions chevron').toBeLessThanOrEqual(0.01)
+    // Nor do the Solutions rows' tint, underline and arrow (#89).
+    expect(result.sectorProperty, 'Solutions row tint').toBe('none')
+    expect(result.sectorLink[0], 'Solutions row link').toBe('none')
+    expect(result.sectorArrow[0], 'Solutions row arrow').toBe('none')
+    expect(result.rowProperty, 'Solutions row').toBe('none')
 
-    // The Solutions chevron does not move on hover, and still turns to
-    // show the open state, with no transition.
-    await sectorTitle(page).hover()
-    expect(await sectorShift(page), 'Solutions chevron on hover').toBe('none')
-    await sectorTitle(page).click()
-    await expect(sector(page)).toHaveAttribute('aria-expanded', 'true')
-    expect(await sectorShift(page), 'open Solutions chevron on hover').toBe('none')
-    // Polled: every property still has a 0.01ms transition here. A half
-    // turn is matrix(-1, ~0, ~0, -1, 0, 0).
-    await expect
-      .poll(() =>
-        sector(page).evaluate((button) =>
-          getComputedStyle(button.querySelector('svg')!)
-            .transform.replace(/^matrix\(|\)$/g, '')
-            .split(',')
-            .map((value) => Math.round(parseFloat(value))),
-        ),
-      )
-      .toEqual([-1, 0, 0, -1, 0, 0])
-    await sectorTitle(page).click()
+    // The hover still tints the row, underlines the name and turns the
+    // arrow teal, at once: read straight after the hover, not polled.
+    const [g100, teal800] = [await probeColour(page, '--graphite-100'), await probeColour(page, '--teal-800')]
+    await sector(page).scrollIntoViewIfNeeded()
+    await sector(page).hover()
+    expect(await sectorState(page), 'Solutions row on hover').toEqual([g100, teal800, teal800])
+    await page.mouse.move(0, 799)
 
     // The header has no transition, and the arrow stays still on hover
     // and on keyboard focus.
@@ -659,29 +705,26 @@ test.describe('reduced motion', () => {
 
     const moved = await durations(page)
     expect(moved.scroll).toBe('smooth')
-    // The Solutions chevron turns over --duration-fast (150ms), and on
-    // hover nudges --cta-arrow-shift (4px) down, or up once open (#59),
-    // over the capability cells' hover duration and easing (#61, #83).
-    expect(moved.sectorProperty).toBe('transform, translate')
-    expect(moved.sector).toBe(
-      `${await tokenDuration(page, '--duration-fast')}, ${await tokenDuration(page, '--duration-card-hover')}`,
-    )
+    // The Solutions row's tint, underline and arrow change over the
+    // capability cells' hover duration and easing (#89, as #83).
+    const cardHover = await tokenDuration(page, '--duration-card-hover')
+    expect(moved.sectorProperty).toBe('background-color')
+    expect(moved.sector).toBe(cardHover)
+    expect(moved.sectorLink).toEqual(['text-decoration-color', cardHover])
+    expect(moved.sectorArrow).toEqual(['color', cardHover])
     expect(moved.cardProperty).toBe('background-color')
-    expect(moved.card.split(', ')[0]).toBe(await tokenDuration(page, '--duration-card-hover'))
+    expect(moved.card.split(', ')[0]).toBe(cardHover)
     expect(moved.sectorEasing.split(', ')[0]).toBe(moved.cardEasing.split(', ')[0])
     // Solutions reveals as it scrolls into view (#61): let it finish, so
     // the pointer is not left over a row that has since moved.
     await sector(page).scrollIntoViewIfNeeded()
     await waitForMotion(page)
-    expect(await sectorShift(page)).toBe('none')
-    await sectorTitle(page).hover()
-    await expect.poll(() => sectorShift(page)).toBe('0px 4px')
-    await sectorTitle(page).click()
-    await expect(sector(page)).toHaveAttribute('aria-expanded', 'true')
-    await expect.poll(() => sectorShift(page)).toBe('0px -4px')
-    await sectorTitle(page).click()
+    const [g100, teal800] = [await probeColour(page, '--graphite-100'), await probeColour(page, '--teal-800')]
+    expect((await sectorState(page))[0]).toBe('rgba(0, 0, 0, 0)')
+    await sector(page).hover()
+    await expect.poll(() => sectorState(page)).toEqual([g100, teal800, teal800])
     await page.mouse.move(0, 799)
-    await expect.poll(() => sectorShift(page)).toBe('none')
+    await expect.poll(async () => (await sectorState(page))[0]).toBe('rgba(0, 0, 0, 0)')
     for (const { name, duration } of buttons) {
       expect.soft(duration, `longest transition-duration of "${name}"`).toBe(150)
     }
@@ -781,10 +824,12 @@ test.describe('320px at 200% text size', () => {
     }
   })
 
-  test('no horizontal scroll with all three Solutions rows open', async ({ page }) => {
-    await openAllSectors(page)
-
-    await noHorizontalScroll(page)
+  // The rows opened here became links (#89): each row focused instead.
+  test('no horizontal scroll with each Solutions row focused', async ({ page }) => {
+    for (let index = 0; index < 3; index++) {
+      await focusSector(page, index)
+      await noHorizontalScroll(page)
+    }
   })
 
   test('skip link focused, no horizontal scroll', async ({ page }) => {
@@ -912,22 +957,17 @@ test.describe('browser text size 200%: the header falls back to the Menu', () =>
       expect(new Set(grid).size, 'capability grid columns').toBe(1)
       expect(await page.locator('.lifecycle-rail').count(), 'lifecycle rail').toBe(0)
 
-      // Solutions is in its below-64em layout: each summary below its
-      // row's title, not beside it (#59).
-      const rows = await page
-        .getByRole('region', { name: 'Solutions' })
-        .getByRole('list')
-        .first()
-        .locator(':scope > li')
-        .evaluateAll((items) =>
-          items.map((item) => ({
-            titleBottom: item.querySelector('h3')!.getBoundingClientRect().bottom,
-            summaryTop: item.querySelector('h3 + ul')!.getBoundingClientRect().top,
-          })),
-        )
+      // Solutions is in its below-48em layout: each row's tags below its
+      // h3, not beside it (#59, #89).
+      const rows = await solutionRows(page).evaluateAll((items) =>
+        items.map((item) => ({
+          nameBottom: item.querySelector('h3')!.getBoundingClientRect().bottom,
+          tagsTop: item.querySelector('.solution-row__tags')!.getBoundingClientRect().top,
+        })),
+      )
       expect(rows).toHaveLength(3)
       for (const row of rows) {
-        expect(row.summaryTop, JSON.stringify(row)).toBeGreaterThanOrEqual(row.titleBottom - 1)
+        expect(row.tagsTop, JSON.stringify(row)).toBeGreaterThanOrEqual(row.nameBottom - 1)
       }
       // The How We Work timeline is vertical: one left edge, each stage
       // below the last.
