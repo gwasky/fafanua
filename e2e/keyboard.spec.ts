@@ -2,6 +2,7 @@ import { expect, type Page } from '@playwright/test'
 import { assessmentHeading } from '../src/data/assessment.ts'
 import { managedServices, services, servicesIntro } from '../src/data/services.ts'
 import { homepageSolutions } from '../src/data/solutions.ts'
+import { solutionPath } from '../src/paths.ts'
 import { focusedName, focusStyle, openPage, pressTab, test, waitForFonts } from './fixtures.ts'
 import { cards, expectUnobscured, moreSectors, nav, sectors, SEQUENCE as FOCUS_ORDER, tabTo, walkFocus } from './focus.ts'
 
@@ -35,7 +36,9 @@ test.describe('Tab order', () => {
   // Assessment's button after it; #73 leaves three Solutions rows and
   // adds the footer's three "More sectors" links, so the count holds;
   // #83 removes the six disclosures and restores the hero's text link;
-  // #88 adds the Managed Services journey's two links.
+  // #88 adds the Managed Services journey's two links; #89 makes the three
+  // Solutions row buttons links, and the open panels' links, stops only
+  // while open, are gone, so the count holds.
   test('1440 has 35 stops', () => {
     expect(SEQUENCE[1440]).toHaveLength(35)
   })
@@ -132,7 +135,7 @@ test.describe('focus after in-page links', () => {
   // The first capability title link (#67), the first stop in the
   // capabilities section since the open grid (#83).
   const firstTitle = services[0].name
-  // The first Solutions row's button (#59).
+  // The first Solutions row's link (#59, a link since #89).
   const firstSector = sectors[0]
 
   const cases = [
@@ -295,57 +298,30 @@ test.describe('capability titles', () => {
   }
 })
 
-// The Solutions rows (#59): one button each, in an h3. Tab reaches each
-// without opening it (focus alone opens nothing, owner decision on #59),
-// Enter and Space toggle it with focus staying put, the ring stays clear
-// of the header, and Shift+Tab goes back up through them. Rows are
-// independent, so earlier rows stay open.
-// Each open row's link to its sector's page (#67).
-const sectorPages = homepageSolutions.map((solution) => solution.heading)
-
+// The Solutions rows (#59; links since #89): one link each, in an h3,
+// named by the sector. Tab reaches the three in order, each with the ring
+// clear of the header, Shift+Tab goes back up through them, and Enter on
+// a focused row opens its page.
 test.describe('Solutions rows', () => {
   for (const width of [360, 1440]) {
-    test(`Tab reaches each row closed, Enter and Space toggle it, and Shift+Tab goes back, at ${width}px`, async ({ page }) => {
+    test(`Tab reaches the three row links in order with a ring, and Shift+Tab goes back, at ${width}px`, async ({ page }) => {
       await openPage(page, width)
+      const section = page.locator('#solutions')
+      await expect(section.getByRole('button')).toHaveCount(0)
+      await expect(section.locator('[aria-expanded]')).toHaveCount(0)
+      await expect(section.getByRole('link')).toHaveCount(3)
       // The Managed Services service link (#67, out of its heading since
       // #88), the stop before the rows.
       await page.getByRole('link', { name: managedServices.heading, exact: true }).focus()
 
-      for (const [index, name] of sectors.entries()) {
-        const button = page.getByRole('button', { name, exact: true })
-        const panel = page.locator(`[id="${await button.getAttribute('aria-controls')}"]`)
-        // The open row above ends with its link to the sector's page (#67).
-        if (index > 0) await tabTo(page, sectorPages[index - 1])
+      for (const name of sectors) {
         await tabTo(page, name)
         await expectRing(page, name)
         await expectUnobscured(page, name)
-        await expect(button).toHaveAttribute('aria-expanded', 'false')
-        await expect(panel).toBeHidden()
-
-        await page.keyboard.press('Enter')
-        await expect(button).toHaveAttribute('aria-expanded', 'true')
-        await expect(panel).toBeVisible()
-        await expect(button).toBeFocused()
-        await page.keyboard.press('Space')
-        await expect(button).toHaveAttribute('aria-expanded', 'false')
-        await expect(panel).toBeHidden()
-        await expect(button).toBeFocused()
-        await page.keyboard.press('Space')
-        await expect(button).toHaveAttribute('aria-expanded', 'true')
-        await expect(button).toBeFocused()
-        await expectUnobscured(page, name)
       }
-      // All three are open at once.
-      for (const name of sectors) {
-        await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute('aria-expanded', 'true')
-      }
-
-      // The theme lists add no tab stop: after the last row's page link
-      // the next stop is the closing call to action.
-      await tabTo(page, sectorPages.at(-1)!)
+      // The rows add no other stop: next is the closing call to action.
       await tabTo(page, 'Book a data trust assessment')
-      for (const [index, name] of [...sectors.entries()].reverse()) {
-        await tabTo(page, sectorPages[index], { shift: true })
+      for (const name of [...sectors].reverse()) {
         await tabTo(page, name, { shift: true })
         await expectRing(page, name)
         await expectUnobscured(page, name)
@@ -353,12 +329,23 @@ test.describe('Solutions rows', () => {
       await tabTo(page, managedServices.heading, { shift: true })
     })
   }
+
+  test('Enter on a focused row opens its page at 1440px', async ({ page }) => {
+    await openPage(page, 1440)
+    await page.getByRole('link', { name: managedServices.heading, exact: true }).focus()
+    await tabTo(page, sectors[0])
+    await tabTo(page, sectors[1])
+    await page.keyboard.press('Enter')
+
+    await expect(page).toHaveURL(new RegExp(`${solutionPath(homepageSolutions[1].id)}$`))
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(homepageSolutions[1].heading)
+  })
 })
 
 test.describe('mouse focus', () => {
-  // The disclosure this clicked left with the open grid (#83); a Solutions
-  // row's button is the page's other disclosure.
-  test('a click on Book a data trust assessment or a Solutions row shows no focus ring', async ({ page, browserName }) => {
+  // The disclosure this clicked left with the open grid (#83), and the
+  // Solutions rows' with #89: a click on a row now opens its page.
+  test('a click on Book a data trust assessment shows no focus ring, and a click on a Solutions row opens its page', async ({ page }) => {
     await openPage(page, 1440)
     const cta = page
       .getByRole('region', { name: 'Trusted Data. Better Decisions.' })
@@ -367,25 +354,9 @@ test.describe('mouse focus', () => {
     await expect(page).toHaveURL(/#contact$/)
     expect(await cta.evaluate((element) => element.matches(':focus-visible'))).toBe(false)
 
-    const disclosure = page.getByRole('button', { name: sectors[0], exact: true })
-    // On its title, as the row's summary sits over the rest of it.
-    await disclosure.locator('.solution-row__title').click()
-    await expect(disclosure).toHaveAttribute('aria-expanded', 'true')
-
-    // Measured for #46 at 1440: in Chromium the clicked disclosure takes
-    // focus, without :focus-visible. In WebKit, as in Safari, a click does
-    // not focus a button: focus goes to <main> (tabIndex -1), which does
-    // not match :focus-visible and has outline-style none. A visitor sees
-    // no difference, as no ring shows in either engine, and Option+Tab
-    // straight after the click goes to the same stop as Chromium's Tab, so
-    // the keyboard continues from the clicked row.
-    let focused = disclosure
-    if (browserName === 'webkit') {
-      focused = page.getByRole('main')
-      await expect(disclosure).not.toBeFocused()
-    }
-    await expect(focused).toBeFocused()
-    expect(await focused.evaluate((element) => element.matches(':focus-visible'))).toBe(false)
+    await page.locator('#solutions').getByRole('link', { name: sectors[0], exact: true }).click()
+    await expect(page).toHaveURL(new RegExp(`${solutionPath(homepageSolutions[0].id)}$`))
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(homepageSolutions[0].heading)
   })
 })
 

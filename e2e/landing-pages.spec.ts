@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test'
 import { managedServices, services } from '../src/data/services.ts'
 import { footerSolutions, homepageSolutions, solutions } from '../src/data/solutions.ts'
-import { expectNoAxeViolations, openPath, test, WIDTHS } from './fixtures.ts'
+import { centreOf, expectNoAxeViolations, openPath, test, WIDTHS } from './fixtures.ts'
 
 // The SEO landing pages (#67) on the production preview: each path
 // answers 200 with the whole page in its HTML, the clean path is the only
@@ -204,6 +204,32 @@ test.describe('crawl from the homepage', () => {
       footerSolutions.map((solution) => `/solutions/${solution.slug}`),
     )
   })
+
+  // The Solutions rows are links since #89: a click anywhere in a row,
+  // here on its tags (under the link's overlay), opens the sector's page.
+  for (const [index, solution] of homepageSolutions.entries()) {
+    test(`a click on the ${solution.title} row's tags opens /solutions/${solution.slug}`, async ({ page }) => {
+      await openPath(page, '/', 1440)
+      const tags = page.locator('#solutions .solution-row').nth(index).locator('.solution-row__tags')
+      await expect(tags).toHaveText(solution.summary.join(' · '))
+      const { x, y } = await centreOf(tags)
+      await page.mouse.click(x, y)
+
+      await expect(page).toHaveURL(new RegExp(`/solutions/${solution.slug}$`))
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(solution.heading)
+    })
+
+    // What the homepage row's accordion used to hold (#89, do-first
+    // check 1): the sector's seven themes, on its page under "Reporting and
+    // analytics use cases", in data order.
+    test(`/solutions/${solution.slug} lists the seven themes the homepage row used to hold`, async ({ page }) => {
+      await openPath(page, `/solutions/${solution.slug}`, 1440)
+      const section = page.locator('#use-cases')
+      await expect(section.getByRole('heading', { level: 2 })).toHaveText('Reporting and analytics use cases')
+      await expect(section.getByRole('listitem')).toHaveText([...solution.themes])
+      expect(solution.themes).toHaveLength(7)
+    })
+  }
 
   test('a service card title opens its page, and the header leads back to the section', async ({ page }) => {
     await openPath(page, '/', 1440)

@@ -13,8 +13,9 @@ import { focusAndHeaderBoxes, focusedName, pressTab, waitForScrollSettle } from 
 // Managed Services journey's first two steps link to the sections they
 // name, and its service link to its page (#88).
 export const cards = services.map((service) => service.name)
-// The Solutions rows' buttons (#59), each named by its sector title: the
-// homepage's three sectors, in W7's order (#73).
+// The Solutions rows' links (#59; links, not buttons, since #89), each
+// named by its sector title: the homepage's three sectors, in W7's order
+// (#73).
 export const sectors = homepageSolutions.map((solution) => solution.title)
 // The footer's "More sectors" links (#73), after the phone number and the
 // copyright, named by the sectors' headings.

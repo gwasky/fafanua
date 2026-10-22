@@ -523,7 +523,8 @@ test.describe('focus never lands on hidden content (no-preference)', () => {
   for (const width of [360, 1440]) {
     test(`Tab from the Managed Services link into hidden Solutions shows it at once, at ${width}px`, async ({ page }) => {
       await openPage(page, width)
-      // The stop before the Solutions rows (#67).
+      // The stop before the Solutions rows (#67), whose first link (#89)
+      // takes focus next.
       await page.getByRole('link', { name: managedServices.heading, exact: true }).focus()
       await waitForMotion(page)
       expect((await solutions(page)).state).toBe('hidden')
@@ -543,6 +544,7 @@ test.describe('focus never lands on hidden content (no-preference)', () => {
       await waitForLanding(page, '#contact')
       expect((await solutions(page)).state).toBe('hidden')
 
+      // Back to the last Solutions row's link (#89).
       await pressTab(page, { shift: true })
       expect(await solutions(page)).toEqual({ state: null, opacity: '1', transform: 'none' })
       expect(await focusedName(page)).toBe(sectors.at(-1))

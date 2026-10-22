@@ -37,8 +37,8 @@ const SECTIONS = [
 ] as const
 const INSIDE = ['#about-heading', '#data-quality-and-reliability-heading'] as const
 
-// The Solutions rows' buttons (#59), named by the sector titles: the
-// homepage's three sectors since #73.
+// The Solutions rows' links (#59; links since #89), named by the sector
+// titles: the homepage's three sectors since #73.
 const sectors = homepageSolutions.map((solution) => solution.title)
 
 /** A header nav link, found whether or not it is currently shown. */
@@ -214,18 +214,17 @@ test.describe('hashes that name nothing visible', () => {
         expect(await page.evaluate(() => location.hash)).toBe(hash)
         await expect(page.locator(hash)).toHaveCount(0)
         await expect(page.getByRole('button', { name: /^Typical engagements/ })).toHaveCount(0)
+        // Nor does any Solutions row expand: they are links (#89).
+        await expect(page.locator('#solutions [aria-expanded]')).toHaveCount(0)
         for (const name of sectors) {
-          await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute(
-            'aria-expanded',
-            'false',
-          )
+          await expect(page.locator('#solutions').getByRole('link', { name, exact: true })).toHaveCount(1)
         }
       })
     }
 
-    // A row opens only on interaction (#59; a hash opening one is #44's
-    // question), so a hidden Solutions panel's id lands nowhere.
-    test(`a hidden Solutions panel stays at the top, with every row closed, at ${width}px`, async ({
+    // The Solutions panels left with #89, with no alias: an old panel's
+    // id names nothing and opens the page at the top.
+    test(`an old Solutions panel id stays at the top at ${width}px`, async ({
       page,
     }) => {
       const hash = `#${homepageSolutions[0].id}-themes`
@@ -233,13 +232,8 @@ test.describe('hashes that name nothing visible', () => {
 
       await expectTop(page)
       expect(await page.evaluate(() => location.hash)).toBe(hash)
-      await expect(page.locator(hash)).toBeHidden()
-      for (const name of sectors) {
-        await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute(
-          'aria-expanded',
-          'false',
-        )
-      }
+      await expect(page.locator(hash)).toHaveCount(0)
+      await expect(page.locator('#solutions [aria-expanded]')).toHaveCount(0)
     })
   }
 })
