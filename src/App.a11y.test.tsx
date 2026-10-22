@@ -4,7 +4,7 @@ import App from './App.tsx'
 import { email } from './data/contact.ts'
 import { footerNavigation, navigation, navigationCta } from './data/navigation.ts'
 import { services } from './data/services.ts'
-import { homepageSolutions } from './data/solutions.ts'
+import { homepageSolutions, solutionsIntro } from './data/solutions.ts'
 import { accessibleNames, expectNoAxeViolations } from './test/axe.ts'
 
 // jsdom has no matchMedia, which the header uses for its breakpoint.
@@ -52,16 +52,19 @@ describe('App accessibility (axe)', () => {
     await expectNoAxeViolations(container)
   })
 
-  it('has no axe violations with all three Solutions rows open', async () => {
+  // The rows opened here became links (#89); it now checks the section
+  // with focus on a row's link.
+  it('has no axe violations with a Solutions row link focused', async () => {
     const { container } = render(<App />)
-    const region = screen.getByRole('region', { name: 'Solutions' })
-    const buttons = within(region).getAllByRole('button')
-    for (const button of buttons) fireEvent.click(button)
+    const region = screen.getByRole('region', { name: solutionsIntro.heading })
+    const links = within(region).getAllByRole('link')
+    links[0].focus()
 
-    expect(buttons).toHaveLength(3)
-    for (const button of buttons) {
-      expect(button).toHaveAttribute('aria-expanded', 'true')
-    }
+    expect(links.map((link) => link.textContent)).toEqual(
+      homepageSolutions.map((solution) => solution.title),
+    )
+    expect(links[0]).toHaveFocus()
+    expect(within(region).queryAllByRole('button')).toHaveLength(0)
     await expectNoAxeViolations(container)
   })
 })
@@ -170,14 +173,18 @@ describe('App links and buttons', () => {
     for (const { href } of links) expect(href).toBe(`mailto:${email}`)
   })
 
-  it('has two kinds of button: the Menu toggle and three Solutions rows (#83)', () => {
+  // The Solutions rows are links now (#89).
+  it('has one kind of button: the Menu toggle', () => {
     render(<App />)
     const buttons = controls().filter(({ element }) => element.tagName === 'BUTTON')
 
-    expect(buttons.map(({ name }) => name)).toEqual([
-      'Menu',
-      ...homepageSolutions.map((solution) => solution.title),
-    ])
+    expect(buttons.map(({ name }) => name)).toEqual(['Menu'])
+    expect(
+      controls()
+        .filter(({ href }) => href?.startsWith('/solutions/'))
+        .slice(0, 3)
+        .map(({ name }) => name),
+    ).toEqual(homepageSolutions.map((solution) => solution.title))
   })
 
   it('shows no Typical engagements on the homepage, and names each capability title link by its service (#83)', () => {

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
 import {
@@ -16,7 +16,7 @@ import {
 } from './data/positioning.ts'
 import { processStages } from './data/process.ts'
 import { managedServices, services, servicesIntro } from './data/services.ts'
-import { homepageSolutions, solutions } from './data/solutions.ts'
+import { homepageSolutions, solutions, solutionsIntro } from './data/solutions.ts'
 import { systemFlow } from './data/systemFlow.ts'
 
 const FUTURE_READY = 'Trusted foundations for what comes next'
@@ -189,13 +189,13 @@ describe('App', () => {
 
   // The inline SVG illustrations the design system allows are the system
   // diagram's return loop (owner decision on #63) and the decorative
-  // contour lines in the assessment's dark panel (#82); the other inline
-  // SVGs are the disclosure chevron icons of the Solutions rows (the
-  // capability cells have none since the open grid, #83) and the header
-  // logo (#86), the one SVG with role="img" and a name. Its sprite is in
+  // contour lines in the assessment's dark panel (#82); the only other
+  // inline SVG is the header logo (#86), the one SVG with role="img" and
+  // a name. The capability cells have no chevrons since the open grid
+  // (#83), and the Solutions rows none since they became links (#89). Its sprite is in
   // index.html, not rendered by App. No canvas anywhere, and the only
   // image is the footer logo.
-  it('has no inline SVG but the header logo, the Solutions chevrons, the diagram\'s loop and the assessment\'s contours, and no canvas', () => {
+  it('has no inline SVG but the header logo, the diagram\'s loop and the assessment\'s contours, and no canvas', () => {
     render(<App />)
     const svgs = [...document.querySelectorAll('svg')]
     const count = (name: string) => svgs.filter((svg) => svg.getAttribute('class') === name).length
@@ -204,13 +204,13 @@ describe('App', () => {
     expect(document.querySelector('.system-flow svg')).toHaveClass('system-flow__loop')
     expect(count('service-card__chevron')).toBe(0)
     expect(document.querySelector('#capabilities .services__list svg')).toBeNull()
-    // One chevron per homepage Solutions row, not per sector (#73).
-    expect(count('solution-row__chevron')).toBe(homepageSolutions.length)
-    expect(count('solution-row__chevron')).toBe(3)
+    // The Solutions rows are links with a text arrow, no chevron (#89).
+    expect(count('solution-row__chevron')).toBe(0)
+    expect(document.querySelector('#solutions svg')).toBeNull()
     expect(count('trust-assessment__contours')).toBe(1)
     expect(document.querySelector('#data-trust-assessment svg')).toHaveClass('trust-assessment__contours')
     expect(count('site-header__logo-art')).toBe(1)
-    expect(svgs).toHaveLength(1 + 1 + 1 + homepageSolutions.length)
+    expect(svgs).toHaveLength(1 + 1 + 1)
     const logo = within(screen.getByRole('banner')).getByRole('img', { name: 'Fafanua Technologies' })
     expect(logo).toHaveClass('site-header__logo-art')
     for (const svg of svgs) {
@@ -241,13 +241,15 @@ describe('App', () => {
     // assessment, the owner's bridge (#79), and the lead of the
     // Data Trust Assessment, W4's own description of the offer (#71), and
     // the capabilities section's promise line, the open grid plan's one
-    // new string (#83): no other paragraph in main repeats it. ("Traceable" and "traceability" in the
+    // new string (#83), and the Solutions intro line, section A of the
+    // homepage sections refinement plan (#89): no other paragraph in main
+    // repeats it. ("Traceable" and "traceability" in the
     // process stages and the diagram's terms are not the hero's claim.)
     const hero = screen.getByRole('region', { name: HERO })
     const tracing = [...screen.getByRole('main').querySelectorAll('p')].filter((p) =>
       /\btrace\b|to the source|back to (its|their) source/i.test(p.textContent!),
     )
-    expect(tracing).toHaveLength(4)
+    expect(tracing).toHaveLength(5)
     expect(hero).toContainElement(tracing[0])
     expect(tracing[1]).toBe(screen.getByText(positioningTransition))
     expect(tracing[1].closest('.positioning')).toBe(hero.nextElementSibling)
@@ -255,6 +257,8 @@ describe('App', () => {
     expect(screen.getByRole('region', { name: ASSESSMENT })).toContainElement(tracing[2])
     expect(tracing[3]).toBe(screen.getByText(servicesIntro.promise))
     expect(screen.getByRole('region', { name: SERVICES })).toContainElement(tracing[3])
+    expect(tracing[4]).toBe(screen.getByText(solutionsIntro.intro))
+    expect(screen.getByRole('region', { name: solutionsIntro.heading })).toContainElement(tracing[4])
   })
 
   it('has the Services h2 W3 names, and no h2 that says "business intelligence" (#70)', () => {
@@ -283,7 +287,7 @@ describe('App', () => {
       screen.getByRole('region', { name: ASSESSMENT }),
       screen.getByRole('region', { name: SERVICES }),
       screen.getByRole('region', { name: MANAGED }),
-      screen.getByRole('region', { name: 'Solutions' }),
+      screen.getByRole('region', { name: solutionsIntro.heading }),
       screen.getByRole('region', { name: 'How We Work' }),
       screen.getByRole('region', { name: FUTURE_READY }),
       screen.getByRole('region', { name: 'About Fafanua' }),
@@ -317,7 +321,7 @@ describe('App', () => {
     expect(services).not.toContainElement(managed)
     expect(services.nextElementSibling).toBe(managed)
     expect(managed.nextElementSibling).toBe(
-      screen.getByRole('region', { name: 'Solutions' }),
+      screen.getByRole('region', { name: solutionsIntro.heading }),
     )
     expect(document.querySelectorAll('#managed-services')).toHaveLength(1)
     // The capabilities section, on paper, separates the assessment's dark
@@ -370,7 +374,7 @@ describe('App', () => {
   it('renders the Solutions section directly after Managed Services', () => {
     render(<App />)
     const managed = screen.getByRole('region', { name: MANAGED })
-    const solutions = screen.getByRole('region', { name: 'Solutions' })
+    const solutions = screen.getByRole('region', { name: solutionsIntro.heading })
     const nav = navigation.find((item) => item.label === 'Solutions')
 
     expect(managed.nextElementSibling).toBe(solutions)
@@ -386,7 +390,7 @@ describe('App', () => {
 
   it('renders the How We Work section directly after Solutions', () => {
     render(<App />)
-    const solutions = screen.getByRole('region', { name: 'Solutions' })
+    const solutions = screen.getByRole('region', { name: solutionsIntro.heading })
     const process = screen.getByRole('region', { name: 'How We Work' })
     const nav = navigation.find((item) => item.label === 'How We Work')
 
@@ -413,7 +417,7 @@ describe('App', () => {
 
   it('names the Solutions and How We Work regions by their h2s, after their eyebrows', () => {
     render(<App />)
-    const solutionsRegion = screen.getByRole('region', { name: 'Solutions' })
+    const solutionsRegion = screen.getByRole('region', { name: solutionsIntro.heading })
     const process = screen.getByRole('region', { name: 'How We Work' })
 
     expect(solutionsRegion.querySelector('.section-eyebrow')?.textContent).toBe(
@@ -729,7 +733,7 @@ describe('App', () => {
     expect(text.replace(/(business|payment) intelligence/gi, '')).not.toMatch(/intelligence/i)
   })
 
-  it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its four verb h3s, h2 Solutions, three h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
+  it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its four verb h3s, h2 Solutions heading, three h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
@@ -763,18 +767,17 @@ describe('App', () => {
       'Activate',
     ])
     expect(headings.map((heading) => heading.textContent)).not.toContain(managedServices.heading)
-    expect(headings[17].textContent).toBe('Solutions')
-    // Each sector h3 holds its row's button (the accordion header
-    // pattern), and is named by the title alone: the number is aria-hidden.
-    // The homepage's three sectors, in W7's order (#73).
+    expect(headings[17].textContent).toBe(solutionsIntro.heading)
+    // Each sector h3 holds its row's one link, named by the title alone
+    // (#89). The homepage's three sectors, in W7's order (#73).
     expect(headings.slice(18, 21).map((heading) => heading.textContent)).toEqual([
-      '01Health',
-      '02Financial Services',
-      '03Education',
+      'Health',
+      'Financial Services',
+      'Education',
     ])
     headings.slice(18, 21).forEach((heading, index) => {
       expect(heading).toHaveAccessibleName(homepageSolutions[index].title)
-      expect(within(heading).getByRole('button')).toHaveAccessibleName(
+      expect(within(heading).getByRole('link')).toHaveAccessibleName(
         homepageSolutions[index].title,
       )
     })
@@ -791,12 +794,12 @@ describe('App', () => {
   })
 
   // W7 (#73): every sector's landing page keeps a crawlable link from the
-  // homepage, in its Solutions row's panel, or from the footer's "More
+  // homepage, as its Solutions row's link (#89), or from the footer's "More
   // sectors" line, and no page is linked from both.
   it('links every solution landing page from either a Solutions row or the footer', () => {
     render(<App />)
-    const region = screen.getByRole('region', { name: 'Solutions' })
-    for (const button of within(region).getAllByRole('button')) fireEvent.click(button)
+    const region = screen.getByRole('region', { name: solutionsIntro.heading })
+    expect(within(region).queryAllByRole('button')).toHaveLength(0)
     const footer = screen.getByRole('contentinfo')
     const hrefs = (root: HTMLElement) =>
       [...root.querySelectorAll<HTMLAnchorElement>('a[href^="/solutions/"]')].map((link) =>
