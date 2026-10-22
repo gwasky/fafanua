@@ -1,32 +1,24 @@
-import { useState } from 'react'
-import { homepageSolutions } from '../data/solutions.ts'
+import { homepageSolutions, solutionsIntro } from '../data/solutions.ts'
 import { solutionPath } from '../paths.ts'
 import SectionEyebrow from './SectionEyebrow.tsx'
 import './Solutions.css'
 
-// The Solutions section (plan V2 §12): the "03 — Solutions" eyebrow, the
-// h2, then the homepage's sectors as compact, editorial rows numbered 01
-// to 03: Health, Financial Services and Education, in the order W7 of the
-// trust and lineage plan sets (homepageSolutions, #73). The other sectors
-// are linked from the footer. The id and h2 match the "Solutions" entry in
-// src/data/navigation.ts.
+// The Solutions section (section A of
+// _docs/fafanua-homepage-sections-refinement-plan.md, #89): the "03 —
+// Solutions" eyebrow, the h2 and the intro line, then the homepage's
+// sectors as an editorial list of three rows: Health, Financial Services
+// and Education, in the order W7 of the trust and lineage plan sets
+// (homepageSolutions, #73). The other sectors are linked from the footer.
+// The id matches the "Solutions" entry in src/data/navigation.ts; the
+// section is named by its h2.
 //
-// Each row is the WAI-ARIA accordion header pattern: an h3 wrapping one
-// button, named by the sector title alone (the number and the chevron are
-// aria-hidden), then the sector's tag line (W7), always visible and outside
-// the button, then the panel the button controls, holding the full
-// approved theme list. Rows open only on a click, a tap, or Enter or Space
-// on the focused button: focus and hover open nothing (owner decision on
-// #59). Each row has its own open state, so any number can be open at
-// once. The summary's separators are drawn in Solutions.css and never
-// announced. Each open panel ends with a link to the sector's page (#67),
-// named by its heading. All copy comes from src/data/solutions.ts.
+// Each row is an h3 holding the row's one link, to the sector's page
+// (#67), named by the sector title alone; then the tag line as one plain
+// text line joined with " · "; then a decorative arrow, hidden from
+// screen readers. The link's ::after covers the whole row (the stretched
+// link, Solutions.css), so a click or tap on the tags or the arrow opens
+// the page too. All copy comes from src/data/solutions.ts.
 function Solutions() {
-  const [open, setOpen] = useState<Readonly<Record<string, boolean>>>({})
-
-  const toggle = (id: string) =>
-    setOpen((current) => ({ ...current, [id]: !current[id] }))
-
   return (
     <section
       id="solutions"
@@ -37,65 +29,24 @@ function Solutions() {
       <div className="container">
         <SectionEyebrow number="03" label="Solutions" />
         <h2 id="solutions-heading" className="solutions__heading">
-          Solutions
+          {solutionsIntro.heading}
         </h2>
-        <ol className="solutions__list" role="list">
-          {homepageSolutions.map((solution, index) => {
-            const isOpen = open[solution.id] === true
-            const panelId = `${solution.id}-themes`
-            return (
-              <li
-                key={solution.id}
-                className={`solution-row${isOpen ? ' solution-row--open' : ''}`}
-              >
-                <h3 className="solution-row__heading">
-                  <button
-                    type="button"
-                    className="solution-row__toggle"
-                    aria-expanded={isOpen}
-                    aria-controls={panelId}
-                    onClick={() => toggle(solution.id)}
-                  >
-                    <span className="solution-row__number" aria-hidden="true">
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    <span className="solution-row__title">{solution.title}</span>
-                    <svg
-                      className="solution-row__chevron"
-                      viewBox="0 0 16 16"
-                      aria-hidden="true"
-                      focusable="false"
-                    >
-                      <path
-                        d="M3.5 6 8 10.5 12.5 6"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                </h3>
-                <ul className="solution-row__summary" role="list">
-                  {solution.summary.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-                <div id={panelId} className="solution-row__panel" hidden={!isOpen}>
-                  <ul className="solution-row__themes" role="list">
-                    {solution.themes.map((theme) => (
-                      <li key={theme}>{theme}</li>
-                    ))}
-                  </ul>
-                  <p className="solution-row__more">
-                    <a href={solutionPath(solution.id)}>{solution.heading}</a>
-                  </p>
-                </div>
-              </li>
-            )
-          })}
-        </ol>
+        <p className="solutions__intro">{solutionsIntro.intro}</p>
+        <ul className="solutions__list" role="list">
+          {homepageSolutions.map((solution) => (
+            <li key={solution.id} className="solution-row">
+              <h3 className="solution-row__name">
+                <a className="solution-row__link" href={solutionPath(solution.id)}>
+                  {solution.title}
+                </a>
+              </h3>
+              <p className="solution-row__tags">{solution.summary.join(' · ')}</p>
+              <span className="solution-row__arrow" aria-hidden="true">
+                →
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   )

@@ -2,12 +2,14 @@
 // the order of _docs/plan-fafanua-services-positioning.md Sections 15-19,
 // with Health after Development & Impact. Each title and theme list is
 // copied from those sections. The doc's "Potential client types" are left
-// out of the rows: it gives them for only three of the five sectors. Each
-// summary is the four-item line under the sector in
-// _docs/fafanua-v2-visual-upgrade-plan.md §12, shown on the collapsed row,
-// except for Health, Financial Services and Education, whose tag lines are
-// W7 in _docs/fafanua-trust-lineage-positioning-plan.md (#73); the themes
-// are the full list its row reveals when opened.
+// out. Each summary is the four-item line under the sector in
+// _docs/fafanua-v2-visual-upgrade-plan.md §12, except for Health,
+// Financial Services and Education, whose tag lines are W7 in
+// _docs/fafanua-trust-lineage-positioning-plan.md (#73) as amended by
+// section A of _docs/fafanua-homepage-sections-refinement-plan.md (#89),
+// which removes "Lineage": three items each. The homepage shows the tag
+// line on each sector's row; it no longer shows the themes, which the
+// landing pages list as their use cases.
 //
 // This order drives the landing pages (src/pages.ts), their "Other
 // sectors" lists and the sitemap, so it does not change. W7 decides which
@@ -20,12 +22,18 @@
 // _docs/fafanua-seo-keyword-and-implementation-plan.md, #67). No earlier
 // plan has it, so its themes are written from the plan's §9 clusters,
 // covering healthcare providers and health programmes alike; its summary
-// is W7's.
+// is W7's, as amended.
 //
 // Each sector also has a landing page at /solutions/<slug> (SEO plan §6,
 // §16 and §18), titled by its heading, whose copy is in solutionPages.ts.
 // Its use cases are the themes, so they are not repeated. No clients, case studies, metrics, certifications or
 // performance claims (§18), and no DHIS2 positioning (§9).
+
+/** Section A of _docs/fafanua-homepage-sections-refinement-plan.md (#89). */
+export const solutionsIntro = {
+  heading: 'Built for the sectors we know',
+  intro: 'In every sector, we start by tracing the numbers leadership relies on back to their source.',
+} as const
 
 export type Solution = {
   readonly id: string
@@ -34,7 +42,7 @@ export type Solution = {
   readonly title: string
   /** The landing page's h1, and the anchor text of links to it. */
   readonly heading: string
-  /** The sector's short summary, four items: plan V2 §12, or W7. */
+  /** The sector's short summary: four items (plan V2 §12), or three (W7 as amended, #89). */
   readonly summary: readonly string[]
   readonly themes: readonly string[]
 }
@@ -45,7 +53,7 @@ export const solutions: readonly Solution[] = [
     slug: 'financial-services',
     title: 'Financial Services',
     heading: 'Financial Services Data & Analytics',
-    summary: ['Payments', 'Reconciliation', 'Regulatory reporting', 'Lineage'],
+    summary: ['Payments', 'Reconciliation', 'Regulatory reporting'],
     themes: [
       'Payment intelligence',
       'Portfolio analytics',
@@ -93,7 +101,7 @@ export const solutions: readonly Solution[] = [
     slug: 'health',
     title: 'Health',
     heading: 'Health Data & Analytics Solutions',
-    summary: ['Branch comparability', 'Billing and claims', 'Pharmacy stock', 'Lineage'],
+    summary: ['Branch comparability', 'Billing and claims', 'Pharmacy stock'],
     themes: [
       'Facility performance and utilisation dashboards',
       'Patient flow and service-delivery analytics',
@@ -109,7 +117,7 @@ export const solutions: readonly Solution[] = [
     slug: 'education',
     title: 'Education',
     heading: 'Education Data & Analytics',
-    summary: ['Enrolment', 'Progression', 'Payments', 'Lineage'],
+    summary: ['Enrolment', 'Progression', 'Payments'],
     themes: [
       'Learner lifecycle analytics',
       'Enrolment dashboards',

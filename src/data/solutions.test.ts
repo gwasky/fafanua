@@ -5,6 +5,7 @@ import {
   homepageSolutionIds,
   homepageSolutions,
   solutions,
+  solutionsIntro,
 } from './solutions.ts'
 
 describe('solutions', () => {
@@ -30,10 +31,13 @@ describe('solutions', () => {
     }
   })
 
-  it('has a four-item summary for each, with no empty or repeated item', () => {
+  // Three items for the homepage sectors, whose W7 tag lines lost
+  // "Lineage" (#89), and plan V2's four for the others.
+  it('has a three-item summary for each homepage sector and four for the others, with no empty or repeated item', () => {
     for (const solution of solutions) {
-      expect(solution.summary).toHaveLength(4)
-      expect(new Set(solution.summary).size).toBe(4)
+      const length = (homepageSolutionIds as readonly string[]).includes(solution.id) ? 3 : 4
+      expect(solution.summary).toHaveLength(length)
+      expect(new Set(solution.summary).size).toBe(length)
       for (const item of solution.summary) {
         expect(item).toBe(item.trim())
         expect(item).not.toBe('')
@@ -56,6 +60,17 @@ describe('solutions', () => {
       'education',
       'public-sector',
     ])
+  })
+})
+
+// Section A of the homepage sections refinement plan (#89).
+describe('solutionsIntro', () => {
+  it('holds a heading and an intro line, both non-empty and trimmed', () => {
+    expect(Object.keys(solutionsIntro).sort()).toEqual(['heading', 'intro'])
+    for (const text of Object.values(solutionsIntro)) {
+      expect(text).toBe(text.trim())
+      expect(text).not.toBe('')
+    }
   })
 })
 

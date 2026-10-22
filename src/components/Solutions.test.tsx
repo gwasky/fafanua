@@ -1,7 +1,13 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { navigation } from '../data/navigation.ts'
-import { footerSolutions, homepageSolutions, solutions as allSolutions } from '../data/solutions.ts'
+import {
+  footerSolutions,
+  homepageSolutions,
+  solutions as allSolutions,
+  solutionsIntro,
+} from '../data/solutions.ts'
+import { solutionPath } from '../paths.ts'
 import Solutions from './Solutions.tsx'
 
 // The homepage's three sectors, in W7's order (#73). The other three are
@@ -10,21 +16,28 @@ const solutions = homepageSolutions
 
 const TITLES = ['Health', 'Financial Services', 'Education']
 
+// Section A of the homepage sections refinement plan (#89): W7's tag
+// lines with "Lineage" removed.
+const TAG_LINES = [
+  'Branch comparability · Billing and claims · Pharmacy stock',
+  'Payments · Reconciliation · Regulatory reporting',
+  'Enrolment · Progression · Payments',
+]
+
 function renderSolutions() {
   render(<Solutions />)
-  const section = screen.getByRole('region', { name: 'Solutions' })
+  const section = screen.getByRole('region', { name: solutionsIntro.heading })
   const list = section.querySelector<HTMLElement>('.solutions__list')!
   const rows = [...list.children] as HTMLElement[]
   return { section, list, rows }
 }
 
-/** A row's parts: its h3, the button in it, its summary and its panel. */
+/** A row's parts: its h3, the link in it, its tags and its arrow. */
 function parts(row: HTMLElement) {
   const heading = within(row).getByRole('heading', { level: 3 })
-  const button = within(heading).getByRole('button')
-  const panel = row.querySelector<HTMLElement>(`[id="${button.getAttribute('aria-controls')}"]`)!
-  const [, summary] = [...row.children] as HTMLElement[]
-  return { heading, button, summary, panel }
+  const link = within(heading).getByRole('link')
+  const [, tags, arrow, ...rest] = [...row.children] as HTMLElement[]
+  return { heading, link, tags, arrow, rest }
 }
 
 // The text a screen reader gets from an element: its text without any
@@ -36,64 +49,68 @@ function accessibleText(element: HTMLElement): string {
 }
 
 describe('Solutions', () => {
-  it('is section#solutions, labelled by the Solutions h2 from the navigation', () => {
+  it('is section#solutions, labelled by its h2', () => {
     const { section } = renderSolutions()
     const heading = within(section).getByRole('heading', { level: 2 })
-    const nav = navigation.find((item) => item.id === 'solutions')
 
     expect(section.tagName).toBe('SECTION')
     expect(section).toHaveAttribute('id', 'solutions')
     expect(section).toHaveAttribute('aria-labelledby', 'solutions-heading')
     expect(heading).toHaveAttribute('id', 'solutions-heading')
-    expect(heading.textContent).toBe('Solutions')
-    expect(nav?.label).toBe(heading.textContent)
+    expect(heading.textContent).toBe(solutionsIntro.heading)
+    expect(heading.textContent).toBe('Built for the sectors we know')
   })
 
-  it('opens with the 03 — Solutions eyebrow, then the h2, then the rows', () => {
+  // The h2 no longer repeats the nav label (#89): the nav entry and the
+  // eyebrow keep "Solutions".
+  it('keeps the Solutions nav label and the 03 — Solutions eyebrow', () => {
+    const { section } = renderSolutions()
+    const nav = navigation.find((item) => item.id === 'solutions')
+
+    expect(nav?.label).toBe('Solutions')
+    expect(section.querySelector('.section-eyebrow')?.textContent).toBe('03 — Solutions')
+  })
+
+  it('opens with the eyebrow, then the h2, then the intro line, then the rows', () => {
     const { list } = renderSolutions()
-    const [eyebrow, heading, rows, ...rest] = [...list.parentElement!.children]
+    const [eyebrow, heading, intro, rows, ...rest] = [...list.parentElement!.children]
 
     expect(rest).toHaveLength(0)
     expect(eyebrow.tagName).toBe('P')
     expect(eyebrow).toHaveClass('section-eyebrow')
     expect(eyebrow.textContent).toBe('03 — Solutions')
     expect(heading.tagName).toBe('H2')
+    expect(intro.tagName).toBe('P')
+    expect(intro).toHaveClass('solutions__intro')
+    expect(intro.textContent).toBe(solutionsIntro.intro)
+    expect(intro.textContent).toBe(
+      'In every sector, we start by tracing the numbers leadership relies on back to their source.',
+    )
     expect(rows).toBe(list)
   })
 
-  it('has one h2, then three h3s, and no introduction paragraph', () => {
+  it('has one h2, then three h3s', () => {
     const { section } = renderSolutions()
 
     expect(
       within(section).getAllByRole('heading').map((heading) => heading.tagName),
     ).toEqual(['H2', 'H3', 'H3', 'H3'])
-    // The eyebrow is the section's only paragraph outside the panels,
-    // which each end with the link to their sector's page (#67).
-    expect(
-      [...section.querySelectorAll('p')]
-        .filter((p) => !p.closest('.solution-row__panel'))
-        .map((p) => p.textContent),
-    ).toEqual(['03 — Solutions'])
   })
 
-  it('shows the three homepage sectors as an ordered list of rows, in W7 order', () => {
+  it('shows the three homepage sectors as an unordered list of rows, in W7 order, unnumbered', () => {
     const { list, rows } = renderSolutions()
 
-    expect(list.tagName).toBe('OL')
+    expect(list.tagName).toBe('UL')
     expect(list).toHaveAttribute('role', 'list')
     expect(rows.map((row) => row.tagName)).toEqual(Array(3).fill('LI'))
-    expect(rows.map((row) => parts(row).heading.textContent)).toEqual([
-      '01Health',
-      '02Financial Services',
-      '03Education',
-    ])
+    expect(rows.map((row) => parts(row).heading.textContent)).toEqual(TITLES)
     expect(solutions.map((solution) => solution.title)).toEqual(TITLES)
+    expect(list.textContent).not.toMatch(/0[1-3]/)
   })
 
   // The other sectors are left to the footer (#73): no row names them.
   it('leaves Retail & Distribution, Development & Impact and Public Sector out', () => {
     const { section } = renderSolutions()
-    for (const button of within(section).getAllByRole('button')) fireEvent.click(button)
 
     expect(footerSolutions.map((solution) => solution.title)).toEqual([
       'Retail & Distribution',
@@ -101,236 +118,93 @@ describe('Solutions', () => {
       'Public Sector',
     ])
     for (const solution of footerSolutions) {
-      expect(within(section).queryByRole('button', { name: solution.title })).toBeNull()
+      expect(within(section).queryByRole('link', { name: solution.title })).toBeNull()
       expect(section.textContent).not.toContain(solution.title)
       expect(section.querySelector(`a[href="/solutions/${solution.slug}"]`)).toBeNull()
     }
     expect(allSolutions).toHaveLength(6)
   })
 
-  it('shows the W7 tag lines on the collapsed rows', () => {
-    const { rows } = renderSolutions()
-
-    expect(
-      rows.map((row) =>
-        within(parts(row).summary).getAllByRole('listitem').map((item) => item.textContent),
-      ),
-    ).toEqual([
-      ['Branch comparability', 'Billing and claims', 'Pharmacy stock', 'Lineage'],
-      ['Payments', 'Reconciliation', 'Regulatory reporting', 'Lineage'],
-      ['Enrolment', 'Progression', 'Payments', 'Lineage'],
-    ])
-  })
-
-  it('gives each row an h3 holding one button, named exactly the sector title', () => {
-    const { rows } = renderSolutions()
+  // Required by #89: the rows replace the panels' links, so each row must
+  // go to its sector's page.
+  it('links each row, once, to its sector\'s landing page, named by the sector', () => {
+    const { section, rows } = renderSolutions()
 
     rows.forEach((row, index) => {
-      const { heading, button } = parts(row)
+      const { link } = parts(row)
 
-      expect([...heading.children]).toEqual([button])
-      expect(button.tagName).toBe('BUTTON')
-      expect(button).toHaveAttribute('type', 'button')
-      expect(button).toHaveAccessibleName(TITLES[index])
-      expect(
-        within(row).getByRole('button', { name: TITLES[index] }),
-      ).toBe(button)
+      expect(within(row).getAllByRole('link')).toEqual([link])
+      expect(link).toHaveAccessibleName(TITLES[index])
+      expect(link.textContent).toBe(TITLES[index])
+      expect(link).toHaveAttribute('href', solutionPath(solutions[index].id))
     })
-    expect(screen.getAllByRole('button')).toHaveLength(3)
+    expect(rows.map((row) => parts(row).link.getAttribute('href'))).toEqual([
+      '/solutions/health',
+      '/solutions/financial-services',
+      '/solutions/education',
+    ])
+    expect(within(section).getAllByRole('link')).toHaveLength(3)
   })
 
-  it('shows the number 01 to 03 and a chevron in each button, both aria-hidden', () => {
+  it('gives each row an h3 holding only its link', () => {
+    const { rows } = renderSolutions()
+
+    for (const row of rows) {
+      const { heading, link } = parts(row)
+      expect(row.firstElementChild).toBe(heading)
+      expect([...heading.children]).toEqual([link])
+      expect(link.tagName).toBe('A')
+    }
+  })
+
+  it('shows the amended tag lines as one plain-text line each, outside the link', () => {
+    const { section, rows } = renderSolutions()
+
+    rows.forEach((row, index) => {
+      const { link, tags } = parts(row)
+
+      expect(tags.tagName).toBe('P')
+      expect(tags).toHaveClass('solution-row__tags')
+      expect(tags.children).toHaveLength(0)
+      expect(tags.textContent).toBe(TAG_LINES[index])
+      expect(tags.textContent).toBe(solutions[index].summary.join(' · '))
+      expect(link).not.toContainElement(tags)
+    })
+    expect(section.textContent).not.toMatch(/lineage/i)
+  })
+
+  it('ends each row with an aria-hidden arrow, outside the link', () => {
     const { rows } = renderSolutions()
 
     rows.forEach((row, index) => {
-      const { button } = parts(row)
-      const [number, title, chevron, ...rest] = [...button.children]
+      const { link, arrow, rest } = parts(row)
 
       expect(rest).toHaveLength(0)
-      expect(number.textContent).toBe(`0${index + 1}`)
-      expect(number).toHaveAttribute('aria-hidden', 'true')
-      expect(title.textContent).toBe(TITLES[index])
-      expect(chevron.tagName.toLowerCase()).toBe('svg')
-      expect(chevron).toHaveAttribute('aria-hidden', 'true')
-      expect(chevron).toHaveAttribute('focusable', 'false')
-      expect(accessibleText(button)).toBe(TITLES[index])
+      expect(arrow.tagName).toBe('SPAN')
+      expect(arrow.textContent).toBe('→')
+      expect(arrow).toHaveAttribute('aria-hidden', 'true')
+      expect(link).not.toContainElement(arrow)
+      expect(accessibleText(link)).toBe(TITLES[index])
     })
   })
 
-  it('lists each row\'s tag line outside the button, always visible', () => {
-    const { rows } = renderSolutions()
-
-    rows.forEach((row, index) => {
-      const { button, summary } = parts(row)
-
-      expect(summary.tagName).toBe('UL')
-      expect(summary).toHaveAttribute('role', 'list')
-      expect(button).not.toContainElement(summary)
-      expect(summary).toBeVisible()
-      expect(
-        within(summary).getAllByRole('listitem').map((item) => item.textContent),
-      ).toEqual(solutions[index].summary)
-      // The separators are drawn in CSS: no text and no extra elements.
-      expect(summary.textContent).toBe(solutions[index].summary.join(''))
-    })
-  })
-
-  it('has every row collapsed on load, with its panel hidden', () => {
-    const { rows } = renderSolutions()
-
-    rows.forEach((row, index) => {
-      const { button, panel } = parts(row)
-
-      expect(button).toHaveAttribute('aria-expanded', 'false')
-      expect(button).toHaveAttribute('aria-controls', `${solutions[index].id}-themes`)
-      expect(panel).toHaveAttribute('hidden')
-      expect(panel).not.toBeVisible()
-      expect(row.lastElementChild).toBe(panel)
-    })
-  })
-
-  it('reveals the full theme list, in data order, once a row is opened', () => {
-    const { rows } = renderSolutions()
-
-    rows.forEach((row, index) => {
-      const { button, panel } = parts(row)
-      fireEvent.click(button)
-
-      expect(button).toHaveAttribute('aria-expanded', 'true')
-      expect(panel).not.toHaveAttribute('hidden')
-      expect(panel).toBeVisible()
-      const themes = within(panel).getByRole('list')
-      expect(themes.tagName).toBe('UL')
-      expect(themes).toHaveAttribute('role', 'list')
-      expect(
-        within(themes).getAllByRole('listitem').map((item) => item.textContent),
-      ).toEqual(solutions[index].themes)
-    })
-  })
-
-  it('toggles each row with a click, Enter and Space, keeping focus on its button', () => {
-    const { rows } = renderSolutions()
-
-    // jsdom does not turn a key into a click, as a browser does for a
-    // native button: Enter on keydown and Space on keyup. So each key is
-    // sent, checked not to be cancelled, and followed by the click the
-    // browser fires for it (detail 0, as for a keyboard click). The real
-    // keys are pressed in Chromium and WebKit in e2e/keyboard.spec.ts.
-    const press = (button: HTMLElement, key: 'Enter' | ' ') => {
-      expect(fireEvent.keyDown(button, { key }), `${key} keydown not cancelled`).toBe(true)
-      expect(fireEvent.keyUp(button, { key }), `${key} keyup not cancelled`).toBe(true)
-      fireEvent.click(button, { detail: 0 })
-    }
-
-    for (const row of rows) {
-      const { button, panel } = parts(row)
-
-      fireEvent.click(button)
-      expect(button).toHaveAttribute('aria-expanded', 'true')
-      expect(panel).toBeVisible()
-      fireEvent.click(button)
-      expect(button).toHaveAttribute('aria-expanded', 'false')
-      expect(panel).not.toBeVisible()
-
-      button.focus()
-      press(button, 'Enter')
-      expect(button).toHaveAttribute('aria-expanded', 'true')
-      expect(button).toHaveFocus()
-      press(button, 'Enter')
-      expect(button).toHaveAttribute('aria-expanded', 'false')
-
-      press(button, ' ')
-      expect(button).toHaveAttribute('aria-expanded', 'true')
-      expect(panel).toBeVisible()
-      expect(button).toHaveFocus()
-      press(button, ' ')
-      expect(button).toHaveAttribute('aria-expanded', 'false')
-      expect(panel).not.toBeVisible()
-    }
-  })
-
-  it('opens nothing on focus or hover', () => {
-    const { rows } = renderSolutions()
-
-    for (const row of rows) {
-      const { button, summary } = parts(row)
-      button.focus()
-      expect(button).toHaveFocus()
-      for (const target of [button, summary, row]) {
-        fireEvent.pointerEnter(target)
-        fireEvent.mouseEnter(target)
-        fireEvent.mouseOver(target)
-      }
-      button.blur()
-    }
-    for (const row of rows) {
-      expect(parts(row).button).toHaveAttribute('aria-expanded', 'false')
-      expect(parts(row).panel).not.toBeVisible()
-    }
-  })
-
-  it('does not toggle a row from a click on its summary', () => {
-    const { rows } = renderSolutions()
-    const { button, summary } = parts(rows[0])
-
-    fireEvent.click(summary)
-    fireEvent.click(within(summary).getAllByRole('listitem')[0])
-    expect(button).toHaveAttribute('aria-expanded', 'false')
-  })
-
-  it('keeps rows independent: all three can be open at once', () => {
-    const { rows } = renderSolutions()
-    const buttons = rows.map((row) => parts(row).button)
-
-    fireEvent.click(buttons[0])
-    fireEvent.click(buttons[2])
-    expect(buttons.map((button) => button.getAttribute('aria-expanded'))).toEqual([
-      'true', 'false', 'true',
-    ])
-
-    fireEvent.click(buttons[1])
-    expect(buttons.map((button) => button.getAttribute('aria-expanded'))).toEqual(
-      Array(3).fill('true'),
-    )
-    for (const row of rows) expect(parts(row).panel).toBeVisible()
-
-    fireEvent.click(buttons[1])
-    expect(buttons.map((button) => button.getAttribute('aria-expanded'))).toEqual([
-      'true', 'false', 'true',
-    ])
-  })
-
-  it('has no images or tab stops other than the three buttons and, in open panels, the page links', () => {
+  it('has no accordion: no button, expanded state, hidden panel, theme list or SVG', () => {
     const { section } = renderSolutions()
 
-    expect(within(section).queryAllByRole('link')).toHaveLength(0)
+    expect(within(section).queryAllByRole('button')).toHaveLength(0)
     expect(
-      section.querySelectorAll('input, select, textarea, details, img, [tabindex]'),
+      section.querySelectorAll(
+        'button, [aria-expanded], [aria-controls], [hidden], svg, img, [tabindex], input, select, textarea, details',
+      ),
     ).toHaveLength(0)
-    expect(section.querySelectorAll('button')).toHaveLength(3)
-  })
-
-  // #67: each panel ends with a crawlable link to its sector's page, named
-  // by the page's heading, so it is reachable only once the row is open.
-  it('links each open panel to its sector\'s landing page', () => {
-    const { rows } = renderSolutions()
-
-    rows.forEach((row, index) => {
-      const { button, panel } = parts(row)
-      fireEvent.click(button)
-      const link = within(panel).getByRole('link')
-      expect(link).toHaveAccessibleName(solutions[index].heading)
-      expect(link).toHaveAttribute('href', `/solutions/${solutions[index].slug}`)
-      expect(panel.lastElementChild).toContainElement(link)
-    })
-    expect(
-      rows.map((row) => within(parts(row).panel).getByRole('link').getAttribute('href')),
-    ).toEqual(['/solutions/health', '/solutions/financial-services', '/solutions/education'])
+    for (const solution of solutions) {
+      for (const theme of solution.themes) expect(section.textContent).not.toContain(theme)
+      expect(section.textContent).not.toContain(solution.heading)
+    }
   })
 
   it('shows no doc labels, client types, stage labels or colour markers', () => {
     const { section } = renderSolutions()
-    for (const button of within(section).getAllByRole('button')) fireEvent.click(button)
 
     expect(section.textContent).not.toMatch(
       /suggested|potential|client|\bbanks\b|sacco|\bNGOs\b|case stud|testimonial|fafanua intelligence|saas|\bAI\b/i,

@@ -4,7 +4,10 @@
 // (_docs/fafanua-v2-visual-upgrade-plan.md) Section 12, except the tag
 // lines W7 in _docs/fafanua-trust-lineage-positioning-plan.md updates
 // (Health, Financial Services and Education, #73), which are checked
-// against W7, so the wording on the site cannot drift from any of them.
+// against W7 as amended by section A of
+// _docs/fafanua-homepage-sections-refinement-plan.md (#89), which removes
+// "Lineage" from them and sets the homepage heading and intro line, so the
+// wording on the site cannot drift from any of them.
 // The ?raw imports resolve relative to this file and are never part of
 // the production bundle.
 import { describe, expect, it } from 'vitest'
@@ -12,7 +15,8 @@ import planV2 from '../../_docs/fafanua-v2-visual-upgrade-plan.md?raw'
 import positioning from '../../_docs/plan-fafanua-services-positioning.md?raw'
 import seoPlan from '../../_docs/fafanua-seo-keyword-and-implementation-plan.md?raw'
 import trustPlan from '../../_docs/fafanua-trust-lineage-positioning-plan.md?raw'
-import { homepageSolutions, solutions } from './solutions.ts'
+import refinementPlan from '../../_docs/fafanua-homepage-sections-refinement-plan.md?raw'
+import { homepageSolutions, solutions, solutionsIntro } from './solutions.ts'
 import { solutionPages } from './solutionPages.ts'
 
 // The five sectors the positioning doc and plan V2 cover, in the site's
@@ -97,6 +101,23 @@ const w7Lines = new Map(
 )
 // W7's homepage order: the bold list after "Show three sectors in this order:".
 const w7Order = (w7.match(/^- Show three sectors in this order: \*\*(.+)\.\*\*$/m)?.[1] ?? '').split(', ')
+
+// Section A's copy table in the refinement plan (#89): the `| Element |
+// Text | Status |` rows, by element.
+const refinement = refinementPlan.replace(/\r\n/g, '\n')
+const sectionAStart = refinement.indexOf('\n## 4. Section A: Solutions\n')
+const sectionA = refinement.slice(sectionAStart, refinement.indexOf('\n## ', sectionAStart + 1))
+const sectionACopy = new Map(
+  [...sectionA.matchAll(/^\| ([^|]+?) \| ([^|]+?) \| [^|]+? \|$/gm)].map((match) => [
+    match[1].trim(),
+    match[2].trim(),
+  ]),
+)
+const sectionATags: Record<string, string> = {
+  health: 'Health tags',
+  'financial-services': 'Financial Services tags',
+  education: 'Education tags',
+}
 
 describe('positioning doc parser', () => {
   it('finds five solutions with seven themes each in Sections 15 to 19', () => {
@@ -222,14 +243,57 @@ describe('W7 in the trust and lineage plan (#73)', () => {
     for (const items of w7Lines.values()) expect(items).toHaveLength(4)
   })
 
-  it.each(Object.entries(W7_NAMES))('uses the W7 tag line for %s, word for word', (id, name) => {
-    const solution = solutions.find((candidate) => candidate.id === id)!
+  // Section A of the refinement plan removes "Lineage" from W7's lines (#89).
+  it.each(Object.entries(W7_NAMES))(
+    'uses the W7 tag line for %s, word for word, without "Lineage", as the refinement plan amends it',
+    (id, name) => {
+      const solution = solutions.find((candidate) => candidate.id === id)!
 
-    expect(solution.summary).toEqual(w7Lines.get(name))
+      expect(solution.summary).toEqual(w7Lines.get(name)!.filter((item) => item !== 'Lineage'))
+      expect(solution.summary).toEqual(sectionACopy.get(sectionATags[id])!.split(' · '))
+    },
+  )
+
+  it('carries the refinement plan\'s amendment note (#89)', () => {
+    expect(w7).toMatch(
+      /^\*\*Amended \([^)]*#89\):\*\* section A of `_docs\/fafanua-homepage-sections-refinement-plan\.md` removes "Lineage"/m,
+    )
   })
 
   it('shows the homepage sectors in W7\'s order', () => {
     expect(w7Order).toEqual(['Health', 'Financial services', 'Education'])
     expect(homepageSolutions.map((solution) => W7_NAMES[solution.id])).toEqual(w7Order)
+  })
+})
+
+describe('section A of the homepage sections refinement plan (#89)', () => {
+  it('finds the copy table\'s rows', () => {
+    for (const element of [
+      'Heading',
+      'Intro line',
+      'Rows',
+      'Health tags',
+      'Financial Services tags',
+      'Education tags',
+    ]) {
+      expect(sectionACopy.get(element), element).toBeTruthy()
+    }
+  })
+
+  it('uses the heading and intro line word for word', () => {
+    expect(solutionsIntro.heading).toBe(sectionACopy.get('Heading'))
+    expect(solutionsIntro.intro).toBe(sectionACopy.get('Intro line'))
+  })
+
+  it('uses the three tag lines word for word', () => {
+    for (const solution of homepageSolutions) {
+      expect(solution.summary).toEqual(sectionACopy.get(sectionATags[solution.id])!.split(' · '))
+    }
+  })
+
+  it('shows the rows in its order', () => {
+    expect(homepageSolutions.map((solution) => solution.title)).toEqual(
+      sectionACopy.get('Rows')!.split('; '),
+    )
   })
 })

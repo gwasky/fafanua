@@ -115,6 +115,8 @@ Apply the rules in section 6 to all homepage and Solutions copy. Do not change H
 
 ### W7. Sectors on the homepage
 
+**Amended (2026-10-15, #89):** section A of `_docs/fafanua-homepage-sections-refinement-plan.md` removes "Lineage" from the three tag lines below. The homepage now shows Health: Branch comparability · Billing and claims · Pharmacy stock; Financial Services: Payments · Reconciliation · Regulatory reporting; Education: Enrolment · Progression · Payments. The sector names and their order are unchanged. Do not restore "Lineage".
+
 - Show three sectors in this order: **Health, Financial services, Education.**
 - Update the tag lines:
   - Health: Branch comparability • Billing and claims • Pharmacy stock • Lineage
