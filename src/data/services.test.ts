@@ -11,16 +11,18 @@ const ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
 const NAV_ANCHORS = ['services', 'capabilities', 'how-we-work', 'future-ready', 'about', 'contact']
 
 // Every string in the module: ids, names, descriptions, engagements, tags,
-// the intro and the Managed Services section.
+// the intro and the Managed Services section. The groups and offers hold
+// the capabilities again, so only their headings are listed here.
 const managedStrings = [
-  managedServices.eyebrow,
   managedServices.heading,
   managedServices.description,
   ...managedServices.capabilities,
   ...managedServices.journey,
   managedServices.sectionLabel,
   managedServices.sectionHeading,
-  ...managedServices.rail,
+  managedServices.journeyLabel,
+  ...managedServices.groups.map((group) => group.heading),
+  managedServices.engagementLabel,
 ]
 
 const allStrings = [
@@ -136,20 +138,38 @@ describe('services', () => {
 })
 
 describe('managedServices', () => {
-  it('has an eyebrow, heading, description, 13 capabilities and 3 journey steps', () => {
-    expect(managedServices.eyebrow).not.toBe('')
+  it('has a heading, description, 13 capabilities and 3 journey steps, and no eyebrow or rail', () => {
+    expect(managedServices).not.toHaveProperty('eyebrow')
+    expect(managedServices).not.toHaveProperty('rail')
     expect(managedServices.heading).not.toBe('')
     expect(managedServices.description).not.toBe('')
     expect(managedServices.capabilities).toHaveLength(13)
     expect(managedServices.journey).toHaveLength(3)
   })
 
-  it('has a section label, a section heading and a four-word rail', () => {
+  it('has a section label, a section heading, a journey label, four one-word groups, an engagement label and 2 offers', () => {
     expect(managedServices.sectionLabel).not.toBe('')
     expect(managedServices.sectionHeading).not.toBe('')
     expect(managedServices.sectionHeading).not.toBe(managedServices.heading)
-    expect(managedServices.rail).toHaveLength(4)
-    for (const word of managedServices.rail) expect(word).toMatch(/^[A-Z][a-z]+$/)
+    expect(managedServices.journeyLabel).not.toBe('')
+    expect(managedServices.groups).toHaveLength(4)
+    for (const group of managedServices.groups) {
+      expect(group.heading).toMatch(/^[A-Z][a-z]+$/)
+      expect(group.services.length).toBeGreaterThan(0)
+    }
+    expect(managedServices.engagementLabel).not.toBe('')
+    expect(managedServices.offers).toHaveLength(2)
+  })
+
+  it('holds each capability exactly once across the groups and offers, and nothing else', () => {
+    const placed: string[] = [
+      ...managedServices.groups.flatMap((group) => group.services),
+      ...managedServices.offers,
+    ]
+
+    expect(placed).toHaveLength(managedServices.capabilities.length)
+    expect(new Set(placed).size).toBe(placed.length)
+    expect([...placed].sort()).toEqual([...managedServices.capabilities].sort())
   })
 
   it('has no empty or duplicate strings', () => {
@@ -163,14 +183,16 @@ describe('managedServices', () => {
     )
     expect(Object.keys(managedServices)).toEqual([
       'slug',
-      'eyebrow',
       'heading',
       'description',
       'capabilities',
       'journey',
       'sectionLabel',
       'sectionHeading',
-      'rail',
+      'journeyLabel',
+      'groups',
+      'engagementLabel',
+      'offers',
     ])
   })
 })
@@ -229,8 +251,12 @@ describe('services types', () => {
     managedServices.capabilities.push('Changed')
     // @ts-expect-error the journey is read-only
     managedServices.journey.push('Changed')
-    // @ts-expect-error the rail is read-only
-    managedServices.rail.push('Changed')
+    // @ts-expect-error the groups are read-only
+    managedServices.groups[0].services.push(managedServices.groups[0].services[0])
+    // @ts-expect-error a group heading is read-only
+    managedServices.groups[0].heading = 'Changed'
+    // @ts-expect-error the offers are read-only
+    managedServices.offers.push(managedServices.offers[0])
     // @ts-expect-error 'operate' is not a stage
     const operate: Stage = 'operate'
     // @ts-expect-error 'intelligence' is not a stage

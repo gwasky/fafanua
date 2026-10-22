@@ -177,37 +177,85 @@ export const services = [
 
 // The Managed Services section, directly after Services: an ongoing
 // engagement model, not a seventh lifecycle card (Section 12). The
-// journey is the Section 12 "Commercial intent" line, one step per item.
-// Reverse ETL appears both here and under Data Engineering & Integration,
-// as Section 13 requires.
+// capabilities are the thirteen Section 12 bullets in that plan's order
+// (the Managed Data & Analytics landing page lists them so); the journey
+// is the Section 12 "Commercial intent" line, one step per item. Reverse
+// ETL appears both here and under Data Engineering & Integration, as
+// Section 13 requires.
+const managedCapabilities = [
+  'Managed data pipelines',
+  'Data-platform monitoring',
+  'Data-quality monitoring',
+  'Dashboard and reporting support',
+  'Analytics development',
+  'Reverse ETL and operational data activation',
+  'Platform optimisation',
+  'Cost and performance optimisation',
+  'Incident support',
+  'Data-model enhancements',
+  'Fractional data engineering',
+  'Fractional analytics support',
+  'Documentation and knowledge transfer',
+] as const
+
+// One of the thirteen capabilities, so a group or offer that is not one of
+// them, word for word, fails `npm run typecheck`.
+type ManagedCapability = (typeof managedCapabilities)[number]
+
 export const managedServices = {
   // Its landing page is /services/<slug> (SEO plan §16, #67).
   slug: 'managed-data-analytics',
-  eyebrow: 'Need ongoing data capability?',
   heading: 'Managed Data & Analytics Services',
   description:
     'Extend your team with ongoing data engineering, analytics, reporting, and platform expertise without having to build an entire internal data function.',
-  capabilities: [
-    'Managed data pipelines',
-    'Data-platform monitoring',
-    'Data-quality monitoring',
-    'Dashboard and reporting support',
-    'Analytics development',
-    'Reverse ETL and operational data activation',
-    'Platform optimisation',
-    'Cost and performance optimisation',
-    'Incident support',
-    'Data-model enhancements',
-    'Fractional data engineering',
-    'Fractional analytics support',
-    'Documentation and knowledge transfer',
-  ],
+  capabilities: managedCapabilities,
   journey: ['Assessment', 'Implementation', 'Managed Service'],
   // From plan V2 Section 10 (_docs/fafanua-v2-visual-upgrade-plan.md),
   // checked by services.managed.plan.test.ts: the section's eyebrow label
-  // (shown as "02 — Managed Services", the Section 9 numbering), its
-  // heading, and the capability rail, one word per item.
+  // (shown as "02 — Managed Services", the Section 9 numbering) and its
+  // heading.
   sectionLabel: 'Managed Services',
   sectionHeading: 'Your data capability, continuously operated.',
-  rail: ['Monitor', 'Maintain', 'Improve', 'Activate'],
+  // From the Managed Services Regrouped plan §3 and §5
+  // (_docs/fafanua-managed-services-regrouped-plan.md, #88), checked by
+  // services.managed.plan.test.ts: the journey nav's accessible name, the
+  // capabilities grouped under the V2 Section 10 verbs (eleven of them),
+  // and the "How you can engage" label with the two fractional offers.
+  // Groups and offers together hold each capability exactly once.
+  journeyLabel: 'How engagements progress',
+  groups: [
+    {
+      heading: 'Monitor',
+      services: ['Data-platform monitoring', 'Data-quality monitoring', 'Incident support'],
+    },
+    {
+      heading: 'Maintain',
+      services: [
+        'Managed data pipelines',
+        'Dashboard and reporting support',
+        'Documentation and knowledge transfer',
+      ],
+    },
+    {
+      heading: 'Improve',
+      services: [
+        'Data-model enhancements',
+        'Platform optimisation',
+        'Cost and performance optimisation',
+        'Analytics development',
+      ],
+    },
+    {
+      heading: 'Activate',
+      services: ['Reverse ETL and operational data activation'],
+    },
+  ] as const satisfies readonly {
+    readonly heading: string
+    readonly services: readonly ManagedCapability[]
+  }[],
+  engagementLabel: 'How you can engage',
+  offers: [
+    'Fractional data engineering',
+    'Fractional analytics support',
+  ] as const satisfies readonly ManagedCapability[],
 } as const

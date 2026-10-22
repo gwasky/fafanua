@@ -236,7 +236,10 @@ describe('services wording', () => {
   })
 
   it('matches the Managed Data & Analytics Services block in Section 12', () => {
-    expect(managedServices.eyebrow).toEqual(docManaged.eyebrow)
+    // The Managed Services Regrouped plan §3 (#88) removes the Section 12
+    // eyebrow from the panel, and so from the data.
+    expect(managedServices).not.toHaveProperty('eyebrow')
+    expect(servicesSource.replace(/\/\/.*$/gm, '')).not.toContain(docManaged.eyebrow)
     expect(managedServices.heading).toEqual(docManaged.heading)
     expect(managedServices.description).toEqual(docManaged.description)
     expect(managedServices.capabilities).toEqual(docManaged.capabilities)
@@ -276,7 +279,10 @@ describe('services source', () => {
     expect(code).toContain('export const managedServices = {')
     expect(literals).toEqual(
       expect.arrayContaining([
-        managedServices.eyebrow,
+        managedServices.engagementLabel,
+        managedServices.journeyLabel,
+        ...managedServices.offers,
+        ...managedServices.groups.map((group) => group.heading),
         managedServices.heading,
         managedServices.description,
         ...managedServices.capabilities,
@@ -318,10 +324,10 @@ describe('other source files', () => {
         ...service.engagements,
       ]),
       servicesIntro.heading,
-      managedServices.eyebrow,
       managedServices.heading,
       managedServices.description,
       ...managedServices.capabilities,
+      ...managedServices.offers,
     ]
     // The journey steps are single words, so they are matched as whole
     // words: "mockImplementation" does not repeat "Implementation". The
