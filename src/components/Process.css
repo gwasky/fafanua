@@ -1,147 +1,387 @@
 /*
- * How We Work (plan V2 §13): the eyebrow, the h2 and the four stages as a
- * numbered timeline on a graphite 100 background (.surface-alt, which
- * also makes --color-link teal 800 there). The line is graphite 200 and
- * each stage's node is a teal 600 ring (--color-accent, graphics only),
- * filled with the section's background so the line stops at its edge. No
- * service-line colours, so it does not read as the capability grid's
- * stage lines (ServiceCard.css), which are a teal number, a stage name
- * and a hairline; here each stage has its full description.
+ * How We Work (section B of the homepage sections refinement plan, #90):
+ * the eyebrow, the h2, then the stage band, the track and four step
+ * columns on graphite 100 (.surface-alt). Still no service-line colours,
+ * so it does not read as the capability grid (#59).
  *
- * Below 64em a vertical timeline: the line runs down the inline-start
- * edge through each node, and each stage's number, name and description
- * sit to its inline-end side. From 64em (1024px; literal breakpoint, see
- * the note in tokens.css) a horizontal one: the four stages in one row of
- * equal columns, a node at the start of each, and the number, name and
- * description below it. At 768px it stays vertical, as four description
- * columns do not fit.
+ * The stage band is the Managed Services journey's labels (#88) above the
+ * first step of each phase: ASSESSMENT in teal 800 (--color-accent-text),
+ * the others graphite 600 (--color-text-muted). The track is one line
+ * through four dots, drawn by each step's empty aria-hidden span: the
+ * span is the dot, and its ::after is the step's segment, so every piece
+ * is a border, never announced and still drawn in forced-colours mode.
+ * The segments join at the column edges: the Assessment segment is 3px
+ * teal 600 (--color-accent, graphics only) from dot 01's centre, the
+ * Implementation one 2px graphite 600, and the Managed Service one 2px
+ * dashed graphite 500 (--color-line-soft, graphics only) running out to
+ * the section's edge, which clips it. Each segment sits under the dots
+ * (z-index -1 in the list's stacking context), so the hollow dots stay
+ * filled with the section's graphite 100.
  *
- * The line is one segment per stage but the last, from its node's centre
- * to the next node's centre, so the segments join into one continuous
- * line under the nodes. Nodes and segments are pseudo-elements drawn with
- * borders: they have no text, are never announced and stay drawn in
- * forced-colours mode. No reordering, so the visual order always matches
- * the DOM order.
+ * Each step's card holds the numeral, the name, the description and the
+ * output under a hairline. The highlighted card (Process.tsx) is
+ * .surface-dark: every colour token takes its on-dark value and the card
+ * paints graphite 900, so only colours change, never its box. Step 01's
+ * pill is .surface-light, so it stays teal 800 on teal 100 on the dark
+ * card too.
+ *
+ * From 64em (1024px; literal breakpoint, see the note in tokens.css) the
+ * steps are four equal columns. Each step and each card is a subgrid of
+ * the list's seven rows (label, track, tag, numeral, name, description,
+ * output), so the numerals and the hairlines line up across the columns
+ * however the descriptions wrap. Below 64em the steps stack, with the
+ * track down the inline-start edge and each label beside its dot. No
+ * reordering, so the visual order always matches the DOM order.
  */
 
-/* A quarter less padding than the other sections (refinement plan §8). */
+/* A quarter less padding than the other sections (refinement plan §8).
+   clip, not hidden: it trims the Managed Service segment at the section's
+   edge without making a scroll container. */
 .process {
   padding-block: var(--space-section-compact);
+  overflow-x: clip;
 }
 
-/* Weight 300 from the global heading styles. */
+/* Weight 300 from the global heading styles. One line at 1440px. */
 .process__heading {
-  max-width: var(--measure-display);
-  margin-block-end: var(--space-10);
+  max-width: var(--measure);
+  margin-block-end: var(--space-16);
   font-size: var(--text-section);
   line-height: var(--leading-display);
   overflow-wrap: break-word;
 }
 
 .process__list {
-  /* The node's size and the space between stages. */
+  /* The dot's size, the space between columns, the line widths, and the
+     height of one stage-label line. */
   --node: var(--space-4);
-  --stage-gap: var(--space-8);
-  /* Centres the node on the number's line. */
-  --node-top: calc((var(--text-sm) * var(--leading-snug) - var(--node)) / 2);
+  --stage-gap: var(--space-5);
+  --line: calc(var(--border-width) * 2);
+  --line-current: calc(var(--border-width) * 3);
+  --label-line: calc(var(--text-eyebrow) * var(--leading-snug));
 
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--stage-gap);
+  row-gap: var(--space-8);
   margin: 0;
   padding: 0;
   list-style: none;
-  /* Keeps the nodes' and segments' stacking inside the list. */
+  /* Keeps the segments' negative z-index inside the list, over the
+     section's background and under the dots. */
   isolation: isolate;
 }
 
 .process__stage {
+  /* The dot: a ring in the phase's colour, filled with the section's
+     background, or filled with teal 600 by its border. */
+  --ring: calc(var(--border-width) * 2);
+  --dot: var(--color-text-muted);
+
   position: relative;
-  padding-inline-start: calc(var(--node) + var(--space-6));
+  display: grid;
+  grid-template-columns: var(--node) minmax(0, 1fr);
+  grid-template-rows: minmax(var(--label-line), auto) auto;
+  column-gap: var(--space-4);
+  row-gap: var(--space-4);
 }
 
-/* The node: a teal 600 ring over the line. */
-.process__stage::before {
-  content: '';
-  position: absolute;
-  z-index: 1;
-  inset-block-start: var(--node-top);
-  inset-inline-start: 0;
+.process__stage[data-phase='managed'] {
+  --dot: var(--color-line-soft);
+}
+
+/* Dot 01 is always filled, and so is the highlighted step's. */
+.process__stage[data-phase='assessment'],
+.process__stage[data-highlighted] {
+  --ring: calc(var(--node) / 2);
+  --dot: var(--color-accent);
+}
+
+.process__phase {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-eyebrow);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.process__phase--current {
+  color: var(--color-accent-text);
+}
+
+/* The dot, centred on the first line of its label (or the empty label
+   row, for step 03). */
+.process__track {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+  box-sizing: border-box;
   width: var(--node);
   height: var(--node);
-  border: calc(var(--border-width) * 2) solid var(--color-accent);
+  margin-block-start: calc((var(--label-line) - var(--node)) / 2);
+  border: var(--ring) solid var(--dot);
   border-radius: var(--radius-full);
   background-color: var(--color-surface-alt);
 }
 
-/* The line: down from this node's centre to the next one's. */
-.process__stage:not(:last-child)::after {
+/* The segment: down the inline-start edge, from this step's top to the
+   next one's, through the dots. */
+.process__track::after {
   content: '';
   position: absolute;
-  inset-block-start: calc(var(--node-top) + var(--node) / 2);
-  inset-inline-start: calc(var(--node) / 2 - var(--border-width) / 2);
-  height: calc(100% + var(--stage-gap));
-  border-inline-start: var(--border-width) solid var(--color-border);
+  z-index: -1;
+  inset-block: 0 calc(-1 * var(--space-8));
+  inset-inline-start: calc(var(--node) / 2 - var(--line) / 2);
+  border-inline-start: var(--line) solid var(--color-text-muted);
 }
 
-/* Teal text via --color-link: teal 800 on graphite 100 (6.9:1). */
+/* Assessment: from dot 01's centre. */
+.process__stage[data-phase='assessment'] .process__track::after {
+  inset-block-start: calc(var(--label-line) / 2);
+  inset-inline-start: calc(var(--node) / 2 - var(--line-current) / 2);
+  border-inline-start: var(--line-current) solid var(--color-accent);
+}
+
+/* Managed Service: dashed, on to the section's bottom edge. */
+.process__stage[data-phase='managed'] .process__track::after {
+  inset-block-end: calc(-1 * var(--space-section-compact));
+  border-inline-start: var(--line) dashed var(--color-line-soft);
+}
+
+.process__card {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--process-card-inset);
+  border-radius: var(--radius-md);
+}
+
+/* A transparent outline: invisible normally, drawn in forced-colours
+   mode, so the highlight stays visible there without changing the box. */
+.process__card.surface-dark {
+  outline: var(--border-width) solid transparent;
+  outline-offset: 0;
+}
+
+/* Step 01's pill: teal 800 on teal 100 (6.9:1), the assessment's rating
+   chip (#82). .surface-light keeps it so on the dark card. */
+.process__card .process__tag {
+  align-self: flex-start;
+  justify-self: start;
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  background-color: var(--color-tag-bg);
+  color: var(--color-tag-text);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+/* Graphite 600 on graphite 100 (5.7:1); teal 400 on the dark card
+   (7.5:1). */
 .process__number {
   display: block;
-  margin-block-end: var(--space-2);
-  color: var(--color-link);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
+  margin-block-start: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-light);
   font-variant-numeric: tabular-nums;
-  line-height: var(--leading-snug);
+  line-height: var(--leading-tight);
+}
+
+.process__card.surface-dark .process__number {
+  color: var(--color-accent-text);
+}
+
+/* Below the pill. In the columns, every numeral keeps this space under
+   the tag row (subgrid, below), so steps 02 to 04 sit level with 01. */
+.process__tag + .process__number {
+  margin-block-start: var(--space-4);
 }
 
 .process__name {
-  margin-block-end: var(--space-3);
+  margin-block: var(--space-2) var(--space-3);
+  color: var(--color-heading);
   font-size: var(--text-service);
   line-height: var(--leading-snug);
 }
 
 .process__description {
-  max-width: var(--measure);
-  margin-block: 0 var(--space-3);
-  color: var(--color-text);
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-normal);
   /* Break a word only if it cannot fit on a line of its own, rather than
      anywhere as .container allows. */
   overflow-wrap: break-word;
   text-wrap: pretty;
 }
 
-/* The stage's output: smaller than the description and secondary to it,
-   graphite 600 on graphite 100 (5.7:1). Not a heading, chip or card. */
+/* The hairline, then the label and the output: smaller than the
+   description and secondary to it. Not a heading, chip or card. */
 .process__output {
-  margin-block: 0;
+  margin-block-start: var(--space-5);
+  padding-block-start: var(--space-4);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.process__output-label {
+  margin: 0 0 var(--space-2);
   color: var(--color-text-muted);
-  font-size: var(--text-sm);
+  font-size: var(--text-eyebrow);
   font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.process__output-text {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
   line-height: var(--leading-snug);
   overflow-wrap: break-word;
 }
 
+/* The highlight's only motion: its colours ease, about 200ms (#83, #89). */
+.process__card,
+.process__number,
+.process__name,
+.process__description,
+.process__output,
+.process__output-label,
+.process__output-text,
+.process__track {
+  transition-property: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .process__card,
+  .process__number,
+  .process__name,
+  .process__description,
+  .process__output,
+  .process__output-label,
+  .process__output-text,
+  .process__track {
+    transition-property: background-color, color, border-color;
+    transition-duration: var(--duration-card-hover);
+    transition-timing-function: var(--ease-standard);
+  }
+}
+
 @media (min-width: 64em) {
   .process__list {
-    --node-top: 0px;
-
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: var(--stage-gap);
+    row-gap: 0;
   }
 
   .process__stage {
-    padding-block-start: calc(var(--node) + var(--space-6));
-    padding-inline-start: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(var(--label-line), auto) auto auto;
+    column-gap: 0;
+    row-gap: 0;
   }
 
-  /* The line: across from this node's centre to the next one's, at the
-     same height in every stage. */
-  .process__stage:not(:last-child)::after {
-    inset-block-start: calc(var(--node) / 2 - var(--border-width) / 2);
-    inset-inline-start: calc(var(--node) / 2);
-    width: calc(100% + var(--stage-gap));
-    height: 0;
+  /* Each label starts at its card's content edge. */
+  .process__phase {
+    grid-column: 1;
+    margin-block-end: var(--space-4);
+    padding-inline-start: var(--process-card-inset);
+  }
+
+  /* Implementation is centred over steps 02 and 03 together. */
+  .process__stage[data-phase='implementation'] .process__phase {
+    justify-self: start;
+    width: calc(200% + var(--stage-gap));
+    padding-inline: 0;
+    text-align: center;
+    white-space: normal;
+  }
+
+  /* The dot, at its card's content edge. */
+  .process__track {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: center;
+    margin-block: 0 var(--space-8);
+    margin-inline-start: var(--process-card-inset);
+  }
+
+  /* The segment: across from this step's start edge to the next one's,
+     vertically centred on the dot. Its block position is its static
+     one, the dot's content box, so it follows the dot. */
+  .process__track::after,
+  .process__stage[data-phase='assessment'] .process__track::after,
+  .process__stage[data-phase='managed'] .process__track::after {
+    inset-block: auto;
+    inset-inline: 0 calc(-1 * var(--stage-gap));
+    margin-block-start: calc(var(--node) / 2 - var(--ring) - var(--line) / 2);
     border-inline-start: 0;
-    border-block-start: var(--border-width) solid var(--color-border);
+    border-block-start: var(--line) solid var(--color-text-muted);
+  }
+
+  .process__stage[data-phase='assessment'] .process__track::after {
+    inset-inline-start: calc(var(--process-card-inset) + var(--node) / 2);
+    margin-block-start: calc(var(--node) / 2 - var(--ring) - var(--line-current) / 2);
+    border-block-start: var(--line-current) solid var(--color-accent);
+  }
+
+  /* On past the container to the section's edge, which clips it. */
+  .process__stage[data-phase='managed'] .process__track::after {
+    inset-inline-end: -100vw;
+    border-block-start: var(--line) dashed var(--color-line-soft);
+  }
+
+  .process__card {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  @supports (grid-template-rows: subgrid) {
+    .process__stage {
+      grid-row: span 7;
+      grid-template-rows: subgrid;
+    }
+
+    .process__card {
+      grid-row: 3 / span 5;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: subgrid;
+    }
+
+    .process__tag {
+      grid-row: 1;
+    }
+
+    .process__number {
+      grid-row: 2;
+      margin-block-start: var(--space-4);
+    }
+
+    .process__name {
+      grid-row: 3;
+    }
+
+    .process__description {
+      grid-row: 4;
+    }
+
+    .process__output {
+      grid-row: 5;
+      align-self: start;
+    }
   }
 }

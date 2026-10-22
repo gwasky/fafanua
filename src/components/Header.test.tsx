@@ -9,6 +9,9 @@ import Header from './Header.tsx'
 // lets a test fire a change as if the window had been resized.
 type Listener = (event: MediaQueryListEvent) => void
 let listeners: Set<Listener>
+// The query each listener was added for: App also renders How We Work,
+// which listens to its own highlight query (#90).
+let mediaOf: Map<Listener, string>
 
 function setWide(matches: boolean) {
   act(() => {
@@ -20,11 +23,14 @@ function setWide(matches: boolean) {
 
 beforeEach(() => {
   listeners = new Set()
+  mediaOf = new Map()
   vi.stubGlobal('matchMedia', (media: string) => ({
     media,
     matches: false,
-    addEventListener: (_type: string, listener: Listener) =>
-      listeners.add(listener),
+    addEventListener: (_type: string, listener: Listener) => {
+      mediaOf.set(listener, media)
+      listeners.add(listener)
+    },
     removeEventListener: (_type: string, listener: Listener) =>
       listeners.delete(listener),
   }))
@@ -360,9 +366,11 @@ describe('Header', () => {
 
   it('removes its media query listener on unmount', () => {
     const { unmount } = render(<App />)
-    expect(listeners.size).toBe(1)
+    const header = () => [...listeners].filter((listener) => mediaOf.get(listener) === '(min-width: 64em)')
+    expect(header()).toHaveLength(1)
 
     unmount()
+    expect(header()).toHaveLength(0)
     expect(listeners.size).toBe(0)
   })
 })

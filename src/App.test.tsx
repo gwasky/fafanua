@@ -14,7 +14,7 @@ import {
   positioningProblem,
   positioningTransition,
 } from './data/positioning.ts'
-import { processStages } from './data/process.ts'
+import { processIntro, processStages } from './data/process.ts'
 import { managedServices, services, servicesIntro } from './data/services.ts'
 import { homepageSolutions, solutions, solutionsIntro } from './data/solutions.ts'
 import { systemFlow } from './data/systemFlow.ts'
@@ -242,14 +242,16 @@ describe('App', () => {
     // Data Trust Assessment, W4's own description of the offer (#71), and
     // the capabilities section's promise line, the open grid plan's one
     // new string (#83), and the Solutions intro line, section A of the
-    // homepage sections refinement plan (#89): no other paragraph in main
-    // repeats it. ("Traceable" and "traceability" in the
-    // process stages and the diagram's terms are not the hero's claim.)
+    // homepage sections refinement plan (#89), and the Assess step's
+    // description in How We Work, section B of the same plan (#90): no
+    // other paragraph in main repeats it. ("Traceable" in the diagram's
+    // terms is not the hero's claim, and "traceability" is gone from the
+    // process stages, #90.)
     const hero = screen.getByRole('region', { name: HERO })
     const tracing = [...screen.getByRole('main').querySelectorAll('p')].filter((p) =>
       /\btrace\b|to the source|back to (its|their) source/i.test(p.textContent!),
     )
-    expect(tracing).toHaveLength(5)
+    expect(tracing).toHaveLength(6)
     expect(hero).toContainElement(tracing[0])
     expect(tracing[1]).toBe(screen.getByText(positioningTransition))
     expect(tracing[1].closest('.positioning')).toBe(hero.nextElementSibling)
@@ -259,6 +261,8 @@ describe('App', () => {
     expect(screen.getByRole('region', { name: SERVICES })).toContainElement(tracing[3])
     expect(tracing[4]).toBe(screen.getByText(solutionsIntro.intro))
     expect(screen.getByRole('region', { name: solutionsIntro.heading })).toContainElement(tracing[4])
+    expect(tracing[5].textContent).toBe(processStages[0].description)
+    expect(screen.getByRole('region', { name: processIntro.heading })).toContainElement(tracing[5])
   })
 
   it('has the Services h2 W3 names, and no h2 that says "business intelligence" (#70)', () => {
@@ -288,7 +292,7 @@ describe('App', () => {
       screen.getByRole('region', { name: SERVICES }),
       screen.getByRole('region', { name: MANAGED }),
       screen.getByRole('region', { name: solutionsIntro.heading }),
-      screen.getByRole('region', { name: 'How We Work' }),
+      screen.getByRole('region', { name: processIntro.heading }),
       screen.getByRole('region', { name: FUTURE_READY }),
       screen.getByRole('region', { name: 'About Fafanua' }),
       screen.getByRole('region', { name: CONTACT }),
@@ -391,7 +395,7 @@ describe('App', () => {
   it('renders the How We Work section directly after Solutions', () => {
     render(<App />)
     const solutions = screen.getByRole('region', { name: solutionsIntro.heading })
-    const process = screen.getByRole('region', { name: 'How We Work' })
+    const process = screen.getByRole('region', { name: processIntro.heading })
     const nav = navigation.find((item) => item.label === 'How We Work')
 
     expect(solutions.nextElementSibling).toBe(process)
@@ -418,7 +422,7 @@ describe('App', () => {
   it('names the Solutions and How We Work regions by their h2s, after their eyebrows', () => {
     render(<App />)
     const solutionsRegion = screen.getByRole('region', { name: solutionsIntro.heading })
-    const process = screen.getByRole('region', { name: 'How We Work' })
+    const process = screen.getByRole('region', { name: processIntro.heading })
 
     expect(solutionsRegion.querySelector('.section-eyebrow')?.textContent).toBe(
       '03 — Solutions',
@@ -432,7 +436,7 @@ describe('App', () => {
 
   it('shows the four stages inside the How We Work section', () => {
     render(<App />)
-    const process = screen.getByRole('region', { name: 'How We Work' })
+    const process = screen.getByRole('region', { name: processIntro.heading })
 
     expect(
       within(process)
@@ -444,7 +448,7 @@ describe('App', () => {
   it('renders the future-ready section directly after How We Work', () => {
     render(<App />)
     const main = screen.getByRole('main')
-    const process = screen.getByRole('region', { name: 'How We Work' })
+    const process = screen.getByRole('region', { name: processIntro.heading })
     const futureReady = screen.getByRole('region', { name: FUTURE_READY })
 
     expect(futureReady.id).toBe('future-ready')
@@ -659,13 +663,19 @@ describe('App', () => {
       screen.getByRole('region', { name: FUTURE_READY }),
     ])
     // In order: the hero, the assessment panel (#82), the Managed panel,
-    // future-ready and the footer. Each panel is inside its section's
-    // container, on paper, and the footer (#60) is the last dark surface,
-    // outside main.
-    expect(dark).toHaveLength(5)
+    // How We Work's highlighted step 01 card (#90), future-ready and the
+    // footer. Each panel is inside its section's container, on paper, the
+    // card is inside its step, on the graphite 100 section, and the footer
+    // (#60) is the last dark surface, outside main.
+    const process = screen.getByRole('region', { name: processIntro.heading })
+    expect(dark).toHaveLength(6)
     expect(dark[0]).toBe(screen.getByRole('region', { name: HERO }))
-    expect(dark[3]).toBe(screen.getByRole('region', { name: FUTURE_READY }))
-    expect(dark[4]).toBe(screen.getByRole('contentinfo'))
+    expect(dark[3]).toHaveClass('process__card')
+    expect(dark[3].closest('li')).toBe(process.querySelector('li'))
+    expect(process).not.toHaveClass('surface-dark')
+    expect(process).toHaveClass('surface-alt')
+    expect(dark[4]).toBe(screen.getByRole('region', { name: FUTURE_READY }))
+    expect(dark[5]).toBe(screen.getByRole('contentinfo'))
     expect(dark[1].parentElement).toHaveClass('container')
     expect(dark[1].parentElement!.parentElement).toBe(assessment)
     expect(assessment).not.toHaveClass('surface-dark')
@@ -733,7 +743,7 @@ describe('App', () => {
     expect(text.replace(/(business|payment) intelligence/gi, '')).not.toMatch(/intelligence/i)
   })
 
-  it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its four verb h3s, h2 Solutions heading, three h3s, h2 How We Work, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
+  it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its four verb h3s, h2 Solutions heading, three h3s, h2 How We Work heading, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
@@ -781,7 +791,7 @@ describe('App', () => {
         homepageSolutions[index].title,
       )
     })
-    expect(headings[21].textContent).toBe('How We Work')
+    expect(headings[21].textContent).toBe(processIntro.heading)
     expect(headings.slice(22, 26).map((heading) => heading.textContent)).toEqual(
       processStages.map((stage) => stage.name),
     )
