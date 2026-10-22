@@ -32,6 +32,7 @@ Avoid adding other test frameworks without discussing it first.
 - Interactive controls work with the keyboard and expose state: the mobile menu toggle (`aria-expanded`, closes after choosing a link).
 - Links point to the right targets, especially `mailto:info@fafanua.tech` and in-page anchors.
 - Content rules are respected: nothing presents Fafanua Intelligence as an existing product.
+- Hover-only states (the How We Work highlight, #90) are checked in Playwright both with a mouse on a hover-capable device and under touch emulation; touch and keyboard users must see the resting state.
 
 **Accessibility**
 

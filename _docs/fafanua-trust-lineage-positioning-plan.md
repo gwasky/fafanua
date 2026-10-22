@@ -219,6 +219,8 @@ Default: **keep** "Trusted Data. Better Decisions." If approved, set the `h1` to
 
 `Approved: [ ]`
 
+**Replaced (2026-10-15, #90):** by section B of `_docs/fafanua-homepage-sections-refinement-plan.md`. Do not implement G2. How We Work keeps Assess, Design, Build and Govern, and takes the Managed Services journey's stage labels (Assessment, Implementation, Managed Service) as its stage band.
+
 **Note (2026-10-15, #88):** the Monitor, Maintain, Improve and Activate group headings in the homepage Managed Services panel are out of G2's scope (the Managed Services Regrouped plan §2). If G2 is approved, it must not remove them from that panel.
 
 Replace the competing process models with one: **Assess, Build, Govern, Run.** This replaces How We Work's Assess, Design, Build, Govern, and retires the six-stage lifecycle labels and the Monitor / Maintain / Improve / Activate strip. Make each step's deliverable prominent text, not a small grey label. Recommended.
