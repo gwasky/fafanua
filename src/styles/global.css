@@ -202,6 +202,7 @@ a:hover {
   --color-tag-text: var(--color-tag-text-on-dark);
   --color-logo-mark: var(--color-logo-mark-on-dark);
   --color-logo-wordmark: var(--color-logo-wordmark-on-dark);
+  --color-line-soft: var(--color-line-soft-on-dark);
 }
 
 .surface-dark {

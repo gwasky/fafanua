@@ -225,6 +225,15 @@ describe('semantic colour tokens', () => {
     expect(teal700).toBeCloseTo(4.47, 1)
   })
 
+  it('keeps the soft line graphite 500, graphics only, at least 3:1 on graphite 100 (#90)', () => {
+    expect(resolve('--color-line-soft', root)).toBe(resolve('--graphite-500', root))
+    const ratio = contrast(resolve('--color-line-soft', surfaceAlt), resolve('--color-surface-alt', surfaceAlt))
+    expect(ratio).toBeGreaterThanOrEqual(3)
+    expect(ratio).toBeCloseTo(3.7, 1)
+    // Graphics only: it is not a text token.
+    expect(textTokens).not.toContain('--color-line-soft')
+  })
+
   it('makes .on-dark the same reassignment as .surface-dark', () => {
     expect(onDarkBlock).toEqual(surfaceDarkBlock)
   })
