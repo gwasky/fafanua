@@ -4,6 +4,7 @@ import { expectLanded, expectNoAxeViolations, openPage, pressTab, scrollThrough,
 import { SEQUENCE, walkFocus } from './focus.ts'
 import { AXE_TAGS, formatViolations } from '../src/test/axe.ts'
 import { assessmentHeading } from '../src/data/assessment.ts'
+import { processIntro } from '../src/data/process.ts'
 import { managedServices, servicesIntro } from '../src/data/services.ts'
 import { solutionsIntro } from '../src/data/solutions.ts'
 
@@ -161,6 +162,20 @@ test.describe('axe, a Solutions row focused', () => {
       await expectNoAxeViolations(page, testInfo)
     })
   }
+})
+
+// How We Work's highlight (#90): axe at rest is covered by the page as
+// loaded; here with the highlight moved to step 03 by a mouse.
+test.describe('axe, How We Work with step 03 hovered', () => {
+  test('step 03 hovered at 1440px', async ({ page }, testInfo) => {
+    await openPage(page, 1440)
+    const steps = page.getByRole('region', { name: processIntro.heading }).getByRole('listitem')
+    await steps.nth(2).getByRole('heading').hover()
+    await expect(steps.nth(2)).toHaveAttribute('data-highlighted', '')
+    await waitForMotion(page)
+
+    await expectNoAxeViolations(page, testInfo)
+  })
 })
 
 test.describe('axe, a capability cell hovered', () => {
@@ -972,7 +987,7 @@ test.describe('browser text size 200%: the header falls back to the Menu', () =>
       // The How We Work timeline is vertical: one left edge, each stage
       // below the last.
       const stages = await page
-        .getByRole('region', { name: 'How We Work' })
+        .getByRole('region', { name: processIntro.heading })
         .getByRole('listitem')
         .evaluateAll((items) =>
           items.map((item) => {

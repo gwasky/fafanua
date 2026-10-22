@@ -1,5 +1,6 @@
-import type { Page, TestInfo } from '@playwright/test'
+import type { Locator, Page, TestInfo } from '@playwright/test'
 import { expect } from '@playwright/test'
+import { processIntro } from '../src/data/process.ts'
 import { managedServices, servicesIntro } from '../src/data/services.ts'
 import { footerSolutions, homepageSolutions, solutionsIntro } from '../src/data/solutions.ts'
 import { solutionPath } from '../src/paths.ts'
@@ -13,6 +14,7 @@ import {
   test,
   waitForFonts,
   waitForLanding,
+  waitForMotion,
   waitForScrollSettle,
 } from './fixtures.ts'
 import { expectFlow, flowDiagram, flowList, flowProblems, flowShapeAt, measureFlow } from './systemFlow.ts'
@@ -563,6 +565,106 @@ const heroRegion = (page: Page) =>
   page.getByRole('region', { name: 'Trusted Data. Better Decisions.' })
 
 // The Solutions section (#59, #73), named by its h2 since #89.
+const processRegion = (page: Page) => page.getByRole('region', { name: processIntro.heading })
+
+/**
+ * How We Work's geometry (#90), in viewport coordinates: each step's box,
+ * its dot (the track span), its segment (the span's ::after, positioned
+ * against the step: horizontal from 64em, vertical below it), its stage
+ * label, its card and the card's text, and any word split across lines.
+ */
+const measureProcess = (page: Page) =>
+  processRegion(page).evaluate((root) => {
+    const px = (value: string) => parseFloat(value) || 0
+    const rect = (element: Element) => {
+      const r = element.getBoundingClientRect()
+      return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }
+    }
+    const section = rect(root)
+    const steps = [...root.querySelectorAll('.process__stage')].map((item) => {
+      const box = item.getBoundingClientRect()
+      const track = item.querySelector('.process__track')!
+      const dot = track.getBoundingClientRect()
+      const s = getComputedStyle(track, '::after')
+      const horizontal = px(s.borderTopWidth) > 0
+      const segment = horizontal
+        ? {
+            start: box.left + px(s.left),
+            end: box.left + px(s.left) + px(s.width),
+            y: box.top + px(s.top) + px(s.marginTop) + px(s.borderTopWidth) / 2,
+            x: NaN,
+          }
+        : {
+            start: box.top + px(s.top) + px(s.marginTop),
+            end: box.top + px(s.top) + px(s.marginTop) + px(s.height),
+            x: box.left + px(s.left) + px(s.borderLeftWidth) / 2,
+            y: NaN,
+          }
+      const label = item.querySelector('.process__phase')
+      const card = item.querySelector('.process__card')!
+      const cardBox = card.getBoundingClientRect()
+      const text = (selector: string) => rect(item.querySelector(selector)!)
+      return {
+        box: { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width },
+        dot: { ...rect(track), x: dot.left + dot.width / 2, y: dot.top + dot.height / 2 },
+        segment,
+        label: label
+          ? {
+              ...rect(label),
+              textLeft: label.getBoundingClientRect().left + px(getComputedStyle(label).paddingLeft),
+              centre: label.getBoundingClientRect().left + label.getBoundingClientRect().width / 2,
+              lineHeight: px(getComputedStyle(label).lineHeight),
+            }
+          : null,
+        card: { ...rect(card), contentLeft: cardBox.left + px(getComputedStyle(card).paddingLeft) },
+        number: text('.process__number'),
+        name: text('h3'),
+        description: text('.process__description'),
+        outputLabel: text('.process__output-label'),
+        output: text('.process__output-text'),
+        // Words split across lines in the paragraphs.
+        broken: [...item.querySelectorAll('p')].flatMap((p) => {
+          const words: string[] = []
+          const node = p.firstChild!
+          for (const match of p.textContent!.matchAll(/\S+/g)) {
+            const range = document.createRange()
+            range.setStart(node, match.index)
+            range.setEnd(node, match.index + match[0].length)
+            const tops = [...range.getClientRects()].filter((r) => r.width > 0).map((r) => r.top)
+            if (tops.length > 1 && Math.max(...tops) - Math.min(...tops) > 2) words.push(match[0])
+          }
+          return words
+        }),
+        outputSize: px(getComputedStyle(item.querySelector('.process__output-text')!).fontSize),
+        descriptionSize: px(getComputedStyle(item.querySelector('.process__description')!).fontSize),
+      }
+    })
+    return {
+      section,
+      steps,
+      overflowX: getComputedStyle(root).overflowX,
+      clientWidth: document.documentElement.clientWidth,
+      labelLine: px(getComputedStyle(root.querySelector('.process__phase')!).lineHeight),
+    }
+  })
+
+/**
+ * How We Work's text that overflows its own box or the section's right
+ * edge. Spans are text only: the track span's segment reaches into the
+ * next step by design, so it is left out.
+ */
+const processOverflow = (page: Page) =>
+  processRegion(page).evaluate((root) =>
+    [...root.querySelectorAll('h2, h3, p, span:not(.process__track), .process__card')]
+      .filter(
+        (element) =>
+          element.scrollWidth > element.clientWidth + 1 ||
+          element.getBoundingClientRect().right > root.getBoundingClientRect().right + 1 ||
+          element.getBoundingClientRect().left < root.getBoundingClientRect().left - 1,
+      )
+      .map((element) => element.textContent?.slice(0, 40)),
+  )
+
 const solutionsRegion = (page: Page) =>
   page.getByRole('region', { name: solutionsIntro.heading })
 
@@ -2503,111 +2605,92 @@ for (const width of WIDTHS) {
       }
     })
 
-    // How We Work (#59): a horizontal timeline from 1024px, the four
-    // stages in one row of equal columns, and a vertical one below it.
-    // The line is one segment per stage but the last, which together run
-    // from the first node's centre to the last one's: horizontal at one
-    // height, or vertical at one inline position. Each stage's text sits
-    // below its node (horizontal) or to its inline end (vertical).
-    test(`the How We Work timeline is ${width >= 1024 ? 'horizontal' : 'vertical'}, with one continuous line through the nodes, at ${width}px`, async ({ page }, testInfo) => {
+    // How We Work (#59; section B of the homepage sections refinement
+    // plan, #90): from 1024px four equal columns under a stage band and a
+    // track, and below it the steps stacked with the track down the
+    // inline-start edge. The track is one continuous line through the four
+    // dots, in three segment styles, each segment joining the next at a
+    // column's (or step's) start edge, and the last running out to the
+    // section's edge.
+    test(`the How We Work steps are ${width >= 1024 ? 'four columns under the stage band' : 'stacked beside the track'}, with one continuous track through the dots, at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
-      const region = page.getByRole('region', { name: 'How We Work' })
+      const region = processRegion(page)
       await expect(region.getByRole('heading', { level: 3 })).toHaveText(['Assess', 'Design', 'Build', 'Govern'])
 
-      const m = await region.getByRole('list').evaluate((list) => {
-        const px = (value: string) => parseFloat(value)
-        return [...list.children].map((item) => {
-          const box = item.getBoundingClientRect()
-          const node = getComputedStyle(item, '::before')
-          const line = getComputedStyle(item, '::after')
-          const nodeLeft = box.left + px(node.left)
-          const nodeTop = box.top + px(node.top)
-          const text = (selector: string) => item.querySelector(selector)!.getBoundingClientRect()
-          return {
-            box: { left: box.left, top: box.top, width: box.width, bottom: box.bottom },
-            node: {
-              left: nodeLeft,
-              right: nodeLeft + px(node.width),
-              top: nodeTop,
-              bottom: nodeTop + px(node.height),
-              x: nodeLeft + px(node.width) / 2,
-              y: nodeTop + px(node.height) / 2,
-            },
-            line:
-              line.content === 'none'
-                ? null
-                : {
-                    left: box.left + px(line.left),
-                    top: box.top + px(line.top),
-                    width: px(line.width) + px(line.borderLeftWidth),
-                    height: px(line.height) + px(line.borderTopWidth),
-                  },
-            number: text('span'),
-            name: text('h3'),
-            description: text('.process__description'),
-            output: text('.process__output'),
-            // Words split across lines in the description and output.
-            broken: [...item.querySelectorAll('p')].flatMap((p) => {
-              const words: string[] = []
-              const node = p.firstChild!
-              for (const match of p.textContent!.matchAll(/\S+/g)) {
-                const range = document.createRange()
-                range.setStart(node, match.index)
-                range.setEnd(node, match.index + match[0].length)
-                const tops = [...range.getClientRects()].filter((r) => r.width > 0).map((r) => r.top)
-                if (tops.length > 1 && Math.max(...tops) - Math.min(...tops) > 2) words.push(match[0])
-              }
-              return words
-            }),
-            outputSize: parseFloat(getComputedStyle(item.querySelector('.process__output')!).fontSize),
-            descriptionSize: parseFloat(getComputedStyle(item.querySelector('.process__description')!).fontSize),
-          }
-        })
-      })
+      const m = await measureProcess(page)
       const detail = JSON.stringify(m)
-      expect(m).toHaveLength(4)
-      expect(m[3].line, 'no line after the last stage').toBeNull()
+      expect(m.steps).toHaveLength(4)
+      expect(m.overflowX).toBe('clip')
+      const [s1, s2, s3, s4] = m.steps
 
       if (width >= 1024) {
-        expect(spread(m.map((stage) => stage.box.top)), 'one row').toBeLessThanOrEqual(1)
-        expect(spread(m.map((stage) => stage.box.width)), 'equal columns').toBeLessThanOrEqual(1)
-        expect(spread(m.map((stage) => stage.node.y)), 'nodes at one height').toBeLessThanOrEqual(0.5)
-        for (let i = 0; i < 3; i++) {
-          const line = m[i].line!
-          expect(m[i + 1].box.left, `stage ${i + 2} right of stage ${i + 1}`).toBeGreaterThan(m[i].box.left)
-          expect(Math.abs(line.left - m[i].node.x), `segment ${i + 1} starts at its node: ${detail}`).toBeLessThanOrEqual(1)
-          expect(Math.abs(line.left + line.width - m[i + 1].node.x), `segment ${i + 1} reaches the next node: ${detail}`).toBeLessThanOrEqual(1)
-          expect(Math.abs(line.top + line.height / 2 - m[0].node.y), `segment ${i + 1} at the nodes' height: ${detail}`).toBeLessThanOrEqual(1)
+        expect(spread(m.steps.map((step) => step.box.top)), 'one row').toBeLessThanOrEqual(1)
+        expect(spread(m.steps.map((step) => step.box.width)), 'equal columns').toBeLessThanOrEqual(1)
+        expect(spread(m.steps.map((step) => step.dot.y)), 'dots at one height').toBeLessThanOrEqual(0.5)
+        for (const step of m.steps) {
+          expect(Math.abs(step.dot.left - step.card.contentLeft), `dot at its card's content edge: ${detail}`).toBeLessThanOrEqual(1)
+          expect(Math.abs(step.segment.y - step.dot.y), `segment through the dots: ${detail}`).toBeLessThanOrEqual(1)
+          expect(step.number.top, `text below the dot: ${detail}`).toBeGreaterThanOrEqual(step.dot.bottom)
         }
-        for (const stage of m) {
-          expect(stage.number.top, `text below the node: ${detail}`).toBeGreaterThanOrEqual(stage.node.bottom)
+        // Assessment: dot 01's centre to step 02's start edge;
+        // Implementation: step 02's to step 04's; Managed Service: step
+        // 04's to the section's (and the viewport's) edge.
+        expect(Math.abs(s1.segment.start - s1.dot.x), detail).toBeLessThanOrEqual(1)
+        expect(Math.abs(s1.segment.end - s2.box.left), detail).toBeLessThanOrEqual(1)
+        expect(Math.abs(s2.segment.start - s2.box.left), detail).toBeLessThanOrEqual(1)
+        expect(Math.abs(s2.segment.end - s3.box.left), detail).toBeLessThanOrEqual(1)
+        expect(Math.abs(s3.segment.start - s3.box.left), detail).toBeLessThanOrEqual(1)
+        expect(Math.abs(s3.segment.end - s4.box.left), detail).toBeLessThanOrEqual(1)
+        expect(Math.abs(s4.segment.start - s4.box.left), detail).toBeLessThanOrEqual(1)
+        expect(s4.segment.end, detail).toBeGreaterThanOrEqual(m.clientWidth - 1)
+        expect(Math.abs(m.section.right - m.clientWidth), detail).toBeLessThanOrEqual(1)
+        // ASSESSMENT and MANAGED SERVICE start at their cards' content
+        // edges, and IMPLEMENTATION is centred over steps 02 and 03.
+        expect(Math.abs(s1.label!.textLeft - s1.card.contentLeft), detail).toBeLessThanOrEqual(1)
+        expect(Math.abs(s4.label!.textLeft - s4.card.contentLeft), detail).toBeLessThanOrEqual(1)
+        expect(Math.abs(s2.label!.centre - (s2.box.left + s3.box.right) / 2), detail).toBeLessThanOrEqual(1)
+        expect(s3.label).toBeNull()
+        for (const step of m.steps) {
+          if (step.label) expect(step.label.bottom, `label above the track: ${detail}`).toBeLessThanOrEqual(step.dot.top)
         }
+        // The subgrid lines up the numerals and the YOU GET labels.
+        expect(spread(m.steps.map((step) => step.number.top)), `numerals level: ${detail}`).toBeLessThanOrEqual(1)
+        expect(spread(m.steps.map((step) => step.outputLabel.top)), `YOU GET level: ${detail}`).toBeLessThanOrEqual(1)
       } else {
-        expect(spread(m.map((stage) => stage.box.left)), 'one column').toBeLessThanOrEqual(1)
-        expect(spread(m.map((stage) => stage.node.x)), 'nodes at one inline position').toBeLessThanOrEqual(0.5)
-        for (let i = 0; i < 3; i++) {
-          const line = m[i].line!
-          expect(m[i + 1].box.top, `stage ${i + 2} below stage ${i + 1}`).toBeGreaterThanOrEqual(m[i].box.bottom)
-          expect(Math.abs(line.top - m[i].node.y), `segment ${i + 1} starts at its node: ${detail}`).toBeLessThanOrEqual(1)
-          expect(Math.abs(line.top + line.height - m[i + 1].node.y), `segment ${i + 1} reaches the next node: ${detail}`).toBeLessThanOrEqual(1)
-          expect(Math.abs(line.left + line.width / 2 - m[0].node.x), `segment ${i + 1} through the nodes: ${detail}`).toBeLessThanOrEqual(1)
+        expect(spread(m.steps.map((step) => step.box.left)), 'one column').toBeLessThanOrEqual(1)
+        expect(spread(m.steps.map((step) => step.dot.x)), 'dots at one inline position').toBeLessThanOrEqual(0.5)
+        for (const [i, step] of m.steps.entries()) {
+          expect(m.steps[i + 1]?.box.top ?? Infinity, `step ${i + 2} below step ${i + 1}`).toBeGreaterThanOrEqual(step.box.bottom)
+          expect(Math.abs(step.segment.x - step.dot.x), `segment through the dots: ${detail}`).toBeLessThanOrEqual(1)
+          // Each segment starts at its step's top (Assessment: at its dot's
+          // centre) and runs to the next step's top, or the section's
+          // bottom.
+          expect(Math.abs(step.segment.start - (i === 0 ? step.dot.y : step.box.top)), detail).toBeLessThanOrEqual(1)
+          expect(Math.abs(step.segment.end - (i < 3 ? m.steps[i + 1].box.top : m.section.bottom)), detail).toBeLessThanOrEqual(1)
+          // The label (or the empty label row, for step 03) beside the
+          // dot, the dot centred on its line, and every text to the
+          // track's inline end.
+          const lineCentre = step.label ? step.label.top + step.label.lineHeight / 2 : step.box.top + m.labelLine / 2
+          expect(Math.abs(step.dot.y - lineCentre), `dot on the label line: ${detail}`).toBeLessThanOrEqual(1)
+          if (step.label) expect(step.label.left).toBeGreaterThanOrEqual(step.dot.right)
+          expect(step.card.left, `card beside the track: ${detail}`).toBeGreaterThanOrEqual(step.dot.right)
         }
-        for (const stage of m) {
-          for (const part of [stage.number, stage.name, stage.description, stage.output]) {
-            expect(part.left, `text to the node's inline end: ${detail}`).toBeGreaterThanOrEqual(stage.node.right)
-          }
-          expect(Math.abs(stage.node.y - (stage.number.top + stage.number.bottom) / 2), `node on the number's line: ${detail}`).toBeLessThanOrEqual(1)
-        }
+        expect(s3.label).toBeNull()
       }
-      // Number, then name, then description, then the output (#63), each
-      // below the last; the output no larger than the description, and no
-      // word broken across lines.
-      for (const stage of m) {
-        expect(stage.name.top).toBeGreaterThanOrEqual(stage.number.bottom - 1)
-        expect(stage.description.top).toBeGreaterThanOrEqual(stage.name.bottom - 1)
-        expect(stage.output.top).toBeGreaterThanOrEqual(stage.description.bottom - 1)
-        expect(stage.outputSize).toBeLessThanOrEqual(stage.descriptionSize)
-        expect(stage.broken, detail).toEqual([])
+      // Numeral, then name, then description, then the output under its
+      // label (#63, #90), each below the last; the output no larger than
+      // the description, and no word broken across lines.
+      for (const step of m.steps) {
+        expect(step.name.top).toBeGreaterThanOrEqual(step.number.bottom - 1)
+        expect(step.description.top).toBeGreaterThanOrEqual(step.name.bottom - 1)
+        expect(step.outputLabel.top).toBeGreaterThanOrEqual(step.description.bottom - 1)
+        expect(step.output.top).toBeGreaterThanOrEqual(step.outputLabel.bottom - 1)
+        expect(step.outputSize).toBeLessThanOrEqual(step.descriptionSize)
+        expect(step.broken, detail).toEqual([])
+        for (const part of [step.number, step.name, step.description, step.outputLabel, step.output]) {
+          expect(part.left, `inside the card: ${detail}`).toBeGreaterThanOrEqual(step.card.left)
+          expect(part.right, `inside the card: ${detail}`).toBeLessThanOrEqual(step.card.right + 0.5)
+        }
       }
       // Its padding is --space-section-compact, a quarter less than the
       // other light sections' --space-section (#63).
@@ -2620,26 +2703,138 @@ for (const width of WIDTHS) {
       })
       expect(padding.top, JSON.stringify(padding)).toBeCloseTo(padding.section * 0.75, 1)
       expect(padding.bottom, JSON.stringify(padding)).toBeCloseTo(padding.section * 0.75, 1)
-      // A stage's scroll width includes its line segment, which reaches
-      // into the next stage by design, so stages are checked by their box
-      // only.
-      const overflowing = await region.evaluate((root) =>
-        [...root.querySelectorAll('h2, h3, p, span')]
-          .filter(
-            (element) =>
-              element.scrollWidth > element.clientWidth + 1 ||
-              element.getBoundingClientRect().right > root.getBoundingClientRect().right + 1,
-          )
-          .map((element) => element.textContent?.slice(0, 40)),
-      )
-      expect(overflowing).toEqual([])
-      const section = await region.boundingBox()
-      if (!section) throw new Error('No How We Work box')
-      for (const stage of m) {
-        expect(stage.box.left + stage.box.width, `stage inside the section: ${detail}`)
-          .toBeLessThanOrEqual(section.x + section.width + 1)
+      expect(await processOverflow(page)).toEqual([])
+      for (const step of m.steps) {
+        expect(step.box.right, `step inside the section: ${detail}`).toBeLessThanOrEqual(m.section.right + 1)
       }
       await expectNoHorizontalScroll(page)
+    })
+
+    // The highlight (#90): at rest step 01. With a mouse from 64em it
+    // follows the step under the pointer, stays while the pointer crosses
+    // a gap or the heading, and returns to step 01 when the pointer
+    // leaves the section; nothing moves. Below 64em it stays on step 01.
+    // The mouse moves by coordinates, with no scroll in between, so the
+    // browser fires no pointer event of its own.
+    test(`the How We Work highlight ${width >= 1024 ? 'follows the mouse and returns to step 01' : 'stays on step 01 under a mouse'} at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      const region = processRegion(page)
+      const steps = region.getByRole('listitem')
+      const highlightedSteps = () =>
+        region.evaluate((root) =>
+          [...root.querySelectorAll('.process__stage')].flatMap((item, index) =>
+            item.hasAttribute('data-highlighted') && item.querySelector('.process__card.surface-dark') ? [index] : [],
+          ),
+        )
+      await expect.poll(highlightedSteps).toEqual([0])
+      // The h2 just below the header, so the cards are in view.
+      await region.evaluate((root) => {
+        const header = document.querySelector('header')!.getBoundingClientRect().bottom
+        window.scrollTo(0, root.querySelector('h2')!.getBoundingClientRect().top + window.scrollY - header - 16)
+      })
+      await waitForScrollSettle(page)
+      await waitForMotion(page)
+      // A locator's centre, without scrolling (centreOf scrolls).
+      const at = async (locator: Locator) => {
+        const box = (await locator.boundingBox())!
+        return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+      }
+      const boxes = () =>
+        region.evaluate((root) => {
+          const rect = (element: Element) => {
+            const r = element.getBoundingClientRect()
+            return [r.left, r.top + window.scrollY, r.width, r.height]
+          }
+          return {
+            section: root.getBoundingClientRect().height,
+            items: [...root.querySelectorAll('.process__stage')].map(rect),
+            cards: [...root.querySelectorAll('.process__card')].map(rect),
+          }
+        })
+      const close = (a: Awaited<ReturnType<typeof boxes>>, b: Awaited<ReturnType<typeof boxes>>, label: string) => {
+        expect(Math.abs(a.section - b.section), label).toBeLessThanOrEqual(0.5)
+        for (const key of ['items', 'cards'] as const) {
+          a[key].forEach((box, i) =>
+            box.forEach((value, j) => expect(Math.abs(value - b[key][i][j]), `${label}: ${key} ${i + 1}`).toBeLessThanOrEqual(0.5)),
+          )
+        }
+      }
+      const rest = await boxes()
+
+      if (width < 1024) {
+        const target = await at(steps.nth(2).getByRole('heading'))
+        await page.mouse.move(target.x, target.y)
+        await waitForMotion(page)
+        expect(await highlightedSteps()).toEqual([0])
+        return
+      }
+
+      for (const index of [0, 1, 2, 3]) {
+        const target = await at(steps.nth(index).getByRole('heading'))
+        await page.mouse.move(target.x, target.y)
+        await expect.poll(highlightedSteps).toEqual([index])
+        await waitForMotion(page)
+        close(rest, await boxes(), `step ${index + 1} hovered`)
+        await expectNoHorizontalScroll(page)
+        expect(await processOverflow(page), `step ${index + 1} hovered`).toEqual([])
+        // The hovered step's dot fills teal 600, and dot 01 stays filled.
+        const dots = await region.evaluate((root) =>
+          [...root.querySelectorAll('.process__track')].map((track) => {
+            const s = getComputedStyle(track)
+            return parseFloat(s.borderTopWidth) * 2 >= parseFloat(s.width) - 0.5
+          }),
+        )
+        expect(dots).toEqual([0, 1, 2, 3].map((i) => i === 0 || i === index))
+        // Step 01 keeps its tag in its light style.
+        await expect(steps.nth(0).locator('.process__tag')).toBeVisible()
+      }
+
+      // Step 02, then the gap between steps 02 and 03, the band above
+      // them and the heading: step 02 stays.
+      const design = await at(steps.nth(1).getByRole('heading'))
+      await page.mouse.move(design.x, design.y)
+      await expect.poll(highlightedSteps).toEqual([1])
+      const gap = await region.evaluate((root) => {
+        const [, second, third] = [...root.querySelectorAll('.process__stage')].map((item) => item.getBoundingClientRect())
+        const card = root.querySelectorAll('.process__card')[1].getBoundingClientRect()
+        return { x: (second.right + third.left) / 2, y: card.top + card.height / 2 }
+      })
+      await page.mouse.move(gap.x, gap.y)
+      await waitForMotion(page)
+      expect(await highlightedSteps(), 'in the gap').toEqual([1])
+      const heading = await at(region.getByRole('heading', { level: 2 }))
+      await page.mouse.move(heading.x, heading.y)
+      await waitForMotion(page)
+      expect(await highlightedSteps(), 'on the heading').toEqual([1])
+
+      // Out of the section, onto the header: back to step 01.
+      await page.mouse.move(4, 4)
+      await expect.poll(highlightedSteps).toEqual([0])
+      await waitForMotion(page)
+      close(rest, await boxes(), 'after leaving')
+    })
+
+    // 200% page text: nothing in the section overflows at rest, and the
+    // highlighted card holds its text. A media query in em follows the
+    // browser's text size, not page text, so the columns stay from 1024px.
+    test(`How We Work fits with 200% page text at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      await page.addStyleTag({ content: 'html { font-size: 200%; }' })
+      await waitForFonts(page)
+      await processRegion(page).scrollIntoViewIfNeeded()
+      await waitForMotion(page)
+
+      expect(await processOverflow(page)).toEqual([])
+      const m = await measureProcess(page)
+      const card = m.steps[0].card
+      for (const part of [m.steps[0].number, m.steps[0].name, m.steps[0].description, m.steps[0].output]) {
+        expect(part.right, JSON.stringify(m.steps[0])).toBeLessThanOrEqual(card.right + 0.5)
+        expect(part.bottom, JSON.stringify(m.steps[0])).toBeLessThanOrEqual(card.bottom + 0.5)
+      }
+      expect(m.section.left).toBeGreaterThanOrEqual(0)
+      expect(m.section.right).toBeLessThanOrEqual(m.clientWidth + 1)
+      // The header's inline navigation at 1024px is #65's.
+      if (width !== 1024) await expectNoHorizontalScroll(page)
     })
 
     // Future-ready, About, the closing call to action and the footer
