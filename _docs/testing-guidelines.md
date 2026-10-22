@@ -29,7 +29,7 @@ Avoid adding other test frameworks without discussing it first.
 **Components**
 
 - Each section renders its heading and key content, and has the anchor id the navigation links to.
-- Interactive controls work with the keyboard and expose state: the mobile menu toggle (`aria-expanded`, closes after choosing a link) and the Solutions rows' disclosures.
+- Interactive controls work with the keyboard and expose state: the mobile menu toggle (`aria-expanded`, closes after choosing a link).
 - Links point to the right targets, especially `mailto:info@fafanua.tech` and in-page anchors.
 - Content rules are respected: nothing presents Fafanua Intelligence as an existing product.
 
@@ -37,7 +37,7 @@ Avoid adding other test frameworks without discussing it first.
 
 - Run axe against the full rendered `App` as part of `npm test`; any violation fails the suite.
 - Check landmarks, a single `h1` and heading order in component tests.
-- A manual keyboard-only pass is still required for UI changes: skip link, navigation, mobile menu, the Solutions rows' disclosures and every call-to-action must be reachable, operable and visibly focused.
+- A manual keyboard-only pass is still required for UI changes: skip link, navigation, mobile menu, the Solutions row links and every call-to-action must be reachable, operable and visibly focused.
 
 **End-to-end**
 
