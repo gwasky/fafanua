@@ -68,6 +68,16 @@ describe('italics in the stylesheets', () => {
     expect(found, describeFound(found)).toEqual([])
   })
 
+  // About's dfn (section D, #92) is italic by default, so its rule resets
+  // it; src/App.italics.test.tsx allows that one dfn because of this.
+  it('resets the italic of About\'s defined word to normal', () => {
+    const css = withoutComments(read('src/components/About.css'))
+    const rule = css.match(/(?:^|\})\s*\.about__word\s*\{([^}]*)\}/)
+
+    expect(rule, '.about__word rule in About.css').not.toBeNull()
+    expect(rule![1]).toMatch(/(?<![\w-])font-style\s*:\s*normal\s*;/)
+  })
+
   it('puts no italic or oblique in a font shorthand', () => {
     const found = cssFiles
       .flatMap((file) => declarations(file, /font/))

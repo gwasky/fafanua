@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
+import { aboutPrinciples } from './data/about.ts'
 import {
   assessmentDeliverablesHeading,
   assessmentHeading,
@@ -21,6 +22,9 @@ import { homepageSolutions, solutions, solutionsIntro } from './data/solutions.t
 import { systemFlow } from './data/systemFlow.ts'
 
 const FUTURE_READY = 'Trusted foundations for what comes next'
+// About's h2 names its region (section D, #92); "About Fafanua" is now
+// its eyebrow.
+const ABOUT = 'Data foundations built for how organisations actually operate.'
 // Plan V2 §16, with its typographic apostrophe (U+2019).
 const CONTACT = 'Let\u2019s build a data foundation your organisation can trust.'
 const HERO = 'Trusted Data. Better Decisions.'
@@ -150,7 +154,7 @@ describe('App', () => {
     expect(panels[0].querySelectorAll('.surface-light')).toHaveLength(1)
     expect(assessment).not.toHaveAttribute('data-header-overlay')
     // Its two eyebrows are unnumbered, as the problem block's is (#79,
-    // #82), so 01 to 04 keep their numbers.
+    // #82), so 01 to 05 keep their numbers.
     expect(
       [...assessment.querySelectorAll('.section-eyebrow')].map((eyebrow) => eyebrow.textContent),
     ).toEqual(['Start with trust', 'What happens next'])
@@ -164,6 +168,7 @@ describe('App', () => {
       '02 — Managed Services',
       '03 — Solutions',
       '04 — How We Work',
+      '05 — About Fafanua',
     ])
     // Not in the header or footer navigation, and nothing links to it.
     for (const item of [...navigation, ...footerNavigation, navigationCta]) {
@@ -302,7 +307,7 @@ describe('App', () => {
       screen.getByRole('region', { name: solutionsIntro.heading }),
       screen.getByRole('region', { name: processIntro.heading }),
       screen.getByRole('region', { name: FUTURE_READY }),
-      screen.getByRole('region', { name: 'About Fafanua' }),
+      screen.getByRole('region', { name: ABOUT }),
       screen.getByRole('region', { name: CONTACT }),
     ])
   })
@@ -469,7 +474,7 @@ describe('App', () => {
     render(<App />)
     const main = screen.getByRole('main')
     const futureReady = screen.getByRole('region', { name: FUTURE_READY })
-    const about = screen.getByRole('region', { name: 'About Fafanua' })
+    const about = screen.getByRole('region', { name: ABOUT })
 
     expect(about.parentElement).toBe(main)
     expect(futureReady.nextElementSibling).toBe(about)
@@ -479,7 +484,7 @@ describe('App', () => {
   it('renders the Contact section directly after About, last in main', () => {
     render(<App />)
     const main = screen.getByRole('main')
-    const about = screen.getByRole('region', { name: 'About Fafanua' })
+    const about = screen.getByRole('region', { name: ABOUT })
     const contact = screen.getByRole('region', { name: CONTACT })
 
     expect(contact.parentElement).toBe(main)
@@ -635,7 +640,7 @@ describe('App', () => {
 
   it('lands the header About link, desktop and mobile, on the About section', () => {
     render(<App />)
-    const about = screen.getByRole('region', { name: 'About Fafanua' })
+    const about = screen.getByRole('region', { name: ABOUT })
     const nav = navigation.find((item) => item.label === 'About')
     // The desktop row and the mobile menu are the same list, so there is
     // one About link for both.
@@ -751,14 +756,14 @@ describe('App', () => {
     expect(text.replace(/(business|payment) intelligence/gi, '')).not.toMatch(/intelligence/i)
   })
 
-  it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its four verb h3s, h2 Solutions heading, three h3s, h2 How We Work heading, four h3s, h2 future-ready, h2 About Fafanua, h2 Contact', () => {
+  it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its four verb h3s, h2 Solutions heading, three h3s, h2 How We Work heading, four h3s, h2 future-ready, h2 About heading, its three principle h3s, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
 
     expect(levels).toEqual([
       1, 2, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2,
-      2,
+      3, 3, 3, 2,
     ])
     expect(levels.filter((level) => level === 1)).toHaveLength(1)
     // No level is skipped.
@@ -804,8 +809,13 @@ describe('App', () => {
       processStages.map((stage) => stage.name),
     )
     expect(headings[26].textContent).toBe(FUTURE_READY)
-    expect(headings[27].textContent).toBe('About Fafanua')
-    expect(headings[28].textContent).toBe(CONTACT)
+    expect(headings[27].textContent).toBe(ABOUT)
+    // About's three principles (section D, #92).
+    expect(headings.slice(28, 31).map((heading) => heading.textContent)).toEqual(
+      aboutPrinciples.map((principle) => principle.name),
+    )
+    expect(headings[31].textContent).toBe(CONTACT)
+    expect(headings).toHaveLength(32)
     expect(
       within(screen.getByRole('contentinfo')).queryAllByRole('heading'),
     ).toHaveLength(0)

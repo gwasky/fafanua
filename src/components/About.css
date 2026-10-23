@@ -1,16 +1,23 @@
 /*
- * About (refinement plan §10, #63): on the page background, set
- * explicitly as Hero and Services do, with no eyebrow, card, border or
- * shadow. The change from the dark section above to paper is the only
- * separator. The h2 is at the display scale, as the other section
- * headings; the supporting statement beneath it is the Positioning
- * statement's style (--text-3xl, weight 300, graphite 900 on paper,
- * 14.9:1), and the description is --text-body-lg.
+ * About, composed per section D of the homepage sections refinement plan
+ * (#92), on the page background, set explicitly as Hero and Services do.
+ * The change from the dark section above to paper separates them. Teal is
+ * the only accent: the word in teal 800 (--color-accent-text, 7.3:1 on
+ * paper), and the definition rule, the principle rules and the location
+ * dot in teal 600 (--color-accent, graphics, 3.27:1). The h2, the
+ * definition, the location and the principle names are graphite 900; the
+ * eyebrow, the note, the paragraph, the label and the descriptions
+ * graphite 600 (6.0:1). The hairline is graphite 200. Only verified
+ * pairings (see the design system's "About after #92" note). Rules, the
+ * hairline and the dot are borders, so they stay visible in forced
+ * colours.
  *
- * Stacked by default: heading, statement, description. From 64em
- * (1024px; literal breakpoint, see the note in tokens.css) two
- * top-aligned columns, the heading and statement at the start and the
- * description at the end, so the visual order is the DOM order.
+ * One column by default, in DOM order: eyebrow, h2, the body (definition,
+ * paragraph, location), then the principles under the hairline, one per
+ * row. From 64em (1024px; literal breakpoint, see the note in tokens.css)
+ * two equal columns: the eyebrow in its own row at the start, then the h2
+ * beside the body, so the definition rule starts level with the h2; the
+ * principles span both columns, three to a row.
  */
 
 .about {
@@ -21,42 +28,173 @@
 .about__layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-8);
   align-items: start;
 }
 
 /* Weight 300 from the global heading styles. */
 .about__heading {
   max-width: var(--measure-display);
+  margin-block: 0;
   font-size: var(--text-section);
   line-height: var(--leading-display);
   overflow-wrap: break-word;
 }
 
-/* Both paragraphs break a word only if it cannot fit on a line of its
-   own, rather than anywhere as .container allows. */
-.about__statement {
-  margin-block: var(--space-6) 0;
-  color: var(--color-heading);
+.about__body {
+  margin-block-start: var(--space-8);
+}
+
+/* The word, its note and its definition: one paragraph, with a 3px rule
+   along its full height. The inset is in px and vw, so it does not double
+   with page text (as the How We Work and future-ready insets). */
+.about__definition {
+  margin-block: 0;
+  padding-inline-start: var(--space-6);
+  border-inline-start: 3px solid var(--color-accent);
+}
+
+/* The word and its note share a line on a common baseline; the note wraps
+   below the word if both do not fit. */
+.about__term {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-3);
+}
+
+/* dfn is italic by default; the word is upright and lowercase as typed. */
+.about__word {
+  color: var(--color-accent-text);
   font-size: var(--text-3xl);
+  font-style: normal;
   font-weight: var(--weight-light);
   line-height: var(--leading-tight);
   overflow-wrap: break-word;
-  text-wrap: balance;
+}
+
+.about__note {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.about__meaning {
+  display: block;
+  margin-block-start: var(--space-3);
+  color: var(--color-text);
+  font-size: var(--text-xl);
+  line-height: var(--leading-normal);
+  overflow-wrap: break-word;
 }
 
 .about__text {
   max-width: var(--measure);
-  margin-block: 0;
-  color: var(--color-text);
+  margin-block: var(--space-8) 0;
+  color: var(--color-text-muted);
   font-size: var(--text-body-lg);
+  line-height: var(--leading-normal);
   overflow-wrap: break-word;
   text-wrap: pretty;
+}
+
+/* An 8px filled teal dot, drawn with a border, centred on the first
+   line of the text. */
+.about__location {
+  display: grid;
+  grid-template-columns: var(--space-2) minmax(0, 1fr);
+  column-gap: var(--space-3);
+  margin-block: var(--space-6) 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  overflow-wrap: break-word;
+}
+
+.about__location::before {
+  content: '';
+  box-sizing: border-box;
+  width: var(--space-2);
+  height: var(--space-2);
+  margin-block-start: calc((1lh - var(--space-2)) / 2);
+  border: calc(var(--space-2) / 2) solid var(--color-accent);
+  border-radius: 50%;
+}
+
+/* The principles row: a hairline across the content width, the label,
+   then the list. */
+.about__principles {
+  margin-block-start: var(--space-16);
+  padding-block-start: var(--space-12);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+/* The eyebrow's style, as the site's other small labels. */
+.about__label {
+  margin-block: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-eyebrow);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.about__list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-8);
+  margin-block: var(--space-6) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.about__principle {
+  padding-block-start: var(--space-6);
+  border-block-start: 2px solid var(--color-accent);
+}
+
+/* Weight 300 from the global heading styles. */
+.about__name {
+  margin-block: 0;
+  color: var(--color-heading);
+  font-size: var(--text-2xl);
+  line-height: var(--leading-snug);
+  overflow-wrap: break-word;
+}
+
+.about__description {
+  margin-block: var(--space-3) 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  overflow-wrap: break-word;
 }
 
 @media (min-width: 64em) {
   .about__layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: var(--space-16);
+  }
+
+  .about__layout > .section-eyebrow {
+    grid-column: 1;
+  }
+
+  .about__heading {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .about__body {
+    grid-column: 2;
+    grid-row: 2;
+    margin-block-start: 0;
+  }
+
+  .about__principles {
+    grid-column: 1 / -1;
+  }
+
+  .about__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

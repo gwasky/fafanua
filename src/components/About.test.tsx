@@ -3,15 +3,27 @@ import { describe, expect, it } from 'vitest'
 import { navigation } from '../data/navigation.ts'
 import About from './About.tsx'
 
-// The refinement plan §10 (#63), character for character, apart from
-// "organisations in Africa" (W6 in the trust and lineage plan, #72).
-const HEADING = 'About Fafanua'
-const STATEMENT = 'Data foundations built for how organisations actually operate.'
+// Section D of the homepage sections refinement plan (§7, #92), character
+// for character. The eyebrow and the principles label are in sentence
+// case in the DOM, and shown in capitals by CSS.
+const EYEBROW = '05 — About Fafanua'
+const HEADING = 'Data foundations built for how organisations actually operate.'
+const WORD = 'fafanua'
+const NOTE = 'Swahili, verb'
+const DEFINITION = 'To explain; to make clear. It is what we do with your numbers.'
 const PARAGRAPH =
   'Fafanua Technologies Limited helps organisations in Africa build and strengthen dependable data platforms and analytical systems. We combine data engineering, business modelling, governance and reporting expertise to turn fragmented organisational data into trusted assets for decision-making.'
+const LOCATION = 'Based in Kampala, working across East Africa'
+const LABEL = 'How we work with data'
+const PRINCIPLES = [
+  ['Explicit over automatic', 'Every definition, rule and owner is written down, not assumed.'],
+  ['One source of truth', 'Each metric is defined once and used the same way everywhere.'],
+  ['Built as code', 'Pipelines and platforms are versioned, reviewed and repeatable.'],
+]
 
 // Claims the section must not make: an existing Intelligence product, SaaS
-// or AI features, or a founder-led company.
+// or AI features, or a founder-led company (W8's founder block is
+// deferred, #75).
 const FORBIDDEN = ['Fafanua Intelligence', 'SaaS', 'AI-powered', 'founder', 'CEO']
 
 function renderAbout() {
@@ -28,6 +40,7 @@ describe('About', () => {
     expect(section).toHaveAttribute('id', 'about')
     expect(section).toHaveAttribute('aria-labelledby', 'about-heading')
     expect(heading).toHaveAttribute('id', 'about-heading')
+    expect(heading.textContent).toBe(HEADING)
   })
 
   it('uses the id of the About navigation entry', () => {
@@ -37,23 +50,73 @@ describe('About', () => {
     expect(section.id).toBe(nav?.id)
   })
 
-  it('has exactly one heading, an h2 with the plan wording', () => {
+  it('has one h2, then three h3s, the principle names in order, and no other heading', () => {
     const section = renderAbout()
     const headings = within(section).getAllByRole('heading')
 
-    expect(headings).toHaveLength(1)
-    expect(headings[0].tagName).toBe('H2')
-    expect(headings[0].textContent).toBe(HEADING)
-    expect(section.querySelectorAll('h1, h2, h3, h4, h5, h6')).toHaveLength(1)
+    expect(headings.map((heading) => [heading.tagName, heading.textContent])).toEqual([
+      ['H2', HEADING],
+      ...PRINCIPLES.map(([name]) => ['H3', name]),
+    ])
+    expect(section.querySelectorAll('h1, h2, h3, h4, h5, h6')).toHaveLength(4)
+    for (const text of [EYEBROW, WORD, DEFINITION, LOCATION, LABEL, 'About Fafanua']) {
+      expect(within(section).queryByRole('heading', { name: text })).toBeNull()
+    }
   })
 
-  it('has exactly two paragraphs, the statement then the description, with the plan wording', () => {
+  it('shows the "05 — About Fafanua" eyebrow as a paragraph, before the h2', () => {
     const section = renderAbout()
-    const paragraphs = section.querySelectorAll('p')
+    const eyebrow = section.querySelector('.section-eyebrow')!
 
-    expect(paragraphs).toHaveLength(2)
-    expect(paragraphs[0].textContent).toBe(STATEMENT)
-    expect(paragraphs[1].textContent).toBe(PARAGRAPH)
+    expect(eyebrow.tagName).toBe('P')
+    expect(eyebrow.textContent).toBe(EYEBROW)
+    expect(
+      eyebrow.compareDocumentPosition(within(section).getByRole('heading', { level: 2 })) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('marks the word as a dfn in Swahili, and nothing else in the section', () => {
+    const section = renderAbout()
+    const dfn = section.querySelector('dfn')!
+
+    expect(section.querySelectorAll('dfn')).toHaveLength(1)
+    expect(dfn).toHaveAttribute('lang', 'sw')
+    expect(dfn.textContent).toBe(WORD)
+    expect([...section.querySelectorAll('[lang]')]).toEqual([dfn])
+  })
+
+  it('holds the word, its note and the definition in one paragraph, with the word and note apart', () => {
+    const section = renderAbout()
+    const paragraph = section.querySelector('dfn')!.closest('p')!
+
+    expect(paragraph.textContent).toBe(`${WORD} ${NOTE} ${DEFINITION}`)
+    expect(paragraph.textContent).not.toContain(`${WORD}${NOTE}`)
+  })
+
+  it('shows the unchanged paragraph and the location line, each a paragraph', () => {
+    const section = renderAbout()
+
+    expect(within(section).getByText(PARAGRAPH).tagName).toBe('P')
+    expect(within(section).getByText(LOCATION).tagName).toBe('P')
+    expect(section.textContent?.split(HEADING)).toHaveLength(2)
+  })
+
+  it('lists the three principles in one list named by its label, each an h3 then its description', () => {
+    const section = renderAbout()
+    const list = within(section).getByRole('list', { name: LABEL })
+    const items = within(list).getAllByRole('listitem')
+
+    expect(section.querySelectorAll('ul, ol')).toHaveLength(1)
+    expect(list.tagName).toBe('UL')
+    expect(list).toHaveAttribute('role', 'list')
+    expect(document.getElementById(list.getAttribute('aria-labelledby')!)?.tagName).toBe('P')
+    expect(items.map((item) => [...item.children].map((child) => [child.tagName, child.textContent]))).toEqual(
+      PRINCIPLES.map(([name, description]) => [
+        ['H3', name],
+        ['P', description],
+      ]),
+    )
   })
 
   it('says "organisations in Africa", not "African organisations" or "East African" (#72)', () => {
@@ -64,41 +127,28 @@ describe('About', () => {
     expect(section.textContent).not.toContain('East African')
   })
 
-  it('contains only the heading, the statement and the description, nothing else', () => {
+  it('contains section D\'s text in DOM order, and nothing else', () => {
     const section = renderAbout()
 
-    expect(section.textContent).toBe(HEADING + STATEMENT + PARAGRAPH)
+    expect(section.textContent).toBe(
+      EYEBROW +
+        HEADING +
+        `${WORD} ${NOTE} ${DEFINITION}` +
+        PARAGRAPH +
+        LOCATION +
+        LABEL +
+        PRINCIPLES.flat().join(''),
+    )
   })
 
-  it('has two columns: the heading with the statement beneath it, then the description (#63)', () => {
+  it('uses plain ASCII text apart from the eyebrow\'s U+2014 dash, with no manual line breaks or non-breaking spaces', () => {
     const section = renderAbout()
-    const container = section.querySelector('.container')!
-    const [start, end, ...rest] = [...container.children]
-
-    expect(section.querySelector('.section-eyebrow')).toBeNull()
-    expect(section.children).toHaveLength(1)
-    expect(rest).toHaveLength(0)
-    expect(start.tagName).toBe('DIV')
-    expect([...start.children].map((child) => [child.tagName, child.textContent])).toEqual([
-      ['H2', HEADING],
-      ['P', STATEMENT],
-    ])
-    expect([end.tagName, end.textContent]).toEqual(['P', PARAGRAPH])
-  })
-
-  it('makes the statement a paragraph, not a heading, so the section has one heading', () => {
-    const section = renderAbout()
-
-    expect(within(section).getByText(STATEMENT).tagName).toBe('P')
-    expect(within(section).queryByRole('heading', { name: STATEMENT })).toBeNull()
-  })
-
-  it('uses plain ASCII text with no manual line breaks or non-breaking spaces', () => {
-    const section = renderAbout()
+    const text = section.textContent!
 
     expect(section.querySelector('br')).toBeNull()
-    expect(section.textContent).not.toMatch(/\u00a0/)
-    expect(section.textContent).toMatch(/^[\x20-\x7e]+$/)
+    expect(text).not.toMatch(/\u00a0/)
+    expect(text.split('—')).toHaveLength(2)
+    expect(text.replace(EYEBROW, '')).toMatch(/^[\x20-\x7e]+$/)
     expect(section.innerHTML).not.toContain('&nbsp;')
   })
 
@@ -128,10 +178,11 @@ describe('About', () => {
     expect(section.textContent?.toLowerCase()).not.toContain(phrase.toLowerCase())
   })
 
-  it('contains no digits, so no figures, years or registration numbers', () => {
+  it('contains no digits outside the eyebrow\'s 05, so no figures, years or registration numbers', () => {
     const section = renderAbout()
 
-    expect(section.textContent).not.toMatch(/\d/)
+    expect(section.textContent?.match(/\d+/g)).toEqual(['05'])
+    expect(section.textContent?.replace(EYEBROW, '')).not.toMatch(/\d/)
   })
 
   it('sits on the page background, not an alternate or dark surface', () => {
@@ -142,12 +193,12 @@ describe('About', () => {
     expect(section.querySelector('.surface-alt, .surface-dark')).toBeNull()
   })
 
-  it('keeps the heading and paragraph inside .container', () => {
+  it('has the .container as its one child, holding all the content', () => {
     const section = renderAbout()
     const container = section.querySelector('.container')
 
-    expect(container).not.toBeNull()
-    expect(container).toContainElement(within(section).getByRole('heading'))
-    expect(container).toContainElement(section.querySelector('p'))
+    expect(section.children).toHaveLength(1)
+    expect(section.children[0]).toBe(container)
+    expect(container?.textContent).toBe(section.textContent)
   })
 })
