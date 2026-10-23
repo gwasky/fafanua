@@ -275,7 +275,8 @@ test.describe('Solutions', () => {
       }
     })
 
-    expect(m.lines).toHaveLength(1 + 3)
+    expect(m.lines).toHaveLength(1 + 4)
+    expect(m.arrows).toHaveLength(4)
     for (const line of m.lines) {
       expect(line.style).toBe('solid')
       expect(line.width).toBeGreaterThan(0)
@@ -290,7 +291,7 @@ test.describe('Solutions', () => {
     const links = solutionsRegion(page).getByRole('link')
     const decoration = (index: number) =>
       links.nth(index).evaluate((element) => getComputedStyle(element).textDecorationLine)
-    expect([await decoration(0), await decoration(1), await decoration(2)]).toEqual(['none', 'none', 'none'])
+    expect([await decoration(0), await decoration(1), await decoration(2), await decoration(3)]).toEqual(['none', 'none', 'none', 'none'])
     const { x, y } = await centreOf(solutionsRegion(page).locator('.solution-row__tags').nth(0))
     await page.mouse.move(x, y)
     await expect.poll(() => decoration(0)).toBe('underline')

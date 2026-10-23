@@ -35,7 +35,8 @@ async function hoverSector(page: Page, index: number) {
  * before it, so the focus is :focus-visible, and waits for its tint. */
 async function focusSector(page: Page, index: number) {
   const links = solutionsRegion(page).getByRole('link')
-  await expect(links).toHaveCount(3)
+  // Four rows since #95.
+  await expect(links).toHaveCount(4)
   if (index === 0) {
     await links.nth(1).focus()
     await pressTab(page, { shift: true })
@@ -1008,7 +1009,7 @@ test.describe('320px at 200% text size', () => {
 
   // The rows opened here became links (#89): each row focused instead.
   test('no horizontal scroll with each Solutions row focused', async ({ page }) => {
-    for (let index = 0; index < 3; index++) {
+    for (let index = 0; index < 4; index++) {
       await focusSector(page, index)
       await noHorizontalScroll(page)
     }
@@ -1147,7 +1148,7 @@ test.describe('browser text size 200%: the header falls back to the Menu', () =>
           tagsTop: item.querySelector('.solution-row__tags')!.getBoundingClientRect().top,
         })),
       )
-      expect(rows).toHaveLength(3)
+      expect(rows).toHaveLength(4)
       for (const row of rows) {
         expect(row.tagsTop, JSON.stringify(row)).toBeGreaterThanOrEqual(row.nameBottom - 1)
       }
