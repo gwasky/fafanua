@@ -1,5 +1,7 @@
+import { fireEvent, waitFor } from '@testing-library/react'
+import type { MouseEvent } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { focusSectionHeading } from './focusSectionHeading.ts'
+import { focusSectionHeading, focusSectionOnClick } from './focusSectionHeading.ts'
 
 // A fixture page: two sections, each named by its h2, and a button to move
 // focus away.
@@ -84,5 +86,57 @@ describe('focusSectionHeading', () => {
     focusSectionHeading('first')
 
     expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+  })
+})
+
+// The shared in-page link handler (#88, moved here in #91). A native
+// listener stands in for React's: the handler reads only the event's
+// button, modifier keys and defaultPrevented.
+describe('focusSectionOnClick', () => {
+  function link() {
+    const anchor = document.createElement('a')
+    anchor.href = '#first'
+    const handler = focusSectionOnClick('first')
+    anchor.addEventListener('click', (event) => {
+      event.preventDefault()
+      handler({
+        button: event.button,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+        defaultPrevented: false,
+      } as MouseEvent<HTMLAnchorElement>)
+    })
+    document.body.append(anchor)
+    return anchor
+  }
+
+  it('focuses the section heading after a plain primary click, not during it', async () => {
+    const { first } = fixture()
+    const anchor = link()
+
+    fireEvent.click(anchor)
+    expect(document.activeElement).not.toBe(first)
+    await waitFor(() => expect(document.activeElement).toBe(first))
+  })
+
+  it('leaves modified and non-primary clicks alone', async () => {
+    const { first } = fixture()
+    const anchor = link()
+
+    for (const init of [
+      { ctrlKey: true },
+      { metaKey: true },
+      { shiftKey: true },
+      { altKey: true },
+      { button: 1 },
+    ]) {
+      fireEvent.click(anchor, init)
+    }
+    // Longer than the frame and task a plain click waits for.
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(document.activeElement).not.toBe(first)
+    expect(first).not.toHaveAttribute('tabindex')
   })
 })

@@ -1,6 +1,5 @@
-import type { MouseEvent } from 'react'
 import { managedServices } from '../data/services.ts'
-import { focusSectionHeading } from '../focusSectionHeading.ts'
+import { focusSectionOnClick } from '../focusSectionHeading.ts'
 import { servicePath } from '../paths.ts'
 import SectionEyebrow from './SectionEyebrow.tsx'
 import './ManagedServices.css'
@@ -9,29 +8,8 @@ import './ManagedServices.css'
 const JOURNEY_TARGETS = ['data-trust-assessment', 'capabilities'] as const
 
 // A plain click on a journey link also moves focus to the target section's
-// heading (the Managed Services Regrouped plan §5). The browser still
-// follows the link, so the hash updates and the page scrolls: smoothly
-// only without a reduced-motion preference, below the sticky header
-// through the scroll margins (global.css). Chromium and WebKit clear focus
-// when they apply a fragment whose target cannot take focus, in the first
-// frame after the click, so the heading is focused after that frame has
-// rendered (a task queued from an animation frame callback). Modified and
-// non-primary clicks, which open a new tab or window, are left alone.
-function focusTarget(id: string) {
-  return (event: MouseEvent<HTMLAnchorElement>) => {
-    if (
-      event.defaultPrevented ||
-      event.button !== 0 ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
-      return
-    }
-    requestAnimationFrame(() => setTimeout(() => focusSectionHeading(id)))
-  }
-}
+// heading (the Managed Services Regrouped plan §5), through the shared
+// handler in focusSectionHeading.ts (#91).
 
 // The Managed Services section (plan V2 §10), directly after Services: an
 // ongoing engagement model, not a seventh capability, so it has no stage
@@ -65,7 +43,7 @@ function ManagedServices() {
                   <a
                     className="managed-services__step-link"
                     href={`#${id}`}
-                    onClick={focusTarget(id)}
+                    onClick={focusSectionOnClick(id)}
                   >
                     {journey[index]}
                   </a>

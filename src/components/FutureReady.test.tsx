@@ -1,21 +1,35 @@
-import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import App from '../App.tsx'
+import {
+  futureReadyConditions,
+  futureReadyGoal,
+  futureReadyHeading,
+  futureReadyLead,
+  futureReadyLinkText,
+  futureReadyVerdictLine,
+  futureReadyVerdicts,
+} from '../data/futureReady.ts'
 import FutureReady from './FutureReady.tsx'
+import futureReadyCss from './FutureReady.css?raw'
 
-// The heading is the owner's amended wording on #52, which plan V2 §14
-// gives exactly. The paragraph and the four labels are W5 in the trust and
-// lineage plan (#72), character for character.
+// The section's copy is section C of the homepage sections refinement
+// plan (#91), character for character; futureReady.plan.test.ts checks
+// futureReady.ts against the plan, so these are the plan's strings. The
+// keys are held in sentence case and shown in capitals by CSS.
 const HEADING = 'Trusted foundations for what comes next'
-const STATEMENT =
-  'AI and advanced analytics work only when three things are true: metrics are clearly defined, inputs can be traced to their source, and data quality is known. The Data Trust Assessment gives you a plain verdict for each use case you are considering: ready now, ready after specific fixes, or not ready yet.'
-const LABELS = [
-  'business definitions',
-  'access controls',
-  'quality signals',
-  'lineage',
+const LEAD = 'AI and advanced analytics work only when four things are true.'
+const TILES = [
+  ['Business definitions', 'Metrics are clearly defined'],
+  ['Lineage', 'Inputs can be traced to their source'],
+  ['Quality signals', 'Data quality is known'],
+  ['Access controls', 'Access is controlled'],
+  ['What comes next', 'Advanced analytics & AI'],
 ]
-// The final node's label, the refinement plan §9's preferred option (#63).
-const DESTINATION = 'advanced analytics & AI'
+const VERDICT_LINE =
+  'The Data Trust Assessment gives you a plain verdict for each use case you are considering:'
+const VERDICTS = ['Ready now', 'Ready after specific fixes', 'Not ready yet']
+const LINK = 'See how the assessment works'
 
 // Words and phrases that would present Fafanua Intelligence, or any AI or
 // SaaS feature, as something that exists today.
@@ -64,20 +78,37 @@ const FORBIDDEN = [
   'data operating system',
 ]
 
-// The only places "AI" may appear: the readiness framing of W5's
-// paragraph (#72), and the final node's one label, a readiness
-// destination (#63).
-const ALLOWED_AI_PHRASES = ['AI and advanced analytics', 'advanced analytics & AI']
+// The only places "AI" may appear: the lead's readiness framing and the
+// goal tile, a readiness outcome (section C, #91).
+const ALLOWED_AI_PHRASES = ['AI and advanced analytics', 'Advanced analytics & AI']
 
 function renderFutureReady() {
   render(<FutureReady />)
   const section = screen.getByRole('region', { name: HEADING })
-  const graphic = section.querySelector<HTMLElement>('.future-ready__graphic')!
-  return { section, graphic }
+  const flow = within(section).getByRole('list', { name: HEADING })
+  const chips = within(section).getByRole('list', { name: VERDICT_LINE })
+  return { section, flow, chips }
+}
+
+// An element's text without its aria-hidden arrows.
+function visibleText(element: Element): string {
+  const copy = element.cloneNode(true) as Element
+  for (const hidden of copy.querySelectorAll('[aria-hidden="true"]')) hidden.remove()
+  return copy.textContent!
+}
+
+// Each text block on its own, in DOM order, so neighbouring blocks do not
+// run together.
+function blocks(section: HTMLElement): string[] {
+  return [
+    ...section.querySelectorAll(
+      'h2, .future-ready__lead, .future-ready__key, .future-ready__condition, .future-ready__verdict-line, .future-ready__chips > li, a',
+    ),
+  ].map(visibleText)
 }
 
 describe('FutureReady', () => {
-  it('is section#future-ready, a region named by its h2', () => {
+  it('is section#future-ready, a dark region named by its h2', () => {
     const { section } = renderFutureReady()
     const heading = within(section).getByRole('heading', { level: 2 })
 
@@ -87,7 +118,7 @@ describe('FutureReady', () => {
     expect(heading).toHaveAttribute('id', 'future-ready-heading')
   })
 
-  it('has exactly one heading, an h2 with the plan wording', () => {
+  it('has exactly one heading, an h2 with the plan wording; the keys are not headings', () => {
     const { section } = renderFutureReady()
     const headings = within(section).getAllByRole('heading')
 
@@ -97,85 +128,129 @@ describe('FutureReady', () => {
     expect(section.querySelectorAll('h1, h2, h3, h4, h5, h6')).toHaveLength(1)
   })
 
-  it('has one paragraph with the plan wording', () => {
+  it('holds the plan copy in DOM order, and nothing else', () => {
+    const { section } = renderFutureReady()
+
+    expect(blocks(section)).toEqual([
+      HEADING,
+      LEAD,
+      ...TILES.flat(),
+      VERDICT_LINE,
+      ...VERDICTS,
+      LINK,
+    ])
+    expect(visibleText(section)).toBe(
+      [HEADING, LEAD, ...TILES.flat(), VERDICT_LINE, ...VERDICTS, LINK].join(''),
+    )
+  })
+
+  it('reads its copy from futureReady.ts', () => {
+    expect(futureReadyHeading).toBe(HEADING)
+    expect(futureReadyLead).toBe(LEAD)
+    expect([...futureReadyConditions, futureReadyGoal].map(({ key, text }) => [key, text])).toEqual(
+      TILES,
+    )
+    expect(futureReadyVerdictLine).toBe(VERDICT_LINE)
+    expect(futureReadyVerdicts).toEqual(VERDICTS)
+    expect(futureReadyLinkText).toBe(LINK)
+  })
+
+  it('has one lead paragraph and the verdict line, the lead in the top row with the heading', () => {
     const { section } = renderFutureReady()
     const paragraphs = section.querySelectorAll('p')
 
-    expect(paragraphs).toHaveLength(1)
-    expect(paragraphs[0].textContent).toBe(STATEMENT)
+    expect([...paragraphs].map((paragraph) => paragraph.textContent)).toEqual([LEAD, VERDICT_LINE])
+    expect(paragraphs[0].parentElement).toBe(section.querySelector('h2')!.parentElement)
   })
 
-  it('uses plain ASCII text with no manual line breaks or non-breaking spaces', () => {
-    const { section } = renderFutureReady()
+  it('lists the four conditions then the goal in one ordered list of five, named by the heading', () => {
+    const { flow } = renderFutureReady()
+    const items = within(flow).getAllByRole('listitem')
 
-    expect(section.querySelector('br')).toBeNull()
-    expect(section.textContent).not.toMatch(/\u00a0/)
-    expect(section.textContent).toMatch(/^[\x20-\x7e]+$/)
-    expect(section.innerHTML).not.toContain('&nbsp;')
+    expect(flow.tagName).toBe('OL')
+    expect(flow).toHaveAttribute('role', 'list')
+    expect(flow).toHaveAttribute('aria-labelledby', 'future-ready-heading')
+    expect(flow.children).toHaveLength(5)
+    expect(items).toHaveLength(5)
+    for (const child of flow.children) expect(child.tagName).toBe('LI')
+    expect(items.map(visibleText)).toEqual(TILES.map(([key, text]) => key + text))
+    // Key, then condition, in each item.
+    items.forEach((item, index) => {
+      expect(
+        [...item.querySelectorAll('.future-ready__key, .future-ready__condition')].map(
+          (element) => element.textContent,
+        ),
+      ).toEqual(TILES[index])
+    })
+    expect(items[4]).toHaveClass('future-ready__goal')
+    expect(items[4].querySelector('.future-ready__tile--goal')).not.toBeNull()
   })
 
-  it('contains only the heading, the paragraph, the four labels and the destination, nothing else', () => {
-    const { section } = renderFutureReady()
+  it('puts the decorative arrow inside the goal item, before its tile, hidden', () => {
+    const { flow } = renderFutureReady()
+    const goal = flow.lastElementChild!
+    const arrows = flow.querySelectorAll('.future-ready__arrow')
 
-    expect(section.textContent).toBe(HEADING + STATEMENT + LABELS.join('') + DESTINATION)
+    expect(arrows).toHaveLength(1)
+    expect(arrows[0].parentElement).toBe(goal)
+    expect(arrows[0]).toHaveAttribute('aria-hidden', 'true')
+    expect(arrows[0].textContent).toBe('→')
+    expect(arrows[0].nextElementSibling).toHaveClass('future-ready__tile--goal')
+    expect(arrows[0].tagName).not.toBe('LI')
   })
 
-  it('contains no links, buttons, form controls or other tab stops', () => {
-    const { section } = renderFutureReady()
+  it('lists the three verdicts as plain-text chips in a ul named by the verdict line', () => {
+    const { section, chips } = renderFutureReady()
+    const line = section.querySelector('.future-ready__verdict-line')!
 
-    expect(within(section).queryAllByRole('link')).toHaveLength(0)
+    expect(chips.tagName).toBe('UL')
+    expect(chips).toHaveAttribute('role', 'list')
+    expect(chips).toHaveAttribute('aria-labelledby', line.id)
+    expect(line.tagName).toBe('P')
+    expect(line.id).toBe('future-ready-verdict-line')
+    expect(within(chips).getAllByRole('listitem').map((item) => item.textContent)).toEqual(VERDICTS)
+    for (const item of within(chips).getAllByRole('listitem')) {
+      expect(item.children).toHaveLength(0)
+    }
+    expect(section.querySelectorAll('[aria-pressed], [aria-current]')).toHaveLength(0)
+  })
+
+  it('has exactly one tab stop, the link to the Data Trust Assessment', () => {
+    const { section } = renderFutureReady()
+    const links = within(section).getAllByRole('link')
+
+    expect(links).toHaveLength(1)
+    expect(links[0]).toHaveAttribute('href', '#data-trust-assessment')
+    expect(links[0]).toHaveAccessibleName(LINK)
     expect(within(section).queryAllByRole('button')).toHaveLength(0)
     expect(
       section.querySelectorAll(
         'a, button, input, select, textarea, iframe, [tabindex], [contenteditable], summary',
       ),
-    ).toHaveLength(0)
+    ).toEqual(section.querySelectorAll('a'))
   })
 
-  it('exposes the graphic: a list named by the heading with the four labels in order, then the destination', () => {
-    const { section, graphic } = renderFutureReady()
-    const list = within(section).getByRole('list', { name: HEADING })
+  it('puts the link\'s arrow in an aria-hidden element after its text', () => {
+    const { section } = renderFutureReady()
+    const link = within(section).getByRole('link')
+    const arrow = link.querySelector('[aria-hidden="true"]')!
 
-    // Only the technical grid behind the content is hidden now (#72).
-    expect(section.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1)
-    expect(section.querySelector('[aria-hidden="true"]')).toHaveClass('technical-grid')
-    expect(graphic).not.toHaveAttribute('aria-hidden')
-    expect(graphic).toContainElement(list)
-    expect(list).toHaveAttribute('aria-labelledby', 'future-ready-heading')
-    expect(within(list).getAllByRole('listitem').map((item) => item.textContent)).toEqual(LABELS)
-    expect(within(section).getByText(DESTINATION)).toBeVisible()
-    expect(graphic).not.toContainElement(
-      within(section).getByRole('heading', { level: 2 }),
+    expect(link.textContent).toBe(`${LINK}→`)
+    expect(arrow.textContent).toBe('→')
+    expect(link.lastElementChild).toBe(arrow)
+  })
+
+  it('uses plain ASCII text, with "→" only inside aria-hidden elements', () => {
+    const { section } = renderFutureReady()
+
+    expect(section.querySelector('br')).toBeNull()
+    expect(section.textContent).not.toMatch(/\u00a0/)
+    expect(section.innerHTML).not.toContain('&nbsp;')
+    expect(visibleText(section)).toMatch(/^[\x20-\x7e]+$/)
+    const hidden = [...section.querySelectorAll('[aria-hidden="true"]')].filter(
+      (element) => !element.classList.contains('technical-grid'),
     )
-    expect(graphic).not.toContainElement(section.querySelector('p'))
-    expect(graphic.textContent).toBe(LABELS.join('') + DESTINATION)
-  })
-
-  it('draws its dots, rail and ring only with empty pseudo-elements, so nothing decorative is in the DOM', () => {
-    const { graphic } = renderFutureReady()
-
-    expect(graphic.querySelectorAll('*')).toHaveLength(LABELS.length + 2)
-    for (const element of graphic.querySelectorAll('*')) {
-      expect(element.textContent).not.toBe('')
-    }
-  })
-
-  it('labels the final node "advanced analytics & AI", after the four foundations, not as a fifth', () => {
-    const { graphic } = renderFutureReady()
-    const end = graphic.lastElementChild!
-
-    expect(end).toHaveClass('future-ready__end')
-    expect(end.textContent).toBe(DESTINATION)
-    expect(end.tagName).not.toBe('LI')
-    expect(end.previousElementSibling!.tagName).toBe('UL')
-    // No empty, unlabelled node is left.
-    for (const element of graphic.querySelectorAll('*')) {
-      if (element.children.length === 0) expect(element.textContent).not.toBe('')
-    }
-  })
-
-  it('says "advanced analytics" in the paragraph that the destination repeats', () => {
-    expect(STATEMENT).toContain('AI and advanced analytics')
+    expect(hidden.map((element) => element.textContent)).toEqual(['→', '→'])
   })
 
   it('has exactly one technical grid, first, behind the content', () => {
@@ -185,46 +260,39 @@ describe('FutureReady', () => {
     expect(grids).toHaveLength(1)
     expect(section.firstElementChild).toBe(grids[0])
     expect(grids[0]).toHaveAttribute('aria-hidden', 'true')
+    expect(section.children).toHaveLength(2)
+    expect(section.children[1]).toHaveClass('container')
   })
 
-  it('no longer names the graphic\'s labels in the paragraph, so the graphic adds to it (#72)', () => {
-    expect(STATEMENT).not.toContain('access controls')
-    for (const label of LABELS) expect(STATEMENT).not.toContain(label)
-  })
-
-  it('names the Data Trust Assessment and its three verdicts in the paragraph', () => {
-    expect(STATEMENT).toContain('The Data Trust Assessment')
-    expect(STATEMENT).toContain('ready now, ready after specific fixes, or not ready yet')
-  })
-
-  it('has no images, icons or charts', () => {
+  it('has no images, icons or charts; its dots, rings and dashed border are CSS', () => {
     const { section } = renderFutureReady()
 
     expect(
       section.querySelectorAll('img, picture, svg, canvas, video, iframe, object'),
     ).toHaveLength(0)
+    for (const element of section.querySelectorAll('.future-ready__key, .future-ready__chips > li')) {
+      expect(element.children).toHaveLength(0)
+    }
+  })
+
+  it('no longer uses the Intelligence colour', () => {
+    expect(futureReadyCss).not.toContain('--service-intelligence')
   })
 
   it.each(FORBIDDEN)('does not say "%s"', (phrase) => {
     const { section } = renderFutureReady()
     const escaped = phrase.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')
-    const text = [...section.querySelectorAll('h2, p, li, .future-ready__end')]
-      .map((element) => element.textContent)
-      .join(' ')
+    const text = blocks(section).join(' ')
 
     expect(text).toBe(
-      [HEADING, STATEMENT, ...LABELS, DESTINATION].join(' '),
+      [HEADING, LEAD, ...TILES.flat(), VERDICT_LINE, ...VERDICTS, LINK].join(' '),
     )
     expect(text).not.toMatch(new RegExp(`\\b${escaped}\\b`, 'i'))
   })
 
   it('says "AI" only inside the two readiness phrases', () => {
     const { section } = renderFutureReady()
-    // Each block's text on its own, so the heading's last word and the
-    // paragraph's first ("AI") do not run together.
-    const text = [...section.querySelectorAll('h2, p, li, .future-ready__end')]
-      .map((element) => element.textContent)
-      .join(' ')
+    const text = blocks(section).join(' ')
     const matches = [...text.matchAll(/\bAI\b/g)]
 
     expect(matches).toHaveLength(ALLOWED_AI_PHRASES.length)
@@ -239,10 +307,85 @@ describe('FutureReady', () => {
     for (const phrase of ALLOWED_AI_PHRASES) expect(text).toContain(phrase)
   })
 
+  it('keeps the SEO terms the old paragraph and list carried, as visible text', () => {
+    const { section } = renderFutureReady()
+    const text = blocks(section).join(' ').toLowerCase()
+
+    for (const term of [
+      'data quality',
+      'lineage',
+      'advanced analytics',
+      'access controls',
+      'business definitions',
+      'quality signals',
+      'data trust assessment',
+    ]) {
+      expect(text).toContain(term)
+    }
+  })
+
   it('uses .surface-dark and nests no .surface-alt inside it', () => {
     const { section } = renderFutureReady()
 
     expect(section).toHaveClass('surface-dark')
     expect(section.querySelector('.surface-alt')).toBeNull()
+  })
+})
+
+describe('FutureReady in the page', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  function renderApp() {
+    vi.stubGlobal('matchMedia', (media: string) => ({
+      media,
+      matches: false,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }))
+    render(<App />)
+    const section = screen.getByRole('region', { name: HEADING })
+    return { link: within(section).getByRole('link', { name: LINK }) }
+  }
+
+  it('links to the Data Trust Assessment section\'s existing id', () => {
+    const { link } = renderApp()
+    const target = document.getElementById('data-trust-assessment')
+
+    expect(link.getAttribute('href')).toBe('#data-trust-assessment')
+    expect(target).not.toBeNull()
+    expect(target!.tagName).toBe('SECTION')
+    expect(document.getElementById('assessment')).toBeNull()
+  })
+
+  it('moves focus to the assessment\'s heading after a plain click, with a temporary tabindex', async () => {
+    const { link } = renderApp()
+    const heading = document.getElementById('data-trust-assessment-heading')!
+
+    fireEvent.click(link)
+    await waitFor(() => expect(document.activeElement).toBe(heading))
+    expect(heading).toHaveAttribute('tabindex', '-1')
+    link.focus()
+    expect(heading).not.toHaveAttribute('tabindex')
+  })
+
+  it('leaves modified and non-primary clicks alone', async () => {
+    const { link } = renderApp()
+    const heading = document.getElementById('data-trust-assessment-heading')!
+
+    for (const init of [
+      { ctrlKey: true },
+      { metaKey: true },
+      { shiftKey: true },
+      { altKey: true },
+      { button: 1 },
+    ]) {
+      fireEvent.click(link, init)
+    }
+    // Longer than the frame and task a plain click waits for.
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(document.activeElement).not.toBe(heading)
+    expect(heading).not.toHaveAttribute('tabindex')
   })
 })

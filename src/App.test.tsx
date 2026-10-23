@@ -7,6 +7,7 @@ import {
   assessmentLead,
   assessmentNextStatement,
 } from './data/assessment.ts'
+import { futureReadyLinkText } from './data/futureReady.ts'
 import { footerNavigation, navigation, navigationCta } from './data/navigation.ts'
 import {
   positioningEyebrow,
@@ -168,11 +169,16 @@ describe('App', () => {
     for (const item of [...navigation, ...footerNavigation, navigationCta]) {
       expect(item.id).not.toBe(assessment.id)
     }
-    // Exactly one link leads to it: the first step of the Managed Services
-    // journey (#88), outside the header and footer.
+    // Exactly two links lead to it, outside the header and footer: the
+    // first step of the Managed Services journey (#88), and the
+    // future-ready section's "See how the assessment works" (#91).
     const toAssessment = [...document.querySelectorAll(`a[href*="${assessment.id}"]`)]
-    expect(toAssessment).toHaveLength(1)
-    expect(toAssessment[0]).toHaveAttribute('href', `#${assessment.id}`)
+    expect(toAssessment).toHaveLength(2)
+    for (const link of toAssessment) {
+      expect(link).toHaveAttribute('href', `#${assessment.id}`)
+      expect(screen.getByRole('banner')).not.toContainElement(link as HTMLElement)
+      expect(screen.getByRole('contentinfo')).not.toContainElement(link as HTMLElement)
+    }
     expect(toAssessment[0].textContent).toBe(managedServices.journey[0])
     expect(
       screen.getByRole('navigation', { name: managedServices.journeyLabel }),
@@ -180,8 +186,10 @@ describe('App', () => {
     expect(screen.getByRole('region', { name: MANAGED })).toContainElement(
       toAssessment[0] as HTMLElement,
     )
-    expect(screen.getByRole('banner')).not.toContainElement(toAssessment[0] as HTMLElement)
-    expect(screen.getByRole('contentinfo')).not.toContainElement(toAssessment[0] as HTMLElement)
+    expect(screen.getByRole('region', { name: FUTURE_READY })).toContainElement(
+      toAssessment[1] as HTMLElement,
+    )
+    expect(toAssessment[1]).toHaveAccessibleName(futureReadyLinkText)
     expect(
       within(screen.getByRole('banner')).getAllByRole('link').map((link) => link.textContent),
     ).not.toContain(ASSESSMENT)

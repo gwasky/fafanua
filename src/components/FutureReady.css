@@ -1,16 +1,38 @@
 /*
  * Future-ready (plan V2 §14): the second full-bleed dark section, after
  * the hero, with the dark sections' generous padding and the heading at
- * the display scale. .surface-dark (global.css) supplies the graphite 900
- * background and the dark text, heading, link and accent colours, so
- * nothing here is dark-specific: the heading is paper (14.9:1), the
- * paragraph graphite 300 (8.9:1). One column by default; from 1024px
- * (literal breakpoint; see the note in tokens.css) the text and graphic
- * sit side by side, in DOM order.
+ * the display scale, laid out as a readiness diagram per section C of the
+ * homepage sections refinement plan (#91). .surface-dark (global.css)
+ * supplies the graphite 900 background and the dark text, heading, link
+ * and accent colours: the heading and condition text paper, the lead, goal
+ * text, arrow and verdict line graphite 400, the keys and the link teal
+ * 400, tiles graphite 800 and lines graphite 700. Only verified pairings
+ * (see the design system's "Trusted foundations after #91" note).
+ *
+ * Top to bottom: the top row (the h2, then the lead, side by side from
+ * 48em, sharing their last baseline); the flow row (four condition tiles,
+ * an arrow and the goal tile: one column, a 2 × 2 grid from 48em with the
+ * goal at full width under a downward arrow, and one row from 64em); and
+ * the verdict row under a hairline (the verdict line and its chips, then
+ * the link, beside them from 48em). The breakpoints are 48em and 64em,
+ * the site's only width queries, where the plan says 768px and 1200px.
  */
 
 .future-ready {
   padding-block: var(--space-section-dark);
+}
+
+.future-ready__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-12);
+}
+
+/* The top row. */
+.future-ready__top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
 }
 
 /* Weight 300 from the global heading styles. */
@@ -21,96 +43,254 @@
   overflow-wrap: break-word;
 }
 
-.future-ready__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-10);
-}
-
-.future-ready__statement {
+.future-ready__lead {
   max-width: var(--measure);
   margin-block: 0;
-  color: var(--color-text);
+  color: var(--color-text-muted);
   font-size: var(--text-body-lg);
-  /* Break a word only if it cannot fit on a line of its own, rather than
-     anywhere as .container allows. */
+  line-height: var(--leading-normal);
   overflow-wrap: break-word;
   text-wrap: pretty;
 }
 
 /*
- * The graphic: four labels, each with a small teal marker, on a thin rail
- * that runs down to one end mark in the Intelligence colour, labelled
- * "advanced analytics & AI" (refinement plan §9, #63). The end mark is a
- * larger ring rather than a dot, so it differs without colour. Markers, rail
- * and end mark are all borders, so forced-colours mode keeps drawing them
- * (it removes background colours). Every centre sits on the same vertical
- * line, half the end mark's width from the start edge.
+ * The flow row: one ordered list of the four conditions and the goal. The
+ * goal's item holds the arrow and the goal tile. In one row (64em) it
+ * spans the arrow's column and the goal's, so the goal tile is exactly as
+ * wide as each condition tile.
  */
-.future-ready__graphic {
-  position: relative;
-  font-size: var(--text-sm);
-  line-height: var(--leading-snug);
-}
+.future-ready__flow {
+  /* The arrow glyph's box, and the room it takes in one row: --space-6
+     either side of it, less the list's gap before the goal's item. */
+  --arrow-size: var(--text-xl);
+  --arrow-column: calc(2 * var(--space-6) - var(--space-4) + var(--arrow-size));
 
-.future-ready__graphic::before {
-  content: '';
-  position: absolute;
-  /* From the first marker's centre to the top of the end ring, which is
-     centred on the last line. */
-  inset-block: calc(var(--leading-snug) * 1em / 2)
-    calc(var(--leading-snug) * 1em / 2 + var(--space-3) / 2);
-  inset-inline-start: calc(var(--space-3) / 2 - var(--border-width) / 2);
-  border-inline-start: var(--border-width) solid var(--color-border);
-}
-
-.future-ready__list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.future-ready__item,
-.future-ready__end {
-  position: relative;
-  padding-inline-start: var(--space-8);
-  color: var(--color-text);
-  font-weight: var(--weight-medium);
+/* A tile: its key, then its condition. The padding is in px and vw, so it
+   does not double with 200% page text (tokens.css). */
+.future-ready__tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--future-ready-tile-inset);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
 }
 
-.future-ready__item::before {
-  content: '';
-  position: absolute;
-  inset-block-start: calc((var(--leading-snug) * 1em - var(--space-2)) / 2);
-  inset-inline-start: calc((var(--space-3) - var(--space-2)) / 2);
+/* The goal: transparent, inside a dashed teal border. */
+.future-ready__tile--goal {
+  border: var(--border-width) dashed var(--color-accent);
+  background-color: transparent;
+}
+
+/* Keys in the eyebrow style, after a filled teal dot drawn with a border,
+   so forced-colours mode keeps drawing it. */
+.future-ready__key {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-accent-text);
+  font-size: var(--text-eyebrow);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.future-ready__key::before {
+  flex: none;
+  box-sizing: border-box;
+  inline-size: var(--space-2);
+  block-size: var(--space-2);
   border: calc(var(--space-2) / 2) solid var(--color-accent);
   border-radius: var(--radius-full);
-}
-
-/* The destination: its label like the four above it, after a 12px ring,
-   the only use of the Intelligence colour on the page. */
-.future-ready__end {
-  display: block;
-  margin-block-start: var(--space-6);
-}
-
-.future-ready__end::before {
   content: '';
-  position: absolute;
-  inset-block-start: calc((var(--leading-snug) * 1em - var(--space-3)) / 2);
-  inset-inline-start: 0;
-  width: var(--space-3);
-  height: var(--space-3);
-  border: calc(var(--border-width) * 2) solid var(--service-intelligence);
+}
+
+/* The goal's dot is a hollow ring. */
+.future-ready__tile--goal .future-ready__key::before {
+  border-width: calc(2 * var(--border-width));
+}
+
+.future-ready__condition {
+  display: block;
+  color: var(--color-heading);
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+}
+
+.future-ready__tile--goal .future-ready__condition {
+  color: var(--color-text-muted);
+}
+
+/* The goal's item: the arrow, pointing down and centred, above the goal
+   tile at full width. */
+.future-ready__goal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: stretch;
+  gap: var(--space-4);
+}
+
+.future-ready__arrow {
+  display: block;
+  justify-self: center;
+  inline-size: var(--arrow-size);
+  color: var(--color-text-muted);
+  font-size: var(--arrow-size);
+  line-height: 1;
+  text-align: center;
+  transform: rotate(90deg);
+}
+
+/* The verdict row, under a hairline. */
+.future-ready__verdict {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  padding-block-start: var(--space-12);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.future-ready__verdict-line {
+  max-width: var(--measure);
+  margin-block: 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+  line-height: var(--leading-normal);
+  text-wrap: pretty;
+}
+
+/* The three verdicts as the assessment's rating-chip pills, all outlined
+   alike: a teal dot, an amber dot and a hollow ring, each beside its
+   text, so meaning never relies on colour alone. The amber is a state
+   colour on a status label (see the design system). They are not
+   buttons: no hover, no pointer and no focus. */
+.future-ready__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.future-ready__chips > li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) min(var(--space-3), 12px);
+  border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-full);
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-snug);
+}
+
+.future-ready__chips > li::before {
+  flex: none;
+  box-sizing: border-box;
+  inline-size: var(--space-2);
+  block-size: var(--space-2);
+  border: calc(var(--space-2) / 2) solid var(--color-accent);
+  border-radius: var(--radius-full);
+  content: '';
+}
+
+.future-ready__chips > li:nth-child(2)::before {
+  border-color: var(--state-warning);
+}
+
+.future-ready__chips > li:nth-child(3)::before {
+  border: calc(2 * var(--border-width)) solid var(--color-text-muted);
+}
+
+/* The link: teal, underlined only on hover and keyboard focus, as the
+   Managed Services link (#88). It stands alone, marked by its colour and
+   arrow. The colour change is the global link transition. */
+.future-ready__link {
+  justify-self: start;
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  text-decoration-line: none;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: var(--border-width);
+  text-underline-offset: 0.2em;
+}
+
+.future-ready__link:focus-visible {
+  text-decoration-line: underline;
+}
+
+@media (hover: hover) {
+  .future-ready__link:hover {
+    text-decoration-line: underline;
+  }
+}
+
+.future-ready__link-arrow {
+  margin-inline-start: var(--space-1);
+}
+
+@media (min-width: 48em) {
+  .future-ready__top {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: var(--space-16);
+    align-items: last baseline;
+  }
+
+  .future-ready__flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .future-ready__goal {
+    grid-column: 1 / -1;
+  }
+
+  .future-ready__verdict {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-8);
+    align-items: center;
+  }
+
+  .future-ready__link {
+    justify-self: end;
+  }
 }
 
 @media (min-width: 64em) {
   .future-ready__layout {
-    grid-template-columns: minmax(0, 1fr) auto;
-    column-gap: var(--space-16);
-    align-items: center;
+    row-gap: var(--space-16);
+  }
+
+  /* One row: four tiles, the arrow's column, then the goal. */
+  .future-ready__flow {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) var(--arrow-column) minmax(0, 1fr);
+  }
+
+  /* The goal's item spans the last two columns and the gap between them,
+     so its first column takes that gap and the goal tile the last column.
+     The arrow points right, --space-6 from the goal tile, centred on the
+     tiles. */
+  .future-ready__goal {
+    grid-column: span 2;
+    grid-template-columns: calc(var(--arrow-column) + var(--space-4)) minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .future-ready__arrow {
+    align-self: center;
+    justify-self: end;
+    margin-inline-end: var(--space-6);
+    transform: none;
   }
 }
