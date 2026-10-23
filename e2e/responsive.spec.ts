@@ -104,6 +104,170 @@ async function expectNoHorizontalScroll(page: Page) {
 
 const menuButton = (page: Page) => page.getByRole('button', { name: 'Menu' })
 
+/**
+ * The About section's boxes, styles and the tokens they should match
+ * (#92), measured in the page: see the tests that call it.
+ */
+const measureAbout = (page: Page) =>
+  page.evaluate(() => {
+    const section = document.querySelector('#about')!
+    const q = (selector: string) => section.querySelector(selector)!
+    const qa = (selector: string) => [...section.querySelectorAll(selector)]
+    const box = (element: Element) => {
+      const { left, right, top, bottom, width, height } = element.getBoundingClientRect()
+      return { left, right, top, bottom, width, height }
+    }
+    const style = (element: Element, pseudo?: string) => getComputedStyle(element, pseudo)
+    // A token's value as painted on paper, read from a probe in the section.
+    const probe = (property: 'color' | 'fontSize' | 'paddingTop', value: string) => {
+      const element = document.createElement('span')
+      element.style.display = 'block'
+      element.style[property] = value
+      section.append(element)
+      const result = getComputedStyle(element)[property]
+      element.remove()
+      return result
+    }
+    const px = (value: string) => parseFloat(probe('paddingTop', value))
+    // An element's last baseline: the bottom of an empty inline-block
+    // added at its end, which sits on the baseline.
+    const baseline = (element: Element) => {
+      const marker = document.createElement('span')
+      marker.style.cssText = 'display: inline-block; width: 0; height: 0'
+      element.append(marker)
+      const value = marker.getBoundingClientRect().bottom
+      marker.remove()
+      return value
+    }
+    const type = (element: Element) => {
+      const s = style(element)
+      return [s.fontSize, s.fontWeight, s.color, s.textTransform]
+    }
+    const unique = <T,>(values: T[]) => [...new Map(values.map((value) => [JSON.stringify(value), value])).values()]
+    const border = (s: CSSStyleDeclaration, side: 'Top' | 'Left') =>
+      `${s[`border${side}Width`]} ${s[`border${side}Style`]} ${s[`border${side}Color`]}`
+
+    const container = q('.container')
+    const definition = q('.about__definition')
+    const location = q('.about__location')
+    const heading = q('h2')
+    const items = qa('.about__principle')
+    const names = qa('.about__name')
+    const descriptions = qa('.about__description')
+    const dot = style(location, '::before')
+    // Where the location's text starts.
+    const locationRange = document.createRange()
+    locationRange.selectNodeContents(location)
+    // Words split across two lines, not counting breaks at a hyphen.
+    const broken: string[] = []
+    const walker = document.createTreeWalker(section, NodeFilter.SHOW_TEXT)
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      for (const match of node.textContent!.matchAll(/[^\s-]+/g)) {
+        const range = document.createRange()
+        range.setStart(node, match.index)
+        range.setEnd(node, match.index + match[0].length)
+        const tops = new Set([...range.getClientRects()].filter((r) => r.width > 0).map((r) => Math.round(r.top)))
+        if (tops.size > 1) broken.push(`${node.parentElement!.tagName.toLowerCase()}: ${match[0]}`)
+      }
+    }
+    const containerStyle = style(container)
+    const containerBox = box(container)
+    return {
+      content: {
+        left: containerBox.left + parseFloat(containerStyle.paddingLeft),
+        right: containerBox.right - parseFloat(containerStyle.paddingRight),
+      },
+      columns: containerStyle.gridTemplateColumns.split(' ').map(parseFloat),
+      columnGap: parseFloat(containerStyle.columnGap),
+      headingLines: box(heading).height / parseFloat(style(heading).lineHeight),
+      nameLines: names.map((name) => box(name).height / parseFloat(style(name).lineHeight)),
+      locationTextLeft: locationRange.getClientRects()[0]?.left ?? 0,
+      boxes: {
+        eyebrow: box(q('.section-eyebrow')),
+        heading: box(heading),
+        body: box(q('.about__body')),
+        definition: box(definition),
+        word: box(q('dfn')),
+        note: box(q('.about__note')),
+        meaning: box(q('.about__meaning')),
+        text: box(q('.about__text')),
+        location: box(location),
+        principles: box(q('.about__principles')),
+        label: box(q('.about__label')),
+        list: box(q('ul')),
+        items: items.map(box),
+        names: names.map(box),
+        descriptions: descriptions.map(box),
+      },
+      baselines: { word: baseline(q('dfn')), note: baseline(q('.about__note')) },
+      type: {
+        eyebrow: type(q('.section-eyebrow')),
+        heading: type(heading),
+        word: type(q('dfn')),
+        note: type(q('.about__note')),
+        meaning: type(q('.about__meaning')),
+        text: type(q('.about__text')),
+        location: type(location),
+        label: type(q('.about__label')),
+        names: unique(names.map(type)),
+        descriptions: unique(descriptions.map(type)),
+      },
+      styles: {
+        background: style(section).backgroundColor,
+        definitionRule: border(style(definition), 'Left'),
+        definitionInset: parseFloat(style(definition).paddingLeft),
+        wordStyle: style(q('dfn')).fontStyle,
+        dot: { width: dot.width, height: dot.height, border: border(dot, 'Top'), radius: dot.borderTopLeftRadius },
+        dotCentre: parseFloat(dot.marginTop) + parseFloat(dot.height) / 2,
+        locationLineHeight: parseFloat(style(location).lineHeight),
+        hairline: border(style(q('.about__principles')), 'Top'),
+        principleRules: items.map((item) => border(style(item), 'Top')),
+        lineHeights: {
+          meaning: parseFloat(style(q('.about__meaning')).lineHeight) / parseFloat(style(q('.about__meaning')).fontSize),
+          names: parseFloat(style(names[0]).lineHeight) / parseFloat(style(names[0]).fontSize),
+          descriptions: parseFloat(style(descriptions[0]).lineHeight) / parseFloat(style(descriptions[0]).fontSize),
+        },
+        heaviest: Math.max(...[section, ...qa('*')].map((element) => Number(style(element).fontWeight))),
+      },
+      colours: [...new Set(qa('*').map((element) => style(element).color))],
+      tokens: {
+        paper: probe('color', 'var(--color-bg)'),
+        heading: probe('color', 'var(--color-heading)'),
+        text: probe('color', 'var(--color-text)'),
+        muted: probe('color', 'var(--color-text-muted)'),
+        accent: probe('color', 'var(--color-accent)'),
+        accentText: probe('color', 'var(--color-accent-text)'),
+        border: probe('color', 'var(--color-border)'),
+        link: probe('color', 'var(--color-link)'),
+        eyebrowSize: probe('fontSize', 'var(--text-eyebrow)'),
+        textSection: probe('fontSize', 'var(--text-section)'),
+        text3xl: probe('fontSize', 'var(--text-3xl)'),
+        text2xl: probe('fontSize', 'var(--text-2xl)'),
+        textXl: probe('fontSize', 'var(--text-xl)'),
+        textSm: probe('fontSize', 'var(--text-sm)'),
+        textBase: probe('fontSize', 'var(--text-base)'),
+        bodyLg: probe('fontSize', 'var(--text-body-lg)'),
+        space3: px('var(--space-3)'),
+        space4: px('var(--space-4)'),
+        space6: px('var(--space-6)'),
+        space8: px('var(--space-8)'),
+        space12: px('var(--space-12)'),
+        space16: px('var(--space-16)'),
+        inset: px('var(--about-definition-inset)'),
+      },
+      outside: qa('*')
+        .filter((element) => {
+          const b = element.getBoundingClientRect()
+          return b.width > 0 && (b.left < -0.5 || b.right > window.innerWidth + 0.5)
+        })
+        .map((element) => `${element.tagName} ${element.textContent?.slice(0, 30)}`),
+      clipped: qa('p, h2, h3, dfn, span, li')
+        .filter((element) => element.scrollWidth > element.clientWidth + 1 && style(element).display !== 'inline')
+        .map((element) => element.textContent?.slice(0, 30)),
+      broken,
+    }
+  })
+
 /** The header's box and computed position, in viewport coordinates. */
 const headerState = (page: Page) =>
   page.getByRole('banner').evaluate((header) => {
@@ -3065,10 +3229,9 @@ for (const width of WIDTHS) {
     // from 1024px, two by two with the goal under a downward arrow from
     // 768px, and in one column below; the verdict row under a hairline,
     // with the link beside the verdict line and chips from 768px and under
-    // them below; and the verified colours. About (#63): the heading with
-    // the statement beneath it, then the description, side by side from
-    // 1024px and stacked below it.
-    test(`future-ready layout and the About columns at ${width}px`, async ({ page }, testInfo) => {
+    // them below; and the verified colours. About's layout has its own
+    // test below (#92).
+    test(`future-ready layout at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       await page.locator('#future-ready').scrollIntoViewIfNeeded()
       await waitForMotion(page)
@@ -3111,8 +3274,6 @@ for (const width of WIDTHS) {
         const keys = [...section.querySelectorAll('.future-ready__key')]
         const conditions = [...section.querySelectorAll('.future-ready__condition')]
         const link = q('.future-ready__link')
-        const about = document.querySelector('#about .container')!
-        const [aboutHeading, statement, description] = ['h2', '.about__statement', '.about__text'].map((selector) => box(about.querySelector(selector)!))
         const contentWidth =
           container.getBoundingClientRect().width -
           parseFloat(style(container).paddingLeft) -
@@ -3191,16 +3352,6 @@ for (const width of WIDTHS) {
             })(),
             space4: parseFloat(style(flow).rowGap),
           },
-          about: { heading: aboutHeading, statement, description },
-          statementStyle: (({ fontSize, fontWeight }) => `${fontSize} ${fontWeight}`)(getComputedStyle(about.querySelector('.about__statement')!)),
-          text3xl: (() => {
-            const probe = document.createElement('p')
-            probe.style.fontSize = 'var(--text-3xl)'
-            document.body.append(probe)
-            const value = getComputedStyle(probe).fontSize
-            probe.remove()
-            return value
-          })(),
         }
       })
       const detail = JSON.stringify(m)
@@ -3301,17 +3452,152 @@ for (const width of WIDTHS) {
         chipDots: [`8px 4px ${t.accent}`, `8px 4px ${t.warning}`, `8px 2px ${t.muted}`],
       })
       expect(m.sizes.key, detail).toBe(m.sizes.eyebrow)
+    })
 
-      const { heading, statement, description } = m.about
-      expect(statement.top, detail).toBeGreaterThanOrEqual(heading.bottom)
-      expect(Math.abs(statement.left - heading.left), detail).toBeLessThanOrEqual(1)
-      expect(m.statementStyle, detail).toBe(`${m.text3xl} 300`)
-      if (width >= 1024) {
-        expect(description.left, detail).toBeGreaterThan(Math.max(heading.right, statement.right))
-        expect(Math.abs(description.top - heading.top), detail).toBeLessThanOrEqual(1)
-      } else {
-        expect(description.top, detail).toBeGreaterThanOrEqual(statement.bottom)
-        expect(Math.abs(description.left - heading.left), detail).toBeLessThanOrEqual(1)
+    // About (section D, #92): the eyebrow, then from 1024px the h2 beside
+    // the body (the definition, the paragraph and the location line), the
+    // definition's rule starting level with the h2; then the principles
+    // under a full-width hairline, three equal columns from 1024px and one
+    // per row below it. Below 1024px everything is one column in DOM
+    // order. The spacing, type and the verified colours on paper. The
+    // 360px project also checks 390px, the plan's phone width.
+    test(`About layout, type and colours at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      for (const w of width === 360 ? [360, 390] : [width]) {
+        await page.setViewportSize({ width: w, height: 800 })
+        await page.locator('#about').scrollIntoViewIfNeeded()
+        await waitForMotion(page)
+        const m = await measureAbout(page)
+        const detail = `${w}px: ${JSON.stringify(m)}`
+        const near = (a: number, b: number, tolerance = 1) => expect(Math.abs(a - b), detail).toBeLessThanOrEqual(tolerance)
+        const { eyebrow, heading, body, definition, word, note, meaning, text, location, principles, label, list, items, names, descriptions } = m.boxes
+        const t = m.tokens
+
+        expect(m.outside, detail).toEqual([])
+        expect(m.clipped, detail).toEqual([])
+
+        // The top row.
+        near(heading.top - eyebrow.bottom, t.space4)
+        near(definition.top, body.top, 0.5)
+        if (w >= 1024) {
+          expect(m.columns, detail).toHaveLength(2)
+          near(m.columns[0], m.columns[1])
+          near(m.columnGap, t.space16)
+          near(heading.left, m.content.left)
+          near(body.left, m.content.left + m.columns[0] + m.columnGap)
+          near(body.right, m.content.right)
+          // The definition's rule starts level with the h2, not the eyebrow.
+          near(definition.top, heading.top, 4)
+          expect(definition.top, detail).toBeGreaterThan(eyebrow.bottom)
+          expect(Math.round(m.headingLines), detail).toBeLessThanOrEqual(4)
+        } else {
+          expect(m.columns, detail).toHaveLength(1)
+          for (const part of [eyebrow, heading, body, principles, label, list, ...items]) near(part.left, m.content.left)
+          for (const part of [body, principles, list, ...items]) near(part.right, m.content.right)
+          near(body.top - heading.bottom, t.space8)
+        }
+        // The definition block: a 3px teal rule along its full height, the
+        // inset, the word and its note on one baseline where both fit (the
+        // note wraps below it otherwise), then the definition.
+        expect(m.styles.definitionRule, detail).toBe(`3px solid ${t.accent}`)
+        near(m.styles.definitionInset, t.inset, 0.5)
+        near(word.left, definition.left + 3 + t.inset)
+        near(definition.bottom, meaning.bottom)
+        if (note.top < word.bottom) {
+          near(m.baselines.word, m.baselines.note)
+          near(note.left - word.right, t.space3)
+        } else {
+          near(note.left, word.left)
+        }
+        near(meaning.top - Math.max(word.bottom, note.bottom), t.space3)
+        // The paragraph, then the location line with its dot.
+        near(text.top - definition.bottom, t.space8)
+        near(location.top - text.bottom, t.space6)
+        expect(m.styles.dot, detail).toEqual({ width: '8px', height: '8px', border: `4px solid ${t.accent}`, radius: '50%' })
+        near(m.styles.dotCentre, m.styles.locationLineHeight / 2, 0.5)
+        near(m.locationTextLeft - location.left, 8 + t.space3)
+
+        // The principles row: the hairline across the content width.
+        expect(m.styles.hairline, detail).toBe(`1px solid ${t.border}`)
+        near(principles.left, m.content.left)
+        near(principles.right, m.content.right)
+        if (w >= 1024) near(principles.top - Math.max(heading.bottom, body.bottom), t.space16)
+        else expect(principles.top, detail).toBeGreaterThan(location.bottom)
+        near(label.top - principles.top, 1 + t.space12)
+        near(list.top - label.bottom, t.space6)
+        expect(items, detail).toHaveLength(3)
+        for (const rule of m.styles.principleRules) expect(rule, detail).toBe(`2px solid ${t.accent}`)
+        if (w >= 1024) {
+          for (const item of items) {
+            near(item.top, items[0].top)
+            near(item.width, items[0].width)
+          }
+          near(items[1].left - items[0].right, t.space8)
+          near(items[2].left - items[1].right, t.space8)
+          near(items[0].left, m.content.left)
+          near(items[2].right, m.content.right)
+        } else {
+          near(items[1].top - items[0].bottom, t.space8)
+          near(items[2].top - items[1].bottom, t.space8)
+        }
+        items.forEach((item, index) => {
+          near(names[index].top - item.top, 2 + t.space6)
+          near(descriptions[index].top - names[index].bottom, t.space3)
+        })
+        if (w === 1440) for (const lines of m.nameLines) expect(Math.round(lines), detail).toBe(1)
+
+        // Type and colour (all on paper; the design system's "About after
+        // #92" note).
+        expect(m.styles.background, detail).toBe(t.paper)
+        expect(m.type, detail).toEqual({
+          eyebrow: [t.eyebrowSize, '500', t.muted, 'uppercase'],
+          heading: [t.textSection, '300', t.heading, 'none'],
+          word: [t.text3xl, '300', t.accentText, 'none'],
+          note: [t.textSm, '400', t.muted, 'none'],
+          meaning: [t.textXl, '400', t.text, 'none'],
+          text: [t.bodyLg, '400', t.muted, 'none'],
+          location: [t.textSm, '400', t.text, 'none'],
+          label: [t.eyebrowSize, '500', t.muted, 'uppercase'],
+          names: [[t.text2xl, '300', t.heading, 'none']],
+          descriptions: [[t.textBase, '400', t.muted, 'none']],
+        })
+        expect(m.styles.wordStyle, detail).toBe('normal')
+        near(m.styles.lineHeights.meaning, 1.6, 0.01)
+        near(m.styles.lineHeights.names, 1.3, 0.01)
+        near(m.styles.lineHeights.descriptions, 1.6, 0.01)
+        expect(m.styles.heaviest, detail).toBeLessThanOrEqual(500)
+        // Teal 700, the link colour, is not used for text here.
+        expect(m.colours, detail).not.toContain(t.link)
+        await expectNoHorizontalScroll(page)
+      }
+    })
+
+    // 200% page text: nothing in About overflows or is clipped (#92). A
+    // media query in em follows the browser's text size, not page text, so
+    // the layout stays as at 100%; the definition's inset is in px and vw,
+    // so it does not double. A long word in the h2 may break only through
+    // its overflow-wrap.
+    test(`About fits with 200% page text at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      await page.addStyleTag({ content: 'html { font-size: 200%; }' })
+      for (const w of width === 360 ? [360, 390] : [width]) {
+        await page.setViewportSize({ width: w, height: 800 })
+        await waitForFonts(page)
+        await page.locator('#about').scrollIntoViewIfNeeded()
+        await waitForMotion(page)
+        const m = await measureAbout(page)
+        const detail = `${w}px: ${JSON.stringify(m)}`
+        const { definition, word, note } = m.boxes
+
+        expect(m.outside, detail).toEqual([])
+        expect(m.clipped, detail).toEqual([])
+        expect(m.broken.filter((part) => !part.startsWith('h2:')), detail).toEqual([])
+        expect(m.styles.definitionInset, detail).toBeLessThanOrEqual(24)
+        expect(word.right, detail).toBeLessThanOrEqual(definition.right + 0.5)
+        expect(note.right, detail).toBeLessThanOrEqual(definition.right + 0.5)
+        // At 1024px with 200% page text the header's inline navigation is
+        // wider than the viewport (#65).
+        if (w !== 1024) await expectNoHorizontalScroll(page)
       }
     })
 

@@ -607,6 +607,71 @@ test.describe('axe, the future-ready section (#91)', () => {
   }
 })
 
+// About (section D, #92): axe with the section in view, where the word
+// "fafanua" is marked lang="sw" (valid-lang), and in forced colours, where
+// the definition rule, the principle rules, the hairline and the location
+// dot stay drawn (they are borders, not backgrounds) and all text stays
+// readable. The section has no tab stops. Forced colours turn
+// color-contrast off for the reason given for the Managed panel above.
+test.describe('axe, the About section (#92)', () => {
+  test.use({ reducedMotion: 'reduce' })
+  const section = (page: Page) => page.locator('#about')
+
+  for (const width of [320, 390, 1024, 1440]) {
+    test(`About in view at ${width}px`, async ({ page }, testInfo) => {
+      await openPage(page, width)
+      await section(page).scrollIntoViewIfNeeded()
+      await waitForMotion(page)
+      expect(await section(page).locator('[lang]').evaluateAll((elements) => elements.map((element) => `${element.tagName} ${element.getAttribute('lang')} ${element.textContent}`))).toEqual(['DFN sw fafanua'])
+      await expectNoAxeViolations(page, testInfo)
+    })
+
+    test(`About in view, forced colours, at ${width}px`, async ({ page }, testInfo) => {
+      await page.emulateMedia({ forcedColors: 'active' })
+      await openPage(page, width)
+      await section(page).scrollIntoViewIfNeeded()
+      await waitForMotion(page)
+
+      const results = await new AxeBuilder({ page })
+        .withTags(AXE_TAGS)
+        .disableRules(['color-contrast'])
+        .analyze()
+      expect(
+        results.violations,
+        `axe violations in "${testInfo.title}":\n${formatViolations(results.violations)}`,
+      ).toEqual([])
+
+      const painted = await section(page).evaluate((root) => {
+        const border = (element: Element, side: 'Top' | 'Left', pseudo?: string) => {
+          const style = getComputedStyle(element, pseudo)
+          return { width: style[`border${side}Width`], style: style[`border${side}Style`], colour: style[`border${side}Color`] }
+        }
+        return {
+          background: getComputedStyle(root).backgroundColor,
+          lines: [
+            border(root.querySelector('.about__definition')!, 'Left'),
+            border(root.querySelector('.about__principles')!, 'Top'),
+            ...[...root.querySelectorAll('.about__principle')].map((item) => border(item, 'Top')),
+            border(root.querySelector('.about__location')!, 'Top', '::before'),
+          ],
+          text: [...root.querySelectorAll('h2, h3, p, dfn, span')].map((element) => getComputedStyle(element).color),
+        }
+      })
+      const detail = JSON.stringify(painted)
+      expect(painted.lines, detail).toHaveLength(6)
+      for (const line of painted.lines) {
+        expect(line.style, detail).not.toBe('none')
+        expect(parseFloat(line.width), detail).toBeGreaterThan(0)
+        expect(line.colour, detail).not.toBe(painted.background)
+      }
+      for (const colour of painted.text) expect(colour, detail).not.toBe(painted.background)
+      await section(page).screenshot({
+        path: `${testInfo.project.outputDir}/screenshots/about-forced-colours-${width}.png`,
+      })
+    })
+  }
+})
+
 test.describe('axe, skip link focused', () => {
   for (const width of [360, 1440]) {
     test(`skip link visible after the first Tab at ${width}px`, async ({ page }, testInfo) => {
