@@ -139,6 +139,8 @@ Add a short founder block. This item has an input dependency.
 
 **Acceptance:** the block is built only from owner-supplied content, and the existing About copy is otherwise unchanged.
 
+**Deferred (2026-10-23, #92):** the owner has deferred W8. It is not cancelled, and it stays tracked in #75 (blocked until the owner supplies the text and photo). Section D of `_docs/fafanua-homepage-sections-refinement-plan.md` now governs the About section's composition and copy, so "leave the About section unchanged" and "the existing About copy is otherwise unchanged" no longer apply. A returning founder block must fit section D's layout.
+
 ### W9. Closing section
 
 - Keep the existing closing heading ("Let's build a data foundation your organisation can trust.") unchanged.
@@ -293,7 +295,7 @@ Items marked with a G-number depend on that approval. Without it, keep the curre
 6. Connected diagram (G3 removes the cards above it)
 7. Sectors: Health, Financial services, Education (W7)
 8. What comes after: Managed Services (laid out per `_docs/fafanua-managed-services-regrouped-plan.md`, which replaces G4)
-9. About (W8)
+9. About (section D of `_docs/fafanua-homepage-sections-refinement-plan.md`; W8 deferred, #92)
 10. Closing section (W9)
 
 ## 8. Health landing page copy (used only if G5 is ticked)
