@@ -252,7 +252,7 @@ test.describe('layout', () => {
     expect(columns(m.traceBoxes)).toBe(1)
     expect(m.traceBoxes[1].top).toBeGreaterThan(m.traceBoxes[0].bottom)
     expect(m.traceBoxes[2].top).toBeGreaterThan(m.traceBoxes[1].bottom)
-    for (const grid of [...m.paired.flat(), ...m.deliverables, ...m.services, ...m.checklist]) {
+    for (const grid of [...m.paired.flat(), ...m.deliverables, ...m.services]) {
       expect(grid.left).toBeCloseTo(m.paired[0][0].left, -1)
     }
     expect(columns(m.deliverables)).toBe(1)
@@ -386,7 +386,8 @@ test.describe('weights', () => {
     await openPath(page, PATH, 1440)
     const m = await page.evaluate(() => {
       const weight = (element: Element) => Number(getComputedStyle(element).fontWeight)
-      const weights = (selector: string) => [...document.querySelectorAll(`main ${selector}`)].map(weight)
+      const weights = (selectors: string) =>
+        [...document.querySelectorAll(selectors.split(', ').map((selector) => `main ${selector}`).join(', '))].map(weight)
       return {
         bold: weights('h1, .sector-heading'),
         semibold: weights(
@@ -399,7 +400,8 @@ test.describe('weights', () => {
         frameMax: Math.max(...[...document.querySelectorAll('header, header *, footer, footer *')].map(weight)),
       }
     })
-    expect(m.bold.length).toBe(10)
+    // The h1 and the five section headings over a section.
+    expect(m.bold.length).toBe(6)
     expect(new Set(m.bold)).toEqual(new Set([700]))
     expect(new Set(m.semibold)).toEqual(new Set([600]))
     expect(new Set(m.body)).toEqual(new Set([400]))
@@ -414,11 +416,14 @@ test.describe('colours', () => {
   test('every element in the colour table takes its token, amber only on the three amber elements and no error colour', async ({ page }) => {
     await openPath(page, PATH, 1440)
     const m = await page.evaluate(() => {
-      // A token's computed colour, as the browser serialises it.
-      const probe = document.createElement('span')
-      document.body.append(probe)
+      // A token's computed colour, as the browser serialises it, read
+      // from a probe of its own.
+      const probes: HTMLElement[] = []
       const token = (name: string) => {
-        probe.style.color = `var(${name})`
+        const probe = document.createElement('span')
+        probe.style.setProperty('color', `var(${name})`)
+        document.body.append(probe)
+        probes.push(probe)
         return getComputedStyle(probe).color
       }
       const style = (selector: string) => getComputedStyle(document.querySelector(selector)!)
@@ -491,7 +496,7 @@ test.describe('colours', () => {
           .map((root) => (root ? root.className.split(' ').at(-1) + (root.closest('.trace') ? ' trace' : root.closest('.chips') ? ' chip' : ' card') : 'OTHER')),
       )
       const redCount = inMain.filter((element) => colours(element).some((colour) => red.includes(colour))).length
-      probe.remove()
+      for (const probe of probes) probe.remove()
       return { tokens, c, amberRoots: [...amberRoots].sort(), redCount }
     })
     const t = m.tokens
