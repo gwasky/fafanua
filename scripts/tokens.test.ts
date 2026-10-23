@@ -59,6 +59,7 @@ describe('V2 tokens', () => {
       '--flow-loop-width': '24px',
       '--process-card-inset': 'clamp(12px, 4vw, 24px)',
       '--future-ready-tile-inset': 'clamp(12px, 4vw, 24px)',
+      '--about-definition-inset': 'clamp(12px, 4vw, 24px)',
       '--grid-size': '4rem',
       '--grid-line-width': '1px',
       '--duration-header': 'var(--duration-base)',

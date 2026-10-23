@@ -49,7 +49,7 @@
    with page text (as the How We Work and future-ready insets). */
 .about__definition {
   margin-block: 0;
-  padding-inline-start: var(--space-6);
+  padding-inline-start: var(--about-definition-inset);
   border-inline-start: 3px solid var(--color-accent);
 }
 
