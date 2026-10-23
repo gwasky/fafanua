@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { managedServices, services } from '../src/data/services.ts'
+import { solutionPages } from '../src/data/solutionPages.ts'
 import { footerSolutions, homepageSolutions, solutions } from '../src/data/solutions.ts'
 import { centreOf, expectNoAxeViolations, openPath, test, WIDTHS } from './fixtures.ts'
 
@@ -16,10 +17,16 @@ const servicePaths = [
 ]
 const solutionPaths = solutions.map((solution) => `/solutions/${solution.slug}`)
 const PATHS = [...servicePaths, ...solutionPaths]
-// The page on the shared landing-page foundation (#93).
+// The pages on the shared landing-page foundation (#93, #94), each with
+// its closing panel's text: the plan's text and the owner's follow-up.
 const PUBLIC_SECTOR = '/solutions/public-sector'
-const PUBLIC_SECTOR_LINE =
-  'Which figure in your next statutory report do you trust least? Tell us about the reports leadership answers for. Then we make sure they are built on a trusted data foundation.'
+const HEALTH = '/solutions/health'
+const FOUNDATION: Record<string, string> = {
+  [PUBLIC_SECTOR]:
+    'Which figure in your next statutory report do you trust least? Tell us about the reports leadership answers for. Then we make sure they are built on a trusted data foundation.',
+  [HEALTH]:
+    'Which numbers do you trust least? Tell us about the reports your branches and head office rely on. Then we make sure they are built on a trusted data foundation.',
+}
 
 // The HTML as a crawler gets it: no JavaScript runs.
 async function served(page: Page, path: string) {
@@ -106,9 +113,10 @@ test.describe('one call to action', () => {
     test(`${path} has the header and closing buttons, and no retired label`, async ({ page }) => {
       const html = await (await page.request.get(path, { maxRedirects: 0 })).text()
 
-      if (path === PUBLIC_SECTOR) {
-        // The shared landing-page foundation (#93): the header's button,
-        // the hero's and the closing panel's, which replaces Contact.
+      if (path in FOUNDATION) {
+        // The shared landing-page foundation (#93, #94): the header's
+        // button, the hero's and the closing panel's, which replaces
+        // Contact.
         expect(all(html, CTA)).toEqual(['#contact', 'mailto:info@fafanua.tech', 'mailto:info@fafanua.tech'])
         expect(html.match(/Book a data trust assessment/g)).toHaveLength(3)
       } else {
@@ -163,10 +171,10 @@ test.describe('closing supporting line', () => {
     test(`${path} has the W9 line in the closing section`, async ({ page }) => {
       const html = await (await page.request.get(path, { maxRedirects: 0 })).text()
 
-      if (path === PUBLIC_SECTOR) {
-        // Its closing panel's own text (#93, plan section 4, with the
+      if (path in FOUNDATION) {
+        // Its closing panel's own text (#93, #94: plan section 4, with the
         // owner's follow-up), not W9's.
-        expect(html.split(`<p class="sector-closing__body">${PUBLIC_SECTOR_LINE}</p>`)).toHaveLength(2)
+        expect(html.split(`<p class="sector-closing__body">${FOUNDATION[path]}</p>`)).toHaveLength(2)
         expect(html).not.toContain(LINE)
       } else {
         expect(html.split(`<p class="contact__text">${LINE}</p>`)).toHaveLength(2)
@@ -234,12 +242,33 @@ test.describe('crawl from the homepage', () => {
       await page.mouse.click(x, y)
 
       await expect(page).toHaveURL(new RegExp(`/solutions/${solution.slug}$`))
-      await expect(page.getByRole('heading', { level: 1 })).toHaveText(solution.heading)
+      // The page's h1, from its data: the foundation hero's (Health, #94)
+      // or the sector's heading.
+      const copy = solutionPages[solution.id]
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+        copy.layout === 'sector' ? copy.hero.heading : solution.heading,
+      )
+      if (solution.id === 'health') {
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText('Health data you can trace.')
+      }
     })
 
     // What the homepage row's accordion used to hold (#89, do-first
     // check 1): the sector's seven themes, on its page under "Reporting and
     // analytics use cases", in data order.
+    // The Health plan removes the use-case list (#94, owner note 9): its
+    // page has no #use-cases and none of the seven themes.
+    if (solutionPages[solution.id].layout === 'sector') {
+      test(`/solutions/${solution.slug} no longer lists the seven themes, as its plan removes them`, async ({ page }) => {
+        await openPath(page, `/solutions/${solution.slug}`, 1440)
+        await expect(page.locator('#use-cases')).toHaveCount(0)
+        await expect(page.getByRole('heading', { name: 'Reporting and analytics use cases' })).toHaveCount(0)
+        expect(solution.themes).toHaveLength(7)
+        const text = await page.getByRole('main').innerText()
+        for (const theme of solution.themes) expect(text, theme).not.toContain(theme)
+      })
+      continue
+    }
     test(`/solutions/${solution.slug} lists the seven themes the homepage row used to hold`, async ({ page }) => {
       await openPath(page, `/solutions/${solution.slug}`, 1440)
       const section = page.locator('#use-cases')
@@ -263,7 +292,7 @@ test.describe('crawl from the homepage', () => {
 test.describe('in the browser', () => {
   // The not-found page is checked at /404, its own address, as a document
   // that answers 404 always logs a console error in the browser.
-  for (const path of [servicePaths[1], '/solutions/health', PUBLIC_SECTOR, '/404']) {
+  for (const path of [servicePaths[1], HEALTH, PUBLIC_SECTOR, '/404']) {
     for (const width of WIDTHS) {
       test(`${path} has no horizontal scroll and no axe violations at ${width}px`, async ({ page }, testInfo) => {
         await openPath(page, path, width)
@@ -293,11 +322,11 @@ test.describe('in the browser', () => {
     })
   }
 
-  // The shared landing-page foundation (#93) with 200% text at the other
-  // widths too.
-  for (const width of [390, 1024, 1440]) {
-    test(`${PUBLIC_SECTOR} has no horizontal scroll with 200% text at ${width}px`, async ({ page }) => {
-      await openPath(page, PUBLIC_SECTOR, width)
+  // The shared landing-page foundation (#93, #94) with 200% text at the
+  // other widths too.
+  for (const path of [PUBLIC_SECTOR, HEALTH]) for (const width of [390, 1024, 1440]) {
+    test(`${path} has no horizontal scroll with 200% text at ${width}px`, async ({ page }) => {
+      await openPath(page, path, width)
       await page.addStyleTag({ content: 'html { font-size: 200%; }' })
       await expect
         .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))

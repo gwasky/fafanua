@@ -142,8 +142,10 @@ test.describe('links', () => {
     expect(style).toEqual({ line: 'underline', thickness: '2px' })
   })
 
+  // Health is on the foundation too (#94) and marks Solutions; a §18
+  // page marks nothing.
   test('the header marks no link on another landing page', async ({ page }) => {
-    await openPath(page, '/solutions/health', 1440)
+    await openPath(page, '/solutions/financial-services', 1440)
     await expect(page.getByRole('banner').locator('[aria-current]')).toHaveCount(0)
   })
 
