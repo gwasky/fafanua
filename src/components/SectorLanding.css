@@ -521,8 +521,12 @@
 }
 
 .sector-landing .audience-card__text {
-  margin-block: 0 var(--space-5);
+  margin-block: 0 var(--space-2);
   color: var(--color-text-muted);
+}
+
+.sector-landing .audience-card__text + .checklist {
+  margin-block-start: var(--space-5);
 }
 
 /* The Data Trust Assessment band. */
@@ -561,6 +565,10 @@
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   text-wrap: pretty;
+}
+
+.sector-landing .service-card-lp__text + .service-card-lp__text {
+  margin-block-start: var(--space-2);
 }
 
 /* The service card's heading link: graphite 900, underlined on hover

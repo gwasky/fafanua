@@ -556,6 +556,13 @@ Supporting:
 - public sector data warehouse
 - government reporting automation
 
+Added for the Public Sector landing page (owner, 2026-10-23, #93). Every keyword above is kept, and the page's visible text carries the eight it had lost (government data systems Uganda, government data integration Uganda, government dashboards Uganda, government data governance, service delivery dashboards, institutional performance dashboards, public sector data warehouse, government reporting automation). The new title, description and hero also target:
+
+- accountable government data analytics
+- public data you can account for
+- public sector data analytics for ministries, agencies and local governments
+- trusted data foundation (protected phrase, §1)
+
 ---
 
 # 13. Problem-Based Search Strategy

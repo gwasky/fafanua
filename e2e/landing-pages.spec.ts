@@ -16,6 +16,10 @@ const servicePaths = [
 ]
 const solutionPaths = solutions.map((solution) => `/solutions/${solution.slug}`)
 const PATHS = [...servicePaths, ...solutionPaths]
+// The page on the shared landing-page foundation (#93).
+const PUBLIC_SECTOR = '/solutions/public-sector'
+const PUBLIC_SECTOR_LINE =
+  'Which figure in your next statutory report do you trust least? Tell us about the reports leadership answers for. Then we make sure they are built on a trusted data foundation.'
 
 // The HTML as a crawler gets it: no JavaScript runs.
 async function served(page: Page, path: string) {
@@ -102,8 +106,15 @@ test.describe('one call to action', () => {
     test(`${path} has the header and closing buttons, and no retired label`, async ({ page }) => {
       const html = await (await page.request.get(path, { maxRedirects: 0 })).text()
 
-      expect(all(html, CTA)).toEqual(['#contact', 'mailto:info@fafanua.tech'])
-      expect(html.match(/Book a data trust assessment/g)).toHaveLength(2)
+      if (path === PUBLIC_SECTOR) {
+        // The shared landing-page foundation (#93): the header's button,
+        // the hero's and the closing panel's, which replaces Contact.
+        expect(all(html, CTA)).toEqual(['#contact', 'mailto:info@fafanua.tech', 'mailto:info@fafanua.tech'])
+        expect(html.match(/Book a data trust assessment/g)).toHaveLength(3)
+      } else {
+        expect(all(html, CTA)).toEqual(['#contact', 'mailto:info@fafanua.tech'])
+        expect(html.match(/Book a data trust assessment/g)).toHaveLength(2)
+      }
       for (const retired of ['Discuss a project', 'Discuss your data needs', 'Explore our capabilities']) {
         expect(html).not.toContain(retired)
       }
@@ -152,7 +163,14 @@ test.describe('closing supporting line', () => {
     test(`${path} has the W9 line in the closing section`, async ({ page }) => {
       const html = await (await page.request.get(path, { maxRedirects: 0 })).text()
 
-      expect(html.split(`<p class="contact__text">${LINE}</p>`)).toHaveLength(2)
+      if (path === PUBLIC_SECTOR) {
+        // Its closing panel's own text (#93, plan section 4, with the
+        // owner's follow-up), not W9's.
+        expect(html.split(`<p class="sector-closing__body">${PUBLIC_SECTOR_LINE}</p>`)).toHaveLength(2)
+        expect(html).not.toContain(LINE)
+      } else {
+        expect(html.split(`<p class="contact__text">${LINE}</p>`)).toHaveLength(2)
+      }
       expect(html).not.toContain('reporting challenges')
     })
   }
@@ -245,7 +263,7 @@ test.describe('crawl from the homepage', () => {
 test.describe('in the browser', () => {
   // The not-found page is checked at /404, its own address, as a document
   // that answers 404 always logs a console error in the browser.
-  for (const path of [servicePaths[1], '/solutions/health', '/404']) {
+  for (const path of [servicePaths[1], '/solutions/health', PUBLIC_SECTOR, '/404']) {
     for (const width of WIDTHS) {
       test(`${path} has no horizontal scroll and no axe violations at ${width}px`, async ({ page }, testInfo) => {
         await openPath(page, path, width)
@@ -263,6 +281,23 @@ test.describe('in the browser', () => {
   for (const path of PATHS) {
     test(`${path} has no horizontal scroll with 200% text at 320px`, async ({ page }) => {
       await openPath(page, path, 320)
+      await page.addStyleTag({ content: 'html { font-size: 200%; }' })
+      await expect
+        .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
+        .toBe('32px')
+      const { scrollWidth, innerWidth } = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        innerWidth: window.innerWidth,
+      }))
+      expect(scrollWidth).toBeLessThanOrEqual(innerWidth)
+    })
+  }
+
+  // The shared landing-page foundation (#93) with 200% text at the other
+  // widths too.
+  for (const width of [390, 1024, 1440]) {
+    test(`${PUBLIC_SECTOR} has no horizontal scroll with 200% text at ${width}px`, async ({ page }) => {
+      await openPath(page, PUBLIC_SECTOR, width)
       await page.addStyleTag({ content: 'html { font-size: 200%; }' })
       await expect
         .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))

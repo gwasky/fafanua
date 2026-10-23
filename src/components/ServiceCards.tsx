@@ -21,6 +21,7 @@ function ServiceCards({ services }: { services: SectorLandingPage['services'] })
                 <a href={servicePath(item.service)}>{item.name}</a>
               </h3>
               <p className="service-card-lp__text">{item.text}</p>
+              {item.detail !== undefined && <p className="service-card-lp__text">{item.detail}</p>}
             </li>
           ))}
         </ul>

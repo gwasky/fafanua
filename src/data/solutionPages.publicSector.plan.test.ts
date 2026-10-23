@@ -15,6 +15,8 @@ import {
   list,
   marked,
   named,
+  OWNER_ADDITIONS,
+  RESTORED_KEYWORDS,
   stage,
   tables,
   TITLE,
@@ -105,6 +107,8 @@ describe('Public Sector copy (plan section 4)', () => {
     expect(page.audience.card.items).toEqual(list(cell(t, 'Checklist')))
     for (const item of page.audience.card.items) expect(item).not.toMatch(/\.$/)
     expect(page.audience.card.icon).toBe('book')
+    // The owner's addition after the card's text (#93).
+    expect(page.audience.card.detail).toBe(OWNER_ADDITIONS.audienceDetail)
   })
 
   it('uses the Data Trust Assessment\'s eyebrow, heading, text and deliverables (no full stops)', () => {
@@ -156,6 +160,12 @@ describe('Public Sector copy (plan section 4)', () => {
       [1, 2, 3].map((n) => named(cell(t, `Card ${n}`))),
     )
     for (const { text } of page.services.items) expect(text).toMatch(/\.$/)
+    // The owner's additions after each card's text (#93).
+    expect(page.services.items.map((item) => item.detail)).toEqual([
+      OWNER_ADDITIONS.integrateDetail,
+      OWNER_ADDITIONS.governanceDetail,
+      OWNER_ADDITIONS.reportingDetail,
+    ])
     expect(page.services.items.map((item) => [item.icon, item.service])).toEqual([
       ['link', 'data-engineering-and-integration'],
       ['shield', 'data-quality-and-reliability'],
@@ -168,8 +178,29 @@ describe('Public Sector copy (plan section 4)', () => {
     expect(upper(page.closing.eyebrow)).toBe(cell(t, 'Eyebrow'))
     expect(page.closing.heading).toBe(cell(t, 'Heading'))
     expect(page.closing.text).toBe(cell(t, 'Text'))
+    // The owner's follow-up sentence (#93), which makes the protected
+    // phrase visible.
+    expect(page.closing.followUp).toBe(OWNER_ADDITIONS.closingFollowUp)
+    expect(page.closing.followUp).toContain('trusted data foundation')
     expect(buttonLabel(cell(t, 'Primary button'))).toBe(ctaLabel)
     expect(cell(t, 'Secondary link')).toBe(`${email} (\`mailto:${email}\`)`)
+  })
+
+  it('carries the eight restored SEO plan §12 keywords in the owner\'s additions, and only there', () => {
+    const additions = Object.values(OWNER_ADDITIONS).join(' ')
+    const planCopy = JSON.stringify({
+      ...page,
+      title: undefined,
+      description: undefined,
+      audience: { ...page.audience, card: { ...page.audience.card, detail: undefined } },
+      services: { ...page.services, items: page.services.items.map((item) => ({ ...item, detail: undefined })) },
+      closing: { ...page.closing, followUp: undefined },
+    })
+    for (const [keyword, pattern] of RESTORED_KEYWORDS) {
+      expect(additions, keyword).toMatch(pattern)
+      expect(planCopy, keyword).not.toMatch(pattern)
+    }
+    expect(Object.keys(OWNER_ADDITIONS)).toHaveLength(5)
   })
 
   it('stores the capitalised labels in sentence case', () => {
@@ -196,8 +227,9 @@ describe('Public Sector copy (plan section 4)', () => {
 
 describe('old Public Sector strings', () => {
   // The page's copy before #93: its lead, context, problems, service
-  // links and texts, governance and activation, and the closing line
-  // that only its old closing section showed there.
+  // texts, governance and activation. Its four service link labels named
+  // keywords the owner's additions bring back (#93), so they are not
+  // listed; their old texts are.
   const OLD = [
     'Government & Public Sector Data Analytics Uganda | Fafanua',
     'Data integration, warehousing, governance and performance dashboards for ministries, agencies and public institutions in Uganda and East Africa.',
@@ -209,10 +241,6 @@ describe('old Public Sector strings', () => {
     'The same indicator defined differently by different institutions.',
     'Unclear ownership and documentation of key datasets.',
     'Sensitive citizen data without consistent classification or access controls.',
-    'Government data integration',
-    'Public sector data warehouse',
-    'Government data governance',
-    'Government dashboards',
     'Cross-system integration between financial, administrative and sector systems.',
     'A data warehouse that consolidates institutional data, with its history preserved.',
     'Measurable quality controls for the data behind official reporting.',

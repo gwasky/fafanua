@@ -19,6 +19,7 @@ function AudienceCard({ audience }: { audience: SectorLandingPage['audience'] })
           <div className="audience-card__body">
             <h3 className="sector-card-heading">{card.heading}</h3>
             <p className="audience-card__text">{card.text}</p>
+            {card.detail !== undefined && <p className="audience-card__text">{card.detail}</p>}
             <Checklist items={card.items} className="audience-card__list" />
           </div>
         </div>

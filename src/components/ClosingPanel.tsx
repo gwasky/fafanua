@@ -19,7 +19,9 @@ function ClosingPanel({ closing }: { closing: SectorLandingPage['closing'] }) {
             <h2 id="contact-heading" className="sector-heading sector-closing__heading">
               {closing.heading}
             </h2>
-            <p className="sector-closing__body">{closing.text}</p>
+            <p className="sector-closing__body">
+              {closing.followUp === undefined ? closing.text : `${closing.text} ${closing.followUp}`}
+            </p>
           </div>
           <div className="sector-closing__actions">
             <a className="button" href={href}>

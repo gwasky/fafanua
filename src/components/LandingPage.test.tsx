@@ -5,7 +5,7 @@ import { managedServices, services } from '../data/services.ts'
 import { footerSolutions, solutions } from '../data/solutions.ts'
 import { notFound, pages, type Page } from '../pages.ts'
 import { expectNoAxeViolations } from '../test/axe.ts'
-import { buttonLabel, cell, figureDescription, list, marked, named, stage } from '../test/publicSectorPlan.ts'
+import { buttonLabel, cell, figureDescription, list, marked, named, OWNER_ADDITIONS, stage } from '../test/publicSectorPlan.ts'
 import LandingPage from './LandingPage.tsx'
 
 // The landing pages (#67): every service and solution page, and the
@@ -87,14 +87,12 @@ describe.each(pages.map((page) => [page.path, page] as const))('%s', (_path, pag
         `mailto:${email}`,
         `mailto:${email}`,
       ])
-      // Its text, after the eyebrow; the plan's text, not the W9 line.
-      expect(closing.querySelector('.sector-closing__body')!.textContent).toBe(
-        'Which figure in your next statutory report do you trust least? Tell us about the reports leadership answers for.',
-      )
-      expect([...closing.querySelectorAll('p')].map((p) => p.textContent)).toEqual([
-        'Get started',
-        'Which figure in your next statutory report do you trust least? Tell us about the reports leadership answers for.',
-      ])
+      // Its text, after the eyebrow: the plan's text and the owner's
+      // follow-up (#93), not the W9 line.
+      const text =
+        'Which figure in your next statutory report do you trust least? Tell us about the reports leadership answers for. Then we make sure they are built on a trusted data foundation.'
+      expect(closing.querySelector('.sector-closing__body')!.textContent).toBe(text)
+      expect([...closing.querySelectorAll('p')].map((p) => p.textContent)).toEqual(['Get started', text])
       expect(screen.queryByRole('region', { name: /Let’s build a data foundation/ })).toBeNull()
       return
     }
@@ -306,7 +304,7 @@ describe('Public Sector page', () => {
     ])
   })
 
-  it('shows exactly plan section 4\'s text in main, in DOM order, and the figure description', () => {
+  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description and the owner\'s five additions (#93)', () => {
     renderPage(publicSector)
     const plan = [
       ...cell('Hero', 'Breadcrumb').split(' › '),
@@ -336,6 +334,7 @@ describe('Public Sector page', () => {
       cell('Who we work with', 'Subheading'),
       cell('Who we work with', 'Card heading'),
       cell('Who we work with', 'Card text'),
+      OWNER_ADDITIONS.audienceDetail,
       ...list(cell('Who we work with', 'Checklist')),
       cell('The Data Trust Assessment', 'Eyebrow'),
       cell('The Data Trust Assessment', 'Heading'),
@@ -355,10 +354,13 @@ describe('Public Sector page', () => {
       ...list(cell('AI and public rules', 'Card 2 checklist')),
       cell('After the assessment', 'Heading'),
       cell('After the assessment', 'Subheading'),
-      ...[1, 2, 3].flatMap((n) => Object.values(named(cell('After the assessment', `Card ${n}`)))),
+      ...[1, 2, 3].flatMap((n) => [
+        ...Object.values(named(cell('After the assessment', `Card ${n}`))),
+        [OWNER_ADDITIONS.integrateDetail, OWNER_ADDITIONS.governanceDetail, OWNER_ADDITIONS.reportingDetail][n - 1],
+      ]),
       cell('Closing panel', 'Eyebrow'),
       cell('Closing panel', 'Heading'),
-      cell('Closing panel', 'Text'),
+      `${cell('Closing panel', 'Text')} ${OWNER_ADDITIONS.closingFollowUp}`,
       buttonLabel(cell('Closing panel', 'Primary button')),
       '→',
       buttonLabel(cell('Closing panel', 'Secondary link')),
@@ -379,6 +381,13 @@ describe('Public Sector page', () => {
     ])
     // No digits but the stage numbers.
     expect(main().textContent!.replace(/Stage [1-4]/g, '')).not.toMatch(/\d/)
+  })
+
+  it('shows the protected "trusted data foundation" in the closing panel (owner, #93)', () => {
+    renderPage(publicSector)
+    const closing = screen.getByRole('region', { name: 'Build a public data foundation you can trust' })
+    expect(closing).toHaveTextContent('trusted data foundation')
+    expect(closing.querySelector('.sector-closing__body')).not.toHaveClass('visually-hidden')
   })
 
   it('has the breadcrumbs Home › Solutions › Public sector', () => {

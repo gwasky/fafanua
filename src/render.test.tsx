@@ -21,7 +21,8 @@ describe('render', () => {
         // A page on the shared landing-page foundation (#93): its own
         // closing panel, at #contact, replaces the Contact section.
         expect(html).toContain(`<h2 id="contact-heading" class="sector-heading sector-closing__heading">${page.copy.closing.heading}</h2>`)
-        expect(html).toContain(`<p class="sector-closing__body">${page.copy.closing.text}</p>`)
+        expect(html).toContain(`<p class="sector-closing__body">${page.copy.closing.text} ${page.copy.closing.followUp}</p>`)
+        expect(html).toContain('trusted data foundation.</p>')
         expect(html).not.toContain('Let’s build a data foundation your organisation can trust.')
         expect(html).not.toContain('class="contact__text"')
       } else {

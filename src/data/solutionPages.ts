@@ -12,7 +12,10 @@ import type { ServiceKey } from './servicePages.ts'
 // foundation (#93): its copy is
 // _docs/fafanua-public-sector-landing-page-plan.md section 4, which
 // replaced its §18 sections, and solutionPages.publicSector.plan.test.ts
-// checks it against the plan.
+// checks it against the plan. The owner added five strings to it on
+// 2026-10-23 (#93), marked below: four carry the SEO plan §12 keywords
+// the plan copy had dropped, and one makes "trusted data foundation"
+// visible in the closing panel.
 
 export type SolutionService = {
   readonly service: ServiceKey
@@ -96,7 +99,8 @@ export type SectorLandingPage = {
   readonly audience: {
     readonly heading: string
     readonly subheading: string
-    readonly card: BadgeCard & { readonly items: readonly string[] }
+    /** `detail`: an optional line after the card's text. */
+    readonly card: BadgeCard & { readonly detail?: string; readonly items: readonly string[] }
   }
   readonly assessment: {
     readonly eyebrow: string
@@ -131,12 +135,16 @@ export type SectorLandingPage = {
       readonly text: string
       readonly icon: IconName
       readonly service: ServiceKey
+      /** An optional line after the card's text. */
+      readonly detail?: string
     }[]
   }
   readonly closing: {
     readonly eyebrow: string
     readonly heading: string
     readonly text: string
+    /** An optional sentence after the text, in the same paragraph. */
+    readonly followUp?: string
   }
 }
 
@@ -483,6 +491,8 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
       card: {
         heading: 'Public institutions',
         text: 'For regulators, revenue-collecting agencies, service-delivery institutions and local governments.',
+        // Owner addition (2026-10-23, #93): SEO plan §12 keyword.
+        detail: 'We work with the government data systems your institution already runs in Uganda.',
         icon: 'book',
         items: [
           'Service delivery and turnaround tracking',
@@ -561,18 +571,25 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
           text: 'Connect case management, finance, revenue and HR systems into one consistent view of services, money and people.',
           icon: 'link',
           service: 'data-engineering-and-integration',
+          // Owner addition (2026-10-23, #93): SEO plan §12 keywords.
+          detail: 'Government data integration in Uganda, into one public sector data warehouse.',
         },
         {
           name: 'Quality and governance',
           text: 'Completeness and timeliness checks, plus clear ownership and access rules.',
           icon: 'shield',
           service: 'data-quality-and-reliability',
+          // Owner addition (2026-10-23, #93): SEO plan §12 keyword.
+          detail: 'Government data governance that your departments can keep up.',
         },
         {
           name: 'Reporting and dashboards',
           text: 'Management, statutory and performance reports built on the traced numbers.',
           icon: 'chart',
           service: 'business-intelligence-and-analytics',
+          // Owner addition (2026-10-23, #93): SEO plan §12 keywords.
+          detail:
+            'Government dashboards in Uganda, from service delivery dashboards and institutional performance dashboards to government reporting automation.',
         },
       ],
     },
@@ -580,6 +597,8 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
       eyebrow: 'Get started',
       heading: 'Build a public data foundation you can trust',
       text: 'Which figure in your next statutory report do you trust least? Tell us about the reports leadership answers for.',
+      // Owner addition (2026-10-23, #93): the protected phrase, visible.
+      followUp: 'Then we make sure they are built on a trusted data foundation.',
     },
   },
 }
