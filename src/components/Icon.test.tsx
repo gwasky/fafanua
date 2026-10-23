@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest'
 import type { IconName } from '../data/iconNames.ts'
 import Icon from './Icon.tsx'
 
-// The landing pages' icons (#93): the 13 names of plan section 2a, each
-// an inline, decorative SVG in currentColor with no title and no text.
+// The landing pages' icons (#93): the 13 names of plan section 2a and the
+// Health page's hospital, flask and pill (#94), each an inline, decorative
+// SVG in currentColor with no title and no text.
 const NAMES = [
   'book',
   'chart',
@@ -19,6 +20,9 @@ const NAMES = [
   'map',
   'score',
   'tick',
+  'hospital',
+  'flask',
+  'pill',
 ] as const satisfies readonly IconName[]
 
 // Fails to compile if IconName gains or loses a name.
@@ -26,9 +30,9 @@ type Exact<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false
 const exact: Exact<IconName, (typeof NAMES)[number]> = true
 
 describe('Icon', () => {
-  it('covers exactly the 13 names', () => {
+  it('covers exactly the 16 names', () => {
     expect(exact).toBe(true)
-    expect(new Set(NAMES).size).toBe(13)
+    expect(new Set(NAMES).size).toBe(16)
   })
 
   it.each(NAMES)('draws %s as a decorative 24 x 24 line icon in currentColor', (name) => {
@@ -54,6 +58,13 @@ describe('Icon', () => {
       expect(shape.getAttribute('stroke')).toBeNull()
       expect(shape.getAttribute('style')).toBeNull()
     }
+  })
+
+  it.each(['hospital', 'flask', 'pill'] as const)('draws the Health icon %s from paths only', (name) => {
+    const { container } = render(<Icon name={name} />)
+    const shapes = [...container.querySelectorAll('svg *')]
+    expect(shapes.length).toBeGreaterThan(0)
+    expect(shapes.every((shape) => shape.tagName.toLowerCase() === 'path')).toBe(true)
   })
 
   it('adds only the class it is given', () => {
