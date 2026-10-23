@@ -107,6 +107,8 @@ In the right-hand list, replace "provenance" with "lineage". The list then reads
 
 **Acceptance:** AI is framed only as readiness enabled by trusted data, per the Content rules in AGENTS.md. Nothing implies an existing AI product, and nothing mentions clinical AI.
 
+**Superseded (2026-10-23, #91):** W5's copy (the paragraph and the list) is superseded by section C of `_docs/fafanua-homepage-sections-refinement-plan.md`. The heading, the dark treatment and the position stay. W5's acceptance rule (AI framed only as readiness, no clinical AI) still applies.
+
 ### W6. One vocabulary
 
 Apply the rules in section 6 to all homepage and Solutions copy. Do not change How We Work wording unless G2 is approved.
@@ -262,6 +264,8 @@ Rename "Services" to "What we do" and "Solutions" to "Sectors". Keep all routes 
 `Approved: [ ]`
 
 Move "Trusted foundations for what comes next" to directly after the Data Trust Assessment section. Keep it dark. No two full-bleed dark sections may sit next to each other. Recommended.
+
+**Note (2026-10-23, #91):** implementing G8 would put the future-ready section directly after the Data Trust Assessment panel, two dark blocks back to back. G8 must not be implemented unless a paper section separates them (`_docs/fafanua-homepage-sections-refinement-plan.md` §2, item 5).
 
 ### G9. Promise a working click-through view
 
