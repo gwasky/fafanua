@@ -638,10 +638,10 @@ describe('Health page', () => {
       hcell('Who we work with', 'Card text 1'),
       hcell('Who we work with', 'Card text 2'),
       hcell('Who we work with', 'List label'),
-      // Each item: its bold name, then the em dash and its text.
+      // Each item: its bold name, then a colon and its text.
       ...[1, 2, 3, 4].flatMap((n) => {
         const { name, text } = healthPlan.boldNamed(hcell('Who we work with', `List item ${n}`))
-        return [name, `— ${text}`]
+        return [name, `: ${text}`]
       }),
       hcell('The Data Trust Assessment', 'Eyebrow'),
       hcell('The Data Trust Assessment', 'Heading'),
@@ -691,7 +691,7 @@ describe('Health page', () => {
     expect(trail.textContent).not.toContain('›')
   })
 
-  it('shows the providers card\'s two paragraphs, then a ul named by its label, each item a strong name, an em dash and its text', () => {
+  it('shows the providers card\'s two paragraphs, then a ul named by its label, each item a strong name, a colon and its text', () => {
     renderPage(health)
     const card = screen.getByRole('region', { name: 'Who we work with' }).querySelector('.audience-card')!
     const t = 'Who we work with'
@@ -706,7 +706,7 @@ describe('Health page', () => {
     items.forEach((item, index) => {
       const { name, text } = healthPlan.boldNamed(hcell(t, `List item ${index + 1}`))
       expect(item.querySelector('strong')!.textContent).toBe(name)
-      expect(item.textContent).toBe(`${name} — ${text}`)
+      expect(item.textContent).toBe(`${name}: ${text}`)
       expect(within(item).queryByRole('heading')).toBeNull()
     })
     // The label is text, not a heading.

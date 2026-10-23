@@ -536,7 +536,7 @@
   font-weight: var(--weight-semibold);
 }
 
-/* A checklist item's name, in bold before its em dash (Health, #94). */
+/* A checklist item's name, in bold before its colon (Health, #94). */
 .sector-landing .checklist__name {
   font-weight: var(--weight-semibold);
 }

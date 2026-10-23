@@ -142,7 +142,7 @@ describe('SectorLandingPage with another sector\'s data', () => {
     expect(item).toHaveTextContent('Phase 1OneFirst.Exit whenDone')
   })
 
-  it('names the checklist by its label, draws named items as a bold name and an em dash, and leads service cards, only when the data asks (#94)', () => {
+  it('names the checklist by its label, draws named items as a bold name and a colon, and leads service cards, only when the data asks (#94)', () => {
     renderFixture()
     expect(screen.getByRole('main').querySelectorAll('.audience-card__label, .service-card-lp__lead, strong')).toHaveLength(0)
     expect(screen.getByRole('main').querySelector('.checklist')).not.toHaveAttribute('aria-labelledby')
@@ -158,7 +158,7 @@ describe('SectorLandingPage with another sector\'s data', () => {
     const list = screen.getByRole('list', { name: 'Fixture label' })
     const [named, plain] = within(list).getAllByRole('listitem')
     expect(named.querySelector('strong')).toHaveTextContent('Name A')
-    expect(named).toHaveTextContent('Name A — Text A.')
+    expect(named).toHaveTextContent('Name A: Text A.')
     expect(plain.querySelector('strong')).toBeNull()
     expect(plain).toHaveTextContent('Item B')
     expect(screen.getByText('Lead A.')).toHaveClass('service-card-lp__lead')

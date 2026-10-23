@@ -40,9 +40,9 @@ export const CARRIED_TERMS: readonly [string, RegExp][] = [
   ['healthcare data', /healthcare data/],
 ]
 
-/** A list item cell, "**Name** — text": the name and the text. */
+/** A list item cell, "**Name**: text": the name and the text. */
 export function boldNamed(text: string) {
-  const match = text.match(/^\*\*(.+?)\*\* — (.+)$/)
+  const match = text.match(/^\*\*(.+?)\*\*: (.+)$/)
   if (!match) throw new Error(`Cannot read "${text}"`)
   return { name: match[1], text: match[2] }
 }

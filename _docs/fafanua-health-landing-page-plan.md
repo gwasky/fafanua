@@ -89,12 +89,12 @@ Owner update (2026-10-23, #94): this section's copy replaces the earlier card te
 | Card text 1 | Helping healthcare organisations bring together data from different facilities, departments and systems. |
 | Card text 2 | We connect the systems you already use to provide a clearer, more reliable view of your operations, finances and resources — without replacing your existing software. |
 | List label | What we help you achieve |
-| List item 1 | **Branch and facility performance** — Compare performance across locations and service lines. |
-| List item 2 | **Revenue and claims reconciliation** — Bring together billing, payments and insurance claims. |
-| List item 3 | **Pharmacy and inventory visibility** — Track medicine stocks, consumption and supply chain performance. |
-| List item 4 | **Reliable healthcare reporting** — Reduce manual reporting and improve access to trusted operational data. |
+| List item 1 | **Branch and facility performance**: Compare performance across locations and service lines. |
+| List item 2 | **Revenue and claims reconciliation**: Bring together billing, payments and insurance claims. |
+| List item 3 | **Pharmacy and inventory visibility**: Track medicine stocks, consumption and supply chain performance. |
+| List item 4 | **Reliable healthcare reporting**: Reduce manual reporting and improve access to trusted operational data. |
 
-Each list item's name (in bold) is followed by an em dash and its description.
+Each list item's name (in bold) is followed by a colon and its description.
 
 ### The Data Trust Assessment
 
