@@ -8,6 +8,7 @@
 // plan V2 §14's, which section C keeps. The ?raw imports resolve relative
 // to this file and are never part of the production bundle.
 import { describe, expect, it } from 'vitest'
+import { LANDING_COPY, occurrences, scanned as scannedWith, type Allowed } from '../test/landingCopy.ts'
 import trustPlan from '../../_docs/fafanua-trust-lineage-positioning-plan.md?raw'
 import refinementPlan from '../../_docs/fafanua-homepage-sections-refinement-plan.md?raw'
 import futureReadySource from './futureReady.ts?raw'
@@ -152,32 +153,39 @@ describe('future-ready source', () => {
   })
 })
 
+// The one homepage string solutionPages.ts repeats here by design (#93):
+// the Public Sector hero's secondary button, as a quoted literal, with the
+// number of times it may occur there. Only it is taken out of that file
+// before the scan below.
+const LANDING_ALLOWED: Allowed = [["'See how the assessment works'", 1]]
+const scanned = (file: string, source: string) => scannedWith(file, source, LANDING_ALLOWED)
+
 describe('other source files', () => {
-  // Every source file under src/ except futureReady.ts, solutionPages.ts
-  // and test files. solutionPages.ts is left out: the solution landing
-  // pages' copy is its own source of truth (section 4 of
-  // _docs/fafanua-public-sector-landing-page-plan.md, #93), and the Public
-  // Sector hero's secondary button has the same words as this section's
-  // link, by design; the homepage never ships it.
+  // Every source file under src/ except futureReady.ts and test files.
+  // solutionPages.ts is scanned without the homepage strings its Public
+  // Sector entry repeats by design (#93, src/test/landingCopy.ts): the
+  // hero's secondary button has the same words as this section's link.
   const sources = Object.entries(
     import.meta.glob<string>('/src/**/*.{ts,tsx,css,html}', {
       query: '?raw',
       import: 'default',
       eager: true,
     }),
-  ).filter(
-    ([file]) =>
-      file !== '/src/data/futureReady.ts' &&
-      file !== '/src/data/solutionPages.ts' &&
-      !/\.test\.tsx?$/.test(file),
   )
+    .filter(([file]) => file !== '/src/data/futureReady.ts' && !/\.test\.tsx?$/.test(file))
+    .map(([file, source]) => [file, scanned(file, source)] as const)
 
-  it('scans the rest of src/', () => {
+  it('scans the rest of src/, the landing pages\' copy included', () => {
     const files = sources.map(([file]) => file)
     expect(files).toContain('/src/components/FutureReady.tsx')
     expect(files).not.toContain('/src/data/futureReady.ts')
-    expect(files).not.toContain('/src/data/solutionPages.ts')
+    expect(files).toContain(LANDING_COPY)
     expect(files).toContain('/src/data/solutions.ts')
+    const raw = import.meta.glob<string>('/src/data/solutionPages.ts', { query: '?raw', import: 'default', eager: true })[LANDING_COPY]
+    expect(LANDING_ALLOWED).toEqual([[`'${futureReadyLinkText}'`, 1]])
+    for (const [literal, count] of LANDING_ALLOWED) expect(occurrences(raw, literal), literal).toBe(count)
+    const stripped = sources.find(([file]) => file === LANDING_COPY)![1]
+    expect(occurrences(stripped, futureReadyLinkText)).toBe(0)
   })
 
   it('do not repeat the heading, the lead, the verdict line or the link text', () => {

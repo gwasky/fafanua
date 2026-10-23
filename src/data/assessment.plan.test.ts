@@ -19,6 +19,7 @@
 // resolve relative to this file and are never part of the production
 // bundle.
 import { describe, expect, it } from 'vitest'
+import { LANDING_COPY, occurrences, scanned as scannedWith, type Allowed } from '../test/landingCopy.ts'
 import darkPanelPlan from '../../_docs/fafanua-data-trust-assessment-dark-panel-plan.md?raw'
 import enhancement from '../../_docs/fafanua-data-trust-assessment-homepage-enhancement.md?raw'
 import trustPlan from '../../_docs/fafanua-trust-lineage-positioning-plan.md?raw'
@@ -494,31 +495,42 @@ describe('assessment source', () => {
   })
 })
 
-// The solution landing pages' copy module (#93).
-const LANDING_COPY = '/src/data/solutionPages.ts'
+// The homepage strings solutionPages.ts repeats by design (#93: the
+// Public Sector page's plan copy), as quoted literals, each with the
+// number of times it may occur there. Only these are taken out of that
+// file before the scans below; everything else in it is scanned.
+const LANDING_ALLOWED: Allowed = [
+  ["'Start with trust'", 1],
+  ["'Lineage map'", 1],
+  ["'Trust scorecard'", 1],
+  ["'Shared definitions'", 1],
+  ["'Fix list'", 1],
+  ["'Illustrative example. Sample data only.'", 1],
+  ["'After the assessment'", 1],
+]
+const scanned = (file: string, source: string) => scannedWith(file, source, LANDING_ALLOWED)
 
 describe('other source files', () => {
-  // Every source file under src/ except assessment.ts, solutionPages.ts
-  // and test files.
-  // solutionPages.ts is left out: the solution landing pages' copy is
-  // its own source of truth (section 4 of
-  // _docs/fafanua-public-sector-landing-page-plan.md, #93), which repeats
-  // some of the homepage's words on the Public Sector page by design, and
-  // the homepage never ships it. Every other file is still scanned.
+  // Every source file under src/ except assessment.ts and test files.
+  // solutionPages.ts is scanned without the homepage strings its Public
+  // Sector entry repeats by design (#93, src/test/landingCopy.ts).
   const sources = Object.entries(
     import.meta.glob<string>('/src/**/*.{ts,tsx,css,html}', {
       query: '?raw',
       import: 'default',
       eager: true,
     }),
-  ).filter(
-    ([file]) =>
-      file !== '/src/data/assessment.ts' && file !== LANDING_COPY && !/\.test\.tsx?$/.test(file),
   )
+    .filter(([file]) => file !== '/src/data/assessment.ts' && !/\.test\.tsx?$/.test(file))
+    .map(([file, source]) => [file, scanned(file, source)] as const)
 
-  it('scans every other file, and leaves out only the landing pages\' copy', () => {
-    expect(sources.map(([file]) => file)).not.toContain(LANDING_COPY)
-    expect(sources.map(([file]) => file)).toContain('/src/data/solutions.ts')
+  it('scans the landing pages\' copy too, without only its allowed literals, each the expected number of times (#93)', () => {
+    expect(sources.map(([file]) => file)).toContain(LANDING_COPY)
+    const raw = import.meta.glob<string>('/src/data/solutionPages.ts', { query: '?raw', import: 'default', eager: true })[LANDING_COPY]
+    for (const [literal, count] of LANDING_ALLOWED) expect(occurrences(raw, literal), literal).toBe(count)
+    const stripped = sources.find(([file]) => file === LANDING_COPY)![1]
+    for (const [literal] of LANDING_ALLOWED) expect(occurrences(stripped, literal), literal).toBe(0)
+    expect(LANDING_ALLOWED).toHaveLength(7)
   })
 
   it('scans the rest of src/', () => {
@@ -583,25 +595,28 @@ describe('other source files', () => {
     }
   })
 
+  // Every source file but tests, assessment.ts included;
+  // solutionPages.ts without its allowed literals (#93): the Public Sector
+  // plan copy brings back the old caption and the after-assessment label
+  // on that page only, checked against its plan in
+  // solutionPages.publicSector.plan.test.ts. The homepage still shows
+  // neither (App.test.tsx).
   const allSources = Object.entries(
     import.meta.glob<string>('/src/**/*.{ts,tsx,css,html}', {
       query: '?raw',
       import: 'default',
       eager: true,
     }),
-  ).filter(([file]) => !/\.test\.tsx?$/.test(file) && file !== LANDING_COPY)
+  )
+    .filter(([file]) => !/\.test\.tsx?$/.test(file))
+    .map(([file, source]) => [file, scanned(file, source)] as const)
 
-  // The Public Sector page's plan copy (#93) brings back two of these
-  // strings, on that page only: its diagram's caption and the heading
-  // over its service cards. They are checked against that plan in
-  // solutionPages.publicSector.plan.test.ts; the homepage still holds
-  // neither (App.test.tsx).
-  it('leaves only the landing pages\' copy out of the removed-string scan', () => {
-    expect(allSources.map(([file]) => file)).not.toContain(LANDING_COPY)
+  it('scans every source file for the removed strings, the landing pages\' copy included (#93)', () => {
+    expect(allSources.map(([file]) => file)).toContain(LANDING_COPY)
     expect(allSources.length).toBe(
       Object.keys(
         import.meta.glob('/src/**/*.{ts,tsx,css,html}', { query: '?raw', import: 'default', eager: true }),
-      ).filter((file) => !/\.test\.tsx?$/.test(file)).length - 1,
+      ).filter((file) => !/\.test\.tsx?$/.test(file)).length,
     )
   })
 
