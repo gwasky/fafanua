@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { assessmentHeading } from '../src/data/assessment.ts'
+import { futureReadyLinkText } from '../src/data/futureReady.ts'
 import { managedServices, services, servicesIntro } from '../src/data/services.ts'
 import { homepageSolutions } from '../src/data/solutions.ts'
 import { solutionPath } from '../src/paths.ts'
@@ -38,13 +39,14 @@ test.describe('Tab order', () => {
   // #83 removes the six disclosures and restores the hero's text link;
   // #88 adds the Managed Services journey's two links; #89 makes the three
   // Solutions row buttons links, and the open panels' links, stops only
-  // while open, are gone, so the count holds.
-  test('1440 has 35 stops', () => {
-    expect(SEQUENCE[1440]).toHaveLength(35)
+  // while open, are gone, so the count holds; #91 adds the future-ready
+  // section's link.
+  test('1440 has 36 stops', () => {
+    expect(SEQUENCE[1440]).toHaveLength(36)
   })
 
-  test('360 with the menu closed has 31 stops', () => {
-    expect(SEQUENCE[360]).toHaveLength(31)
+  test('360 with the menu closed has 32 stops', () => {
+    expect(SEQUENCE[360]).toHaveLength(32)
   })
 
   // #83: hero button, the hero link, the assessment's button, then the six
@@ -141,7 +143,8 @@ test.describe('focus after in-page links', () => {
   const cases = [
     { from: 'header', link: 'Services', hash: '#capabilities', next: firstTitle },
     { from: 'header', link: 'Solutions', hash: '#solutions', next: firstSector },
-    { from: 'header', link: 'How We Work', hash: '#how-we-work', next: 'Book a data trust assessment' },
+    // How We Work has no stop, so next is the future-ready link (#91).
+    { from: 'header', link: 'How We Work', hash: '#how-we-work', next: futureReadyLinkText },
     { from: 'header', link: 'About', hash: '#about', next: 'Book a data trust assessment' },
     { from: 'header', link: 'Book a data trust assessment', hash: '#contact', next: 'Book a data trust assessment' },
     { from: 'hero', link: 'Book a data trust assessment', hash: '#contact', next: 'Book a data trust assessment' },
@@ -319,8 +322,8 @@ test.describe('Solutions rows', () => {
         await expectRing(page, name)
         await expectUnobscured(page, name)
       }
-      // The rows add no other stop: next is the closing call to action.
-      await tabTo(page, 'Book a data trust assessment')
+      // The rows add no other stop: next is the future-ready link (#91).
+      await tabTo(page, futureReadyLinkText)
       for (const name of [...sectors].reverse()) {
         await tabTo(page, name, { shift: true })
         await expectRing(page, name)

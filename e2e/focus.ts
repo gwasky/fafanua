@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test'
 import { managedServices, services } from '../src/data/services.ts'
 import { email, phone } from '../src/data/contact.ts'
+import { futureReadyLinkText } from '../src/data/futureReady.ts'
 import { footerSolutions, homepageSolutions } from '../src/data/solutions.ts'
 import { focusAndHeaderBoxes, focusedName, pressTab, waitForScrollSettle } from './fixtures.ts'
 
@@ -38,6 +39,8 @@ const fromHero = [
   managedServices.journey[1],
   managedServices.heading,
   ...sectors,
+  // The future-ready section's one stop, its link to the assessment (#91).
+  futureReadyLinkText,
   // The closing call to action (#60): the button, which shares the hero
   // button's name, then the address and the phone number.
   'Book a data trust assessment',

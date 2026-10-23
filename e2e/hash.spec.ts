@@ -461,7 +461,8 @@ test.describe('keyboard focus', () => {
     { path: '/#solutions', next: sectors[0] },
     // The section's one stop, its button (#71).
     { path: '/#data-trust-assessment', next: 'Book a data trust assessment' },
-    { path: '/#how-we-work', next: 'Book a data trust assessment' },
+    // How We Work has no stop, so next is the future-ready link (#91).
+    { path: '/#how-we-work', next: futureReadyLinkText },
     // The section's one stop, its link to the assessment (#91).
     { path: '/#future-ready', next: 'See how the assessment works' },
     { path: '/#about', next: 'Book a data trust assessment' },

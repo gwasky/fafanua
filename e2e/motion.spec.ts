@@ -9,6 +9,7 @@ import {
   waitForLanding,
   waitForMotion,
 } from './fixtures.ts'
+import { futureReadyLinkText } from '../src/data/futureReady.ts'
 import { managedServices } from '../src/data/services.ts'
 import { expectUnobscured, sectors } from './focus.ts'
 
@@ -544,7 +545,11 @@ test.describe('focus never lands on hidden content (no-preference)', () => {
       await waitForLanding(page, '#contact')
       expect((await solutions(page)).state).toBe('hidden')
 
-      // Back to the last Solutions row's link (#89).
+      // Back through the future-ready link (#91), whose section shows at
+      // once too, to the last Solutions row's link (#89).
+      await pressTab(page, { shift: true })
+      expect(await focusedName(page)).toBe(futureReadyLinkText)
+      expect(await page.locator('#future-ready').getAttribute('data-reveal-state')).not.toBe('hidden')
       await pressTab(page, { shift: true })
       expect(await solutions(page)).toEqual({ state: null, opacity: '1', transform: 'none' })
       expect(await focusedName(page)).toBe(sectors.at(-1))
