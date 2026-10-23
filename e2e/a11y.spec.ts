@@ -506,6 +506,107 @@ test.describe('axe, future-ready and the dark footer in view (#60)', () => {
   }
 })
 
+// The future-ready section as a readiness diagram (#91): axe with the
+// section in view, its one link focused by keyboard with its ring fully in
+// view, and in forced colours, where the tiles' borders, the goal's dashed
+// border, the chip outlines, the hairline and every dot and ring stay
+// drawn (they are borders, not backgrounds) and the link shows as a link.
+// Forced colours turn color-contrast off for the reason given for the
+// Managed panel above.
+test.describe('axe, the future-ready section (#91)', () => {
+  // Focus scrolls the link into view at once, so its ring is measured
+  // where it lands.
+  test.use({ reducedMotion: 'reduce' })
+  const section = (page: Page) => page.locator('#future-ready')
+  const link = (page: Page) => section(page).getByRole('link')
+
+  for (const width of [320, 390, 1024, 1440]) {
+    test(`future-ready in view, its link focused by keyboard, at ${width}px`, async ({ page }, testInfo) => {
+      await openPage(page, width)
+      await section(page).scrollIntoViewIfNeeded()
+      await waitForMotion(page)
+      await expectNoAxeViolations(page, testInfo)
+
+      // Focus the stop before the link, then Tab to it.
+      await link(page).focus()
+      await pressTab(page, { shift: true })
+      await pressTab(page)
+      await expect(link(page)).toBeFocused()
+      await waitForScrollSettle(page)
+      const ring = await link(page).evaluate((element) => {
+        const style = getComputedStyle(element)
+        const box = element.getBoundingClientRect()
+        const reach = parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset)
+        const header = document.querySelector('header')!.getBoundingClientRect().bottom
+        return {
+          visible: element.matches(':focus-visible'),
+          style: style.outlineStyle,
+          decoration: style.textDecorationLine,
+          inView:
+            box.left - reach >= 0 &&
+            box.right + reach <= document.documentElement.clientWidth &&
+            box.top - reach >= header &&
+            box.bottom + reach <= window.innerHeight,
+        }
+      })
+      expect(ring).toEqual({ visible: true, style: 'solid', decoration: 'underline', inView: true })
+      await expectNoAxeViolations(page, testInfo)
+    })
+
+    test(`future-ready in view, forced colours, at ${width}px`, async ({ page }, testInfo) => {
+      await page.emulateMedia({ forcedColors: 'active' })
+      await openPage(page, width)
+      await section(page).scrollIntoViewIfNeeded()
+      await waitForMotion(page)
+
+      const results = await new AxeBuilder({ page })
+        .withTags(AXE_TAGS)
+        .disableRules(['color-contrast'])
+        .analyze()
+      expect(
+        results.violations,
+        `axe violations in "${testInfo.title}":\n${formatViolations(results.violations)}`,
+      ).toEqual([])
+
+      const painted = await section(page).evaluate((root) => {
+        const border = (element: Element, pseudo?: string) => {
+          const style = getComputedStyle(element, pseudo)
+          return { width: style.borderTopWidth, style: style.borderTopStyle, colour: style.borderTopColor }
+        }
+        const background = getComputedStyle(root).backgroundColor
+        return {
+          background,
+          tiles: [...root.querySelectorAll('.future-ready__tile')].map((tile) => border(tile)),
+          chips: [...root.querySelectorAll('.future-ready__chips > li')].map((chip) => border(chip)),
+          hairline: border(root.querySelector('.future-ready__verdict')!),
+          dots: [
+            ...[...root.querySelectorAll('.future-ready__key')].map((key) => border(key, '::before')),
+            ...[...root.querySelectorAll('.future-ready__chips > li')].map((chip) => border(chip, '::before')),
+          ],
+          text: [...root.querySelectorAll('h2, p, .future-ready__key, .future-ready__condition, li')].map(
+            (element) => getComputedStyle(element).color,
+          ),
+          link: getComputedStyle(root.querySelector('a')!).color,
+        }
+      })
+      const detail = JSON.stringify(painted)
+      for (const line of [...painted.tiles, ...painted.chips, painted.hairline, ...painted.dots]) {
+        expect(line.style, detail).not.toBe('none')
+        expect(parseFloat(line.width), detail).toBeGreaterThan(0)
+        expect(line.colour, detail).not.toBe(painted.background)
+      }
+      expect(painted.tiles.at(-1)!.style, detail).toBe('dashed')
+      for (const colour of painted.text) expect(colour, detail).not.toBe(painted.background)
+      // The link takes the forced link colour, unlike the text.
+      expect(painted.link, detail).not.toBe(painted.background)
+      expect(painted.link, detail).not.toBe(painted.text[0])
+      await section(page).screenshot({
+        path: `${testInfo.project.outputDir}/screenshots/future-ready-forced-colours-${width}.png`,
+      })
+    })
+  }
+})
+
 test.describe('axe, skip link focused', () => {
   for (const width of [360, 1440]) {
     test(`skip link visible after the first Tab at ${width}px`, async ({ page }, testInfo) => {

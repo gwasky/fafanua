@@ -4,10 +4,13 @@ import { fileURLToPath } from 'node:url'
 import { expect } from '@playwright/test'
 import { aboutParagraph } from '../src/data/about.ts'
 import {
-  futureReadyDestination,
+  futureReadyConditions,
+  futureReadyGoal,
   futureReadyHeading,
-  futureReadyLabels,
-  futureReadyStatement,
+  futureReadyLead,
+  futureReadyLinkText,
+  futureReadyVerdictLine,
+  futureReadyVerdicts,
 } from '../src/data/futureReady.ts'
 import { systemFlow } from '../src/data/systemFlow.ts'
 import { openPage, scrollThrough, test } from './fixtures.ts'
@@ -59,7 +62,7 @@ test('the rendered homepage says neither "provenance" nor "data operating system
   await expect(page.getByText('Build a data foundation you can trust.', { exact: true })).toBeVisible()
 })
 
-test('the future-ready graphic is exposed: a list named by the heading, then the destination (W5)', async ({ page }) => {
+test('the future-ready section is exposed: the heading, the lead, the list of five named by the heading, the verdict chips and the one link (section C, #91)', async ({ page }) => {
   await openPage(page, 1440)
   const section = page.getByRole('region', { name: futureReadyHeading })
   await section.scrollIntoViewIfNeeded()
@@ -69,13 +72,20 @@ test('the future-ready graphic is exposed: a list named by the heading, then the
     [
       `- region "${futureReadyHeading}":`,
       `  - heading "${futureReadyHeading}" [level=2]`,
-      // Quoted, as the paragraph has colons.
-      `  - paragraph: ${JSON.stringify(futureReadyStatement)}`,
+      `  - paragraph: ${futureReadyLead}`,
       `  - list "${futureReadyHeading}":`,
-      ...futureReadyLabels.map((label) => `    - listitem: ${label}`),
-      `  - text: ${futureReadyDestination}`,
+      // Key, then condition; the arrow is aria-hidden.
+      ...[...futureReadyConditions, futureReadyGoal].map(
+        ({ key, text }) => `    - listitem: ${key} ${text}`,
+      ),
+      // Quoted, as the line ends with a colon.
+      `  - paragraph: ${JSON.stringify(futureReadyVerdictLine)}`,
+      `  - list ${JSON.stringify(futureReadyVerdictLine)}:`,
+      ...futureReadyVerdicts.map((verdict) => `    - listitem: ${verdict}`),
+      `  - link "${futureReadyLinkText}":`,
+      `    - /url: "#data-trust-assessment"`,
     ].join('\n'),
   )
-  // No link, button or other tab stop.
-  expect(await section.locator('a, button, input, select, textarea, [tabindex]').count()).toBe(0)
+  // The link is the one tab stop.
+  expect(await section.locator('a, button, input, select, textarea, [tabindex]').count()).toBe(1)
 })

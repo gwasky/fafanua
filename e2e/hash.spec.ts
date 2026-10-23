@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test'
+import { futureReadyHeading, futureReadyLinkText } from '../src/data/futureReady.ts'
 import { services } from '../src/data/services.ts'
 import { homepageSolutions } from '../src/data/solutions.ts'
 import {
@@ -461,7 +462,8 @@ test.describe('keyboard focus', () => {
     // The section's one stop, its button (#71).
     { path: '/#data-trust-assessment', next: 'Book a data trust assessment' },
     { path: '/#how-we-work', next: 'Book a data trust assessment' },
-    { path: '/#future-ready', next: 'Book a data trust assessment' },
+    // The section's one stop, its link to the assessment (#91).
+    { path: '/#future-ready', next: 'See how the assessment works' },
     { path: '/#about', next: 'Book a data trust assessment' },
     { path: '/#contact', next: 'Book a data trust assessment' },
     { path: '/#main', next: 'Book a data trust assessment' },
@@ -504,6 +506,87 @@ test.describe('keyboard focus', () => {
       })
     }
   }
+})
+
+// The future-ready section's link (#91) jumps to the Data Trust
+// Assessment below the header, smoothly only without a reduced-motion
+// preference, and moves focus to its h2, so the next Tab reaches its
+// button. The shared click handler is #88's.
+test.describe('the future-ready link', () => {
+  const link = (page: Page) =>
+    page
+      .getByRole('region', { name: futureReadyHeading })
+      .getByRole('link', { name: futureReadyLinkText, exact: true })
+
+  for (const motion of MOTIONS) {
+    test.describe(`with ${motion} motion`, () => {
+      test.use({ reducedMotion: motion })
+
+      for (const width of [390, 1440] as const) {
+        test(`a click lands on #data-trust-assessment and focuses its h2, then Tab reaches its button at ${width}px, ${motion}`, async ({
+          page,
+        }) => {
+          await openPage(page, width)
+          await link(page).scrollIntoViewIfNeeded()
+          await waitForScrollSettle(page)
+          await expect(link(page)).toHaveAttribute('href', '#data-trust-assessment')
+
+          const from = await scrollY(page)
+          await page.evaluate(() => {
+            const w = window as unknown as { __samples: Sample[] }
+            w.__samples = []
+            const tick = () => {
+              w.__samples.push({ y: window.scrollY, fontLoaded: true })
+              requestAnimationFrame(tick)
+            }
+            requestAnimationFrame(tick)
+          })
+          await link(page).click()
+          await expect.poll(() => scrollY(page)).not.toBe(from)
+          await expectLanded(page, '#data-trust-assessment')
+          expect(await page.evaluate(() => location.hash)).toBe('#data-trust-assessment')
+
+          const heading = page.locator('#data-trust-assessment-heading')
+          await expect(heading).toBeFocused()
+          await expect(heading).toHaveAttribute('tabindex', '-1')
+          await expect(heading).toBeInViewport()
+          const m = await page.evaluate(() => ({
+            heading: document.getElementById('data-trust-assessment-heading')!.getBoundingClientRect().top,
+            header: document.querySelector('header')!.getBoundingClientRect().bottom,
+          }))
+          expect(m.heading, JSON.stringify(m)).toBeGreaterThanOrEqual(m.header)
+
+          // Smooth passes through positions between the two; reduced
+          // motion jumps.
+          const to = await scrollY(page)
+          expect(to).toBeLessThan(from)
+          const between = (await scrollSteps(page)).filter((step) => step.y < from && step.y > to)
+          if (motion === 'no-preference') expect(between.length).toBeGreaterThan(1)
+          else expect(between).toEqual([])
+
+          await pressTab(page)
+          expect(await focusedName(page)).toBe('Book a data trust assessment')
+          await expect(heading).not.toHaveAttribute('tabindex')
+        })
+      }
+    })
+  }
+
+  test.describe('with the keyboard', () => {
+    test.use({ reducedMotion: 'reduce' })
+
+    test('Enter on the focused link lands on #data-trust-assessment and focuses its h2 at 1440px', async ({ page }) => {
+      await openPage(page, 1440)
+      await link(page).focus()
+      await waitForScrollSettle(page)
+
+      await page.keyboard.press('Enter')
+      await expectLanded(page, '#data-trust-assessment')
+      await expect(page.locator('#data-trust-assessment-heading')).toBeFocused()
+      await pressTab(page)
+      expect(await focusedName(page)).toBe('Book a data trust assessment')
+    })
+  })
 })
 
 test.describe('history', () => {

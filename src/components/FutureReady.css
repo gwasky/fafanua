@@ -61,9 +61,10 @@
  */
 .future-ready__flow {
   /* The arrow glyph's box, and the room it takes in one row: --space-6
-     either side of it, less the list's gap before the goal's item. */
+     either side of it, less the list's gap before the goal's item and the
+     gap the item spans (see the 64em rule). */
   --arrow-size: var(--text-xl);
-  --arrow-column: calc(2 * var(--space-6) - var(--space-4) + var(--arrow-size));
+  --arrow-column: calc(2 * var(--space-6) - 2 * var(--space-4) + var(--arrow-size));
 
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -242,8 +243,10 @@
 }
 
 @media (min-width: 48em) {
+  /* The heading's column a little wider than the lead's, so at 1440px
+     the heading breaks once, after "foundations", as in the image. */
   .future-ready__top {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
     column-gap: var(--space-16);
     align-items: last baseline;
   }

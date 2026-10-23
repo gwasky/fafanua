@@ -58,6 +58,7 @@ const ANCHORS = [
   '#contact', // the Data Trust Assessment's button (#71)
   '#data-trust-assessment', // the Managed Services journey's first two steps (#88)
   '#capabilities',
+  '#data-trust-assessment', // the future-ready link (#91)
   '#capabilities', // footer nav
   '#solutions',
   '#how-we-work',
@@ -2888,7 +2889,7 @@ for (const width of WIDTHS) {
           about: padding('#about'),
           contact: padding('#contact'),
           headings: ['#future-ready-heading', '#about-heading', '#contact-heading'].map(type),
-          paragraphs: ['.future-ready__statement', '.about__text', '.contact__text'].map((selector) => parseFloat(style(selector).fontSize)),
+          paragraphs: ['.future-ready__lead', '.about__text', '.contact__text'].map((selector) => parseFloat(style(selector).fontSize)),
           contactLines: box('#contact-heading').height / parseFloat(style('#contact-heading').lineHeight),
           button: box('#contact .button'),
           email: box('.contact__email'),
@@ -3059,46 +3060,138 @@ for (const width of WIDTHS) {
       await expectNoHorizontalScroll(page)
     })
 
-    // The future-ready graphic's final node (#63): labelled "advanced
-    // analytics & AI" like the four labels above it, a larger ring than
-    // their dots, with the rail reaching it from lineage (#72). About (#63):
-    // the heading with the statement beneath it, then the description,
-    // side by side from 1024px and stacked below it.
-    test(`future-ready destination and the About columns at ${width}px`, async ({ page }, testInfo) => {
+    // The future-ready section (section C, #91): the h2 beside the lead,
+    // sharing their last baseline, from 768px; the five tiles in one row
+    // from 1024px, two by two with the goal under a downward arrow from
+    // 768px, and in one column below; the verdict row under a hairline,
+    // with the link beside the verdict line and chips from 768px and under
+    // them below; and the verified colours. About (#63): the heading with
+    // the statement beneath it, then the description, side by side from
+    // 1024px and stacked below it.
+    test(`future-ready layout and the About columns at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
+      await page.locator('#future-ready').scrollIntoViewIfNeeded()
+      await waitForMotion(page)
       const m = await page.evaluate(() => {
         const box = (element: Element) => {
-          const { left, right, top, bottom } = element.getBoundingClientRect()
-          return { left, right, top, bottom }
+          const { left, right, top, bottom, width, height } = element.getBoundingClientRect()
+          return { left, right, top, bottom, width, height }
         }
-        const graphic = document.querySelector('.future-ready__graphic')!
-        const items = [...graphic.querySelectorAll('li')]
-        const end = graphic.querySelector('.future-ready__end')!
-        const ring = getComputedStyle(end, '::before')
-        const dot = getComputedStyle(items[0], '::before')
-        const rail = getComputedStyle(graphic, '::before')
-        const graphicBox = graphic.getBoundingClientRect()
-        const endBox = end.getBoundingClientRect()
-        const ringTop = endBox.top + parseFloat(ring.top)
-        const railBottom = graphicBox.top + parseFloat(rail.top) + parseFloat(rail.height)
-        const text = (element: Element) => {
-          const s = getComputedStyle(element)
-          return `${s.fontSize} ${s.fontWeight} ${s.color}`
+        const section = document.querySelector('#future-ready')!
+        const q = (selector: string) => section.querySelector(selector)!
+        // An element's last baseline: the bottom of an empty inline-block
+        // added at its end, which sits on the baseline.
+        const baseline = (element: Element) => {
+          const probe = document.createElement('span')
+          probe.style.cssText = 'display: inline-block; width: 0; height: 0'
+          element.append(probe)
+          const value = probe.getBoundingClientRect().bottom
+          probe.remove()
+          return value
         }
+        // A token's colour as painted inside the dark section.
+        const token = (name: string) => {
+          const probe = document.createElement('span')
+          probe.style.color = `var(${name})`
+          section.append(probe)
+          const value = getComputedStyle(probe).color
+          probe.remove()
+          return value
+        }
+        const style = (element: Element, pseudo?: string) => getComputedStyle(element, pseudo)
+        const flow = q('.future-ready__flow')
+        const tiles = [...section.querySelectorAll('.future-ready__tile')]
+        const goal = q('.future-ready__tile--goal')
+        const arrow = q('.future-ready__arrow')
+        const chips = [...section.querySelectorAll('.future-ready__chips > li')]
+        const verdict = q('.future-ready__verdict')
+        const container = q('.container')
+        const heading = q('h2')
+        const lead = q('.future-ready__lead')
+        const keys = [...section.querySelectorAll('.future-ready__key')]
+        const conditions = [...section.querySelectorAll('.future-ready__condition')]
+        const link = q('.future-ready__link')
         const about = document.querySelector('#about .container')!
-        const [heading, statement, description] = ['h2', '.about__statement', '.about__text'].map((selector) => box(about.querySelector(selector)!))
+        const [aboutHeading, statement, description] = ['h2', '.about__statement', '.about__text'].map((selector) => box(about.querySelector(selector)!))
+        const contentWidth =
+          container.getBoundingClientRect().width -
+          parseFloat(style(container).paddingLeft) -
+          parseFloat(style(container).paddingRight)
         return {
-          endText: end.textContent,
-          endStyle: text(end),
-          itemStyle: text(items[3]),
-          ring: { width: parseFloat(ring.width), border: parseFloat(ring.borderTopWidth), style: ring.borderTopStyle },
-          // Border-box sizes (global box-sizing).
-          dot: { width: parseFloat(dot.width) },
-          railToRing: ringTop - railBottom,
-          railStyle: `${rail.borderLeftWidth} ${rail.borderLeftStyle}`,
-          endBelowItems: endBox.top >= items[3].getBoundingClientRect().bottom,
-          ringBesideLabel: endBox.left + parseFloat(ring.left) + parseFloat(ring.width) <= endBox.left + parseFloat(getComputedStyle(end).paddingLeft),
-          about: { heading, statement, description },
+          heading: box(heading),
+          headingLines: box(heading).height / parseFloat(style(heading).lineHeight),
+          lead: box(lead),
+          baselines: [baseline(heading), baseline(lead)],
+          flow: box(flow),
+          tiles: tiles.map(box),
+          arrow: box(arrow),
+          arrowTransform: style(arrow).transform,
+          verdict: box(verdict),
+          verdicts: box(q('.future-ready__verdicts')),
+          verdictLine: box(q('.future-ready__verdict-line')),
+          hairline: `${style(verdict).borderTopWidth} ${style(verdict).borderTopStyle} ${style(verdict).borderTopColor}`,
+          contentWidth,
+          chips: chips.map(box),
+          link: box(link),
+          // Nothing clipped: no key or condition is wider inside than out.
+          clipped: [...keys, ...conditions]
+            .filter((element) => element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1)
+            .map((element) => element.textContent),
+          outside: [...section.querySelectorAll('*')]
+            .filter((element) => {
+              const b = element.getBoundingClientRect()
+              return b.width > 0 && !element.classList.contains('technical-grid') && (b.left < -0.5 || b.right > window.innerWidth + 0.5)
+            })
+            .map((element) => element.className),
+          colours: {
+            heading: style(heading).color,
+            lead: style(lead).color,
+            keys: [...new Set(keys.map((key) => style(key).color))],
+            conditions: [...new Set(conditions.slice(0, 4).map((condition) => style(condition).color))],
+            goalText: style(conditions[4]).color,
+            arrow: style(arrow).color,
+            verdictLine: style(q('.future-ready__verdict-line')).color,
+            chips: [...new Set(chips.map((chip) => style(chip).color))],
+            chipBorders: [...new Set(chips.map((chip) => `${style(chip).borderTopWidth} ${style(chip).borderTopStyle} ${style(chip).borderTopColor}`))],
+            chipBackgrounds: [...new Set(chips.map((chip) => style(chip).backgroundColor))],
+            link: style(link).color,
+            linkDecoration: style(link).textDecorationLine,
+            tileBackgrounds: [...new Set(tiles.slice(0, 4).map((tile) => style(tile).backgroundColor))],
+            tileBorders: [...new Set(tiles.slice(0, 4).map((tile) => `${style(tile).borderTopWidth} ${style(tile).borderTopStyle} ${style(tile).borderTopColor}`))],
+            goalBackground: style(goal).backgroundColor,
+            goalBorder: `${style(goal).borderTopWidth} ${style(goal).borderTopStyle} ${style(goal).borderTopColor}`,
+            keyDots: keys.map((key) => {
+              const dot = style(key, '::before')
+              return `${dot.width} ${dot.borderTopWidth} ${dot.borderTopColor}`
+            }),
+            chipDots: chips.map((chip) => {
+              const dot = style(chip, '::before')
+              return `${dot.width} ${dot.borderTopWidth} ${dot.borderTopColor}`
+            }),
+          },
+          tokens: {
+            paper: token('--color-heading'),
+            muted: token('--color-text-muted'),
+            accent: token('--color-accent'),
+            accentText: token('--color-accent-text'),
+            surface: token('--color-surface'),
+            border: token('--color-border'),
+            link: token('--color-link'),
+            warning: token('--state-warning'),
+          },
+          sizes: {
+            key: style(keys[0]).fontSize,
+            eyebrow: (() => {
+              const probe = document.createElement('span')
+              probe.style.fontSize = 'var(--text-eyebrow)'
+              section.append(probe)
+              const value = style(probe).fontSize
+              probe.remove()
+              return value
+            })(),
+            space4: parseFloat(style(flow).rowGap),
+          },
+          about: { heading: aboutHeading, statement, description },
           statementStyle: (({ fontSize, fontWeight }) => `${fontSize} ${fontWeight}`)(getComputedStyle(about.querySelector('.about__statement')!)),
           text3xl: (() => {
             const probe = document.createElement('p')
@@ -3111,18 +3204,103 @@ for (const width of WIDTHS) {
         }
       })
       const detail = JSON.stringify(m)
+      const near = (a: number, b: number, tolerance = 1) => expect(Math.abs(a - b), detail).toBeLessThanOrEqual(tolerance)
+      const centreX = (b: { left: number; right: number }) => (b.left + b.right) / 2
+      const centreY = (b: { top: number; bottom: number }) => (b.top + b.bottom) / 2
+      const [t1, t2, t3, t4, goalTile] = m.tiles
 
-      expect(m.endText).toBe('advanced analytics & AI')
-      expect(m.endStyle, detail).toBe(m.itemStyle)
-      expect(m.endBelowItems, detail).toBe(true)
-      expect(m.ringBesideLabel, detail).toBe(true)
-      // A ring (its border less than half its width), larger than the dots.
-      expect(m.ring.style, detail).toBe('solid')
-      expect(m.ring.border * 2, detail).toBeLessThan(m.ring.width)
-      expect(m.ring.width, detail).toBeGreaterThan(m.dot.width)
-      // The rail runs down to the ring's top edge.
-      expect(m.railStyle, detail).toBe('1px solid')
-      expect(Math.abs(m.railToRing), detail).toBeLessThanOrEqual(1)
+      expect(m.outside, detail).toEqual([])
+      expect(m.clipped, detail).toEqual([])
+
+      // Top row.
+      if (width >= 768) {
+        expect(m.lead.left, detail).toBeGreaterThan(m.heading.right)
+        near(m.baselines[0], m.baselines[1], 2)
+      } else {
+        expect(m.lead.top, detail).toBeGreaterThanOrEqual(m.heading.bottom)
+        near(m.lead.left, m.heading.left)
+      }
+      if (width === 1440) expect(Math.round(m.headingLines), detail).toBe(2)
+
+      // Flow row.
+      expect(m.flow.top, detail).toBeGreaterThan(Math.max(m.heading.bottom, m.lead.bottom))
+      if (width >= 1024) {
+        for (const tile of m.tiles) {
+          near(tile.top, t1.top)
+          near(tile.width, t1.width)
+          near(tile.height, t1.height)
+        }
+        for (const [a, b] of [[t1, t2], [t2, t3], [t3, t4]]) near(b.left - a.right, m.sizes.space4)
+        // The arrow, pointing right, --space-6 from the tiles either side,
+        // centred on them.
+        expect(m.arrowTransform, detail).toBe('none')
+        near(m.arrow.left - t4.right, m.sizes.space4 * 1.5)
+        near(goalTile.left - m.arrow.right, m.sizes.space4 * 1.5)
+        near(centreY(m.arrow), centreY(t1))
+        near(goalTile.right, m.flow.right)
+      } else {
+        // The arrow points down, centred, above the goal at full width.
+        expect(m.arrowTransform, detail).toBe('matrix(0, 1, -1, 0, 0, 0)')
+        near(centreX(m.arrow), centreX(m.flow))
+        expect(m.arrow.top, detail).toBeGreaterThanOrEqual(Math.max(t3.bottom, t4.bottom))
+        expect(goalTile.top, detail).toBeGreaterThanOrEqual(m.arrow.bottom)
+        near(goalTile.left, m.flow.left)
+        near(goalTile.width, m.flow.width)
+        if (width >= 768) {
+          near(t1.top, t2.top)
+          near(t3.top, t4.top)
+          expect(t3.top, detail).toBeGreaterThan(t1.bottom)
+          near(t2.left - t1.right, m.sizes.space4)
+          for (const tile of [t1, t2, t3, t4]) near(tile.width, t1.width)
+        } else {
+          for (const tile of [t1, t2, t3, t4]) {
+            near(tile.left, m.flow.left)
+            near(tile.width, m.flow.width)
+          }
+          for (const [a, b] of [[t1, t2], [t2, t3], [t3, t4]]) expect(b.top, detail).toBeGreaterThan(a.bottom)
+        }
+      }
+
+      // Verdict row: a hairline across the content width, the chips under
+      // the verdict line, and the link.
+      expect(m.verdict.top, detail).toBeGreaterThan(goalTile.bottom)
+      near(m.verdict.width, m.contentWidth)
+      expect(m.hairline, detail).toBe(`1px solid ${m.tokens.border}`)
+      for (const chip of m.chips) expect(chip.top, detail).toBeGreaterThanOrEqual(m.verdictLine.bottom)
+      if (width === 1440) for (const chip of m.chips) near(chip.top, m.chips[0].top)
+      if (width >= 768) {
+        expect(m.link.left, detail).toBeGreaterThan(m.verdicts.right)
+        near(m.link.right, m.verdict.right)
+        near(centreY(m.link), centreY(m.verdicts))
+      } else {
+        expect(m.link.top, detail).toBeGreaterThanOrEqual(Math.max(...m.chips.map((chip) => chip.bottom)))
+        near(m.link.left, m.verdict.left)
+      }
+
+      // The verified colours (design system, "Trusted foundations after
+      // #91"), and the type of the keys.
+      const t = m.tokens
+      expect(m.colours, detail).toEqual({
+        heading: t.paper,
+        lead: t.muted,
+        keys: [t.accentText],
+        conditions: [t.paper],
+        goalText: t.muted,
+        arrow: t.muted,
+        verdictLine: t.muted,
+        chips: [t.paper],
+        chipBorders: [`1px solid ${t.border}`],
+        chipBackgrounds: ['rgba(0, 0, 0, 0)'],
+        link: t.link,
+        linkDecoration: 'none',
+        tileBackgrounds: [t.surface],
+        tileBorders: [`1px solid ${t.border}`],
+        goalBackground: 'rgba(0, 0, 0, 0)',
+        goalBorder: `1px dashed ${t.accent}`,
+        keyDots: [...Array(4).fill(`8px 4px ${t.accent}`), `8px 2px ${t.accent}`],
+        chipDots: [`8px 4px ${t.accent}`, `8px 4px ${t.warning}`, `8px 2px ${t.muted}`],
+      })
+      expect(m.sizes.key, detail).toBe(m.sizes.eyebrow)
 
       const { heading, statement, description } = m.about
       expect(statement.top, detail).toBeGreaterThanOrEqual(heading.bottom)
@@ -3135,6 +3313,48 @@ for (const width of WIDTHS) {
         expect(description.top, detail).toBeGreaterThanOrEqual(statement.bottom)
         expect(Math.abs(description.left - heading.left), detail).toBeLessThanOrEqual(1)
       }
+    })
+
+    // 200% page text: nothing in the future-ready section overflows or is
+    // clipped (#91). A media query in em follows the browser's text size,
+    // not page text, so the layout stays as at 100%; the tiles' inset is
+    // in px and vw, so it does not double.
+    test(`future-ready fits with 200% page text at ${width}px`, async ({ page }, testInfo) => {
+      await open(page, testInfo, width)
+      await page.addStyleTag({ content: 'html { font-size: 200%; }' })
+      await waitForFonts(page)
+      await page.locator('#future-ready').scrollIntoViewIfNeeded()
+      await waitForMotion(page)
+      const m = await page.evaluate(() => {
+        const section = document.querySelector('#future-ready')!
+        return {
+          outside: [...section.querySelectorAll('*')]
+            .filter((element) => {
+              const { left, right, width } = element.getBoundingClientRect()
+              return width > 0 && !element.classList.contains('technical-grid') && (left < -0.5 || right > window.innerWidth + 0.5)
+            })
+            .map((element) => `${element.tagName} ${element.textContent?.slice(0, 30)}`),
+          clipped: [...section.querySelectorAll('.future-ready__key, .future-ready__condition, .future-ready__chips > li, .future-ready__link')]
+            .filter((element) => element.scrollWidth > element.clientWidth + 1)
+            .map((element) => element.textContent),
+          // Each tile's text inside its tile.
+          spilled: [...section.querySelectorAll('.future-ready__tile')].flatMap((tile) => {
+            const outer = tile.getBoundingClientRect()
+            return [...tile.querySelectorAll('.future-ready__key, .future-ready__condition')]
+              .filter((part) => {
+                const inner = part.getBoundingClientRect()
+                return inner.right > outer.right + 0.5 || inner.bottom > outer.bottom + 0.5
+              })
+              .map((part) => part.textContent)
+          }),
+        }
+      })
+      expect(m.outside, JSON.stringify(m)).toEqual([])
+      expect(m.clipped, JSON.stringify(m)).toEqual([])
+      expect(m.spilled, JSON.stringify(m)).toEqual([])
+      // At 1024px with 200% page text the header's inline navigation is
+      // wider than the viewport (#65).
+      if (width !== 1024) await expectNoHorizontalScroll(page)
     })
 
     if (width === 320) {
@@ -3185,7 +3405,7 @@ for (const width of WIDTHS) {
   })
 
   test.describe('in-page links', () => {
-    test(`exactly 17 in-page links, each naming one element, at ${width}px`, async ({ page }, testInfo) => {
+    test(`exactly 18 in-page links, each naming one element, at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       const anchors = await page.evaluate(() =>
         [...document.querySelectorAll('a[href^="#"]')].map((link) => {
