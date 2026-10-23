@@ -90,10 +90,13 @@ describe('"Inter Fallback" @font-face', () => {
     expect(fallbackFaces.length).toBeGreaterThan(0)
   })
 
+  // Arial's regular face up to 549; its bold face for the solution
+  // landing pages' 600 and 700 (#93), which both engines measure alike.
   it.each(fallbackFaces.map((face) => [face['font-weight'], face]))(
     'uses Arial with all four metric overrides (weights %s)',
     (_weights, face) => {
-      expect(face.src).toBe('local("Arial")')
+      const [from] = face['font-weight'].split(/\s+/).map(Number)
+      expect(face.src).toBe(from < 550 ? 'local("Arial")' : 'local("Arial Bold"), local("Arial-BoldMT")')
       for (const descriptor of [
         'size-adjust',
         'ascent-override',
@@ -120,6 +123,10 @@ describe('"Inter Fallback" @font-face', () => {
       expect(face['line-gap-override']).toBe('0%')
     },
   )
+
+  it('gives 600 and 700 faces of their own, and 500 its own (#93)', () => {
+    expect(fallbackFaces.map((face) => face['font-weight'])).toEqual(['100 349', '350 449', '450 549', '550 649', '650 900'])
+  })
 
   it('covers weights 100 to 900 once each, with no gaps or overlaps', () => {
     const ranges = fallbackFaces

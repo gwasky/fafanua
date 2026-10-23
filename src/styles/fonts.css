@@ -1,6 +1,7 @@
 /*
  * Inter, self-hosted. One variable woff2 file covers every weight the
- * site uses (300, 400 and 500), Latin subset only.
+ * site uses (300, 400 and 500, and 600 and 700 on the solution landing
+ * pages, #93), Latin subset only.
  */
 
 /* Copied from the inter-latin-wght-normal rule in
@@ -60,10 +61,39 @@
 
 @font-face {
   font-family: "Inter Fallback";
-  font-weight: 450 900;
+  font-weight: 450 549;
   src: local("Arial");
   size-adjust: 108.1%;
   ascent-override: 89.62%;
   descent-override: 22.31%;
+  line-gap-override: 0%;
+}
+
+/*
+ * The solution landing pages' 600 and 700 (#93, under main.sector-landing
+ * only). Arial's regular face, made bold by the browser, is not the same
+ * width in each engine (measured: Chromium 3% narrower than Inter, WebKit
+ * 6% wider), so these use Arial's own bold face, which both engines
+ * measure alike: Inter is 1.0119 times its width at 600 and 1.0237 at
+ * 700, over the page's headings, labels and buttons. No other page uses
+ * these weights.
+ */
+@font-face {
+  font-family: "Inter Fallback";
+  font-weight: 550 649;
+  src: local("Arial Bold"), local("Arial-BoldMT");
+  size-adjust: 101.19%;
+  ascent-override: 95.74%;
+  descent-override: 23.84%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Inter Fallback";
+  font-weight: 650 900;
+  src: local("Arial Bold"), local("Arial-BoldMT");
+  size-adjust: 102.37%;
+  ascent-override: 94.63%;
+  descent-override: 23.56%;
   line-gap-override: 0%;
 }
