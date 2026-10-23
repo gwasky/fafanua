@@ -34,7 +34,7 @@ The sections in this plan use the same visual language as those plans: hairlines
 
 ## 2. Precedence
 
-1. **Section A** supersedes `_docs/plan-fafanua-services-positioning.md` on the homepage Solutions section only: the heading, the intro line, the row presentation, the removal of numbers and accordions, and the tag lines. It amends W7 in the Trust and Lineage plan (removing "Lineage" from the tags). Sector names and their order stay as W7 set them.
+1. **Section A** supersedes `_docs/plan-fafanua-services-positioning.md` on the homepage Solutions section only: the heading, the intro line, the row presentation, the removal of numbers and accordions, and the tag lines. It amends W7 in the Trust and Lineage plan (removing "Lineage" from the tags). It also adds Public Sector as a fourth featured sector (owner decision, 2026-10-23), amending W7's list and order.
 2. **Section B** supersedes `_docs/plan.md` and `_docs/fafanua-v2-refinement-plan.md` on How We Work: the heading, the Assess description and output, one word in Govern, the output labels, the stage band, the track and the highlight behaviour. The four step names and their order stay. Section B **replaces G2** in the Trust and Lineage plan. Do not implement G2.
 3. **Section C** supersedes `_docs/fafanua-v2-refinement-plan.md` on the future-ready section's layout, and supersedes W5's copy in the Trust and Lineage plan. The dark background with the technical grid stays.
 4. **Section D** supersedes `_docs/fafanua-v2-refinement-plan.md` on the About section's composition. W8 (the founder block) is **deferred**, not cancelled. Leave room for it to return later, but do not build it now.
@@ -62,7 +62,8 @@ The sections in this plan use the same visual language as those plans: hairlines
 | Eyebrow | 03 — SOLUTIONS | Unchanged |
 | Heading | Built for the sectors we know | New, replaces "Solutions" |
 | Intro line | In every sector, we start by tracing the numbers leadership relies on back to their source. | New |
-| Rows | Health; Financial Services; Education | Unchanged, in this order |
+| Rows | Health; Public Sector; Financial Services; Education | Amended: Public Sector added, in this order |
+| Public Sector tags | Service turnaround · Revenue and budget · Statutory reporting | New |
 | Health tags | Branch comparability · Billing and claims · Pharmacy stock | Amended: "Lineage" removed |
 | Financial Services tags | Payments · Reconciliation · Regulatory reporting | Amended: "Lineage" removed |
 | Education tags | Enrolment · Progression · Payments | Amended: "Lineage" removed |
@@ -72,7 +73,7 @@ The sections in this plan use the same visual language as those plans: hairlines
 ### Layout
 
 - Paper background. The eyebrow, heading (weight 300) and intro line (muted token) are left-aligned.
-- Three full-width rows separated by hairlines, with one hairline above the first row.
+- Four full-width rows separated by hairlines, with one hairline above the first row.
 - Each row shows the sector name (large, weight 300) on the left, the tags (muted, separated by " · ") in the middle, and a muted "→" on the right.
 - Each row is one link to that sector's landing page. Use a stretched link so the whole row is clickable, with the sector name as the link text.
 - **Hover and focus:** the row gets a subtle tint (a surface token one step from paper), the sector name gets a 1px teal underline, and the arrow turns teal. Keyboard focus also shows the standard focus ring.
@@ -81,7 +82,8 @@ The sections in this plan use the same visual language as those plans: hairlines
 ### Do first
 
 1. Check what each accordion currently contains. If any of it is missing from that sector's landing page, add it there first without changing the wording.
-2. Confirm all three landing page routes exist and match the SEO plan. If any sector has no landing page, stop and report it.
+2. Confirm all four landing page routes exist and match the SEO plan. If any sector has no landing page, stop and report it. The Public Sector row links to the page built under `_docs/fafanua-public-sector-landing-page-plan.md`.
+4. Remove Public Sector Data & Analytics from the footer's "More sectors" line, since it is now featured. The line keeps its other links.
 3. Report any keyword the SEO plan assigns to the homepage that the removed accordion text or the removed "Lineage" tags carried.
 
 ### Semantics
@@ -224,7 +226,8 @@ In the design system, record any new verified pairs or hover-tint tokens.
 
 ### Section A
 - [ ] The heading, intro line and amended tags match section 4 exactly. There are no row numbers, accordions or chevrons.
-- [ ] Each row links to its sector's landing page, and no accordion content was lost.
+- [ ] There are four rows in the order Health, Public Sector, Financial Services, Education, each linking to its sector's landing page, and no accordion content was lost.
+- [ ] The footer's "More sectors" line no longer lists Public Sector.
 - [ ] Hover and focus show the tint, teal underline, teal arrow and a visible focus ring.
 
 ### Section B
