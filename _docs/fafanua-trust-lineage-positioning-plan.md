@@ -119,6 +119,8 @@ Apply the rules in section 6 to all homepage and Solutions copy. Do not change H
 
 **Amended (2026-10-15, #89):** section A of `_docs/fafanua-homepage-sections-refinement-plan.md` removes "Lineage" from the three tag lines below. The homepage now shows Health: Branch comparability · Billing and claims · Pharmacy stock; Financial Services: Payments · Reconciliation · Regulatory reporting; Education: Enrolment · Progression · Payments. The sector names and their order are unchanged. Do not restore "Lineage".
 
+**Amended (2026-10-23, #95):** section A of `_docs/fafanua-homepage-sections-refinement-plan.md` adds **Public Sector** as a fourth homepage sector (owner decision). The homepage now shows four sectors in this order: Health, Public Sector, Financial Services, Education. Public Sector's tag line is "Service turnaround · Revenue and budget · Statutory reporting". Public Sector is removed from the footer's "More sectors" line, which keeps Retail & Distribution and Development & Impact. The bullets below are kept as originally written.
+
 - Show three sectors in this order: **Health, Financial services, Education.**
 - Update the tag lines:
   - Health: Branch comparability • Billing and claims • Pharmacy stock • Lineage
@@ -295,7 +297,7 @@ Items marked with a G-number depend on that approval. Without it, keep the curre
 4. AI readiness (W5, moves here only with G8)
 5. How we work (G2)
 6. Connected diagram (G3 removes the cards above it)
-7. Sectors: Health, Financial services, Education (W7)
+7. Sectors: Health, Financial services, Education (W7; amended by section A of `_docs/fafanua-homepage-sections-refinement-plan.md`, #95, to Health, Public Sector, Financial Services, Education)
 8. What comes after: Managed Services (laid out per `_docs/fafanua-managed-services-regrouped-plan.md`, which replaces G4)
 9. About (section D of `_docs/fafanua-homepage-sections-refinement-plan.md`; W8 deferred, #92)
 10. Closing section (W9)
@@ -349,7 +351,7 @@ Create these issues in order and follow `_docs/process.md` for each.
 3. Remove repeated copy in the problem and capabilities sections (W3)
 4. Data Trust Assessment section and illustrative lineage example (W4)
 5. AI-readiness copy and vocabulary pass (W5, W6)
-6. Homepage sectors: Health, Financial services, Education (W7)
+6. Homepage sectors: Health, Financial services, Education (W7; Public Sector added as a fourth, second in order, by section A of `_docs/fafanua-homepage-sections-refinement-plan.md`, #95)
 7. Closing section supporting line (W9)
 8. About founder block, blocked until the owner supplies content (W8)
 9. Data Trust Assessment section layout (W11, built in #81; superseded by the dark panel plan, #82)

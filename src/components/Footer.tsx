@@ -14,7 +14,8 @@ const FORCED_LIGHT = '(forced-colors: active) and (prefers-color-scheme: light)'
 // (footerNavigation in src/data/navigation.ts), the email and phone links
 // from src/data/contact.ts, the copyright line, then a quiet "More
 // sectors" line linking, by their headings, to the sector pages the
-// homepage's Solutions list leaves out (footerSolutions, W7, #73), so
+// homepage's Solutions list leaves out (footerSolutions, W7, #73: since
+// #95, Retail & Distribution and Development & Impact), so
 // every sector page keeps a crawlable link from the homepage or the
 // footer. It reads only solutions.ts, never the landing pages' copy, as
 // the footer is hydrated on every landing page. The year is read when

@@ -173,7 +173,7 @@ describe('App links and buttons', () => {
     for (const { href } of links) expect(href).toBe(`mailto:${email}`)
   })
 
-  // The Solutions rows are links now (#89).
+  // The Solutions rows are links now (#89), four since #95.
   it('has one kind of button: the Menu toggle', () => {
     render(<App />)
     const buttons = controls().filter(({ element }) => element.tagName === 'BUTTON')
@@ -182,7 +182,7 @@ describe('App links and buttons', () => {
     expect(
       controls()
         .filter(({ href }) => href?.startsWith('/solutions/'))
-        .slice(0, 3)
+        .slice(0, 4)
         .map(({ name }) => name),
     ).toEqual(homepageSolutions.map((solution) => solution.title))
   })

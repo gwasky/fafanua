@@ -6,9 +6,11 @@ import './Solutions.css'
 // The Solutions section (section A of
 // _docs/fafanua-homepage-sections-refinement-plan.md, #89): the "03 —
 // Solutions" eyebrow, the h2 and the intro line, then the homepage's
-// sectors as an editorial list of three rows: Health, Financial Services
-// and Education, in the order W7 of the trust and lineage plan sets
-// (homepageSolutions, #73). The other sectors are linked from the footer.
+// sectors as an editorial list of four rows: Health, Public Sector,
+// Financial Services and Education, in the order W7 of the trust and
+// lineage plan sets (homepageSolutions, #73), with Public Sector added
+// second by section A as the owner amended it (#95). The other two
+// sectors are linked from the footer.
 // The id matches the "Solutions" entry in src/data/navigation.ts; the
 // section is named by its h2.
 //

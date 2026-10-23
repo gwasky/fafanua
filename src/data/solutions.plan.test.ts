@@ -6,8 +6,10 @@
 // (Health, Financial Services and Education, #73), which are checked
 // against W7 as amended by section A of
 // _docs/fafanua-homepage-sections-refinement-plan.md (#89), which removes
-// "Lineage" from them and sets the homepage heading and intro line, so the
-// wording on the site cannot drift from any of them.
+// "Lineage" from them and sets the homepage heading and intro line, and
+// Public Sector's, which section A sets when it adds Public Sector as a
+// fourth homepage sector (#95), so the wording on the site cannot drift
+// from any of them.
 // The ?raw imports resolve relative to this file and are never part of
 // the production bundle.
 import { describe, expect, it } from 'vitest'
@@ -118,6 +120,7 @@ const sectionACopy = new Map(
 )
 const sectionATags: Record<string, string> = {
   health: 'Health tags',
+  'public-sector': 'Public Sector tags',
   'financial-services': 'Financial Services tags',
   education: 'Education tags',
 }
@@ -168,7 +171,7 @@ describe('solutions wording', () => {
   it.each(
     v2Rows
       .map((row, index) => [row.number, row.title, index] as const)
-      .filter(([, , index]) => !(planned[index].id in W7_NAMES)),
+      .filter(([, , index]) => !(planned[index].id in sectionATags)),
   )(
     'matches the summary of row %s, %s, in plan V2 Section 12',
     (_number, _title, index) => {
@@ -176,17 +179,26 @@ describe('solutions wording', () => {
     },
   )
 
-  it('keeps the plan V2 summaries of Retail & Distribution, Development & Impact and Public Sector', () => {
-    const kept = planned.filter((solution) => !(solution.id in W7_NAMES))
+  it('keeps the plan V2 summaries of Retail & Distribution and Development & Impact', () => {
+    const kept = planned.filter((solution) => !(solution.id in sectionATags))
 
     expect(kept.map((solution) => solution.title)).toEqual([
       'Retail & Distribution',
       'Development & Impact',
-      'Public Sector',
     ])
     for (const solution of kept) {
       expect(solution.summary).toEqual(v2Rows.find((row) => row.title === solution.title)?.summary)
     }
+  })
+
+  // Section A replaces Public Sector's plan V2 §12 line with its own (#95).
+  it('uses section A\'s Public Sector tags, not its plan V2 summary', () => {
+    const publicSector = solutions.find((solution) => solution.id === 'public-sector')!
+
+    expect(publicSector.summary).toEqual(sectionACopy.get('Public Sector tags')!.split(' · '))
+    expect(publicSector.summary).not.toEqual(
+      v2Rows.find((row) => row.title === 'Public Sector')?.summary,
+    )
   })
 
   it('has the doc\'s solutions and Health, after Development & Impact, and nothing else', () => {
@@ -273,9 +285,26 @@ describe('W7 in the trust and lineage plan (#73)', () => {
     )
   })
 
-  it('shows the homepage sectors in W7\'s order', () => {
+  it('carries section A\'s amendment note adding Public Sector (#95)', () => {
+    expect(w7).toMatch(
+      /^\*\*Amended \(2026-10-23, #95\):\*\* section A of `_docs\/fafanua-homepage-sections-refinement-plan\.md` adds \*\*Public Sector\*\* as a fourth homepage sector/m,
+    )
+    expect(w7).toContain('Health, Public Sector, Financial Services, Education')
+    expect(w7).toContain('"Service turnaround · Revenue and budget · Statutory reporting"')
+  })
+
+  // Section A adds Public Sector, second, to W7's three (#95); the others
+  // keep W7's order, and the full order is section A's Rows cell.
+  it('shows the homepage sectors in W7\'s order, with Public Sector added as section A amends it', () => {
     expect(w7Order).toEqual(['Health', 'Financial services', 'Education'])
-    expect(homepageSolutions.map((solution) => W7_NAMES[solution.id])).toEqual(w7Order)
+    expect(
+      homepageSolutions
+        .filter((solution) => solution.id !== 'public-sector')
+        .map((solution) => W7_NAMES[solution.id]),
+    ).toEqual(w7Order)
+    expect(homepageSolutions.map((solution) => solution.title)).toEqual(
+      sectionACopy.get('Rows')!.split('; '),
+    )
   })
 })
 
@@ -285,6 +314,7 @@ describe('section A of the homepage sections refinement plan (#89)', () => {
       'Heading',
       'Intro line',
       'Rows',
+      'Public Sector tags',
       'Health tags',
       'Financial Services tags',
       'Education tags',
@@ -298,7 +328,8 @@ describe('section A of the homepage sections refinement plan (#89)', () => {
     expect(solutionsIntro.intro).toBe(sectionACopy.get('Intro line'))
   })
 
-  it('uses the three tag lines word for word', () => {
+  it('uses the four tag lines word for word', () => {
+    expect(homepageSolutions).toHaveLength(4)
     for (const solution of homepageSolutions) {
       expect(solution.summary).toEqual(sectionACopy.get(sectionATags[solution.id])!.split(' · '))
     }

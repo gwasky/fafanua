@@ -12,11 +12,10 @@ const PHONE = '+256 752 008 822'
 const TEL = 'tel:+256752008822'
 const COPYRIGHT = /^© \d{4} Fafanua Technologies Limited$/
 // The "More sectors" line (#73): the sectors the homepage leaves out, by
-// their headings, in data order.
+// their headings, in data order. Public Sector is a homepage row since #95.
 const SECTORS = [
   ['Retail & Distribution Analytics', '/solutions/retail-distribution'],
   ['Development & Impact Data Systems', '/solutions/development-impact'],
-  ['Public Sector Data & Analytics', '/solutions/public-sector'],
 ] as const
 
 // Claims the footer must not make, and details it must not invent.
@@ -170,11 +169,11 @@ describe('Footer', () => {
     }
   })
 
-  it('contains nothing else: ten links, no headings, ids or forms', () => {
+  it('contains nothing else: nine links, no headings, ids or forms', () => {
     const footer = renderFooter()
     const year = new Date().getFullYear()
 
-    expect(within(footer).getAllByRole('link')).toHaveLength(10)
+    expect(within(footer).getAllByRole('link')).toHaveLength(9)
     expect(within(footer).getAllByRole('link').map((link) => link.textContent)).toEqual([
       ...footerNavigation.map((item) => item.label),
       EMAIL,
@@ -234,7 +233,7 @@ describe('Footer', () => {
       return footer.querySelector<HTMLElement>('.site-footer__sectors')!
     }
 
-    it('shows the label, then the three sector links, by their headings, in data order', () => {
+    it('shows the label, then the two sector links, by their headings, in data order', () => {
       const footer = renderFooter()
       const line = sectorsLine(footer)
       const links = within(line).getAllByRole('link')
@@ -263,8 +262,21 @@ describe('Footer', () => {
       expect(nav).not.toContainElement(line)
       expect(within(footer).getAllByRole('navigation')).toHaveLength(1)
       expect(list.tagName).toBe('UL')
-      expect(within(list).getAllByRole('listitem')).toHaveLength(3)
+      expect(within(list).getAllByRole('listitem')).toHaveLength(2)
       expect(line.querySelector('h1, h2, h3, h4, h5, h6, nav, [role]:not([role="list"])')).toBeNull()
+    })
+
+    // Public Sector moved to the homepage's Solutions rows (#95).
+    it('no longer links Public Sector, from the homepage or a landing page', () => {
+      for (const home of [undefined, '/'] as const) {
+        const { unmount } = render(<Footer home={home} />)
+        const footer = screen.getByRole('contentinfo')
+
+        expect(footer.textContent).not.toContain('Public Sector Data & Analytics')
+        expect(footer.textContent).not.toContain('Public Sector')
+        expect(footer.querySelector('a[href="/solutions/public-sector"], a[href$="/solutions/public-sector"]')).toBeNull()
+        unmount()
+      }
     })
 
     it('links to the same pages from a landing page, where home is "/"', () => {

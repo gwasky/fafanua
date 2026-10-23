@@ -49,12 +49,12 @@ const paths = new Set(pages.map((page) => page.path))
 
 const renderPage = (page: Page) => render(<LandingPage page={page} />)
 
-// The footer's "More sectors" line (#73): the three sector pages the
+// The footer's "More sectors" line (#73): the two sector pages the
 // homepage's Solutions list leaves out, by their headings, on every page.
+// Public Sector is a homepage row since #95, so no footer links it.
 const MORE_SECTORS = [
   ['Retail & Distribution Analytics', '/solutions/retail-distribution'],
   ['Development & Impact Data Systems', '/solutions/development-impact'],
-  ['Public Sector Data & Analytics', '/solutions/public-sector'],
 ]
 
 function expectMoreSectors() {
@@ -66,6 +66,8 @@ function expectMoreSectors() {
   for (const [, href] of MORE_SECTORS) expect(paths.has(href)).toBe(true)
   expect(within(footer).getByRole('navigation', { name: 'Footer' })).not.toContainElement(line)
   expect(within(within(footer).getByRole('navigation', { name: 'Footer' })).getAllByRole('link')).toHaveLength(5)
+  expect(footer.textContent).not.toContain('Public Sector Data & Analytics')
+  expect(footer.querySelector('a[href="/solutions/public-sector"]')).toBeNull()
 }
 
 const h2s = (main: HTMLElement) =>
@@ -145,7 +147,7 @@ describe.each(pages.map((page) => [page.path, page] as const))('%s', (_path, pag
     await expectNoAxeViolations(container)
   })
 
-  it('links the footer\'s "More sectors" line to the three sectors the homepage leaves out', () => {
+  it('links the footer\'s "More sectors" line to the two sectors the homepage leaves out, and not Public Sector', () => {
     renderPage(page)
     expectMoreSectors()
   })
@@ -209,6 +211,17 @@ describe('service pages', () => {
       services[4].name,
     ])
     expect(within(trail).getByRole('link', { name: 'Services' })).toHaveAttribute('href', '/#capabilities')
+  })
+
+  // Public Sector's summary is section A's tag line since #95, so its
+  // "Relevant sectors" line reads it joined with ", ".
+  it('shows Public Sector\'s new summary on a service page\'s "Relevant sectors"', () => {
+    renderPage(pageFor('data-strategy-and-platform-architecture'))
+    const region = screen.getByRole('region', { name: 'Relevant sectors' })
+    const link = within(region).getByRole('link', { name: 'Public Sector Data & Analytics' })
+    expect(link).toHaveAttribute('href', '/solutions/public-sector')
+    expect(link.nextElementSibling?.textContent).toBe('Service turnaround, Revenue and budget, Statutory reporting')
+    expect(region).not.toHaveTextContent('Service delivery, Governance, Reporting, Integration')
   })
 
   it('explains Reverse ETL on the engineering page only', () => {

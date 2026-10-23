@@ -10,16 +10,18 @@ import {
 import { solutionPath } from '../paths.ts'
 import Solutions from './Solutions.tsx'
 
-// The homepage's three sectors, in W7's order (#73). The other three are
-// linked from the footer's "More sectors" line instead.
+// The homepage's four sectors, in W7's order (#73) with Public Sector
+// added second by section A of the refinement plan (#95). The other two
+// are linked from the footer's "More sectors" line instead.
 const solutions = homepageSolutions
 
-const TITLES = ['Health', 'Financial Services', 'Education']
+const TITLES = ['Health', 'Public Sector', 'Financial Services', 'Education']
 
 // Section A of the homepage sections refinement plan (#89): W7's tag
-// lines with "Lineage" removed.
+// lines with "Lineage" removed, and Public Sector's own (#95).
 const TAG_LINES = [
   'Branch comparability · Billing and claims · Pharmacy stock',
+  'Service turnaround · Revenue and budget · Statutory reporting',
   'Payments · Reconciliation · Regulatory reporting',
   'Enrolment · Progression · Payments',
 ]
@@ -89,34 +91,40 @@ describe('Solutions', () => {
     expect(rows).toBe(list)
   })
 
-  it('has one h2, then three h3s', () => {
+  it('has one h2, then four h3s', () => {
     const { section } = renderSolutions()
 
     expect(
       within(section).getAllByRole('heading').map((heading) => heading.tagName),
-    ).toEqual(['H2', 'H3', 'H3', 'H3'])
+    ).toEqual(['H2', 'H3', 'H3', 'H3', 'H3'])
   })
 
-  it('shows the three homepage sectors as an unordered list of rows, in W7 order, unnumbered', () => {
+  it('shows the four homepage sectors as an unordered list of rows, in section A\'s order, unnumbered', () => {
     const { list, rows } = renderSolutions()
 
     expect(list.tagName).toBe('UL')
     expect(list).toHaveAttribute('role', 'list')
-    expect(rows.map((row) => row.tagName)).toEqual(Array(3).fill('LI'))
+    expect(rows.map((row) => row.tagName)).toEqual(Array(4).fill('LI'))
     expect(rows.map((row) => parts(row).heading.textContent)).toEqual(TITLES)
     expect(solutions.map((solution) => solution.title)).toEqual(TITLES)
-    expect(list.textContent).not.toMatch(/0[1-3]/)
+    expect(list.textContent).not.toMatch(/0[1-4]/)
   })
 
   // The other sectors are left to the footer (#73): no row names them.
-  it('leaves Retail & Distribution, Development & Impact and Public Sector out', () => {
+  // Public Sector is now a row (#95), once, with its tag line.
+  it('leaves Retail & Distribution and Development & Impact out, and shows Public Sector once', () => {
     const { section } = renderSolutions()
 
     expect(footerSolutions.map((solution) => solution.title)).toEqual([
       'Retail & Distribution',
       'Development & Impact',
-      'Public Sector',
     ])
+    expect(within(section).getAllByRole('link', { name: 'Public Sector' })).toHaveLength(1)
+    expect(section.querySelectorAll('a[href="/solutions/public-sector"]')).toHaveLength(1)
+    expect(section.textContent!.split('Public Sector')).toHaveLength(2)
+    expect(section.textContent).toContain(
+      'Service turnaround · Revenue and budget · Statutory reporting',
+    )
     for (const solution of footerSolutions) {
       expect(within(section).queryByRole('link', { name: solution.title })).toBeNull()
       expect(section.textContent).not.toContain(solution.title)
@@ -140,10 +148,11 @@ describe('Solutions', () => {
     })
     expect(rows.map((row) => parts(row).link.getAttribute('href'))).toEqual([
       '/solutions/health',
+      '/solutions/public-sector',
       '/solutions/financial-services',
       '/solutions/education',
     ])
-    expect(within(section).getAllByRole('link')).toHaveLength(3)
+    expect(within(section).getAllByRole('link')).toHaveLength(4)
   })
 
   it('gives each row an h3 holding only its link', () => {

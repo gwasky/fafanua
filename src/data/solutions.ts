@@ -3,19 +3,21 @@
 // with Health after Development & Impact. Each title and theme list is
 // copied from those sections. The doc's "Potential client types" are left
 // out. Each summary is the four-item line under the sector in
-// _docs/fafanua-v2-visual-upgrade-plan.md §12, except for Health,
-// Financial Services and Education, whose tag lines are W7 in
+// _docs/fafanua-v2-visual-upgrade-plan.md §12, except for the four
+// homepage sectors, whose tag lines are three items each: Health,
+// Financial Services and Education's are W7 in
 // _docs/fafanua-trust-lineage-positioning-plan.md (#73) as amended by
 // section A of _docs/fafanua-homepage-sections-refinement-plan.md (#89),
-// which removes "Lineage": three items each. The homepage shows the tag
-// line on each sector's row; it no longer shows the themes, which the
-// landing pages list as their use cases.
+// which removes "Lineage"; Public Sector's is section A's, as amended by
+// the owner on 2026-10-23 (#95), and replaces its plan V2 §12 line. The
+// homepage shows the tag line on each sector's row; it no longer shows the
+// themes, which the landing pages list as their use cases.
 //
 // This order drives the landing pages (src/pages.ts), their "Other
-// sectors" lists and the sitemap, so it does not change. W7 decides which
-// sectors the homepage shows, and in what order: homepageSolutions. The
-// others are linked from the footer's "More sectors" line instead:
-// footerSolutions, in data order. Together they cover every sector once,
+// sectors" lists and the sitemap, so it does not change. W7, as amended by
+// section A (#95), decides which sectors the homepage shows, and in what
+// order: homepageSolutions, four sectors. The other two are linked from
+// the footer's "More sectors" line instead: footerSolutions, in data order. Together they cover every sector once,
 // so every landing page keeps a link from the homepage or the footer.
 //
 // Health is the SEO plan's first-class sixth domain (§9,
@@ -42,7 +44,7 @@ export type Solution = {
   readonly title: string
   /** The landing page's h1, and the anchor text of links to it. */
   readonly heading: string
-  /** The sector's short summary: four items (plan V2 §12), or three (W7 as amended, #89). */
+  /** The sector's short summary: four items (plan V2 §12), or three on the homepage sectors (W7 and section A as amended, #89, #95). */
   readonly summary: readonly string[]
   readonly themes: readonly string[]
 }
@@ -133,7 +135,7 @@ export const solutions: readonly Solution[] = [
     slug: 'public-sector',
     title: 'Public Sector',
     heading: 'Public Sector Data & Analytics',
-    summary: ['Service delivery', 'Governance', 'Reporting', 'Integration'],
+    summary: ['Service turnaround', 'Revenue and budget', 'Statutory reporting'],
     themes: [
       'Institutional performance dashboards',
       'Service-delivery analytics',
@@ -148,15 +150,16 @@ export const solutions: readonly Solution[] = [
 
 const byId = (id: string) => solutions.find((solution) => solution.id === id)!
 
-/** W7 (#73): the homepage's sectors, in its order. */
-export const homepageSolutionIds = ['health', 'financial-services', 'education'] as const
-
-/** The footer's "More sectors" links (#73): the others, in data order. */
-export const footerSolutionIds = [
-  'retail-and-distribution',
-  'development-and-impact',
+/** W7 (#73) as amended by section A (#95): the homepage's sectors, in its order. */
+export const homepageSolutionIds = [
+  'health',
   'public-sector',
+  'financial-services',
+  'education',
 ] as const
+
+/** The footer's "More sectors" links (#73, #95): the other two, in data order. */
+export const footerSolutionIds = ['retail-and-distribution', 'development-and-impact'] as const
 
 export const homepageSolutions: readonly Solution[] = homepageSolutionIds.map(byId)
 

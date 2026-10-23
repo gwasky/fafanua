@@ -768,14 +768,14 @@ describe('App', () => {
     expect(text).not.toContain('After the assessment')
   })
 
-  it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its four verb h3s, h2 Solutions heading, three h3s, h2 How We Work heading, four h3s, h2 future-ready, h2 About heading, its three principle h3s, h2 Contact', () => {
+  it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its four verb h3s, h2 Solutions heading, four h3s, h2 How We Work heading, four h3s, h2 future-ready, h2 About heading, its three principle h3s, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')
     const levels = headings.map((heading) => Number(heading.tagName.slice(1)))
 
     expect(levels).toEqual([
-      1, 2, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 3, 3, 3, 2, 3, 3, 3, 3, 2, 2,
-      3, 3, 3, 2,
+      1, 2, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2, 3, 3, 3, 3, 2,
+      2, 3, 3, 3, 2,
     ])
     expect(levels.filter((level) => level === 1)).toHaveLength(1)
     // No level is skipped.
@@ -804,30 +804,32 @@ describe('App', () => {
     expect(headings.map((heading) => heading.textContent)).not.toContain(managedServices.heading)
     expect(headings[17].textContent).toBe(solutionsIntro.heading)
     // Each sector h3 holds its row's one link, named by the title alone
-    // (#89). The homepage's three sectors, in W7's order (#73).
-    expect(headings.slice(18, 21).map((heading) => heading.textContent)).toEqual([
+    // (#89). The homepage's four sectors, in W7's order (#73) with Public
+    // Sector added second by section A (#95).
+    expect(headings.slice(18, 22).map((heading) => heading.textContent)).toEqual([
       'Health',
+      'Public Sector',
       'Financial Services',
       'Education',
     ])
-    headings.slice(18, 21).forEach((heading, index) => {
+    headings.slice(18, 22).forEach((heading, index) => {
       expect(heading).toHaveAccessibleName(homepageSolutions[index].title)
       expect(within(heading).getByRole('link')).toHaveAccessibleName(
         homepageSolutions[index].title,
       )
     })
-    expect(headings[21].textContent).toBe(processIntro.heading)
-    expect(headings.slice(22, 26).map((heading) => heading.textContent)).toEqual(
+    expect(headings[22].textContent).toBe(processIntro.heading)
+    expect(headings.slice(23, 27).map((heading) => heading.textContent)).toEqual(
       processStages.map((stage) => stage.name),
     )
-    expect(headings[26].textContent).toBe(FUTURE_READY)
-    expect(headings[27].textContent).toBe(ABOUT)
+    expect(headings[27].textContent).toBe(FUTURE_READY)
+    expect(headings[28].textContent).toBe(ABOUT)
     // About's three principles (section D, #92).
-    expect(headings.slice(28, 31).map((heading) => heading.textContent)).toEqual(
+    expect(headings.slice(29, 32).map((heading) => heading.textContent)).toEqual(
       aboutPrinciples.map((principle) => principle.name),
     )
-    expect(headings[31].textContent).toBe(CONTACT)
-    expect(headings).toHaveLength(32)
+    expect(headings[32].textContent).toBe(CONTACT)
+    expect(headings).toHaveLength(33)
     expect(
       within(screen.getByRole('contentinfo')).queryAllByRole('heading'),
     ).toHaveLength(0)
@@ -848,12 +850,14 @@ describe('App', () => {
     const fromRows = hrefs(region)
     const fromFooter = hrefs(footer)
 
-    expect(fromRows).toEqual(['/solutions/health', '/solutions/financial-services', '/solutions/education'])
-    expect(fromFooter).toEqual([
-      '/solutions/retail-distribution',
-      '/solutions/development-impact',
+    // Four rows, in section A's order, and the other two in the footer (#95).
+    expect(fromRows).toEqual([
+      '/solutions/health',
       '/solutions/public-sector',
+      '/solutions/financial-services',
+      '/solutions/education',
     ])
+    expect(fromFooter).toEqual(['/solutions/retail-distribution', '/solutions/development-impact'])
     expect([...fromRows, ...fromFooter].sort()).toEqual(
       solutions.map((solution) => `/solutions/${solution.slug}`).sort(),
     )
