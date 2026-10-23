@@ -153,7 +153,12 @@ describe('future-ready source', () => {
 })
 
 describe('other source files', () => {
-  // Every source file under src/ except futureReady.ts and test files.
+  // Every source file under src/ except futureReady.ts, solutionPages.ts
+  // and test files. solutionPages.ts is left out: the solution landing
+  // pages' copy is its own source of truth (section 4 of
+  // _docs/fafanua-public-sector-landing-page-plan.md, #93), and the Public
+  // Sector hero's secondary button has the same words as this section's
+  // link, by design; the homepage never ships it.
   const sources = Object.entries(
     import.meta.glob<string>('/src/**/*.{ts,tsx,css,html}', {
       query: '?raw',
@@ -161,13 +166,18 @@ describe('other source files', () => {
       eager: true,
     }),
   ).filter(
-    ([file]) => file !== '/src/data/futureReady.ts' && !/\.test\.tsx?$/.test(file),
+    ([file]) =>
+      file !== '/src/data/futureReady.ts' &&
+      file !== '/src/data/solutionPages.ts' &&
+      !/\.test\.tsx?$/.test(file),
   )
 
   it('scans the rest of src/', () => {
     const files = sources.map(([file]) => file)
     expect(files).toContain('/src/components/FutureReady.tsx')
     expect(files).not.toContain('/src/data/futureReady.ts')
+    expect(files).not.toContain('/src/data/solutionPages.ts')
+    expect(files).toContain('/src/data/solutions.ts')
   })
 
   it('do not repeat the heading, the lead, the verdict line or the link text', () => {

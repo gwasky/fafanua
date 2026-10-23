@@ -2,7 +2,7 @@ import type { SectorLandingPage } from '../data/solutionPages.ts'
 import { servicePath } from '../paths.ts'
 import IconBadge from './IconBadge.tsx'
 
-// After the assessment (#93): the h2 and subheading over three white
+// The service cards after the assessment (#93): the h2 and subheading over three white
 // cards with square badges, three across from 64em. Each h3 links to its
 // service's landing page (owner note 4), in the heading's colour.
 function ServiceCards({ services }: { services: SectorLandingPage['services'] }) {

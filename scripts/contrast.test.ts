@@ -357,3 +357,89 @@ describe('technical grid lines', () => {
     expect(surfaceDarkBlock['--color-grid-line']).toBe('var(--color-grid-line-on-dark)')
   })
 })
+
+// The solution landing pages' tints and pairings (#93, the shared
+// landing-page foundation): every new text pair at least 4.5:1, every
+// graphics pair at least 3:1, at the ratios the issue measured.
+describe('landing-page tokens (#93)', () => {
+  const hex = (name: string) => resolve(name, root)
+  const ratio = (a: string, b: string) => contrast(hex(a), hex(b))
+
+  it('defines the three tints as primitives with the agreed values, each behind a landing token', () => {
+    expect([hex('--teal-tint-hero'), hex('--teal-tint-soft'), hex('--amber-tint')].map((value) => value.toUpperCase())).toEqual([
+      '#EAF3F0',
+      '#F0F6F4',
+      '#F8ECD6',
+    ])
+    expect(root['--landing-hero-bg']).toBe('var(--teal-tint-hero)')
+    expect(root['--landing-tint-bg']).toBe('var(--teal-tint-soft)')
+    expect(root['--landing-badge-amber-bg']).toBe('var(--amber-tint)')
+    expect(root['--landing-badge-teal-bg']).toBe('var(--teal-100)')
+    expect(root['--landing-amber']).toBe('var(--state-warning-text)')
+    expect(root['--landing-tick-bg']).toBe('var(--teal-700)')
+    expect(root['--landing-tick']).toBe('var(--white)')
+  })
+
+  it('keeps the landing tokens out of the --color-* layer, so they need no dark value', () => {
+    expect(Object.keys(root).filter((name) => name.startsWith('--landing-')).sort()).toEqual([
+      '--landing-amber',
+      '--landing-badge-amber-bg',
+      '--landing-badge-teal-bg',
+      '--landing-card-inset',
+      '--landing-hero-bg',
+      '--landing-tick',
+      '--landing-tick-bg',
+      '--landing-tint-bg',
+    ])
+    expect(Object.keys(surfaceDarkBlock).some((name) => name.includes('landing'))).toBe(false)
+  })
+
+  // [text token, background token, ratio]
+  it.each([
+    ['--color-heading', '--landing-hero-bg', 14.5],
+    ['--color-text-muted', '--landing-hero-bg', 5.85],
+    ['--color-accent-text', '--landing-hero-bg', 7.13],
+    ['--color-link', '--landing-hero-bg', 4.6],
+    ['--color-link-hover', '--landing-hero-bg', 7.13],
+    ['--color-text-muted', '--landing-badge-teal-bg', 5.68],
+    ['--color-accent-text', '--landing-badge-teal-bg', 6.93],
+    ['--color-heading', '--landing-tint-bg', 14.98],
+    ['--color-text-muted', '--landing-tint-bg', 6.04],
+    ['--color-accent-text', '--landing-tint-bg', 7.37],
+    ['--color-link', '--color-surface', 5.2],
+    ['--color-link-hover', '--color-surface', 8.06],
+  ])('text %s on %s is at least 4.5:1 (%f)', (text, background, expected) => {
+    const value = ratio(text, background)
+    expect(value).toBeGreaterThanOrEqual(4.5)
+    expect(value).toBeCloseTo(expected, 1)
+  })
+
+  it.each([
+    ['--color-focus', '--landing-hero-bg', 3.19],
+    ['--color-link', '--landing-hero-bg', 4.6],
+    ['--color-accent', '--color-surface', 3.6],
+    ['--color-line-soft', '--color-surface', 4.32],
+    ['--landing-amber', '--color-surface', 5.47],
+    ['--landing-tick-bg', '--color-surface', 5.2],
+    ['--landing-tick-bg', '--landing-tint-bg', 4.75],
+    ['--landing-tick', '--landing-tick-bg', 5.2],
+    ['--color-accent', '--landing-badge-teal-bg', 3.1],
+    ['--landing-amber', '--landing-badge-amber-bg', 4.68],
+    ['--color-accent', '--color-bg', 3.27],
+  ])('graphics %s on %s is at least 3:1 (%f)', (graphic, background, expected) => {
+    const value = ratio(graphic, background)
+    expect(value).toBeGreaterThanOrEqual(3)
+    expect(value).toBeCloseTo(expected, 1)
+  })
+
+  it('substitutes the text-safe warning value for amber, where --state-warning fails', () => {
+    expect(contrast(hex('--state-warning'), hex('--amber-tint'))).toBeLessThan(3)
+    expect(contrast(hex('--state-warning'), hex('--white'))).toBeLessThan(3)
+  })
+
+  it('never uses the error colours in a landing token', () => {
+    for (const [name, value] of Object.entries(root)) {
+      if (name.startsWith('--landing-')) expect(value, name).not.toMatch(/error/)
+    }
+  })
+})

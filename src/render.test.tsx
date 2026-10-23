@@ -17,12 +17,21 @@ describe('render', () => {
       expect(html.match(/<h1\b/g)).toHaveLength(1)
       expect(html).toContain('<main id="main"')
       expect(html).toContain('href="/#capabilities"')
-      expect(html).toContain('Let’s build a data foundation your organisation can trust.')
-      // The closing section's W9 supporting line (#74), and not the line
-      // it replaces.
-      expect(html).toContain(
-        '<p class="contact__text">Which number do you trust least? Tell us about the reports and figures your organisation relies on.</p>',
-      )
+      if (page.kind === 'solution' && page.copy.layout === 'sector') {
+        // A page on the shared landing-page foundation (#93): its own
+        // closing panel, at #contact, replaces the Contact section.
+        expect(html).toContain(`<h2 id="contact-heading" class="sector-heading sector-closing__heading">${page.copy.closing.heading}</h2>`)
+        expect(html).toContain(`<p class="sector-closing__body">${page.copy.closing.text}</p>`)
+        expect(html).not.toContain('Let’s build a data foundation your organisation can trust.')
+        expect(html).not.toContain('class="contact__text"')
+      } else {
+        expect(html).toContain('Let’s build a data foundation your organisation can trust.')
+        // The closing section's W9 supporting line (#74), and not the line
+        // it replaces.
+        expect(html).toContain(
+          '<p class="contact__text">Which number do you trust least? Tell us about the reports and figures your organisation relies on.</p>',
+        )
+      }
       expect(html).not.toContain('reporting challenges')
     },
   )

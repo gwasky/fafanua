@@ -756,6 +756,18 @@ describe('App', () => {
     expect(text.replace(/(business|payment) intelligence/gi, '')).not.toMatch(/intelligence/i)
   })
 
+  // The dark panel plan removed these from the homepage (#79, #82). The
+  // Public Sector landing page's plan copy uses both, on that page only
+  // (#93), so assessment.plan.test.ts leaves its copy module out of the
+  // source scan; the homepage must still show neither.
+  it('shows neither the old example caption nor the after-assessment label', () => {
+    render(<App />)
+    const text = document.body.textContent!
+
+    expect(text).not.toContain('Illustrative example. Sample data only.')
+    expect(text).not.toContain('After the assessment')
+  })
+
   it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its four verb h3s, h2 Solutions heading, three h3s, h2 How We Work heading, four h3s, h2 future-ready, h2 About heading, its three principle h3s, h2 Contact', () => {
     render(<App />)
     const headings = screen.getAllByRole('heading')

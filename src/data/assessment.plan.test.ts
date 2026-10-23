@@ -494,15 +494,32 @@ describe('assessment source', () => {
   })
 })
 
+// The solution landing pages' copy module (#93).
+const LANDING_COPY = '/src/data/solutionPages.ts'
+
 describe('other source files', () => {
-  // Every source file under src/ except assessment.ts and test files.
+  // Every source file under src/ except assessment.ts, solutionPages.ts
+  // and test files.
+  // solutionPages.ts is left out: the solution landing pages' copy is
+  // its own source of truth (section 4 of
+  // _docs/fafanua-public-sector-landing-page-plan.md, #93), which repeats
+  // some of the homepage's words on the Public Sector page by design, and
+  // the homepage never ships it. Every other file is still scanned.
   const sources = Object.entries(
     import.meta.glob<string>('/src/**/*.{ts,tsx,css,html}', {
       query: '?raw',
       import: 'default',
       eager: true,
     }),
-  ).filter(([file]) => file !== '/src/data/assessment.ts' && !/\.test\.tsx?$/.test(file))
+  ).filter(
+    ([file]) =>
+      file !== '/src/data/assessment.ts' && file !== LANDING_COPY && !/\.test\.tsx?$/.test(file),
+  )
+
+  it('scans every other file, and leaves out only the landing pages\' copy', () => {
+    expect(sources.map(([file]) => file)).not.toContain(LANDING_COPY)
+    expect(sources.map(([file]) => file)).toContain('/src/data/solutions.ts')
+  })
 
   it('scans the rest of src/', () => {
     expect(sources.map(([file]) => file)).toContain('/src/components/TrustAssessment.tsx')
@@ -572,7 +589,21 @@ describe('other source files', () => {
       import: 'default',
       eager: true,
     }),
-  ).filter(([file]) => !/\.test\.tsx?$/.test(file))
+  ).filter(([file]) => !/\.test\.tsx?$/.test(file) && file !== LANDING_COPY)
+
+  // The Public Sector page's plan copy (#93) brings back two of these
+  // strings, on that page only: its diagram's caption and the heading
+  // over its service cards. They are checked against that plan in
+  // solutionPages.publicSector.plan.test.ts; the homepage still holds
+  // neither (App.test.tsx).
+  it('leaves only the landing pages\' copy out of the removed-string scan', () => {
+    expect(allSources.map(([file]) => file)).not.toContain(LANDING_COPY)
+    expect(allSources.length).toBe(
+      Object.keys(
+        import.meta.glob('/src/**/*.{ts,tsx,css,html}', { query: '?raw', import: 'default', eager: true }),
+      ).filter((file) => !/\.test\.tsx?$/.test(file)).length - 1,
+    )
+  })
 
   it.each([
     ['the old after-line', 'Most organisations continue with integration and modelling, quality and governance, or reporting built on the traced numbers.'],
