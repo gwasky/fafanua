@@ -67,6 +67,44 @@
   --state-info: #3E7CB1;
   --state-info-text: #2E6C9E;
 
+  /* Landing-page tints (#93): the shared solution landing-page
+     foundation's surfaces, used only under main.sector-landing. Each is
+     a decorative surface (1.01 to 1.17:1 against paper or white), so a
+     tinted card or box always has a graphite 200 border where it meets
+     paper or white. */
+  --teal-tint-hero: #EAF3F0;
+  --teal-tint-soft: #F0F6F4;
+  --amber-tint: #F8ECD6;
+
+  /* Landing-page semantic tokens (#93), solution landing pages only. A
+     landing-specific prefix, not --color-*, because they are never used
+     on a dark surface, so they need no -on-dark value. Text pairings
+     (all checked by scripts/contrast.test.ts):
+     - hero tint: graphite 900 14.50:1, graphite 600 5.85:1, teal 800
+       7.13:1, teal 700 links and the secondary button's border 4.60:1;
+       teal 600 focus ring 3.19:1 (graphics).
+     - lighter tint (the audience card and the stages' exit boxes):
+       graphite 900 14.98:1, graphite 600 6.04:1, teal 800 7.37:1; teal
+       700 tick circles 4.75:1 (graphics).
+     - amber tint (the challenge badge only): the amber icon 4.68:1
+       (graphics). */
+  --landing-hero-bg: var(--teal-tint-hero);
+  --landing-tint-bg: var(--teal-tint-soft);
+  --landing-badge-amber-bg: var(--amber-tint);
+  /* The teal badges and the diagram's middle box: teal 100, the rating
+     chip's tint. Teal 800 heading 6.93:1, graphite 600 footnote 5.68:1,
+     teal 600 icons 3.10:1 (graphics). */
+  --landing-badge-teal-bg: var(--teal-100);
+  /* Amber, graphics only and only on the challenge badge's icon and the
+     two caveat markers (Trusted with caveats, Ready after specific
+     fixes): the text-safe warning value, 4.68:1 on the amber tint and
+     5.47:1 on white, where --state-warning would be 2.09 and 2.44:1. */
+  --landing-amber: var(--state-warning-text);
+  /* The checklists' filled tick circles: teal 700 (5.20:1 on white,
+     4.75:1 on the lighter tint, graphics) with a white tick. */
+  --landing-tick-bg: var(--teal-700);
+  --landing-tick: var(--white);
+
   /* Links on --color-surface-alt. Teal 700 on graphite 100 is 4.46:1 and
      fails AA, so links there use teal 800 (6.9:1), hovering to teal 900
      (10.4:1). Do not use these directly: put the .surface-alt class
@@ -126,6 +164,11 @@
   --weight-light: 300; /* large headings */
   --weight-regular: 400; /* body text */
   --weight-medium: 500; /* small labels and buttons; the heaviest weight */
+  /* Solution landing pages only (#93, under main.sector-landing): card
+     headings, eyebrows and buttons at 600, the h1 and section headings at
+     700. The homepage and every other page never go above 500. */
+  --weight-semibold: 600;
+  --weight-bold: 700;
 
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -165,6 +208,10 @@
 
   /* Eyebrows (SectionEyebrow): uppercase, slightly spaced. */
   --tracking-eyebrow: 0.08em;
+  /* The solution landing pages' bold display h1 (#93): slightly tight,
+     as bold Inter at display sizes is set, so "Public data you can"
+     fits one line of the hero's text column at 1440px. */
+  --tracking-display: -0.02em;
 
   /* Spacing (4px steps) */
   --space-1: 0.25rem;
@@ -193,6 +240,9 @@
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  /* Solution landing pages' cards and closing panel (#93; the Health
+     plan's 14 to 16px). */
+  --radius-card: 16px;
   --radius-full: 9999px;
 
   /* Borders */
@@ -224,6 +274,11 @@
      and vw for the same reason: in rem it doubles with 200% page text and
      squeezes "fafanua" at 320px. 12.8px at 320px and 24px from 600px. */
   --about-definition-inset: clamp(12px, 4vw, 24px);
+  /* The solution landing pages' card inline padding (#93), in px and vw
+     for the same reason: in rem it doubles with 200% page text and
+     squeezes the cards' text at 320px. 12.8px at 320px and 24px from
+     600px. */
+  --landing-card-inset: clamp(12px, 4vw, 24px);
 
   /* Layout */
   --container-max: 72rem;

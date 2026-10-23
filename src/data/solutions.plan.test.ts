@@ -17,13 +17,15 @@ import seoPlan from '../../_docs/fafanua-seo-keyword-and-implementation-plan.md?
 import trustPlan from '../../_docs/fafanua-trust-lineage-positioning-plan.md?raw'
 import refinementPlan from '../../_docs/fafanua-homepage-sections-refinement-plan.md?raw'
 import { homepageSolutions, solutions, solutionsIntro } from './solutions.ts'
-import { solutionPages } from './solutionPages.ts'
+import { solutionPages, type SolutionSectionsPage } from './solutionPages.ts'
 
 // The five sectors the positioning doc and plan V2 cover, in the site's
 // order; Health, the SEO plan's sixth domain (#67), is checked below.
 const planned = solutions.filter((solution) => solution.id !== 'health')
 const health = solutions.find((solution) => solution.id === 'health')!
-const healthPage = solutionPages.health
+// Health is still on the §18 sections until #94 moves it to the shared
+// landing-page foundation.
+const healthPage = solutionPages.health as SolutionSectionsPage
 
 // The sectors whose tag lines W7 updates, by their W7 names (#73). W7
 // writes "Financial services"; the title keeps the positioning doc's

@@ -1,3 +1,4 @@
+import type { IconName } from './iconNames.ts'
 import type { ServiceKey } from './servicePages.ts'
 
 // The solution landing pages' copy (SEO plan §6, §16 and §18,
@@ -7,7 +8,11 @@ import type { ServiceKey } from './servicePages.ts'
 // the landing pages' entry imports, so the homepage, which shows the rows
 // and links to the pages, does not ship it. No clients, case studies,
 // metrics, certifications or performance claims (§18), and no DHIS2
-// positioning (§9).
+// positioning (§9). Public Sector is on the shared landing-page
+// foundation (#93): its copy is
+// _docs/fafanua-public-sector-landing-page-plan.md section 4, which
+// replaced its §18 sections, and solutionPages.publicSector.plan.test.ts
+// checks it against the plan.
 
 export type SolutionService = {
   readonly service: ServiceKey
@@ -16,7 +21,10 @@ export type SolutionService = {
   readonly text: string
 }
 
-export type SolutionPage = {
+/** The existing landing page (SEO plan §18, #67): context, problems,
+ * services, governance and activation. Five sectors still use it. */
+export type SolutionSectionsPage = {
+  readonly layout?: undefined
   /** The <title>. */
   readonly title: string
   /** The meta description. */
@@ -36,6 +44,103 @@ export type SolutionPage = {
   readonly governance: readonly string[]
   readonly activation: readonly string[]
 }
+
+/** A rating or chip marker: a teal dot, an amber dot or a hollow ring. */
+export type Marker = 'teal' | 'amber' | 'hollow'
+
+/** A card with a round icon badge (the paired cards). */
+export type BadgeCard = {
+  readonly heading: string
+  readonly text: string
+  readonly icon: IconName
+}
+
+/**
+ * A page on the shared landing-page foundation (#93, section 2a of
+ * _docs/fafanua-public-sector-landing-page-plan.md, styled as section 5 of
+ * _docs/fafanua-health-landing-page-plan.md): every string the page
+ * shows, in its order, and the diagram's and cards' data. The components
+ * hold no copy. The call to action's label and the address come from
+ * contact.ts. Labels shown in capitals are stored in sentence case.
+ */
+export type SectorLandingPage = {
+  readonly layout: 'sector'
+  readonly title: string
+  readonly description: string
+  /** The current page's name, last in the breadcrumbs. */
+  readonly breadcrumb: string
+  readonly hero: {
+    readonly eyebrow: string
+    readonly heading: string
+    readonly lead: string
+    /** The secondary button's label; it jumps to #assessment. */
+    readonly secondaryLabel: string
+  }
+  /** The trace diagram: sources, the trace, and the rated figures. */
+  readonly diagram: {
+    readonly sourcesHeading: string
+    /** `feeds`: whether it feeds the figures (solid connector) or not
+     * (dashed, faded). */
+    readonly sources: readonly { readonly label: string; readonly icon: IconName; readonly feeds: boolean }[]
+    readonly traceHeading: string
+    readonly steps: readonly string[]
+    readonly traceFootnote: string
+    readonly figuresHeading: string
+    readonly figures: readonly { readonly name: string; readonly rating: string; readonly marker: Marker }[]
+    readonly caption: string
+    /** The figure's accessible description (plan section 6). */
+    readonly description: string
+  }
+  readonly challenge: BadgeCard
+  readonly approach: BadgeCard
+  readonly audience: {
+    readonly heading: string
+    readonly subheading: string
+    readonly card: BadgeCard & { readonly items: readonly string[] }
+  }
+  readonly assessment: {
+    readonly eyebrow: string
+    readonly heading: string
+    readonly text: string
+    readonly deliverables: readonly { readonly name: string; readonly text: string; readonly icon: IconName }[]
+  }
+  /** Delivered in stages; a page may leave it out. */
+  readonly stages?: {
+    readonly eyebrow: string
+    readonly heading: string
+    readonly subheading: string
+    /** Shown as "<stageLabel> <n>". */
+    readonly stageLabel: string
+    readonly exitLabel: string
+    readonly items: readonly { readonly name: string; readonly description: string; readonly exit: string }[]
+  }
+  readonly ai: BadgeCard & {
+    readonly chips: readonly { readonly label: string; readonly marker: Marker }[]
+  }
+  /** The second card beside the AI card: a checklist under a heading. */
+  readonly handling: {
+    readonly heading: string
+    readonly icon: IconName
+    readonly items: readonly string[]
+  }
+  readonly services: {
+    readonly heading: string
+    readonly subheading: string
+    readonly items: readonly {
+      readonly name: string
+      readonly text: string
+      readonly icon: IconName
+      readonly service: ServiceKey
+    }[]
+  }
+  readonly closing: {
+    readonly eyebrow: string
+    readonly heading: string
+    readonly text: string
+  }
+}
+
+export type SolutionPage = SolutionSectionsPage | SectorLandingPage
 
 // Each sector's landing-page copy, by solution id.
 export const solutionPages: Readonly<Record<string, SolutionPage>> = {
@@ -329,59 +434,153 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
     ],
   },
   'public-sector': {
-    title: 'Government & Public Sector Data Analytics Uganda | Fafanua',
+    layout: 'sector',
+    title: 'Accountable Government Data Analytics Uganda | Fafanua',
     description:
-      'Data integration, warehousing, governance and performance dashboards for ministries, agencies and public institutions in Uganda and East Africa.',
-    lead: 'For ministries, departments, agencies, local governments and public institutions.',
-    context: [
-      'Public institutions manage data across many systems: financial and human-resource management, sector management information systems, registries, licensing and revenue platforms, and reports submitted by districts and partners. Performance and accountability reporting depends on bringing that data together reliably and explaining where each figure came from.',
-      'Fafanua helps public-sector organisations in Uganda and East Africa build a trusted data foundation: integrating government data systems, establishing data-quality and governance practices, and delivering dashboards that track service delivery and institutional performance.',
-    ],
-    problems: [
-      'Data held in separate systems across departments, agencies and districts.',
-      'Performance reports compiled by hand, often late and hard to verify.',
-      'The same indicator defined differently by different institutions.',
-      'Unclear ownership and documentation of key datasets.',
-      'Sensitive citizen data without consistent classification or access controls.',
-    ],
-    services: [
-      {
-        service: 'data-engineering-and-integration',
-        label: 'Government data integration',
-        text: 'Cross-system integration between financial, administrative and sector systems.',
+      'Public data you can account for: public sector data analytics for ministries, agencies and local governments in Uganda, built on a trusted data foundation.',
+    breadcrumb: 'Public sector',
+    hero: {
+      eyebrow: 'Public sector solutions',
+      heading: 'Public data you can account for.',
+      lead: 'For ministries, departments, agencies and local governments in Uganda and East Africa. We trace the figures you report to your ministry, Parliament and the public back to their source, and build the platform that keeps them right.',
+      secondaryLabel: 'See how the assessment works',
+    },
+    diagram: {
+      sourcesHeading: 'Agency systems',
+      sources: [
+        { label: 'HR & payroll', icon: 'book', feeds: false },
+        { label: 'Programme monitoring', icon: 'chart', feeds: false },
+        { label: 'Case & applications', icon: 'list', feeds: true },
+        { label: 'Finance & budget', icon: 'ledger', feeds: true },
+        { label: 'Revenue & collections', icon: 'card', feeds: true },
+      ],
+      traceHeading: 'Traced to source',
+      steps: ['Report', 'Definition', 'Calculation', 'Data model', 'Source system'],
+      traceFootnote: 'Owner and trust rating for every number',
+      figuresHeading: 'Figures you report',
+      figures: [
+        { name: 'Service turnaround time', rating: 'Trusted with caveats', marker: 'amber' },
+        { name: 'Budget execution rate', rating: 'Trusted', marker: 'teal' },
+        { name: 'Revenue against target', rating: 'Not yet trusted', marker: 'hollow' },
+      ],
+      caption: 'Illustrative example. Sample data only.',
+      description:
+        'Illustrative example: service turnaround time, budget execution rate and revenue against target traced to case, finance and revenue systems, with trust ratings.',
+    },
+    challenge: {
+      heading: 'The challenge',
+      text: 'Statutory and performance reports are compiled by hand from separate systems. Each department defines key measures its own way, and leadership cannot easily answer simple questions, such as how long a service really takes to deliver.',
+      icon: 'alert',
+    },
+    approach: {
+      heading: 'Our approach',
+      text: 'We start by tracing the figures leadership reports on most back to their source. Then we build the data platform in stages, each with clear conditions before the next one begins.',
+      icon: 'check',
+    },
+    audience: {
+      heading: 'Who we work with',
+      subheading: 'Ministries, departments, agencies and local governments.',
+      card: {
+        heading: 'Public institutions',
+        text: 'For regulators, revenue-collecting agencies, service-delivery institutions and local governments.',
+        icon: 'book',
+        items: [
+          'Service delivery and turnaround tracking',
+          'Revenue, budget and expenditure reporting',
+          'Programme and performance indicators',
+          'Statutory and audit-ready reporting',
+        ],
       },
-      {
-        service: 'data-warehousing-and-analytics-modelling',
-        label: 'Public sector data warehouse',
-        text: 'A data warehouse that consolidates institutional data, with its history preserved.',
-      },
-      {
-        service: 'data-quality-and-reliability',
-        label: 'Data-quality frameworks',
-        text: 'Measurable quality controls for the data behind official reporting.',
-      },
-      {
-        service: 'data-governance-and-metadata',
-        label: 'Government data governance',
-        text: 'Metadata and governance programmes: ownership, glossaries, lineage and access policies.',
-      },
-      {
-        service: 'business-intelligence-and-analytics',
-        label: 'Government dashboards',
-        text: 'Institutional-performance and service-delivery dashboards, and government reporting automation.',
-      },
-    ],
-    governance: [
-      'Data ownership and stewardship across ministries, departments and agencies.',
-      'Shared indicator definitions and metadata standards.',
-      'Classification and access policies for citizen and other sensitive data.',
-      'Lineage that shows how published figures were produced.',
-    ],
-    activation: [
-      'Sharing service-delivery alerts with the teams responsible for them.',
-      'Returning verified registry data to operational systems.',
-      'Exposing trusted indicators in the management tools departments use.',
-    ],
+    },
+    assessment: {
+      eyebrow: 'Start with trust',
+      heading: 'The Data Trust Assessment: three weeks, fixed fee',
+      text: 'The Data Trust Assessment takes the numbers your leadership relies on most and traces each one from the report back to its source.',
+      deliverables: [
+        { name: 'Lineage map', text: 'How each key number is produced, system by system', icon: 'map' },
+        { name: 'Trust scorecard', text: 'Each number rated trusted, with caveats, or not yet', icon: 'score' },
+        { name: 'Shared definitions', text: 'For the terms your departments use differently', icon: 'book' },
+        { name: 'Fix list', text: 'Prioritised by impact and effort', icon: 'list' },
+      ],
+    },
+    stages: {
+      eyebrow: 'Delivered in stages',
+      heading: 'No big-bang projects',
+      subheading:
+        'Each stage has clear conditions before the next one begins, so leadership decides on evidence, not promises.',
+      stageLabel: 'Stage',
+      exitLabel: 'Moves on when',
+      items: [
+        {
+          name: 'Assess',
+          description: 'The Data Trust Assessment traces the figures leadership relies on.',
+          exit: 'Findings accepted and a sponsor named',
+        },
+        {
+          name: 'Foundation',
+          description: 'The core data platform, shared definitions and quality checks.',
+          exit: 'Hosting model approved and data owners named',
+        },
+        {
+          name: 'First use cases',
+          description: 'Two or three pilots, such as service turnaround, revenue and budget execution.',
+          exit: 'Dashboards used in management meetings',
+        },
+        {
+          name: 'Extend',
+          description: 'More departments, self-service reporting and readiness for AI.',
+          exit: 'Each extension agreed on evidence from the last',
+        },
+      ],
+    },
+    ai: {
+      heading: 'What this means for AI',
+      text: 'AI and advanced analytics work only when metrics are clearly defined, inputs can be traced to their source, data quality is known and access is controlled. The assessment gives each use case a plain verdict.',
+      icon: 'gauge',
+      chips: [
+        { label: 'Ready now', marker: 'teal' },
+        { label: 'Ready after specific fixes', marker: 'amber' },
+        { label: 'Not ready yet', marker: 'hollow' },
+      ],
+    },
+    handling: {
+      heading: 'Working within public rules',
+      icon: 'shield',
+      items: [
+        'We work within public procurement rules, and the assessment does not commit you to any provider.',
+        'Findings, architecture and roadmap belong to your institution.',
+        'Citizen and staff personal data is protected, with hosting and access agreed with your ICT and legal teams before any pipeline is built.',
+      ],
+    },
+    services: {
+      heading: 'After the assessment',
+      subheading: 'What we fix, once we know where trust breaks down.',
+      items: [
+        {
+          name: 'Integrate and model',
+          text: 'Connect case management, finance, revenue and HR systems into one consistent view of services, money and people.',
+          icon: 'link',
+          service: 'data-engineering-and-integration',
+        },
+        {
+          name: 'Quality and governance',
+          text: 'Completeness and timeliness checks, plus clear ownership and access rules.',
+          icon: 'shield',
+          service: 'data-quality-and-reliability',
+        },
+        {
+          name: 'Reporting and dashboards',
+          text: 'Management, statutory and performance reports built on the traced numbers.',
+          icon: 'chart',
+          service: 'business-intelligence-and-analytics',
+        },
+      ],
+    },
+    closing: {
+      eyebrow: 'Get started',
+      heading: 'Build a public data foundation you can trust',
+      text: 'Which figure in your next statutory report do you trust least? Tell us about the reports leadership answers for.',
+    },
   },
 }
 

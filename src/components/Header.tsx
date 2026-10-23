@@ -73,9 +73,14 @@ const STATIC_CLASS = 'header-static'
 // and the section links lead back to the homepage's sections; on the
 // homepage it is left out and they stay in-page. The call to action always
 // goes to #contact, which every page has.
-type HeaderProps = { overlay?: boolean; home?: string }
+//
+// `current` is the id of the section link to mark as the current one, on
+// a landing page on the shared foundation (#93: Solutions on the Public
+// Sector page): aria-current="true", teal 800 and a 2px underline, so it
+// is not marked by colour alone. No other page sets it.
+type HeaderProps = { overlay?: boolean; home?: string; current?: string }
 
-function Header({ overlay = false, home }: HeaderProps) {
+function Header({ overlay = false, home, current }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const toggleRef = useRef<HTMLButtonElement>(null)
@@ -175,6 +180,7 @@ function Header({ overlay = false, home }: HeaderProps) {
                 <a
                   className="site-nav__link"
                   href={`${home ?? ''}#${item.id}`}
+                  aria-current={item.id === current ? 'true' : undefined}
                   onClick={onLinkClick}
                 >
                   {item.label}

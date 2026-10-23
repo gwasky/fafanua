@@ -16,16 +16,29 @@ export const FOOTER_ISLAND = 'footer-island'
 // footer. The header and footer section links lead back to the homepage.
 // Each island's wrapper generates no box, so the header still sticks to
 // the page and the layout is the homepage's.
-function PageLayout({ children }: { children: ReactNode }) {
+//
+// A page on the shared landing-page foundation (#93) sets `sector`: main
+// takes the sector-landing class, which scopes the foundation's styles
+// (SectorLanding.css), and the page's own closing panel replaces Contact.
+// `current` marks a header link as the current section (the nav id, such
+// as solutions); the header island carries it as data-nav-current, so
+// page.tsx hydrates the header with the same state.
+type PageLayoutProps = {
+  children: ReactNode
+  sector?: boolean
+  current?: string
+}
+
+function PageLayout({ children, sector = false, current }: PageLayoutProps) {
   return (
     <>
       <div id="top" />
-      <div id={HEADER_ISLAND} className="page-island">
-        <Header home="/" />
+      <div id={HEADER_ISLAND} className="page-island" data-nav-current={current}>
+        <Header home="/" current={current} />
       </div>
-      <main id="main" tabIndex={-1}>
+      <main id="main" tabIndex={-1} className={sector ? 'sector-landing' : undefined}>
         {children}
-        <Contact />
+        {!sector && <Contact />}
       </main>
       <div id={FOOTER_ISLAND} className="page-island">
         <Footer home="/" />

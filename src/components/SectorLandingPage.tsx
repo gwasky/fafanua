@@ -1,0 +1,64 @@
+import type { SectorLandingPage as SectorLandingPageCopy } from '../data/solutionPages.ts'
+import AudienceCard from './AudienceCard.tsx'
+import BadgeCard from './BadgeCard.tsx'
+import Checklist from './Checklist.tsx'
+import ClosingPanel from './ClosingPanel.tsx'
+import DeliverableCards from './DeliverableCards.tsx'
+import LandingHero from './LandingHero.tsx'
+import PairedCards from './PairedCards.tsx'
+import RatingMarker from './RatingMarker.tsx'
+import ServiceCards from './ServiceCards.tsx'
+import StagesList from './StagesList.tsx'
+import './SectorLanding.css'
+
+// A solution landing page on the shared landing-page foundation (#93,
+// section 2a of _docs/fafanua-public-sector-landing-page-plan.md), top to
+// bottom: the hero with the trace diagram, the challenge and approach,
+// who we work with, the Data Trust Assessment (#assessment), Delivered in
+// stages where the page has them, the AI and handling cards, the service
+// cards and the closing panel (#contact). PageLayout puts it in
+// main.sector-landing, which scopes every style in SectorLanding.css, and
+// leaves out the Contact section. All copy comes from the page's entry in
+// solutionPages.ts, and the call to action from contact.ts.
+function SectorLandingPage({ page }: { page: SectorLandingPageCopy }) {
+  return (
+    <>
+      <LandingHero
+        hero={page.hero}
+        diagram={page.diagram}
+        breadcrumb={page.breadcrumb}
+        trail={[
+          { label: 'Home', href: '/' },
+          { label: 'Solutions', href: '/#solutions' },
+        ]}
+        assessmentId="assessment"
+      />
+      <PairedCards>
+        <BadgeCard {...page.challenge} tone="amber" layout="inline" />
+        <BadgeCard {...page.approach} layout="inline" />
+      </PairedCards>
+      <AudienceCard audience={page.audience} />
+      <DeliverableCards assessment={page.assessment} id="assessment" />
+      {page.stages && <StagesList stages={page.stages} />}
+      <PairedCards>
+        <BadgeCard heading={page.ai.heading} text={page.ai.text} icon={page.ai.icon} layout="stacked">
+          <ul className="chips" role="list">
+            {page.ai.chips.map((chip) => (
+              <li key={chip.label} className="chip">
+                <RatingMarker marker={chip.marker} />
+                <span>{chip.label}</span>
+              </li>
+            ))}
+          </ul>
+        </BadgeCard>
+        <BadgeCard heading={page.handling.heading} icon={page.handling.icon} layout="stacked">
+          <Checklist items={page.handling.items} />
+        </BadgeCard>
+      </PairedCards>
+      <ServiceCards services={page.services} />
+      <ClosingPanel closing={page.closing} />
+    </>
+  )
+}
+
+export default SectorLandingPage

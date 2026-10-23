@@ -1,5 +1,5 @@
 import { solutions, type Solution } from '../data/solutions.ts'
-import { activationIntro, type SolutionPage as SolutionPageCopy } from '../data/solutionPages.ts'
+import { activationIntro, type SolutionSectionsPage as SolutionPageCopy } from '../data/solutionPages.ts'
 import { servicePath, solutionPath } from '../pages.ts'
 import Breadcrumbs from './Breadcrumbs.tsx'
 import LandingSection from './LandingSection.tsx'

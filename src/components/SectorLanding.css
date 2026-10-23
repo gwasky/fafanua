@@ -1,0 +1,815 @@
+/*
+ * The shared solution landing-page foundation (#93, section 2a of
+ * _docs/fafanua-public-sector-landing-page-plan.md, styled as section 5
+ * of _docs/fafanua-health-landing-page-plan.md). Every rule is scoped
+ * under main.sector-landing (PageLayout's `sector` option), so the
+ * homepage and the other landing pages never change. page.tsx imports
+ * this file, so the build ships it with the pre-rendered pages.
+ *
+ * Surfaces: the hero on the hero tint, the body on paper, white cards
+ * with a graphite 200 hairline and --radius-card, the audience card and
+ * the exit boxes on the lighter tint, the assessment band white between
+ * two hairlines, and the closing panel graphite 900 (.surface-dark), inset
+ * in the container with paper below it before the dark footer.
+ *
+ * Typography exception (owner-approved, solution landing pages only): the
+ * h1 and section headings at 700, card headings, eyebrows, labels and
+ * buttons at 600, body text at 400. The header and footer are outside
+ * main and keep the site's weights.
+ *
+ * Colour: teal is the only accent; amber (--landing-amber) only on the
+ * challenge badge and the two caveat markers; no red. Width queries are
+ * the literal 48em and 64em (see tokens.css).
+ */
+
+.sector-landing {
+  --sector-gap: var(--space-12);
+  /* The trace diagram: the space between its columns, which the
+     connectors cross, and its boxes' padding. */
+  --trace-gap: var(--space-5);
+  --trace-pad: var(--space-3);
+  --trace-line: calc(1.5 * var(--border-width));
+  --badge-size: var(--space-10);
+  --tick-size: var(--space-5);
+}
+
+/* Body text at 400 everywhere in main; headings set their own weight. */
+.sector-landing p,
+.sector-landing li {
+  font-weight: var(--weight-regular);
+}
+
+.sector-landing .button {
+  font-weight: var(--weight-semibold);
+}
+
+/* ---- Shared type ---- */
+
+.sector-landing .sector-eyebrow {
+  margin-block: 0 var(--space-3);
+  color: var(--color-accent-text);
+  font-size: var(--text-eyebrow);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.sector-landing .sector-heading {
+  max-width: var(--measure);
+  margin-block: 0 var(--space-3);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  overflow-wrap: break-word;
+}
+
+.sector-landing .sector-subheading {
+  max-width: var(--measure);
+  margin-block: 0 var(--space-8);
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+  line-height: var(--leading-normal);
+  text-wrap: pretty;
+}
+
+.sector-landing .sector-card-heading {
+  margin-block: 0 var(--space-2);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  overflow-wrap: break-word;
+}
+
+.sector-landing .sector-card-heading--small {
+  font-size: var(--text-lg);
+}
+
+/* ---- Sections ---- */
+
+.sector-landing .sector-section {
+  padding-block-start: var(--sector-gap);
+}
+
+/* ---- Hero ---- */
+
+.sector-landing .sector-hero {
+  padding-block: var(--space-8) var(--sector-gap);
+  background-color: var(--landing-hero-bg);
+}
+
+.sector-landing .sector-hero__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-10);
+}
+
+/* The breadcrumbs (Breadcrumbs.tsx). Breadcrumbs.css is not part of the
+   landing entry's stylesheet, so the foundation draws them itself, as
+   Breadcrumbs.css does: a wrapping row of small links, the separators
+   border-drawn chevrons, never text. On the hero tint: teal 700 links
+   (4.60:1), graphite 600 current item and chevrons (5.85:1). */
+.sector-landing .breadcrumbs__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  list-style: none;
+}
+
+.sector-landing .breadcrumbs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.sector-landing .breadcrumbs__item:not(:last-child)::after {
+  content: '';
+  inline-size: var(--space-1);
+  block-size: var(--space-1);
+  border-block-start: var(--border-width) solid currentColor;
+  border-inline-end: var(--border-width) solid currentColor;
+  rotate: 45deg;
+}
+
+.sector-landing .breadcrumbs__item a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--space-6);
+  text-decoration-line: none;
+}
+
+.sector-landing .breadcrumbs__item a:hover,
+.sector-landing .breadcrumbs__item a:focus-visible {
+  text-decoration-line: underline;
+}
+
+.sector-landing .sector-hero__heading {
+  margin-block: 0 var(--space-5);
+  font-size: var(--text-section);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-display);
+  letter-spacing: var(--tracking-display);
+  overflow-wrap: break-word;
+}
+
+.sector-landing .sector-hero__lead {
+  max-width: var(--measure);
+  margin-block: 0 var(--space-8);
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+  line-height: var(--leading-normal);
+  text-wrap: pretty;
+}
+
+.sector-landing .sector-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* Compact, so the two share one row in the hero's text column. */
+.sector-landing .sector-hero__actions .button {
+  padding-inline: var(--space-4);
+  font-size: var(--text-sm);
+}
+
+/* The secondary button on the hero tint: teal 700 text and border on a
+   white fill (5.20:1; the border 4.60:1 on the tint), teal 800 on hover
+   (8.06:1). */
+.sector-landing .sector-hero .button--secondary,
+.sector-landing .sector-hero .button--secondary:link,
+.sector-landing .sector-hero .button--secondary:visited {
+  border-color: var(--color-link);
+  background-color: var(--color-surface);
+  color: var(--color-link);
+}
+
+.sector-landing .sector-hero .button--secondary:hover {
+  border-color: var(--color-link-hover);
+  background-color: var(--color-surface);
+  color: var(--color-link-hover);
+}
+
+/* Break a word in a button's label only if it cannot fit on a line of
+   its own (200% text at 320px). */
+.sector-landing .button {
+  overflow-wrap: break-word;
+}
+
+/* ---- Trace diagram ---- */
+
+.sector-landing .trace {
+  margin: 0;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface);
+}
+
+.sector-landing .trace__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--space-6);
+}
+
+.sector-landing .trace__box {
+  position: relative;
+  padding: var(--trace-pad);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}
+
+/* The middle box: teal 100, with the steps as white pills. */
+.sector-landing .trace__middle {
+  background-color: var(--landing-badge-teal-bg);
+  text-align: center;
+}
+
+/* Below 48em the columns stack, joined by short downward lines. */
+.sector-landing .trace__middle::before,
+.sector-landing .trace__figures::before {
+  content: '';
+  position: absolute;
+  inset-block-start: calc(-1 * var(--space-6) - var(--border-width));
+  inset-inline-start: 50%;
+  block-size: var(--space-6);
+  border-inline-start: calc(2 * var(--border-width)) solid var(--color-accent);
+}
+
+.sector-landing .trace__heading {
+  margin-block: 0 var(--space-2);
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.sector-landing .trace__heading--middle {
+  color: var(--color-accent-text);
+}
+
+.sector-landing .trace__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sector-landing .trace__source,
+.sector-landing .trace__figure {
+  position: relative;
+  padding-block: var(--space-2);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+}
+
+.sector-landing .trace__source + .trace__source,
+.sector-landing .trace__figure + .trace__figure {
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.sector-landing .trace__source {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+}
+
+.sector-landing .trace__icon {
+  flex: none;
+  inline-size: var(--space-4);
+  block-size: var(--space-4);
+  color: var(--color-accent);
+}
+
+/* A source that does not feed the figures: icon and text muted. */
+.sector-landing .trace__source--faded,
+.sector-landing .trace__source--faded .trace__icon {
+  color: var(--color-text-muted);
+}
+
+/* The connectors: shown from 48em, where the columns sit side by side. */
+.sector-landing .trace__connector {
+  display: none;
+}
+
+.sector-landing .trace__steps {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.sector-landing .trace__step {
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+}
+
+.sector-landing .trace__footnote {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+}
+
+.sector-landing .trace__figure-name {
+  margin: 0 0 var(--space-1);
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.sector-landing .trace__rating {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.sector-landing .trace__caption {
+  margin-block-start: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+}
+
+/* ---- Markers ---- */
+
+/* An 8px dot or ring, drawn with borders so forced-colours mode keeps
+   it. */
+.sector-landing .rating-marker {
+  flex: none;
+  display: inline-block;
+  inline-size: var(--space-2);
+  block-size: var(--space-2);
+  border: calc(var(--space-2) / 2) solid var(--color-accent);
+  border-radius: var(--radius-full);
+}
+
+.sector-landing .rating-marker--amber {
+  border-color: var(--landing-amber);
+}
+
+.sector-landing .rating-marker--hollow {
+  border-width: var(--border-width);
+  border-color: var(--color-text-muted);
+}
+
+/* ---- Badges ---- */
+
+.sector-landing .icon-badge {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--badge-size);
+  block-size: var(--badge-size);
+  /* Transparent, but drawn in forced-colours mode. */
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-full);
+  background-color: var(--landing-badge-teal-bg);
+  color: var(--color-accent);
+}
+
+.sector-landing .icon-badge svg {
+  inline-size: var(--space-5);
+  block-size: var(--space-5);
+}
+
+.sector-landing .icon-badge--square {
+  border-radius: var(--radius-md);
+}
+
+.sector-landing .icon-badge--amber {
+  background-color: var(--landing-badge-amber-bg);
+  color: var(--landing-amber);
+}
+
+/* ---- Checklists ---- */
+
+.sector-landing .checklist {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sector-landing .checklist__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  color: var(--color-text);
+  line-height: var(--leading-snug);
+}
+
+/* A filled teal 700 circle with a white tick; its transparent border is
+   drawn in forced-colours mode, where the fill is not. */
+.sector-landing .checklist__tick {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--tick-size);
+  block-size: var(--tick-size);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-full);
+  background-color: var(--landing-tick-bg);
+  color: var(--landing-tick);
+}
+
+.sector-landing .checklist__tick svg {
+  inline-size: var(--space-3);
+  block-size: var(--space-3);
+}
+
+/* ---- Cards ---- */
+
+.sector-landing .paired-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+}
+
+.sector-landing .badge-card,
+.sector-landing .service-card-lp {
+  padding: var(--space-6) var(--landing-card-inset);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface);
+}
+
+.sector-landing .badge-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--space-4);
+}
+
+.sector-landing .badge-card__body {
+  min-width: 0;
+}
+
+.sector-landing .badge-card__heading {
+  margin-block: 0 var(--space-2);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  overflow-wrap: break-word;
+}
+
+.sector-landing .badge-card__text {
+  margin: 0;
+  color: var(--color-text-muted);
+  text-wrap: pretty;
+}
+
+.sector-landing .badge-card__text + * {
+  margin-block-start: var(--space-5);
+}
+
+.sector-landing .badge-card .checklist {
+  margin-block-start: var(--space-2);
+}
+
+/* The AI card's verdict chips: outlined pills, not buttons. */
+.sector-landing .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sector-landing .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-full);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+/* Who we work with: one card on the lighter tint. */
+.sector-landing .audience-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-6) var(--landing-card-inset);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--landing-tint-bg);
+}
+
+.sector-landing .audience-card__body {
+  min-width: 0;
+}
+
+.sector-landing .audience-card__text {
+  margin-block: 0 var(--space-5);
+  color: var(--color-text-muted);
+}
+
+/* The Data Trust Assessment band. */
+.sector-landing .sector-band {
+  margin-block-start: var(--sector-gap);
+  padding-block: var(--sector-gap);
+  border-block: var(--border-width) solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.sector-landing .deliverables,
+.sector-landing .service-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sector-landing .deliverable {
+  padding: var(--space-6) var(--landing-card-inset);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-bg);
+}
+
+.sector-landing .deliverable .icon-badge,
+.sector-landing .service-card-lp .icon-badge {
+  margin-block-end: var(--space-5);
+}
+
+.sector-landing .deliverable__text,
+.sector-landing .service-card-lp__text {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  text-wrap: pretty;
+}
+
+/* The service card's heading link: graphite 900, underlined on hover
+   and focus. */
+.sector-landing .service-card-lp h3 a,
+.sector-landing .service-card-lp h3 a:visited,
+.sector-landing .service-card-lp h3 a:hover {
+  color: var(--color-heading);
+}
+
+.sector-landing .service-card-lp h3 a {
+  text-decoration-line: none;
+  text-underline-offset: var(--space-1);
+}
+
+.sector-landing .service-card-lp h3 a:hover,
+.sector-landing .service-card-lp h3 a:focus-visible {
+  text-decoration-line: underline;
+}
+
+/* ---- Delivered in stages ---- */
+
+.sector-landing .stages {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Each stage under a 3px teal rule; side by side, the rules meet into
+   one. */
+.sector-landing .stage {
+  display: flex;
+  flex-direction: column;
+  padding-block-start: var(--space-4);
+  border-block-start: calc(3 * var(--border-width)) solid var(--color-accent);
+}
+
+.sector-landing .stage__number {
+  margin: 0 0 var(--space-1);
+  color: var(--color-accent-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.sector-landing .stage__description {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  text-wrap: pretty;
+}
+
+.sector-landing .stage__exit {
+  margin-block-start: auto;
+  padding: var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--landing-tint-bg);
+}
+
+.sector-landing .stage__exit-label {
+  margin: 0 0 var(--space-1);
+  color: var(--color-accent-text);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+.sector-landing .stage__exit-condition {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+/* ---- Closing panel ---- */
+
+.sector-landing .sector-closing {
+  padding-block: var(--sector-gap);
+}
+
+.sector-landing .sector-closing__panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-8);
+  padding: var(--space-10) var(--landing-card-inset);
+  border-radius: var(--radius-card);
+}
+
+.sector-landing .sector-closing__heading {
+  color: var(--color-heading);
+}
+
+.sector-landing .sector-closing__body {
+  max-width: var(--measure);
+  margin: 0;
+  color: var(--color-text-muted);
+  text-wrap: pretty;
+}
+
+.sector-landing .sector-closing__actions {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* ---- Forced colours ---- */
+
+/* The tick circles and badges lose their fills: their borders are drawn
+   instead, and the ticks and icons stay in the text colour. */
+@media (forced-colors: active) {
+  .sector-landing .checklist__tick,
+  .sector-landing .icon-badge {
+    border-color: CanvasText;
+  }
+}
+
+/* ---- From 48em ---- */
+
+@media (min-width: 48em) {
+  .sector-landing .trace__columns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: var(--trace-gap);
+    align-items: start;
+  }
+
+  .sector-landing .trace__middle {
+    align-self: stretch;
+  }
+
+  .sector-landing .trace__middle::before,
+  .sector-landing .trace__figures::before {
+    display: none;
+  }
+
+  /* Each connector crosses its box's padding and border and the gap to
+     the middle box, at its row's vertical centre. */
+  .sector-landing .trace__connector {
+    display: block;
+    position: absolute;
+    inset-block-start: 50%;
+    inline-size: calc(var(--trace-pad) + var(--border-width) + var(--trace-gap));
+    border-block-start: var(--trace-line) solid var(--color-accent);
+    translate: 0 -50%;
+  }
+
+  .sector-landing .trace__source .trace__connector {
+    inset-inline-start: 100%;
+  }
+
+  .sector-landing .trace__connector--dashed {
+    border-block-start-style: dashed;
+    border-block-start-color: var(--color-line-soft);
+  }
+
+  .sector-landing .trace__connector--in {
+    inset-inline-end: 100%;
+  }
+
+  .sector-landing .audience-card,
+  .sector-landing .badge-card--inline {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .sector-landing .audience-card__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-8);
+  }
+
+  .sector-landing .deliverables {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sector-landing .stages {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sector-landing .stage {
+    padding-inline-end: var(--space-4);
+  }
+
+  .sector-landing .stage:nth-child(even) {
+    padding-inline-start: var(--space-4);
+    border-inline-start: var(--border-width) solid var(--color-border);
+  }
+
+  .sector-landing .sector-closing__panel {
+    padding-inline: var(--space-10);
+  }
+
+  .sector-landing .sector-closing__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}
+
+/* ---- From 64em ---- */
+
+@media (min-width: 64em) {
+  .sector-landing {
+    --sector-gap: var(--space-16);
+  }
+
+  .sector-landing .sector-hero {
+    padding-block-start: var(--space-10);
+  }
+
+  .sector-landing .sector-hero__inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-8);
+    align-items: start;
+  }
+
+  .sector-landing .paired-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sector-landing .deliverables {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .sector-landing .service-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .sector-landing .stages {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .sector-landing .stage + .stage {
+    padding-inline-start: var(--space-4);
+    border-inline-start: var(--border-width) solid var(--color-border);
+  }
+
+  .sector-landing .sector-closing__panel {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--space-12);
+    padding: var(--space-12);
+  }
+
+  /* The two actions stacked, equal width. */
+  .sector-landing .sector-closing__actions {
+    display: grid;
+    align-items: stretch;
+  }
+}

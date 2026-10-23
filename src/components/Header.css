@@ -222,6 +222,22 @@ main:focus {
   text-decoration-line: underline;
 }
 
+/* The current section's link, on a landing page on the shared foundation
+   (#93): teal 800 (7.3:1 on paper) and a 2px teal 600 underline at every
+   state, so it is not marked by colour alone. */
+.site-nav__link[aria-current]:link,
+.site-nav__link[aria-current]:visited,
+.site-nav__link[aria-current]:hover {
+  color: var(--color-accent-text);
+}
+
+.site-nav__link[aria-current] {
+  text-decoration-line: underline;
+  text-decoration-color: var(--color-accent);
+  text-decoration-thickness: calc(2 * var(--border-width));
+  text-underline-offset: var(--space-2);
+}
+
 @media (min-width: 64em) {
   /* .site-header lets this beat .button's later display: inline-flex. */
   .site-header .menu-toggle {

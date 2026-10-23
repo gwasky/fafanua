@@ -4,9 +4,19 @@
 import { describe, expect, it } from 'vitest'
 import { servicePages } from './servicePages.ts'
 import { solutions } from './solutions.ts'
-import { activationIntro, solutionPages } from './solutionPages.ts'
+import { activationIntro, solutionPages, type SolutionSectionsPage } from './solutionPages.ts'
 
 const pages = solutions.map((solution) => ({ ...solution, page: solutionPages[solution.id] }))
+
+// The five sectors still on the SEO plan §18 sections. Public Sector is
+// on the shared landing-page foundation (#93), whose copy is plan section
+// 4 of _docs/fafanua-public-sector-landing-page-plan.md, a change of
+// approved specification (its section 2.1): it has its own rules below,
+// and solutionPages.publicSector.plan.test.ts checks its copy.
+const sectionPages = pages.flatMap((solution) =>
+  solution.page.layout === 'sector' ? [] : [{ ...solution, page: solution.page as SolutionSectionsPage }],
+)
+const publicSector = solutionPages['public-sector']
 
 describe('solution landing pages', () => {
   it('gives every page a unique title, description and h1', () => {
@@ -15,6 +25,20 @@ describe('solution landing pages', () => {
       expect(new Set(values).size, field).toBe(6)
     }
     expect(new Set(solutions.map((solution) => solution.heading)).size).toBe(6)
+    // Each page's h1: the sector's heading, or the foundation hero's.
+    const h1s = pages.map(({ page, heading }) => (page.layout === 'sector' ? page.hero.heading : heading))
+    expect(new Set(h1s).size).toBe(6)
+  })
+
+  it('keeps the five §18 pages, and Public Sector on the shared foundation', () => {
+    expect(sectionPages.map((solution) => solution.id)).toEqual([
+      'financial-services',
+      'retail-and-distribution',
+      'development-and-impact',
+      'health',
+      'education',
+    ])
+    expect(publicSector.layout).toBe('sector')
   })
 
   it('names Fafanua at the end of every title, and keeps titles to 60 characters', () => {
@@ -33,7 +57,7 @@ describe('solution landing pages', () => {
 
   it('writes every section for every sector, with no copy shared between sectors', () => {
     const seen = new Map<string, string>()
-    for (const solution of pages) {
+    for (const solution of sectionPages) {
       const { page } = solution
       expect(page.context.length).toBeGreaterThanOrEqual(2)
       expect(page.problems.length).toBeGreaterThanOrEqual(5)
@@ -48,7 +72,7 @@ describe('solution landing pages', () => {
   })
 
   it('uses "trusted data foundation" and names Uganda and East Africa in each sector context', () => {
-    for (const { page, id } of pages) {
+    for (const { page, id } of sectionPages) {
       const context = page.context.join(' ')
       expect(context, id).toMatch(/trusted data foundation/)
       expect(context, id).toMatch(/Uganda and East Africa/)
@@ -57,7 +81,7 @@ describe('solution landing pages', () => {
 
   it('links each sector to real, distinct services with descriptive anchors', () => {
     const keys = servicePages.map((page) => page.key)
-    for (const { page } of pages) {
+    for (const { page } of sectionPages) {
       for (const link of page.services) {
         expect(keys).toContain(link.service)
         expect(link.label).not.toMatch(/learn more|read more|click here/i)
@@ -72,8 +96,27 @@ describe('solution landing pages', () => {
     ['health', ['data-engineering-and-integration', 'data-warehousing-and-analytics-modelling', 'data-quality-and-reliability', 'data-governance-and-metadata', 'business-intelligence-and-analytics', 'managed-data-and-analytics']],
     ['development-and-impact', ['data-engineering-and-integration', 'data-quality-and-reliability', 'data-governance-and-metadata', 'business-intelligence-and-analytics']],
   ])('links %s to the services SEO plan §22 lists', (id, expected) => {
-    const solution = pages.find((item) => item.id === id)!
+    const solution = sectionPages.find((item) => item.id === id)!
     expect(solution.page.services.map((link) => link.service)).toEqual(expect.arrayContaining(expected))
+  })
+
+  it('gives Public Sector "trusted data foundation" in its description and Uganda and East Africa in its lead', () => {
+    if (publicSector.layout !== 'sector') throw new Error('Public Sector is not on the foundation')
+    expect(publicSector.description).toMatch(/trusted data foundation/)
+    expect(publicSector.hero.lead).toMatch(/Uganda and East Africa/)
+  })
+
+  it('keeps Public Sector\'s assigned keywords in its title and description (SEO plan §12)', () => {
+    expect(publicSector.title).toContain('Government Data Analytics Uganda')
+    expect(publicSector.description).toContain('public sector data analytics')
+  })
+
+  it('links Public Sector\'s service cards to real, distinct services', () => {
+    if (publicSector.layout !== 'sector') throw new Error('Public Sector is not on the foundation')
+    const keys = servicePages.map((page) => page.key)
+    const linked = publicSector.services.items.map((item) => item.service)
+    for (const key of linked) expect(keys).toContain(key)
+    expect(new Set(linked).size).toBe(linked.length)
   })
 
   it('introduces activation in buyer language, with Reverse ETL as the explanation', () => {
