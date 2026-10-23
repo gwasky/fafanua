@@ -4,7 +4,7 @@ import { futureReadyLinkText } from '../src/data/futureReady.ts'
 import { managedServices, services, servicesIntro } from '../src/data/services.ts'
 import { homepageSolutions } from '../src/data/solutions.ts'
 import { solutionPath } from '../src/paths.ts'
-import { focusedName, focusStyle, openPage, pressTab, test, waitForFonts } from './fixtures.ts'
+import { focusedName, focusStyle, openPage, pressTab, solutionH1, test, waitForFonts } from './fixtures.ts'
 import { cards, expectUnobscured, moreSectors, nav, sectors, SEQUENCE as FOCUS_ORDER, tabTo, walkFocus } from './focus.ts'
 
 // The automated part of the keyboard review: Tab order, focus rings,
@@ -341,7 +341,7 @@ test.describe('Solutions rows', () => {
     await page.keyboard.press('Enter')
 
     await expect(page).toHaveURL(new RegExp(`${solutionPath(homepageSolutions[1].id)}$`))
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(homepageSolutions[1].heading)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(solutionH1(homepageSolutions[1].id))
   })
 })
 
@@ -359,7 +359,7 @@ test.describe('mouse focus', () => {
 
     await page.locator('#solutions').getByRole('link', { name: sectors[0], exact: true }).click()
     await expect(page).toHaveURL(new RegExp(`${solutionPath(homepageSolutions[0].id)}$`))
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(homepageSolutions[0].heading)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(solutionH1(homepageSolutions[0].id))
   })
 })
 

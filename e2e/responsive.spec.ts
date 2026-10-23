@@ -11,6 +11,7 @@ import {
   headerLogoArtwork,
   linkName,
   pressTab,
+  solutionH1,
   test,
   waitForFonts,
   waitForLanding,
@@ -2735,7 +2736,7 @@ for (const width of WIDTHS) {
             const { x, y } = await centreOf(row.locator(`.solution-row__${part}`))
             await page.touchscreen.tap(x, y)
             await expect(page).toHaveURL(new RegExp(`${solutionPath(homepageSolutions[index].id)}$`))
-            await expect(page.getByRole('heading', { level: 1 })).toHaveText(homepageSolutions[index].heading)
+            await expect(page.getByRole('heading', { level: 1 })).toHaveText(solutionH1(homepageSolutions[index].id))
           }
         })
       }

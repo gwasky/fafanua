@@ -6,6 +6,8 @@ import {
   type Page,
   type TestInfo,
 } from '@playwright/test'
+import { solutionPages } from '../src/data/solutionPages.ts'
+import { solutions } from '../src/data/solutions.ts'
 import { AXE_TAGS, formatViolations } from '../src/test/axe.ts'
 
 export const HEIGHT = 800
@@ -387,4 +389,13 @@ export async function centreOf(locator: Locator) {
   await waitForScrollSettle(locator.page())
   const box = (await locator.boundingBox())!
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+}
+
+/** A solution page's h1, from its data: the foundation hero's heading on
+ * the pages on the shared landing-page foundation (Public Sector, Health;
+ * #93, #94), the sector's heading on the others. */
+export function solutionH1(id: string): string {
+  const copy = solutionPages[id]
+  if (copy.layout === 'sector') return copy.hero.heading
+  return solutions.find((solution) => solution.id === id)!.heading
 }

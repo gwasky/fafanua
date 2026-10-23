@@ -3,7 +3,7 @@ import { processIntro, processStages } from '../src/data/process.ts'
 import { managedServices, servicesIntro } from '../src/data/services.ts'
 import { homepageSolutions, solutionsIntro } from '../src/data/solutions.ts'
 import { solutionPath } from '../src/paths.ts'
-import { centreOf, openPage, test } from './fixtures.ts'
+import { centreOf, openPage, solutionH1, test } from './fixtures.ts'
 
 // The Solutions rows (#59, links since #89) and How We Work (#59, laid
 // out by section B of the homepage sections refinement plan in #90) in
@@ -180,7 +180,7 @@ test.describe('Solutions', () => {
     const { x, y } = await centreOf(row.locator('.solution-row__tags'))
     await page.mouse.click(x, y)
     await expect(page).toHaveURL(new RegExp(`${solutionPath(homepageSolutions[0].id)}$`))
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(homepageSolutions[0].heading)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(solutionH1(homepageSolutions[0].id))
   })
 
   test('a mouse click on a row\'s name leaves no focus tint', async ({ page }) => {

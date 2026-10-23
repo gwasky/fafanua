@@ -443,6 +443,15 @@ test.describe('colours', () => {
         cardTexts: [...document.querySelectorAll('.audience-card__text, .service-card-lp__text')].map(
           (text) => getComputedStyle(text).color,
         ),
+        chips: [...document.querySelectorAll('.chip .rating-marker')].map((dot) => getComputedStyle(dot).borderTopColor),
+        serviceLink: style('.service-card-lp h3 a').color,
+        panel: style('.sector-closing__panel').backgroundColor,
+        closingEyebrow: style('.sector-closing .sector-eyebrow').color,
+        closingHeading: style('.sector-closing__heading').color,
+        closingText: style('.sector-closing__body').color,
+        closingButton: [style('.sector-closing__actions .button').backgroundColor, style('.sector-closing__actions .button').color],
+        address: [style('.sector-closing__actions .button--secondary').color, style('.sector-closing__actions .button--secondary').borderTopColor],
+        nav: [style('.site-nav__link[aria-current]').color, style('.site-nav__link[aria-current]').textDecorationColor],
       }
       // Every element whose text, fill or border is amber or red.
       const amber = [tokens['--state-warning'], tokens['--state-warning-text'], tokens['--amber-tint']]
