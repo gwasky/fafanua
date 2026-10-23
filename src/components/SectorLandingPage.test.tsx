@@ -6,8 +6,9 @@ import PageLayout from './PageLayout.tsx'
 import SectorLandingPage from './SectorLandingPage.tsx'
 
 // The shared landing-page foundation's components (#93) hold no copy:
-// rendered with another sector's data (a fixture, as the Health page will
-// be in #94), they show that data and none of the Public Sector page's.
+// rendered with another sector's data (a fixture, neither Public Sector
+// nor Health), they show that data and none of the Public Sector or
+// Health pages' (#94).
 
 beforeEach(() => {
   vi.stubGlobal('matchMedia', (media: string) => ({
@@ -73,7 +74,7 @@ const renderFixture = (copy: Copy = FIXTURE) =>
   )
 
 describe('SectorLandingPage with another sector\'s data', () => {
-  it('shows only the fixture\'s copy, with no Public Sector string', () => {
+  it('shows only the fixture\'s copy, with no Public Sector or Health string', () => {
     renderFixture()
     const main = screen.getByRole('main')
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Fixture heading.')
@@ -93,6 +94,18 @@ describe('SectorLandingPage with another sector\'s data', () => {
       publicSector.closing.heading,
       'Stage',
       'Moves on when',
+    ]) {
+      expect(main.textContent, text).not.toContain(text)
+    }
+    const health = solutionPages.health as Copy
+    for (const text of [
+      health.hero.heading,
+      health.diagram.sourcesHeading,
+      health.challenge.text,
+      health.audience.card.heading,
+      health.assessment.text,
+      health.handling.heading,
+      health.closing.heading,
     ]) {
       expect(main.textContent, text).not.toContain(text)
     }

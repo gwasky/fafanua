@@ -5,6 +5,7 @@ import { managedServices, services } from '../data/services.ts'
 import { footerSolutions, solutions } from '../data/solutions.ts'
 import { notFound, pages, type Page } from '../pages.ts'
 import { expectNoAxeViolations } from '../test/axe.ts'
+import * as healthPlan from '../test/healthPlan.ts'
 import { buttonLabel, cell, figureDescription, list, marked, named, OWNER_ADDITIONS, stage } from '../test/publicSectorPlan.ts'
 import LandingPage from './LandingPage.tsx'
 
@@ -28,6 +29,22 @@ const servicePages = pages.filter((page) => page.kind === 'service')
 const solutionPages = pages.filter((page) => page.kind === 'solution')
 const sectionPages = solutionPages.filter((page) => page.kind === 'solution' && page.copy.layout !== 'sector')
 const publicSector = solutionPages.find((page) => page.path === '/solutions/public-sector')!
+const health = solutionPages.find((page) => page.path === '/solutions/health')!
+// The pages on the shared landing-page foundation (#93, #94).
+const foundationPages: readonly Page[] = [publicSector, health]
+
+// Each foundation page's closing panel: its heading, and its text after
+// the eyebrow (the plan's text and the owner's follow-up).
+const CLOSING: Record<string, { heading: string; text: string }> = {
+  '/solutions/public-sector': {
+    heading: 'Build a public data foundation you can trust',
+    text: 'Which figure in your next statutory report do you trust least? Tell us about the reports leadership answers for. Then we make sure they are built on a trusted data foundation.',
+  },
+  '/solutions/health': {
+    heading: 'Build a health data foundation you can trust',
+    text: `${healthPlan.cell('Closing panel', 'Text')} ${healthPlan.OWNER_ADDITIONS.closingFollowUp}`,
+  },
+}
 const paths = new Set(pages.map((page) => page.path))
 
 const renderPage = (page: Page) => render(<LandingPage page={page} />)
@@ -79,18 +96,19 @@ describe.each(pages.map((page) => [page.path, page] as const))('%s', (_path, pag
     expect(within(footer).getByRole('link', { name: 'Solutions' })).toHaveAttribute('href', '/#solutions')
     expect(within(footer).getByRole('link', { name: 'Contact' })).toHaveAttribute('href', '#contact')
     if (page.kind === 'solution' && page.copy.layout === 'sector') {
-      // The page's own closing panel (#93) replaces the Contact section:
-      // the button and the address, both opening an email.
-      const closing = screen.getByRole('region', { name: 'Build a public data foundation you can trust' })
+      // The page's own closing panel (#93, #94) replaces the Contact
+      // section: the button and the address, both opening an email.
+      const expected = CLOSING[page.path]
+      expect(expected, page.path).toBeDefined()
+      const closing = screen.getByRole('region', { name: expected.heading })
       expect(closing).toHaveAttribute('id', 'contact')
       expect(within(closing).getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual([
         `mailto:${email}`,
         `mailto:${email}`,
       ])
       // Its text, after the eyebrow: the plan's text and the owner's
-      // follow-up (#93), not the W9 line.
-      const text =
-        'Which figure in your next statutory report do you trust least? Tell us about the reports leadership answers for. Then we make sure they are built on a trusted data foundation.'
+      // follow-up (#93, #94), not the W9 line.
+      const { text } = expected
       expect(closing.querySelector('.sector-closing__body')!.textContent).toBe(text)
       expect([...closing.querySelectorAll('p')].map((p) => p.textContent)).toEqual(['Get started', text])
       expect(screen.queryByRole('region', { name: /Let’s build a data foundation/ })).toBeNull()
@@ -200,8 +218,8 @@ describe('service pages', () => {
 })
 
 describe('solution pages', () => {
-  // The five sectors still on the §18 sections; Public Sector is on the
-  // shared landing-page foundation (#93), checked below.
+  // The four sectors still on the §18 sections; Public Sector and Health
+  // are on the shared landing-page foundation (#93, #94), checked below.
   it.each(sectionPages.map((page) => [page.path, page] as const))(
     '%s has the SEO plan §18 sections in order',
     (_path, page) => {
@@ -219,13 +237,15 @@ describe('solution pages', () => {
     },
   )
 
-  it('shows Health’s two audiences as h3s, providers and programmes', () => {
-    renderPage(pages.find((page) => page.path === '/solutions/health')!)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Health Data & Analytics Solutions')
-    expect(screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual([
-      'Healthcare providers',
-      'Public and global-health programmes',
-    ])
+  // The Health plan (#94) keeps one audience, healthcare providers.
+  it('shows Health’s h1 and its one audience, healthcare providers, without the programmes', () => {
+    renderPage(health)
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Health data you can trace\.$/)
+    const main = screen.getByRole('main')
+    const audience = screen.getByRole('region', { name: 'Who we work with' })
+    expect(within(audience).getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual(['Healthcare providers'])
+    expect(main).not.toHaveTextContent('Public and global-health programmes')
+    expect(main).not.toHaveTextContent('Health Data & Analytics Solutions')
   })
 
   it('links every other sector, and not itself', () => {
@@ -500,27 +520,29 @@ describe('Public Sector page', () => {
     expect(main().querySelector('a[href^="tel:"]')).toBeNull()
   })
 
-  it('puts main.sector-landing on this page only, and leaves out the Contact section', () => {
+  it('puts main.sector-landing on the foundation pages (Public Sector and Health) only, and leaves out the Contact section there', () => {
+    expect(foundationPages.map((page) => page.path)).toEqual(['/solutions/public-sector', '/solutions/health'])
     for (const page of [...pages, notFound]) {
       const { unmount } = renderPage(page)
-      const isPublicSector = page === publicSector
-      expect(main().classList.contains('sector-landing'), page.path).toBe(isPublicSector)
-      expect(main().querySelector('.contact') !== null, page.path).toBe(!isPublicSector)
+      const onFoundation = foundationPages.includes(page)
+      expect(main().classList.contains('sector-landing'), page.path).toBe(onFoundation)
+      expect(main().querySelector('.contact') !== null, page.path).toBe(!onFoundation)
       unmount()
     }
   })
 
-  it('marks the header\'s Solutions link as current on this page only', () => {
+  it('marks the header\'s Solutions link as current on the foundation pages (Public Sector and Health) only', () => {
     for (const page of [...pages, notFound]) {
       const { unmount } = renderPage(page)
+      const onFoundation = foundationPages.includes(page)
       const nav = within(screen.getByRole('banner')).getByRole('navigation', { name: 'Main' })
       const current = within(nav)
         .getAllByRole('link')
         .filter((link) => link.hasAttribute('aria-current'))
         .map((link) => [link.textContent, link.getAttribute('aria-current')])
-      expect(current, page.path).toEqual(page === publicSector ? [['Solutions', 'true']] : [])
+      expect(current, page.path).toEqual(onFoundation ? [['Solutions', 'true']] : [])
       expect(document.getElementById('header-island')!.dataset.navCurrent, page.path).toBe(
-        page === publicSector ? 'solutions' : undefined,
+        onFoundation ? 'solutions' : undefined,
       )
       unmount()
     }
@@ -528,6 +550,263 @@ describe('Public Sector page', () => {
 
   it('has no img, lang, tabindex or contenteditable in main, and no axe violations', async () => {
     const { container } = renderPage(publicSector)
+    expect(main().querySelectorAll('img, canvas, [lang], [tabindex], [contenteditable]')).toHaveLength(0)
+    await expectNoAxeViolations(container)
+  })
+})
+
+// The Health page on the shared landing-page foundation (#94), against
+// section 4 of _docs/fafanua-health-landing-page-plan.md.
+describe('Health page', () => {
+  const { cell: hcell, list: hlist, marked: hmarked, named: hnamed, buttonLabel: hbutton } = healthPlan
+  const added = healthPlan.OWNER_ADDITIONS
+  const main = () => screen.getByRole('main')
+  const headings = (level: number) =>
+    within(main()).getAllByRole('heading', { level }).map((heading) => heading.textContent)
+
+  // Every text node in main, trimmed, in DOM order.
+  function texts(root: Element) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+    const out: string[] = []
+    while (walker.nextNode()) {
+      const text = walker.currentNode.textContent!.trim()
+      if (text) out.push(text)
+    }
+    return out
+  }
+
+  const upperIfPlan = (text: string, plan: string) => (text.toUpperCase() === plan ? plan : text)
+  // The Handled responsibly items each end with a full stop, so the plan's
+  // list splits at ".; ".
+  const handlingItems = () => hcell('AI and responsible handling', 'Card 2 checklist').split(/(?<=\.); /)
+
+  it('has the plan\'s h2s and h3s, in order', () => {
+    renderPage(health)
+    expect(headings(1)).toEqual([hcell('Hero', 'Heading (`h1`)')])
+    expect(headings(1)).toEqual(['Health data you can trace.'])
+    expect(headings(2)).toEqual([
+      'The challenge',
+      'Our approach',
+      'Who we work with',
+      'The Data Trust Assessment: three weeks, fixed fee',
+      'What this means for AI',
+      'Handled responsibly',
+      'After the assessment',
+      'Build a health data foundation you can trust',
+    ])
+    expect(headings(3)).toEqual([
+      'Healthcare providers',
+      'Lineage map',
+      'Trust scorecard',
+      'Shared definitions',
+      'Fix list',
+      'Integrate and model',
+      'Quality and governance',
+      'Reporting and dashboards',
+    ])
+  })
+
+  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description and the owner\'s five additions (#94)', () => {
+    renderPage(health)
+    const plan = [
+      ...hcell('Hero', 'Breadcrumb').split(' › '),
+      hcell('Hero', 'Eyebrow'),
+      hcell('Hero', 'Heading (`h1`)'),
+      hcell('Hero', 'Lead'),
+      hbutton(hcell('Hero', 'Primary button')),
+      '→',
+      hbutton(hcell('Hero', 'Secondary button')),
+      healthPlan.figureDescription,
+      hcell('Trace diagram', 'Left column heading'),
+      ...hlist(hcell('Trace diagram', 'Sources')),
+      hcell('Trace diagram', 'Middle box heading'),
+      ...hlist(hcell('Trace diagram', 'Middle steps')),
+      hcell('Trace diagram', 'Middle footnote'),
+      hcell('Trace diagram', 'Right column heading'),
+      ...hlist(hcell('Trace diagram', 'Numbers and ratings')).flatMap((entry) => {
+        const { name, rating } = hmarked(entry)
+        return [name, rating!]
+      }),
+      hcell('Trace diagram', 'Caption'),
+      hcell('Challenge and approach', 'Card 1 heading'),
+      hcell('Challenge and approach', 'Card 1 text'),
+      hcell('Challenge and approach', 'Card 2 heading'),
+      hcell('Challenge and approach', 'Card 2 text'),
+      hcell('Who we work with', 'Heading'),
+      hcell('Who we work with', 'Subheading'),
+      hcell('Who we work with', 'Card heading'),
+      hcell('Who we work with', 'Card text'),
+      added.audienceDetail,
+      ...hlist(hcell('Who we work with', 'Checklist')),
+      hcell('The Data Trust Assessment', 'Eyebrow'),
+      hcell('The Data Trust Assessment', 'Heading'),
+      hcell('The Data Trust Assessment', 'Text'),
+      ...[1, 2, 3, 4].flatMap((n) => Object.values(hnamed(hcell('The Data Trust Assessment', `Deliverable ${n}`)))),
+      hcell('AI and responsible handling', 'Card 1 heading'),
+      hcell('AI and responsible handling', 'Card 1 text'),
+      ...hlist(hcell('AI and responsible handling', 'Card 1 chips')).map((chip) => hmarked(chip).name),
+      hcell('AI and responsible handling', 'Card 2 heading'),
+      ...handlingItems(),
+      hcell('After the assessment', 'Heading'),
+      hcell('After the assessment', 'Subheading'),
+      ...[1, 2, 3].flatMap((n) => [
+        ...Object.values(hnamed(hcell('After the assessment', `Card ${n}`))),
+        [added.integrateDetail, added.governanceDetail, added.reportingDetail][n - 1],
+      ]),
+      hcell('Closing panel', 'Eyebrow'),
+      hcell('Closing panel', 'Heading'),
+      `${hcell('Closing panel', 'Text')} ${added.closingFollowUp}`,
+      hbutton(hcell('Closing panel', 'Primary button')),
+      '→',
+      hbutton(hcell('Closing panel', 'Secondary link')),
+    ]
+    const shown = texts(main())
+    // Labels the plan writes in capitals are stored in sentence case and
+    // capitalised by CSS.
+    expect(shown.map((text, index) => upperIfPlan(text, plan[index]))).toEqual(plan)
+    expect(shown.filter((text, index) => text !== plan[index])).toEqual(['Health solutions', 'Start with trust', 'Get started'])
+    expect(main().textContent).not.toMatch(/\d/)
+  })
+
+  it('shows the protected "trusted data foundation" in the closing panel (owner, #94)', () => {
+    renderPage(health)
+    const closing = screen.getByRole('region', { name: 'Build a health data foundation you can trust' })
+    expect(closing).toHaveTextContent('trusted data foundation')
+    expect(closing.querySelector('.sector-closing__body')).not.toHaveClass('visually-hidden')
+  })
+
+  it('has the breadcrumbs Home › Solutions › Health', () => {
+    renderPage(health)
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(within(trail).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['Home', 'Solutions', 'Health'])
+    expect(within(trail).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/')
+    expect(within(trail).getByRole('link', { name: 'Solutions' })).toHaveAttribute('href', '/#solutions')
+    expect(within(trail).getAllByRole('listitem')[2]).toHaveAttribute('aria-current', 'page')
+    expect(trail.textContent).not.toContain('›')
+  })
+
+  it('links the hero buttons to the email and #assessment, the service cards to their pages and the closing panel to the email', () => {
+    renderPage(health)
+    const hero = screen.getByRole('region', { name: 'Health data you can trace.' })
+    expect(within(hero).getByRole('link', { name: 'Book a data trust assessment' })).toHaveAttribute('href', `mailto:${email}`)
+    const jump = within(hero).getByRole('link', { name: 'See how the assessment works' })
+    expect(jump).toHaveAttribute('href', '#assessment')
+    expect(jump).toHaveAttribute('data-focus-section', 'assessment')
+    const closing = screen.getByRole('region', { name: 'Build a health data foundation you can trust' })
+    expect(within(closing).getByRole('link', { name: 'Book a data trust assessment' })).toHaveAttribute('href', `mailto:${email}`)
+    expect(within(closing).getByRole('link', { name: email })).toHaveAttribute('href', `mailto:${email}`)
+    expect(mainLinks()).toEqual([
+      ['Home', '/'],
+      ['Solutions', '/#solutions'],
+      ['Book a data trust assessment→', `mailto:${email}`],
+      ['See how the assessment works', '#assessment'],
+      ['Integrate and model', '/services/data-engineering-integration'],
+      ['Quality and governance', '/services/data-quality-reliability'],
+      ['Reporting and dashboards', '/services/business-intelligence-analytics'],
+      ['Book a data trust assessment→', `mailto:${email}`],
+      [email, `mailto:${email}`],
+    ])
+    for (const link of main().querySelectorAll('a[href^="mailto:"]')) expect(link).toHaveAttribute('href', 'mailto:info@fafanua.tech')
+  })
+
+  it('labels section#assessment by its h2', () => {
+    renderPage(health)
+    const section = screen.getByRole('region', { name: 'The Data Trust Assessment: three weeks, fixed fee' })
+    expect(section.tagName).toBe('SECTION')
+    expect(section).toHaveAttribute('id', 'assessment')
+    expect(document.getElementById(section.getAttribute('aria-labelledby')!)!.tagName).toBe('H2')
+  })
+
+  it('has no Delivered in stages section', () => {
+    renderPage(health)
+    // The only ordered lists are the breadcrumbs and the trace's steps.
+    const ols = [...main().querySelectorAll('ol')]
+    expect(ols).toHaveLength(2)
+    expect(ols[0].closest('nav')).toHaveAccessibleName('Breadcrumb')
+    expect(ols[1].closest('figure')).not.toBeNull()
+    expect(main().textContent).not.toMatch(/Delivered in stages|No big-bang projects|Moves on when|Stage/)
+  })
+
+  it('draws the figure with its caption, description, five sources, five steps and three rated numbers', () => {
+    renderPage(health)
+    // Named by its figcaption (jsdom's name computation does not read it).
+    const figure = screen.getByRole('figure')
+    expect(figure.querySelector(':scope > figcaption')!.textContent).toBe('Illustrative example. Sample data only.')
+    expect(figure).toHaveAccessibleDescription(healthPlan.figureDescription)
+    expect(document.getElementById(figure.getAttribute('aria-describedby')!)).toHaveClass('visually-hidden')
+    const [sources, steps, figures] = within(figure).getAllByRole('list')
+    expect(within(sources).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      'EMR / HMIS',
+      'Laboratory',
+      'Billing & insurance',
+      'Pharmacy dispensing',
+      'Finance ledger',
+    ])
+    expect(steps.tagName).toBe('OL')
+    expect(within(steps).getAllByRole('listitem').map((item) => item.textContent)).toEqual(
+      hlist(hcell('Trace diagram', 'Middle steps')),
+    )
+    expect(within(figures).getAllByRole('listitem').map((item) => texts(item))).toEqual([
+      ['Revenue by branch', 'Trusted with caveats'],
+      ['Claims rejection rate', 'Trusted'],
+      ['Pharmacy stock variance', 'Not yet trusted'],
+    ])
+    // EMR / HMIS and Laboratory do not feed the numbers: faded, with
+    // dashed connectors; the other three solid.
+    expect([...sources.querySelectorAll('li')].map((item) => item.querySelector('.trace__connector--dashed') !== null)).toEqual([
+      true,
+      true,
+      false,
+      false,
+      false,
+    ])
+    // Every connector, marker and icon is hidden and holds no text.
+    for (const hidden of figure.querySelectorAll('.trace__connector, .rating-marker, svg')) {
+      expect(hidden).toHaveAttribute('aria-hidden', 'true')
+      expect(hidden.textContent).toBe('')
+    }
+    expect(within(figure).queryByRole('heading')).toBeNull()
+  })
+
+  it('has none of the removed sections or strings', () => {
+    renderPage(health)
+    for (const name of [
+      'Sector context',
+      'Common data problems',
+      'How Fafanua helps',
+      'Reporting and analytics use cases',
+      'Data quality and governance',
+      'Operational activation',
+      'Other sectors',
+      'Public and global-health programmes',
+    ]) {
+      expect(screen.queryByRole('heading', { name })).toBeNull()
+    }
+    expect(main().querySelector('#use-cases')).toBeNull()
+    const text = main().textContent!
+    for (const removed of [
+      'Health Data & Analytics Solutions',
+      'national health information systems',
+      'Managed health data services',
+      'Longitudinal patient and programme outcomes',
+      'Returning follow-up lists to facility and outreach teams.',
+      'Let’s build a data foundation',
+      'Which number do you trust least?',
+      '+256',
+      'Reverse ETL',
+      'Fafanua Intelligence',
+      'AI-powered',
+      'DHIS',
+    ]) {
+      expect(text).not.toContain(removed)
+    }
+    for (const theme of solutions.find((solution) => solution.id === 'health')!.themes) expect(text).not.toContain(theme)
+    expect(text).not.toMatch(/complian|certified|guarantee|meets the requirements of|in line with the Act/i)
+    expect(main().querySelector('a[href^="tel:"]')).toBeNull()
+  })
+
+  it('has no img, lang, tabindex or contenteditable in main, and no axe violations', async () => {
+    const { container } = renderPage(health)
     expect(main().querySelectorAll('img, canvas, [lang], [tabindex], [contenteditable]')).toHaveLength(0)
     await expectNoAxeViolations(container)
   })
