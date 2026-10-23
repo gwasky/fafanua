@@ -245,7 +245,9 @@ Reduce the Managed Services panel to two sentences and a promoted strip reading 
 
 ### G5. Restructure the Health landing page
 
-`Approved: [ ]`
+`Approved: [x]`
+
+**Approved (owner, 2026-10-23, #94):** through `_docs/fafanua-health-landing-page-plan.md`, which supersedes the copy in section 8 and sets the page's structure and style.
 
 Rebuild the page in this order, using the copy in section 8. Remove the use cases list, the public and global-health programme audience, managed health data services, longitudinal outcomes and follow-up lists to outreach teams. Before merging, list any keyword the SEO plan assigns to this page that the rebuild removes, and report it to the owner. The "handled responsibly" wording needs legal review before any production release.
 
@@ -299,6 +301,8 @@ Items marked with a G-number depend on that approval. Without it, keep the curre
 10. Closing section (W9)
 
 ## 8. Health landing page copy (used only if G5 is ticked)
+
+**Superseded (2026-10-23, #94):** the copy below is superseded by section 4 of `_docs/fafanua-health-landing-page-plan.md`, which the owner approved with G5. Do not build the Health page from this section.
 
 Copy this wording. Do not rewrite it.
 

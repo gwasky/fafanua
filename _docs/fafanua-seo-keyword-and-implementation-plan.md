@@ -488,6 +488,13 @@ Use only if supported by actual Fafanua implementation capabilities:
 
 Do not position Fafanua as a dedicated DHIS2 consultancy unless explicitly approved.
 
+Added for the Health landing page (owner, 2026-10-23, #94). Every keyword above is kept. Under `_docs/fafanua-health-landing-page-plan.md`, the page now serves healthcare providers only: the plan removed the public and global-health programme audience, so the scope above (providers and programmes) is narrowed for this page. The page's visible text carries back the keywords the removed sections had carried (health information systems Uganda, pharmacy analytics Uganda, medical inventory analytics, health supply chain analytics Uganda, health systems integration Uganda, health systems interoperability, health API integration, health data exchange Uganda, health data warehouse Uganda, health data quality Uganda, health data governance Uganda, health data quality framework, healthcare analytics Uganda, healthcare analytics East Africa, health facility performance dashboard, facility utilisation analytics, patient flow analytics, health service delivery analytics; health data interoperability Uganda, health system data integration, health data integration Uganda, healthcare data warehouse Uganda and healthcare data governance only loosely). The programme-only and outcomes keywords are no longer on the page: public health analytics Uganda, public health dashboards Uganda, health programme performance dashboard, health programme reporting, health programme analytics Uganda, public health data systems Uganda, health monitoring dashboard, patient outcomes analytics, programme outcomes analytics, longitudinal health outcomes and patient data analytics Uganda. The new title, description and hero also target:
+
+- traceable health data analytics
+- health data you can trace
+- healthcare analytics for hospitals and clinic networks
+- trusted data foundation (protected phrase, §1)
+
 ---
 
 # 10. Retail & Distribution Keyword Cluster
@@ -825,6 +832,8 @@ Suggested description:
 Suggested H1:
 
 > **Health Data & Analytics Solutions**
+
+Note (owner, 2026-10-23): the suggested title, description and H1 above are superseded by the Health plan, `_docs/fafanua-health-landing-page-plan.md` (#94).
 
 ---
 
