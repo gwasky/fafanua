@@ -79,13 +79,22 @@ The diagram has three columns linked by connector lines.
 
 ### Who we work with
 
+Owner update (2026-10-23, #94): this section's copy replaces the earlier card text and checklist, and the A1 keyword line added for #94.
+
 | Element | Text |
 |---|---|
 | Heading | Who we work with |
 | Subheading | Hospitals, clinic networks, laboratories and pharmacies. |
 | Card heading | Healthcare providers |
-| Card text | For organisations running more than one branch, ward or service line. |
-| Checklist | Branch performance and comparability; Revenue, billing and insurance-claims reconciliation; Pharmacy and medical stock analytics; Healthcare reporting automation |
+| Card text 1 | Helping healthcare organisations bring together data from different facilities, departments and systems. |
+| Card text 2 | We connect the systems you already use to provide a clearer, more reliable view of your operations, finances and resources — without replacing your existing software. |
+| List label | What we help you achieve |
+| List item 1 | **Branch and facility performance** — Compare performance across locations and service lines. |
+| List item 2 | **Revenue and claims reconciliation** — Bring together billing, payments and insurance claims. |
+| List item 3 | **Pharmacy and inventory visibility** — Track medicine stocks, consumption and supply chain performance. |
+| List item 4 | **Reliable healthcare reporting** — Reduce manual reporting and improve access to trusted operational data. |
+
+Each list item's name (in bold) is followed by an em dash and its description.
 
 ### The Data Trust Assessment
 
@@ -111,13 +120,23 @@ The diagram has three columns linked by connector lines.
 
 ### After the assessment
 
+Owner update (2026-10-23, #94): this section's copy replaces the earlier subheading and card text, and the A2–A4 keyword lines added for #94.
+
 | Element | Text |
 |---|---|
 | Heading | After the assessment |
-| Subheading | What we fix, once we know where trust breaks down. |
-| Card 1 | Integrate and model: Connect billing, pharmacy, lab and finance systems into one consistent view of patients, visits, services and stock. |
-| Card 2 | Quality and governance: Completeness and timeliness checks, plus clear ownership and access rules. |
-| Card 3 | Reporting and dashboards: Automated branch and head-office reporting built on the traced numbers. |
+| Subheading | A practical roadmap to connect your systems, improve data reliability and make reporting easier. |
+| Card 1 heading | Integrate and model |
+| Card 1 lead | Bring your healthcare data together. |
+| Card 1 text | Connect billing, pharmacy, laboratory, patient management and finance systems into a central data warehouse. Establish consistent definitions for patients, visits, services, revenue and stock across your organisation. |
+| Card 2 heading | Quality and governance |
+| Card 2 lead | Build confidence in your data. |
+| Card 2 text | Introduce automated checks for accuracy, completeness and timeliness. Establish clear data ownership, access controls and consistent definitions so your teams can rely on the information they use. |
+| Card 3 heading | Reporting and dashboards |
+| Card 3 lead | Turn trusted data into useful insights. |
+| Card 3 text | Replace fragmented spreadsheets and manual reporting with reliable dashboards that give management visibility into facility performance, revenue, patient flow, resource utilisation and service delivery. |
+
+Each card's lead line is shown in bold above its text.
 
 ### Closing panel
 
