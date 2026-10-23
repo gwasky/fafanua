@@ -3,12 +3,15 @@
 // drift from the plan: every string character for character, the labels
 // the plan writes in capitals compared in upper case (CSS shows them so),
 // the "Name: text" and list splits, the title and description, the
-// figure's accessible description (plan section 8) and the owner's five
-// additions. It also checks that the old Health strings are gone from
+// figure's accessible description (plan section 8), the owner's new Who
+// we work with and After the assessment copy (a55c2b4) and the owner's
+// closing addition; the four withdrawn keyword lines are gone. It also checks that the old Health strings are gone from
 // src/ and that the call to action and address come from contact.ts.
 import { describe, expect, it } from 'vitest'
 import {
+  boldNamed,
   buttonLabel,
+  CARRIED_TERMS,
   cell,
   DESCRIPTION,
   figureDescription,
@@ -16,7 +19,6 @@ import {
   marked,
   named,
   OWNER_ADDITIONS,
-  RESTORED_KEYWORDS,
   tables,
   TITLE,
 } from '../test/healthPlan.ts'
@@ -28,6 +30,16 @@ const entry = solutionPages.health
 if (entry.layout !== 'sector') throw new Error('Health is not on the shared foundation')
 const page: SectorLandingPage = entry
 const upper = (text: string) => text.toUpperCase()
+
+// The four keyword lines first proposed for #94 (A1–A4), withdrawn when
+// the owner rewrote the plan's Who we work with and After the assessment
+// copy (a55c2b4).
+const WITHDRAWN = [
+  'We work with the health information systems your organisation already runs in Uganda, including those behind pharmacy analytics, medical inventory analytics and health supply chain analytics.',
+  'Health systems integration in Uganda, with health systems interoperability through APIs and health data exchange, into one health data warehouse.',
+  'Health data quality and health data governance in Uganda, with a health data quality framework your branches can keep up.',
+  'Healthcare analytics in Uganda and East Africa, from health facility performance dashboards and facility utilisation analytics to patient flow analytics and health service delivery analytics.',
+] as const
 
 describe('Health plan section 4 parser', () => {
   it('finds the eight copy tables and the removed list in order', () => {
@@ -105,18 +117,22 @@ describe('Health copy (plan section 4)', () => {
     expect([page.challenge.icon, page.approach.icon]).toEqual(['alert', 'check'])
   })
 
-  it('uses Who we work with, its card and its checklist (no full stops)', () => {
+  it('uses Who we work with: its card\'s two paragraphs, the list label and four bold-named items', () => {
     const t = 'Who we work with'
     expect(page.audience.heading).toBe(cell(t, 'Heading'))
     expect(page.audience.subheading).toBe(cell(t, 'Subheading'))
     expect(page.audience.card.heading).toBe(cell(t, 'Card heading'))
-    expect(page.audience.card.text).toBe(cell(t, 'Card text'))
-    expect(page.audience.card.items).toEqual(list(cell(t, 'Checklist')))
-    expect(page.audience.card.items).toHaveLength(4)
-    for (const item of page.audience.card.items) expect(item).not.toMatch(/\.$/)
+    expect(page.audience.card.text).toBe(cell(t, 'Card text 1'))
+    expect(page.audience.card.detail).toBe(cell(t, 'Card text 2'))
+    expect(page.audience.card.detail).toContain(' — ')
+    expect(page.audience.card.itemsLabel).toBe(cell(t, 'List label'))
+    expect(page.audience.card.items).toEqual([1, 2, 3, 4].map((n) => boldNamed(cell(t, `List item ${n}`))))
+    for (const item of page.audience.card.items) {
+      if (typeof item === 'string') throw new Error(`"${item}" has no bold name`)
+      expect(item.text).toMatch(/\.$/)
+      expect(item.name).not.toMatch(/\*|—/)
+    }
     expect(page.audience.card.icon).toBe('hospital')
-    // The owner's addition after the card's text (#94).
-    expect(page.audience.card.detail).toBe(OWNER_ADDITIONS.audienceDetail)
   })
 
   it('uses the Data Trust Assessment\'s eyebrow, heading, text and deliverables (no full stops)', () => {
@@ -152,20 +168,23 @@ describe('Health copy (plan section 4)', () => {
     expect([page.ai.icon, page.handling.icon]).toEqual(['gauge', 'shield'])
   })
 
-  it('uses After the assessment and its three service cards (with full stops), each linked to its service', () => {
+  it('uses After the assessment: its subheading and three service cards with a lead and text, each linked to its service', () => {
     const t = 'After the assessment'
     expect(page.services.heading).toBe(cell(t, 'Heading'))
     expect(page.services.subheading).toBe(cell(t, 'Subheading'))
-    expect(page.services.items.map(({ name, text }) => ({ name, text }))).toEqual(
-      [1, 2, 3].map((n) => named(cell(t, `Card ${n}`))),
+    expect(page.services.items.map(({ name, lead, text }) => ({ name, lead, text }))).toEqual(
+      [1, 2, 3].map((n) => ({
+        name: cell(t, `Card ${n} heading`),
+        lead: cell(t, `Card ${n} lead`),
+        text: cell(t, `Card ${n} text`),
+      })),
     )
-    for (const { text } of page.services.items) expect(text).toMatch(/\.$/)
-    // The owner's additions after each card's text (#94).
-    expect(page.services.items.map((item) => item.detail)).toEqual([
-      OWNER_ADDITIONS.integrateDetail,
-      OWNER_ADDITIONS.governanceDetail,
-      OWNER_ADDITIONS.reportingDetail,
-    ])
+    for (const { lead, text } of page.services.items) {
+      expect(lead).toMatch(/\.$/)
+      expect(text).toMatch(/\.$/)
+    }
+    // The withdrawn keyword lines (A2–A4) are gone.
+    expect(page.services.items.map((item) => item.detail)).toEqual([undefined, undefined, undefined])
     expect(page.services.items.map((item) => [item.icon, item.service])).toEqual([
       ['link', 'data-engineering-and-integration'],
       ['shield', 'data-quality-and-reliability'],
@@ -186,31 +205,17 @@ describe('Health copy (plan section 4)', () => {
     expect(cell(t, 'Secondary link')).toBe(`${email} (\`mailto:${email}\`)`)
   })
 
-  it('holds the five owner additions verbatim, as listed for review', () => {
-    expect(Object.values(OWNER_ADDITIONS)).toEqual([
-      'We work with the health information systems your organisation already runs in Uganda, including those behind pharmacy analytics, medical inventory analytics and health supply chain analytics.',
-      'Health systems integration in Uganda, with health systems interoperability through APIs and health data exchange, into one health data warehouse.',
-      'Health data quality and health data governance in Uganda, with a health data quality framework your branches can keep up.',
-      'Healthcare analytics in Uganda and East Africa, from health facility performance dashboards and facility utilisation analytics to patient flow analytics and health service delivery analytics.',
-      'Then we make sure they are built on a trusted data foundation.',
-    ])
+  it('holds the owner\'s one remaining addition (A5) verbatim, and none of the withdrawn A1–A4 lines', () => {
+    expect(Object.values(OWNER_ADDITIONS)).toEqual(['Then we make sure they are built on a trusted data foundation.'])
+    expect(WITHDRAWN).toHaveLength(4)
+    const text = JSON.stringify(page)
+    for (const line of WITHDRAWN) expect(text, line).not.toContain(line)
   })
 
-  it('carries the restored SEO plan §9 keywords in the owner\'s additions, and only there', () => {
-    const additions = Object.values(OWNER_ADDITIONS).join(' ')
-    const planCopy = JSON.stringify({
-      ...page,
-      title: undefined,
-      description: undefined,
-      audience: { ...page.audience, card: { ...page.audience.card, detail: undefined } },
-      services: { ...page.services, items: page.services.items.map((item) => ({ ...item, detail: undefined })) },
-      closing: { ...page.closing, followUp: undefined },
-    })
-    for (const [keyword, pattern] of RESTORED_KEYWORDS) {
-      expect(additions, keyword).toMatch(pattern)
-      expect(planCopy, keyword).not.toMatch(pattern)
-    }
-    expect(Object.keys(OWNER_ADDITIONS)).toHaveLength(5)
+  it('carries the reported SEO plan §9 terms in the plan copy\'s visible text', () => {
+    const visible = JSON.stringify({ ...page, title: undefined, description: undefined })
+    for (const [term, pattern] of CARRIED_TERMS) expect(visible, term).toMatch(pattern)
+    expect(CARRIED_TERMS).toHaveLength(8)
   })
 
   it('stores the capitalised labels in sentence case', () => {
@@ -281,6 +286,15 @@ describe('old Health strings', () => {
     'Sharing stock and expiry alerts with pharmacy and supply teams.',
     'Returning follow-up lists to facility and outreach teams.',
     'Exposing trusted facility indicators inside operational and management tools.',
+    // Superseded by the owner's new copy (a55c2b4, #94): the first card
+    // text, checklist and service texts, and the withdrawn A1–A4 lines.
+    'For organisations running more than one branch, ward or service line.',
+    'Branch performance and comparability',
+    'Revenue, billing and insurance-claims reconciliation',
+    'Pharmacy and medical stock analytics',
+    'Connect billing, pharmacy, lab and finance systems into one consistent view of patients, visits, services and stock.',
+    'Automated branch and head-office reporting built on the traced numbers.',
+    ...WITHDRAWN,
   ]
 
   const sources = Object.entries(

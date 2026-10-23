@@ -606,7 +606,7 @@ describe('Health page', () => {
     ])
   })
 
-  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description and the owner\'s five additions (#94)', () => {
+  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description and the owner\'s closing addition (#94)', () => {
     renderPage(health)
     const plan = [
       ...hcell('Hero', 'Breadcrumb').split(' › '),
@@ -635,9 +635,14 @@ describe('Health page', () => {
       hcell('Who we work with', 'Heading'),
       hcell('Who we work with', 'Subheading'),
       hcell('Who we work with', 'Card heading'),
-      hcell('Who we work with', 'Card text'),
-      added.audienceDetail,
-      ...hlist(hcell('Who we work with', 'Checklist')),
+      hcell('Who we work with', 'Card text 1'),
+      hcell('Who we work with', 'Card text 2'),
+      hcell('Who we work with', 'List label'),
+      // Each item: its bold name, then the em dash and its text.
+      ...[1, 2, 3, 4].flatMap((n) => {
+        const { name, text } = healthPlan.boldNamed(hcell('Who we work with', `List item ${n}`))
+        return [name, `— ${text}`]
+      }),
       hcell('The Data Trust Assessment', 'Eyebrow'),
       hcell('The Data Trust Assessment', 'Heading'),
       hcell('The Data Trust Assessment', 'Text'),
@@ -650,8 +655,9 @@ describe('Health page', () => {
       hcell('After the assessment', 'Heading'),
       hcell('After the assessment', 'Subheading'),
       ...[1, 2, 3].flatMap((n) => [
-        ...Object.values(hnamed(hcell('After the assessment', `Card ${n}`))),
-        [added.integrateDetail, added.governanceDetail, added.reportingDetail][n - 1],
+        hcell('After the assessment', `Card ${n} heading`),
+        hcell('After the assessment', `Card ${n} lead`),
+        hcell('After the assessment', `Card ${n} text`),
       ]),
       hcell('Closing panel', 'Eyebrow'),
       hcell('Closing panel', 'Heading'),
@@ -683,6 +689,40 @@ describe('Health page', () => {
     expect(within(trail).getByRole('link', { name: 'Solutions' })).toHaveAttribute('href', '/#solutions')
     expect(within(trail).getAllByRole('listitem')[2]).toHaveAttribute('aria-current', 'page')
     expect(trail.textContent).not.toContain('›')
+  })
+
+  it('shows the providers card\'s two paragraphs, then a ul named by its label, each item a strong name, an em dash and its text', () => {
+    renderPage(health)
+    const card = screen.getByRole('region', { name: 'Who we work with' }).querySelector('.audience-card')!
+    const t = 'Who we work with'
+    expect([...card.querySelectorAll('.audience-card__text')].map((p) => p.textContent)).toEqual([
+      hcell(t, 'Card text 1'),
+      hcell(t, 'Card text 2'),
+    ])
+    const list = within(card as HTMLElement).getByRole('list', { name: hcell(t, 'List label') })
+    expect(list.tagName).toBe('UL')
+    const items = within(list).getAllByRole('listitem')
+    expect(items).toHaveLength(4)
+    items.forEach((item, index) => {
+      const { name, text } = healthPlan.boldNamed(hcell(t, `List item ${index + 1}`))
+      expect(item.querySelector('strong')!.textContent).toBe(name)
+      expect(item.textContent).toBe(`${name} — ${text}`)
+      expect(within(item).queryByRole('heading')).toBeNull()
+    })
+    // The label is text, not a heading.
+    expect(within(card as HTMLElement).getAllByRole('heading').map((h) => h.textContent)).toEqual(['Healthcare providers'])
+  })
+
+  it('gives each service card its h3, then its bold lead line, then its text', () => {
+    renderPage(health)
+    const cards = within(screen.getByRole('region', { name: 'After the assessment' })).getAllByRole('listitem')
+    expect(cards.map((card) => [...card.querySelectorAll('h3, p')].map((element) => [element.tagName, element.className, element.textContent]))).toEqual(
+      [1, 2, 3].map((n) => [
+        ['H3', 'sector-card-heading sector-card-heading--small', hcell('After the assessment', `Card ${n} heading`)],
+        ['P', 'service-card-lp__lead', hcell('After the assessment', `Card ${n} lead`)],
+        ['P', 'service-card-lp__text', hcell('After the assessment', `Card ${n} text`)],
+      ]),
+    )
   })
 
   it('links the hero buttons to the email and #assessment, the service cards to their pages and the closing panel to the email', () => {
@@ -790,6 +830,11 @@ describe('Health page', () => {
       'Managed health data services',
       'Longitudinal patient and programme outcomes',
       'Returning follow-up lists to facility and outreach teams.',
+      'For organisations running more than one branch, ward or service line.',
+      'What we fix, once we know where trust breaks down.',
+      'health information systems',
+      'health data exchange',
+      'health data quality framework',
       'Let’s build a data foundation',
       'Which number do you trust least?',
       '+256',

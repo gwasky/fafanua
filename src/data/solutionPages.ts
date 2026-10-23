@@ -14,10 +14,10 @@ import type { ServiceKey } from './servicePages.ts'
 // _docs/fafanua-health-landing-page-plan.md, which replaced their §18
 // sections, and solutionPages.publicSector.plan.test.ts and
 // solutionPages.health.plan.test.ts check it against the plans. The owner
-// added five strings to each on 2026-10-23 (#93, #94), marked below: four
-// carry the SEO plan §12 (Public Sector) or §9 (Health) keywords the plan
-// copy had dropped, and one makes "trusted data foundation" visible in
-// the closing panel.
+// added strings to them on 2026-10-23, marked below: on Public Sector
+// (#93) four carry the SEO plan §12 keywords the plan copy had dropped,
+// and on both one makes "trusted data foundation" visible in the closing
+// panel (#93, #94).
 
 export type SolutionService = {
   readonly service: ServiceKey
@@ -52,6 +52,10 @@ export type SolutionSectionsPage = {
 
 /** A rating or chip marker: a teal dot, an amber dot or a hollow ring. */
 export type Marker = 'teal' | 'amber' | 'hollow'
+
+/** A checklist item: plain text, or a name shown in bold, then an em
+ * dash and its text (Health, #94). */
+export type ChecklistItem = string | { readonly name: string; readonly text: string }
 
 /** A card with a round icon badge (the paired cards). */
 export type BadgeCard = {
@@ -101,8 +105,13 @@ export type SectorLandingPage = {
   readonly audience: {
     readonly heading: string
     readonly subheading: string
-    /** `detail`: an optional line after the card's text. */
-    readonly card: BadgeCard & { readonly detail?: string; readonly items: readonly string[] }
+    /** `detail`: an optional paragraph after the card's text;
+     * `itemsLabel`: an optional label that names the checklist. */
+    readonly card: BadgeCard & {
+      readonly detail?: string
+      readonly itemsLabel?: string
+      readonly items: readonly ChecklistItem[]
+    }
   }
   readonly assessment: {
     readonly eyebrow: string
@@ -137,6 +146,8 @@ export type SectorLandingPage = {
       readonly text: string
       readonly icon: IconName
       readonly service: ServiceKey
+      /** An optional bold line between the heading and the text (#94). */
+      readonly lead?: string
       /** An optional line after the card's text. */
       readonly detail?: string
     }[]
@@ -358,16 +369,19 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
       subheading: 'Hospitals, clinic networks, laboratories and pharmacies.',
       card: {
         heading: 'Healthcare providers',
-        text: 'For organisations running more than one branch, ward or service line.',
-        // Owner addition (2026-10-23, #94): SEO plan §9 keyword(s).
+        text: 'Helping healthcare organisations bring together data from different facilities, departments and systems.',
         detail:
-          'We work with the health information systems your organisation already runs in Uganda, including those behind pharmacy analytics, medical inventory analytics and health supply chain analytics.',
+          'We connect the systems you already use to provide a clearer, more reliable view of your operations, finances and resources — without replacing your existing software.',
         icon: 'hospital',
+        itemsLabel: 'What we help you achieve',
         items: [
-          'Branch performance and comparability',
-          'Revenue, billing and insurance-claims reconciliation',
-          'Pharmacy and medical stock analytics',
-          'Healthcare reporting automation',
+          { name: 'Branch and facility performance', text: 'Compare performance across locations and service lines.' },
+          { name: 'Revenue and claims reconciliation', text: 'Bring together billing, payments and insurance claims.' },
+          { name: 'Pharmacy and inventory visibility', text: 'Track medicine stocks, consumption and supply chain performance.' },
+          {
+            name: 'Reliable healthcare reporting',
+            text: 'Reduce manual reporting and improve access to trusted operational data.',
+          },
         ],
       },
     },
@@ -403,34 +417,28 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
     },
     services: {
       heading: 'After the assessment',
-      subheading: 'What we fix, once we know where trust breaks down.',
+      subheading: 'A practical roadmap to connect your systems, improve data reliability and make reporting easier.',
       items: [
         {
           name: 'Integrate and model',
-          text: 'Connect billing, pharmacy, lab and finance systems into one consistent view of patients, visits, services and stock.',
+          lead: 'Bring your healthcare data together.',
+          text: 'Connect billing, pharmacy, laboratory, patient management and finance systems into a central data warehouse. Establish consistent definitions for patients, visits, services, revenue and stock across your organisation.',
           icon: 'link',
           service: 'data-engineering-and-integration',
-          // Owner addition (2026-10-23, #94): SEO plan §9 keyword(s).
-          detail:
-            'Health systems integration in Uganda, with health systems interoperability through APIs and health data exchange, into one health data warehouse.',
         },
         {
           name: 'Quality and governance',
-          text: 'Completeness and timeliness checks, plus clear ownership and access rules.',
+          lead: 'Build confidence in your data.',
+          text: 'Introduce automated checks for accuracy, completeness and timeliness. Establish clear data ownership, access controls and consistent definitions so your teams can rely on the information they use.',
           icon: 'shield',
           service: 'data-quality-and-reliability',
-          // Owner addition (2026-10-23, #94): SEO plan §9 keyword(s).
-          detail:
-            'Health data quality and health data governance in Uganda, with a health data quality framework your branches can keep up.',
         },
         {
           name: 'Reporting and dashboards',
-          text: 'Automated branch and head-office reporting built on the traced numbers.',
+          lead: 'Turn trusted data into useful insights.',
+          text: 'Replace fragmented spreadsheets and manual reporting with reliable dashboards that give management visibility into facility performance, revenue, patient flow, resource utilisation and service delivery.',
           icon: 'chart',
           service: 'business-intelligence-and-analytics',
-          // Owner addition (2026-10-23, #94): SEO plan §9 keyword(s).
-          detail:
-            'Healthcare analytics in Uganda and East Africa, from health facility performance dashboards and facility utilisation analytics to patient flow analytics and health service delivery analytics.',
         },
       ],
     },
@@ -438,7 +446,7 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
       eyebrow: 'Get started',
       heading: 'Build a health data foundation you can trust',
       text: 'Which numbers do you trust least? Tell us about the reports your branches and head office rely on.',
-      // Owner addition (2026-10-23, #94): SEO plan §9 keyword(s).
+      // Owner addition (2026-10-23, #94): the protected phrase, visible.
       followUp: 'Then we make sure they are built on a trusted data foundation.',
     },
   },

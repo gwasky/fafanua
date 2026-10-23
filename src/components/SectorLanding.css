@@ -529,6 +529,18 @@
   margin-block-start: var(--space-5);
 }
 
+/* The checklist's label, when a page gives one (Health, #94). */
+.sector-landing .audience-card__label {
+  margin-block: var(--space-5) var(--space-3);
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+/* A checklist item's name, in bold before its em dash (Health, #94). */
+.sector-landing .checklist__name {
+  font-weight: var(--weight-semibold);
+}
+
 /* The Data Trust Assessment band. */
 .sector-landing .sector-band {
   margin-block-start: var(--sector-gap);
@@ -564,6 +576,15 @@
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+  text-wrap: pretty;
+}
+
+/* A service card's lead line, when a page gives one (Health, #94). */
+.sector-landing .service-card-lp__lead {
+  margin-block: 0 var(--space-2);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   text-wrap: pretty;
 }
 

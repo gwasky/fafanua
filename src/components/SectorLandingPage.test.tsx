@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { solutionPages, type SectorLandingPage as Copy } from '../data/solutionPages.ts'
 import { expectNoAxeViolations } from '../test/axe.ts'
@@ -140,6 +140,28 @@ describe('SectorLandingPage with another sector\'s data', () => {
     })
     const item = within(screen.getByRole('region', { name: 'Fixture stages' })).getByRole('listitem')
     expect(item).toHaveTextContent('Phase 1OneFirst.Exit whenDone')
+  })
+
+  it('names the checklist by its label, draws named items as a bold name and an em dash, and leads service cards, only when the data asks (#94)', () => {
+    renderFixture()
+    expect(screen.getByRole('main').querySelectorAll('.audience-card__label, .service-card-lp__lead, strong')).toHaveLength(0)
+    expect(screen.getByRole('main').querySelector('.checklist')).not.toHaveAttribute('aria-labelledby')
+    cleanup()
+    renderFixture({
+      ...FIXTURE,
+      audience: {
+        ...FIXTURE.audience,
+        card: { ...FIXTURE.audience.card, itemsLabel: 'Fixture label', items: [{ name: 'Name A', text: 'Text A.' }, 'Item B'] },
+      },
+      services: { ...FIXTURE.services, items: [{ ...FIXTURE.services.items[0], lead: 'Lead A.' }] },
+    })
+    const list = screen.getByRole('list', { name: 'Fixture label' })
+    const [named, plain] = within(list).getAllByRole('listitem')
+    expect(named.querySelector('strong')).toHaveTextContent('Name A')
+    expect(named).toHaveTextContent('Name A — Text A.')
+    expect(plain.querySelector('strong')).toBeNull()
+    expect(plain).toHaveTextContent('Item B')
+    expect(screen.getByText('Lead A.')).toHaveClass('service-card-lp__lead')
   })
 
   it('takes the service card link, the jump target and the closing id from its own wiring', () => {

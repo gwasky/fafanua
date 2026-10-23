@@ -4,7 +4,8 @@ import IconBadge from './IconBadge.tsx'
 
 // Who we work with (#93): the section's h2 and subheading over one card on
 // the lighter teal tint, with a round badge, the h3, its text and a
-// checklist in two columns from 48em.
+// checklist in two columns from 48em. A page may give the checklist a
+// label, which names the list (Health, #94).
 function AudienceCard({ audience }: { audience: SectorLandingPage['audience'] }) {
   const { card } = audience
   return (
@@ -20,7 +21,16 @@ function AudienceCard({ audience }: { audience: SectorLandingPage['audience'] })
             <h3 className="sector-card-heading">{card.heading}</h3>
             <p className="audience-card__text">{card.text}</p>
             {card.detail !== undefined && <p className="audience-card__text">{card.detail}</p>}
-            <Checklist items={card.items} className="audience-card__list" />
+            {card.itemsLabel !== undefined && (
+              <p id="audience-list-label" className="audience-card__label">
+                {card.itemsLabel}
+              </p>
+            )}
+            <Checklist
+              items={card.items}
+              className="audience-card__list"
+              labelledBy={card.itemsLabel !== undefined ? 'audience-list-label' : undefined}
+            />
           </div>
         </div>
       </div>

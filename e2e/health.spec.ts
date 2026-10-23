@@ -362,7 +362,12 @@ test.describe('weights', () => {
         [...document.querySelectorAll(selectors.split(', ').map((selector) => `main ${selector}`).join(', '))].map(weight)
       return {
         bold: weights('h1, .sector-heading'),
-        semibold: weights('h3, .badge-card__heading, .sector-eyebrow, .trace__heading, .trace__figure-name, .button'),
+        semibold: weights(
+          'h3, .badge-card__heading, .sector-eyebrow, .trace__heading, .trace__figure-name, .button, .audience-card__label, .checklist__name, .service-card-lp__lead',
+        ),
+        // The owner's new copy (#94): the label, four bold names and three
+        // lead lines are among them.
+        newBold: weights('.audience-card__label, .checklist__name, .service-card-lp__lead').length,
         body: weights(
           '.sector-hero__lead, .badge-card__text, .checklist__item, .deliverable__text, .trace__step, .trace__source, .trace__rating, .chip, .sector-closing__body, .breadcrumbs__item',
         ),
@@ -374,6 +379,7 @@ test.describe('weights', () => {
     expect(m.bold.length).toBe(5)
     expect(new Set(m.bold)).toEqual(new Set([700]))
     expect(new Set(m.semibold)).toEqual(new Set([600]))
+    expect(m.newBold).toBe(8)
     expect(new Set(m.body)).toEqual(new Set([400]))
     expect(m.mainMax).toBeLessThanOrEqual(700)
     expect(m.frameMax).toBeLessThanOrEqual(500)
@@ -437,11 +443,14 @@ test.describe('colours', () => {
         bandBg: style('.sector-band').backgroundColor,
         bandEyebrow: style('.sector-band .sector-eyebrow').color,
         deliverableBg: style('.deliverable').backgroundColor,
-        // The owner's additions follow the card text in the same class and
-        // colour (#94): the audience card's text and its line, and each
-        // service card's text and its line.
+        // The audience card's two paragraphs and each service card's text
+        // (#94).
         cardTexts: [...document.querySelectorAll('.audience-card__text, .service-card-lp__text')].map(
           (text) => getComputedStyle(text).color,
+        ),
+        // The list label, the bold names and the lead lines (#94).
+        strongText: [...document.querySelectorAll('.audience-card__label, .checklist__name, .service-card-lp__lead')].map(
+          (element) => getComputedStyle(element).color,
         ),
         chips: [...document.querySelectorAll('.chip .rating-marker')].map((dot) => getComputedStyle(dot).borderTopColor),
         serviceLink: style('.service-card-lp h3 a').color,
@@ -501,7 +510,8 @@ test.describe('colours', () => {
       bandBg: t['--white'],
       bandEyebrow: t['--teal-800'],
       deliverableBg: t['--paper'],
-      cardTexts: Array.from({ length: 8 }, () => t['--graphite-600']),
+      cardTexts: Array.from({ length: 5 }, () => t['--graphite-600']),
+      strongText: Array.from({ length: 8 }, () => t['--graphite-900']),
       chips: [t['--teal-600'], t['--state-warning-text'], t['--graphite-600']],
       serviceLink: t['--graphite-900'],
       panel: t['--graphite-900'],
