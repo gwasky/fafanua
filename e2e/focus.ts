@@ -15,11 +15,12 @@ import { focusAndHeaderBoxes, focusedName, pressTab, waitForScrollSettle } from 
 // name, and its service link to its page (#88).
 export const cards = services.map((service) => service.name)
 // The Solutions rows' links (#59; links, not buttons, since #89), each
-// named by its sector title: the homepage's three sectors, in W7's order
-// (#73).
+// named by its sector title: the homepage's four sectors, in W7's order
+// (#73) with Public Sector added second (#95).
 export const sectors = homepageSolutions.map((solution) => solution.title)
 // The footer's "More sectors" links (#73), after the phone number and the
-// copyright, named by the sectors' headings.
+// copyright, named by the sectors' headings: Retail & Distribution and
+// Development & Impact since #95.
 export const moreSectors = footerSolutions.map((solution) => solution.heading)
 // The header's four section links and its call to action, which replaces
 // a Contact link; the footer keeps Contact.

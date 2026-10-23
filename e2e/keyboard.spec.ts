@@ -40,7 +40,8 @@ test.describe('Tab order', () => {
   // #88 adds the Managed Services journey's two links; #89 makes the three
   // Solutions row buttons links, and the open panels' links, stops only
   // while open, are gone, so the count holds; #91 adds the future-ready
-  // section's link.
+  // section's link; #95 adds the Public Sector row and removes its footer
+  // link, so the count holds.
   test('1440 has 36 stops', () => {
     expect(SEQUENCE[1440]).toHaveLength(36)
   })
@@ -65,17 +66,19 @@ test.describe('Tab order', () => {
     }
   })
 
-  // #73: three Solutions rows, in W7's order, and the page ends with the
-  // footer's "More sectors" links.
-  test('has the three homepage sectors and ends with the footer\'s "More sectors" links', () => {
-    expect(sectors).toEqual(['Health', 'Financial Services', 'Education'])
+  // #73: the Solutions rows, in W7's order, with Public Sector added
+  // second (#95), and the page ends with the footer's two "More sectors"
+  // links.
+  test('has the four homepage sectors and ends with the footer\'s two "More sectors" links', () => {
+    expect(sectors).toEqual(['Health', 'Public Sector', 'Financial Services', 'Education'])
     expect(moreSectors).toEqual([
       'Retail & Distribution Analytics',
       'Development & Impact Data Systems',
-      'Public Sector Data & Analytics',
     ])
     for (const width of [1440, 360]) {
-      expect(SEQUENCE[width].slice(-3)).toEqual(moreSectors)
+      expect(SEQUENCE[width].slice(-2)).toEqual(moreSectors)
+      expect(SEQUENCE[width]).not.toContain('Public Sector Data & Analytics')
+      expect(SEQUENCE[width].filter((name) => name === 'Public Sector')).toHaveLength(1)
     }
   })
 
@@ -302,17 +305,17 @@ test.describe('capability titles', () => {
 })
 
 // The Solutions rows (#59; links since #89): one link each, in an h3,
-// named by the sector. Tab reaches the three in order, each with the ring
+// named by the sector. Tab reaches the four in order, each with the ring
 // clear of the header, Shift+Tab goes back up through them, and Enter on
 // a focused row opens its page.
 test.describe('Solutions rows', () => {
   for (const width of [360, 1440]) {
-    test(`Tab reaches the three row links in order with a ring, and Shift+Tab goes back, at ${width}px`, async ({ page }) => {
+    test(`Tab reaches the four row links in order with a ring, and Shift+Tab goes back, at ${width}px`, async ({ page }) => {
       await openPage(page, width)
       const section = page.locator('#solutions')
       await expect(section.getByRole('button')).toHaveCount(0)
       await expect(section.locator('[aria-expanded]')).toHaveCount(0)
-      await expect(section.getByRole('link')).toHaveCount(3)
+      await expect(section.getByRole('link')).toHaveCount(4)
       // The Managed Services service link (#67, out of its heading since
       // #88), the stop before the rows.
       await page.getByRole('link', { name: managedServices.heading, exact: true }).focus()

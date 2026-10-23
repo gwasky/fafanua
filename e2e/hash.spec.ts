@@ -39,7 +39,7 @@ const SECTIONS = [
 const INSIDE = ['#about-heading', '#data-quality-and-reliability-heading'] as const
 
 // The Solutions rows' links (#59; links since #89), named by the sector
-// titles: the homepage's three sectors since #73.
+// titles: the homepage's three sectors since #73, four since #95.
 const sectors = homepageSolutions.map((solution) => solution.title)
 
 /** A header nav link, found whether or not it is currently shown. */

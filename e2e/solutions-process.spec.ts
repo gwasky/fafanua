@@ -39,7 +39,7 @@ const tokenPx = (page: Page, token: string) =>
   }, token)
 
 test.describe('Solutions', () => {
-  test('reads as the eyebrow, the h2, the intro line and three rows, each a heading link and its tag line', async ({ page }) => {
+  test('reads as the eyebrow, the h2, the intro line and four rows, each a heading link and its tag line', async ({ page }) => {
     await openPage(page, 1440)
 
     const snapshot = await solutionsRegion(page).ariaSnapshot()
@@ -61,14 +61,17 @@ test.describe('Solutions', () => {
     )
     // Below the eyebrow: no arrows, row numbers, theme text or "Lineage" (#89).
     expect(snapshot.split('\n').slice(2).join('\n')).not.toMatch(/→|\b0\d\b|Payment intelligence|Lineage|button/)
-    // W7 (#73): Health, Financial Services and Education, in that order;
-    // the other sectors are linked from the footer, not listed here.
+    // W7 (#73) as section A amends it (#95): Health, Public Sector,
+    // Financial Services and Education, in that order; the other two
+    // sectors are linked from the footer, not listed here.
     expect([...snapshot.matchAll(/link "(.+)"/g)].map((match) => match[1])).toEqual([
       'Health',
+      'Public Sector',
       'Financial Services',
       'Education',
     ])
-    expect(snapshot).not.toMatch(/Retail|Development|Public Sector/)
+    expect(snapshot).toContain('paragraph: Service turnaround · Revenue and budget · Statutory reporting')
+    expect(snapshot).not.toMatch(/Retail|Development|Public Sector Data/)
   })
 
   test('paints graphite on paper at rest, with graphite 200 hairlines', async ({ page }) => {
@@ -102,14 +105,14 @@ test.describe('Solutions', () => {
 
     expect(m.section).toBe(paper)
     // Graphite 900 on paper (14.9:1) and graphite 600 on paper (6.0:1).
-    expect([m.h2, ...m.names]).toEqual(Array(4).fill(g900))
-    expect([m.eyebrow, m.intro, ...m.tags, ...m.arrows]).toEqual(Array(8).fill(g600))
-    expect([m.firstHairline, ...m.hairlines]).toEqual(Array(4).fill(g200))
+    expect([m.h2, ...m.names]).toEqual(Array(5).fill(g900))
+    expect([m.eyebrow, m.intro, ...m.tags, ...m.arrows]).toEqual(Array(10).fill(g600))
+    expect([m.firstHairline, ...m.hairlines]).toEqual(Array(5).fill(g200))
     // Nothing inside the section has a fill, shadow or radius at rest.
-    expect(m.tints).toEqual(Array(3).fill('rgba(0, 0, 0, 0)'))
+    expect(m.tints).toEqual(Array(4).fill('rgba(0, 0, 0, 0)'))
     expect(m.backgrounds).toEqual([])
     for (const shadow of m.shadows) expect(shadow).toBe('none')
-    expect(m.radii).toEqual(Array(3).fill('0px'))
+    expect(m.radii).toEqual(Array(4).fill('0px'))
   })
 
   for (const how of ['hover', 'keyboard focus'] as const) {
@@ -164,8 +167,9 @@ test.describe('Solutions', () => {
       } else {
         expect(after.outline[0]).toBe('none')
       }
-      // The other rows stay at rest.
-      for (const index of [0, 2]) {
+      // The other rows stay at rest. Row 1 is Public Sector (#95).
+      expect(homepageSolutions[1].id).toBe('public-sector')
+      for (const index of [0, 2, 3]) {
         const other = await state(index)
         expect(other.tint).toBe('rgba(0, 0, 0, 0)')
         expect(other.arrow).toBe(g600)

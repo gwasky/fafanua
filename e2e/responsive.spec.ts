@@ -834,7 +834,7 @@ const processOverflow = (page: Page) =>
 const solutionsRegion = (page: Page) =>
   page.getByRole('region', { name: solutionsIntro.heading })
 
-// The Solutions section's three row links (#89), in order.
+// The Solutions section's four row links (#89, #95), in order.
 const sectorLinks = (page: Page) => solutionsRegion(page).getByRole('link')
 
 type Box = { left: number; right: number; top: number; bottom: number; height: number }
@@ -1427,7 +1427,7 @@ for (const width of WIDTHS) {
     test(`each Solutions row hovered at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       const rows = solutionsRegion(page).locator('.solution-row')
-      await expect(rows).toHaveCount(3)
+      await expect(rows).toHaveCount(4)
       for (const row of await rows.all()) {
         await row.scrollIntoViewIfNeeded()
         await row.hover()
@@ -2668,7 +2668,7 @@ for (const width of WIDTHS) {
     // name line. Nothing overflows.
     test(`solutions rows are ${width >= 768 ? 'name, tags and arrow on one line' : 'name and arrow, then tags'}, not cards, at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
-      await expect(sectorLinks(page)).toHaveCount(3)
+      await expect(sectorLinks(page)).toHaveCount(4)
 
       const m = await measureSectors(page)
       const detail = (row: SectorBox) => JSON.stringify(row)
@@ -2708,15 +2708,24 @@ for (const width of WIDTHS) {
       if (width >= 768) {
         expect(spread(m.rows.map((row) => row.tags.left)), 'tags lined up').toBeLessThanOrEqual(1)
       }
-      if (width === 1440) {
+      // "Public Sector" (#95), like every name, never wraps.
+      if (width >= 360) {
+        for (const row of m.rows) {
+          expect(row.link.height, `name on one line: ${detail(row)}`).toBeLessThan(1.5 * row.nameLineHeight)
+        }
+      }
+      // Name, tags and arrow on one line at 1024px too (#95).
+      if (width >= 1024) {
         for (const row of m.rows) expect(row.tagsLines, `tags on one line: ${detail(row)}`).toBe(1)
+      }
+      if (width === 1440) {
         // Compact, as in the reference image (about 86px): one name line,
         // --space-6 above and below it, and the hairline.
         for (const row of m.rows) {
           expect(row.row.height, `row height: ${detail(row)}`).toBeCloseTo(row.nameLineHeight + 2 * 24 + 1, 0)
           expect(row.row.height, `row height: ${detail(row)}`).toBeLessThanOrEqual(90)
         }
-        expect(m.listHeight, 'list height').toBeLessThanOrEqual(3 * 90 + 1)
+        expect(m.listHeight, 'list height').toBeLessThanOrEqual(4 * 90 + 1)
       }
       expect(await sectorOverflow(page), 'overflowing').toEqual([])
       await expectNoHorizontalScroll(page)
@@ -2729,7 +2738,7 @@ for (const width of WIDTHS) {
 
       for (const part of ['name', 'tags', 'arrow'] as const) {
         test(`a tap on a Solutions row's ${part} opens its page at ${width}px`, async ({ page }, testInfo) => {
-          const indexes = width === 360 || width === 1440 ? [0, 1, 2] : [1]
+          const indexes = width === 360 || width === 1440 ? [0, 1, 2, 3] : [1]
           for (const index of indexes) {
             await open(page, testInfo, width)
             const row = solutionsRegion(page).locator('.solution-row').nth(index)
@@ -2755,7 +2764,7 @@ for (const width of WIDTHS) {
       await expectSectionFits(page)
       await pageFits()
       const rows = solutionsRegion(page).locator('.solution-row')
-      for (let index = 0; index < 3; index++) {
+      for (let index = 0; index < 4; index++) {
         await rows.nth(index).scrollIntoViewIfNeeded()
         await rows.nth(index).hover()
         expect(await sectorOverflow(page), `overflowing, row ${index + 1} hovered`).toEqual([])
@@ -2763,7 +2772,7 @@ for (const width of WIDTHS) {
         await pageFits()
       }
       await page.mouse.move(0, 0)
-      for (let index = 0; index < 3; index++) {
+      for (let index = 0; index < 4; index++) {
         await sectorLinks(page).nth(index).focus()
         expect(await sectorOverflow(page), `overflowing, row ${index + 1} focused`).toEqual([])
         await expectSectionFits(page)
@@ -3207,6 +3216,11 @@ for (const width of WIDTHS) {
 
       expect(m.label, detail).toEqual({ text: 'More sectors', colour: m.muted, size: m.small })
       expect(m.links.map((link) => link.name)).toEqual(footerSolutions.map((solution) => solution.heading))
+      // Two links since #95, which moves Public Sector to the Solutions rows.
+      expect(m.links.map((link) => link.name)).toEqual([
+        'Retail & Distribution Analytics',
+        'Development & Impact Data Systems',
+      ])
       for (const link of m.links) {
         expect(link.colour, detail).toBe(m.navColour)
         expect(link.size, detail).toBe(m.small)

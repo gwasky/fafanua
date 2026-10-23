@@ -216,8 +216,9 @@ test.describe('crawl from the homepage', () => {
   // Instant scrolling, and no section reveal under the pointer.
   test.use({ reducedMotion: 'reduce' })
 
-  // Since #73 three sector pages are linked from the Solutions rows in
-  // main and the other three from the footer's "More sectors" line (W7).
+  // Since #73 the homepage's sector pages are linked from the Solutions
+  // rows in main and the others from the footer's "More sectors" line
+  // (W7): four and two since #95, which moves Public Sector to the rows.
   test('the homepage links to every landing page with an <a href>', async ({ page }) => {
     await openPath(page, '/', 1440)
     const hrefs = (selector: string) =>
@@ -229,6 +230,13 @@ test.describe('crawl from the homepage', () => {
     expect(footer.filter((href) => href?.startsWith('/solutions/'))).toEqual(
       footerSolutions.map((solution) => `/solutions/${solution.slug}`),
     )
+    expect(footer.filter((href) => href?.startsWith('/solutions/'))).toEqual([
+      '/solutions/retail-distribution',
+      '/solutions/development-impact',
+    ])
+    expect(footer).not.toContain(PUBLIC_SECTOR)
+    expect(main.filter((href) => href === PUBLIC_SECTOR)).toHaveLength(1)
+    expect([...main, ...footer].filter((href) => href?.startsWith('/solutions/'))).toHaveLength(6)
   })
 
   // The Solutions rows are links since #89: a click anywhere in a row,
@@ -252,6 +260,11 @@ test.describe('crawl from the homepage', () => {
         await expect(page.getByRole('heading', { level: 1 })).toHaveText('Health data you can trace.')
       }
     })
+
+    // Public Sector was never a homepage row before #95, so it had no
+    // accordion to carry over (do-first check 1); its page is checked in
+    // public-sector.spec.ts.
+    if (solution.id === 'public-sector') continue
 
     // What the homepage row's accordion used to hold (#89, do-first
     // check 1): the sector's seven themes, on its page under "Reporting and
@@ -383,6 +396,9 @@ test.describe('in the browser', () => {
         expect(footerHtml).toContain(`href="/solutions/${solution.slug}"`)
       }
       expect(footerHtml).toContain('More sectors')
+      // Public Sector is a homepage row since #95, not a footer link.
+      expect(footerHtml).not.toContain(`href="${PUBLIC_SECTOR}"`)
+      expect(footerHtml).not.toMatch(/Public Sector Data &(amp;)? Analytics/)
 
       await openPath(page, path, 1440)
       const footer = page.getByRole('contentinfo')
@@ -393,8 +409,20 @@ test.describe('in the browser', () => {
         footerSolutions.map((solution) => `/solutions/${solution.slug}`),
       )
       await expect(footer.getByRole('navigation', { name: 'Footer' }).getByRole('link')).toHaveCount(5)
+      await expect(footer.locator(`a[href="${PUBLIC_SECTOR}"]`)).toHaveCount(0)
+      await expect(footer).not.toContainText('Public Sector Data & Analytics')
     })
   }
+
+  // Since #95 the Public Sector page's footer no longer links to itself.
+  test(`${PUBLIC_SECTOR} has no footer link to itself`, async ({ page }) => {
+    const { html } = await served(page, PUBLIC_SECTOR)
+    expect(html).toContain('<footer')
+    expect(html.slice(html.indexOf('<footer'))).not.toContain(`href="${PUBLIC_SECTOR}"`)
+
+    await openPath(page, PUBLIC_SECTOR, 1440)
+    await expect(page.getByRole('contentinfo').locator(`a[href="${PUBLIC_SECTOR}"]`)).toHaveCount(0)
+  })
 
   test('a "More sectors" link opens its sector page, which answers 200', async ({ page }) => {
     await openPath(page, '/solutions/health', 1440)

@@ -13,7 +13,8 @@ import { solutionsIntro } from '../src/data/solutions.ts'
 // a failure names the state and width that broke.
 
 // The Solutions section (#59; Health, Financial Services and Education
-// since #73), named by its h2, and its three rows, each one link (#89).
+// since #73, with Public Sector second since #95), named by its h2, and
+// its four rows, each one link (#89).
 const solutionsRegion = (page: Page) => page.getByRole('region', { name: solutionsIntro.heading })
 const solutionRows = (page: Page) => solutionsRegion(page).locator('.solution-row')
 
