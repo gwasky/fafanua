@@ -495,18 +495,18 @@ describe('assessment source', () => {
   })
 })
 
-// The homepage strings solutionPages.ts repeats by design (#93: the
-// Public Sector page's plan copy), as quoted literals, each with the
-// number of times it may occur there. Only these are taken out of that
+// The homepage strings solutionPages.ts repeats by design (#93, #94: the
+// Public Sector and Health pages' plan copy), as quoted literals, each
+// with the number of times it may occur there (once per foundation page). Only these are taken out of that
 // file before the scans below; everything else in it is scanned.
 const LANDING_ALLOWED: Allowed = [
-  ["'Start with trust'", 1],
-  ["'Lineage map'", 1],
-  ["'Trust scorecard'", 1],
-  ["'Shared definitions'", 1],
-  ["'Fix list'", 1],
-  ["'Illustrative example. Sample data only.'", 1],
-  ["'After the assessment'", 1],
+  ["'Start with trust'", 2],
+  ["'Lineage map'", 2],
+  ["'Trust scorecard'", 2],
+  ["'Shared definitions'", 2],
+  ["'Fix list'", 2],
+  ["'Illustrative example. Sample data only.'", 2],
+  ["'After the assessment'", 2],
 ]
 const scanned = (file: string, source: string) => scannedWith(file, source, LANDING_ALLOWED)
 

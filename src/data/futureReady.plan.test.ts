@@ -153,11 +153,11 @@ describe('future-ready source', () => {
   })
 })
 
-// The one homepage string solutionPages.ts repeats here by design (#93):
-// the Public Sector hero's secondary button, as a quoted literal, with the
-// number of times it may occur there. Only it is taken out of that file
+// The one homepage string solutionPages.ts repeats here by design (#93,
+// #94): the Public Sector and Health heroes' secondary button, as a quoted
+// literal, with the number of times it may occur there (once per page). Only it is taken out of that file
 // before the scan below.
-const LANDING_ALLOWED: Allowed = [["'See how the assessment works'", 1]]
+const LANDING_ALLOWED: Allowed = [["'See how the assessment works'", 2]]
 const scanned = (file: string, source: string) => scannedWith(file, source, LANDING_ALLOWED)
 
 describe('other source files', () => {
@@ -182,7 +182,7 @@ describe('other source files', () => {
     expect(files).toContain(LANDING_COPY)
     expect(files).toContain('/src/data/solutions.ts')
     const raw = import.meta.glob<string>('/src/data/solutionPages.ts', { query: '?raw', import: 'default', eager: true })[LANDING_COPY]
-    expect(LANDING_ALLOWED).toEqual([[`'${futureReadyLinkText}'`, 1]])
+    expect(LANDING_ALLOWED).toEqual([[`'${futureReadyLinkText}'`, 2]])
     for (const [literal, count] of LANDING_ALLOWED) expect(occurrences(raw, literal), literal).toBe(count)
     const stripped = sources.find(([file]) => file === LANDING_COPY)![1]
     expect(occurrences(stripped, futureReadyLinkText)).toBe(0)

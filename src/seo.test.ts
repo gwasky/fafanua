@@ -54,9 +54,14 @@ describe('pageHead', () => {
     expect(doc.querySelector('link[rel="canonical"], meta[property^="og:"], script')).toBeNull()
   })
 
-  it('escapes the ampersands in titles', () => {
+  it('gives Health the title of its plan (#94)', () => {
     const page = pages.find((item) => item.path === '/solutions/health')!
-    expect(pageHead(page)).toContain('<title>Healthcare &amp; Health Data Analytics Uganda | Fafanua</title>')
+    expect(pageHead(page)).toContain('<title>Traceable Health Data Analytics Uganda | Fafanua</title>')
+  })
+
+  it('escapes the ampersands in titles', () => {
+    const page = pages.find((item) => item.path === '/solutions/financial-services')!
+    expect(pageHead(page)).toContain('<title>Financial Services &amp; Banking Analytics Uganda | Fafanua</title>')
   })
 })
 

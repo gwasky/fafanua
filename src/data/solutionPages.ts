@@ -8,14 +8,16 @@ import type { ServiceKey } from './servicePages.ts'
 // the landing pages' entry imports, so the homepage, which shows the rows
 // and links to the pages, does not ship it. No clients, case studies,
 // metrics, certifications or performance claims (§18), and no DHIS2
-// positioning (§9). Public Sector is on the shared landing-page
-// foundation (#93): its copy is
-// _docs/fafanua-public-sector-landing-page-plan.md section 4, which
-// replaced its §18 sections, and solutionPages.publicSector.plan.test.ts
-// checks it against the plan. The owner added five strings to it on
-// 2026-10-23 (#93), marked below: four carry the SEO plan §12 keywords
-// the plan copy had dropped, and one makes "trusted data foundation"
-// visible in the closing panel.
+// positioning (§9). Public Sector and Health are on the shared
+// landing-page foundation (#93, #94): their copy is section 4 of
+// _docs/fafanua-public-sector-landing-page-plan.md and of
+// _docs/fafanua-health-landing-page-plan.md, which replaced their §18
+// sections, and solutionPages.publicSector.plan.test.ts and
+// solutionPages.health.plan.test.ts check it against the plans. The owner
+// added five strings to each on 2026-10-23 (#93, #94), marked below: four
+// carry the SEO plan §12 (Public Sector) or §9 (Health) keywords the plan
+// copy had dropped, and one makes "trusted data foundation" visible in
+// the closing panel.
 
 export type SolutionService = {
   readonly service: ServiceKey
@@ -25,7 +27,7 @@ export type SolutionService = {
 }
 
 /** The existing landing page (SEO plan §18, #67): context, problems,
- * services, governance and activation. Five sectors still use it. */
+ * services, governance and activation. Four sectors still use it. */
 export type SolutionSectionsPage = {
   readonly layout?: undefined
   /** The <title>. */
@@ -308,89 +310,137 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
     ],
   },
   health: {
-    title: 'Healthcare & Health Data Analytics Uganda | Fafanua',
+    layout: 'sector',
+    title: 'Traceable Health Data Analytics Uganda | Fafanua',
     description:
-      'Fafanua helps healthcare providers and health programmes connect data systems, improve data quality, build trusted reporting and create actionable healthcare analytics.',
-    lead: 'For hospitals, clinic networks, laboratories and pharmacies, and for public and global-health programmes.',
-    context: [
-      'Health organisations depend on data from many systems: electronic medical records, hospital and laboratory systems, pharmacy and stock tools, billing and insurance platforms, national health information systems and programme survey tools. Each serves its own purpose, but few give managers, clinicians or programme teams a reliable combined view.',
-      'Fafanua helps healthcare providers and health programmes in Uganda and East Africa build a trusted data foundation: integrating health systems, improving health data quality and governance, and delivering healthcare analytics and reporting that people can act on.',
-    ],
-    audiences: [
-      {
+      'Health data you can trace: healthcare analytics for hospitals and clinic networks in Uganda and East Africa, built on a trusted data foundation.',
+    breadcrumb: 'Health',
+    hero: {
+      eyebrow: 'Health solutions',
+      heading: 'Health data you can trace.',
+      lead: 'For hospitals and clinic networks in Uganda and East Africa. We show you where your key finance and operations numbers come from, where they disagree across branches, and what to fix first.',
+      secondaryLabel: 'See how the assessment works',
+    },
+    diagram: {
+      sourcesHeading: 'Health systems',
+      sources: [
+        { label: 'EMR / HMIS', icon: 'hospital', feeds: false },
+        { label: 'Laboratory', icon: 'flask', feeds: false },
+        { label: 'Billing & insurance', icon: 'card', feeds: true },
+        { label: 'Pharmacy dispensing', icon: 'pill', feeds: true },
+        { label: 'Finance ledger', icon: 'ledger', feeds: true },
+      ],
+      traceHeading: 'Traced to source',
+      steps: ['Report', 'Definition', 'Calculation', 'Data model', 'Source system'],
+      traceFootnote: 'Owner and trust rating for every number',
+      figuresHeading: 'Numbers you can trust',
+      figures: [
+        { name: 'Revenue by branch', rating: 'Trusted with caveats', marker: 'amber' },
+        { name: 'Claims rejection rate', rating: 'Trusted', marker: 'teal' },
+        { name: 'Pharmacy stock variance', rating: 'Not yet trusted', marker: 'hollow' },
+      ],
+      caption: 'Illustrative example. Sample data only.',
+      description:
+        'Illustrative example: revenue by branch traced to billing, pharmacy dispensing and the finance ledger, with trust ratings for three numbers.',
+    },
+    challenge: {
+      heading: 'The challenge',
+      text: 'Each branch reports in its own way, so head office cannot compare like with like. Monthly reports are assembled by hand from billing, pharmacy and finance exports, and when a number looks wrong, nobody can say where it came from.',
+      icon: 'alert',
+    },
+    approach: {
+      heading: 'Our approach',
+      text: 'We start by tracing the numbers head office relies on most back to their source. What the trace reveals tells us what to fix first, so every branch ends up reporting the same way.',
+      icon: 'check',
+    },
+    audience: {
+      heading: 'Who we work with',
+      subheading: 'Hospitals, clinic networks, laboratories and pharmacies.',
+      card: {
         heading: 'Healthcare providers',
-        text: 'For hospitals, clinic networks, laboratories and pharmacies, analytics starts with operations and finance.',
+        text: 'For organisations running more than one branch, ward or service line.',
+        // Owner addition (2026-10-23, #94): SEO plan §9 keyword(s).
+        detail:
+          'We work with the health information systems your organisation already runs in Uganda, including those behind pharmacy analytics, medical inventory analytics and health supply chain analytics.',
+        icon: 'hospital',
         items: [
-          'Facility performance and utilisation dashboards',
-          'Patient flow and service-delivery analytics',
-          'Revenue, billing and insurance-claims reporting',
-          'Pharmacy and medical inventory analytics',
+          'Branch performance and comparability',
+          'Revenue, billing and insurance-claims reconciliation',
+          'Pharmacy and medical stock analytics',
           'Healthcare reporting automation',
         ],
       },
-      {
-        heading: 'Public and global-health programmes',
-        text: 'For health ministries, district health teams, implementing partners and global-health programmes, analytics centres on coverage, quality and outcomes.',
-        items: [
-          'Health programme performance dashboards',
-          'Public-health reporting and indicator tracking',
-          'Longitudinal patient and programme outcomes',
-          'Health supply-chain analytics',
-          'Donor and stakeholder reporting',
-        ],
-      },
-    ],
-    problems: [
-      'Patient, service and financial data held in separate systems that do not exchange data.',
-      'Reports to national systems, donors and boards prepared by hand from different sources.',
-      'Incomplete, late or inconsistent facility data that undermines trust in indicators.',
-      'Little visibility of stock levels and expiries across facilities.',
-      'Patient and programme outcomes that are hard to follow over time.',
-      'Sensitive health data shared without clear ownership or access rules.',
-    ],
-    services: [
-      {
-        service: 'data-engineering-and-integration',
-        label: 'Health system integration and interoperability',
-        text: 'Connect medical-record, laboratory, pharmacy, billing and health information systems through APIs, data exchange and monitored pipelines.',
-      },
-      {
-        service: 'data-warehousing-and-analytics-modelling',
-        label: 'Health data warehousing',
-        text: 'A health data warehouse that models patients, encounters, facilities, services and stock consistently.',
-      },
-      {
-        service: 'data-quality-and-reliability',
-        label: 'Health data quality',
-        text: 'Completeness, timeliness and consistency checks on facility and programme data before it reaches reports.',
-      },
-      {
-        service: 'data-governance-and-metadata',
-        label: 'Health data governance',
-        text: 'Ownership, classification and access policies for patient and programme data, and shared indicator definitions.',
-      },
-      {
-        service: 'business-intelligence-and-analytics',
-        label: 'Healthcare analytics and dashboards',
-        text: 'Facility, programme and public-health dashboards, and automated health reporting.',
-      },
-      {
-        service: 'managed-data-and-analytics',
-        label: 'Managed health data services',
-        text: 'Ongoing monitoring, support and improvement of health data pipelines and reporting.',
-      },
-    ],
-    governance: [
-      'Classification and access controls for patient-level and other sensitive health data.',
-      'Shared indicator definitions across facilities, programmes and reporting levels.',
-      'Data-quality rules for the completeness, timeliness and consistency of facility reporting.',
-      'Lineage from published indicators back to the source records.',
-    ],
-    activation: [
-      'Sharing stock and expiry alerts with pharmacy and supply teams.',
-      'Returning follow-up lists to facility and outreach teams.',
-      'Exposing trusted facility indicators inside operational and management tools.',
-    ],
+    },
+    assessment: {
+      eyebrow: 'Start with trust',
+      heading: 'The Data Trust Assessment: three weeks, fixed fee',
+      text: 'The Data Trust Assessment takes the numbers your leadership relies on most and traces each one from the report back to its source.',
+      deliverables: [
+        { name: 'Lineage map', text: 'How each key number is produced, system by system', icon: 'map' },
+        { name: 'Trust scorecard', text: 'Each number rated trusted, with caveats, or not yet', icon: 'score' },
+        { name: 'Shared definitions', text: 'For the terms your branches use differently', icon: 'book' },
+        { name: 'Fix list', text: 'Prioritised by impact and effort', icon: 'list' },
+      ],
+    },
+    ai: {
+      heading: 'What this means for AI',
+      text: 'AI and advanced analytics work only when metrics are clearly defined, inputs can be traced to their source, data quality is known and access is controlled. The assessment gives each use case a plain verdict.',
+      icon: 'gauge',
+      chips: [
+        { label: 'Ready now', marker: 'teal' },
+        { label: 'Ready after specific fixes', marker: 'amber' },
+        { label: 'Not ready yet', marker: 'hollow' },
+      ],
+    },
+    handling: {
+      heading: 'Handled responsibly',
+      icon: 'shield',
+      items: [
+        'We begin with aggregated or de-identified data.',
+        'Ownership, classification and access rules are agreed before any pipeline is built.',
+        'We focus on operational and financial data, not clinical decision-making.',
+      ],
+    },
+    services: {
+      heading: 'After the assessment',
+      subheading: 'What we fix, once we know where trust breaks down.',
+      items: [
+        {
+          name: 'Integrate and model',
+          text: 'Connect billing, pharmacy, lab and finance systems into one consistent view of patients, visits, services and stock.',
+          icon: 'link',
+          service: 'data-engineering-and-integration',
+          // Owner addition (2026-10-23, #94): SEO plan §9 keyword(s).
+          detail:
+            'Health systems integration in Uganda, with health systems interoperability through APIs and health data exchange, into one health data warehouse.',
+        },
+        {
+          name: 'Quality and governance',
+          text: 'Completeness and timeliness checks, plus clear ownership and access rules.',
+          icon: 'shield',
+          service: 'data-quality-and-reliability',
+          // Owner addition (2026-10-23, #94): SEO plan §9 keyword(s).
+          detail:
+            'Health data quality and health data governance in Uganda, with a health data quality framework your branches can keep up.',
+        },
+        {
+          name: 'Reporting and dashboards',
+          text: 'Automated branch and head-office reporting built on the traced numbers.',
+          icon: 'chart',
+          service: 'business-intelligence-and-analytics',
+          // Owner addition (2026-10-23, #94): SEO plan §9 keyword(s).
+          detail:
+            'Healthcare analytics in Uganda and East Africa, from health facility performance dashboards and facility utilisation analytics to patient flow analytics and health service delivery analytics.',
+        },
+      ],
+    },
+    closing: {
+      eyebrow: 'Get started',
+      heading: 'Build a health data foundation you can trust',
+      text: 'Which numbers do you trust least? Tell us about the reports your branches and head office rely on.',
+      // Owner addition (2026-10-23, #94): SEO plan §9 keyword(s).
+      followUp: 'Then we make sure they are built on a trusted data foundation.',
+    },
   },
   education: {
     title: 'Education Data Analytics Uganda | Fafanua',

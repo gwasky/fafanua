@@ -17,15 +17,16 @@ import seoPlan from '../../_docs/fafanua-seo-keyword-and-implementation-plan.md?
 import trustPlan from '../../_docs/fafanua-trust-lineage-positioning-plan.md?raw'
 import refinementPlan from '../../_docs/fafanua-homepage-sections-refinement-plan.md?raw'
 import { homepageSolutions, solutions, solutionsIntro } from './solutions.ts'
-import { solutionPages, type SolutionSectionsPage } from './solutionPages.ts'
+import { solutionPages, type SectorLandingPage } from './solutionPages.ts'
 
 // The five sectors the positioning doc and plan V2 cover, in the site's
 // order; Health, the SEO plan's sixth domain (#67), is checked below.
 const planned = solutions.filter((solution) => solution.id !== 'health')
 const health = solutions.find((solution) => solution.id === 'health')!
-// Health is still on the §18 sections until #94 moves it to the shared
-// landing-page foundation.
-const healthPage = solutionPages.health as SolutionSectionsPage
+// Health is on the shared landing-page foundation (#94); its copy is
+// checked against _docs/fafanua-health-landing-page-plan.md in
+// solutionPages.health.plan.test.ts.
+const healthPage = solutionPages.health as SectorLandingPage
 
 // The sectors whose tag lines W7 updates, by their W7 names (#73). W7
 // writes "Financial services"; the title keeps the positioning doc's
@@ -216,10 +217,19 @@ describe('Health (SEO plan §9 and §21, #67)', () => {
   const plan = seoPlan.replace(/\r\n/g, '\n')
   const section21 = section(plan, 21)
 
-  it('uses the §21 title, description and h1 verbatim', () => {
-    expect(section21).toContain(`> **${healthPage.title}**\n`)
-    expect(section21).toContain(`> **${healthPage.description}**\n`)
+  // The Health plan (#94) supersedes §21's suggested title, description
+  // and h1, as §21's dated note records; the h1 stays the sector's
+  // heading in solutions.ts (homepage data).
+  it('records that the Health plan supersedes the §21 title, description and h1, and keeps the h1 as the heading', () => {
     expect(section21).toContain(`> **${health.heading}**\n`)
+    expect(section21).toMatch(/superseded by the Health plan[^\n]*#94/)
+    expect(healthPage.layout).toBe('sector')
+    expect(healthPage.title).not.toBe('Healthcare & Health Data Analytics Uganda | Fafanua')
+    expect(section21).not.toContain(`> **${healthPage.title}**`)
+    expect(section21).not.toContain(`> **${healthPage.description}**`)
+    expect(healthPage.title).toContain('Health Data Analytics Uganda')
+    expect(healthPage.description).toContain('healthcare analytics')
+    expect(healthPage.hero.heading).not.toBe(health.heading)
   })
 
   it('lives at /solutions/health, as §9 names it', () => {
@@ -227,11 +237,12 @@ describe('Health (SEO plan §9 and §21, #67)', () => {
     expect(health.slug).toBe('health')
   })
 
-  it('serves both healthcare providers and health programmes', () => {
-    expect(healthPage.audiences?.map((audience) => audience.heading)).toEqual([
-      'Healthcare providers',
-      'Public and global-health programmes',
-    ])
+  // The Health plan narrows §9's two audiences to healthcare providers
+  // (#94), as §9's dated note records.
+  it('serves healthcare providers only, as the dated §9 note records', () => {
+    expect(section(plan, 9)).toContain('Added for the Health landing page (owner, 2026-10-23, #94).')
+    expect(healthPage.audience.card.heading).toBe('Healthcare providers')
+    expect(JSON.stringify(healthPage)).not.toMatch(/Public and global-health programmes|global-health/)
   })
 
   it('does not position Fafanua as a DHIS2 consultancy', () => {
