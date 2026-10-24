@@ -18,7 +18,8 @@
  * main and keep the site's weights.
  *
  * Colour: teal is the only accent; amber (--landing-amber) only on the
- * challenge badge and the two caveat markers; no red. Width queries are
+ * challenge badge, the two caveat markers and the reconciliation cards'
+ * exception icon (#98); no red. Width queries are
  * the literal 48em and 64em (see tokens.css).
  */
 
@@ -165,6 +166,12 @@
   font-size: var(--text-lg);
   line-height: var(--leading-normal);
   text-wrap: pretty;
+}
+
+/* The first of two lead paragraphs (#98): closer to the second, which
+   keeps the space before the buttons. */
+.sector-landing .sector-hero__lead--first {
+  margin-block-end: var(--space-4);
 }
 
 .sector-landing .sector-hero__actions {
@@ -479,6 +486,16 @@
   margin-block-start: var(--space-5);
 }
 
+/* A paired card's label above its heading, and its second paragraph
+   (#98). */
+.sector-landing .badge-card__label {
+  margin-block-end: var(--space-1);
+}
+
+.sector-landing .badge-card__text + .badge-card__text {
+  margin-block-start: var(--space-3);
+}
+
 .sector-landing .badge-card .checklist {
   margin-block-start: var(--space-2);
 }
@@ -541,6 +558,20 @@
   font-weight: var(--weight-semibold);
 }
 
+/* Stacked items (#98): the name on its own line in graphite 900, the text
+   below it in graphite 600. */
+.sector-landing .checklist__stacked .checklist__name {
+  display: block;
+  color: var(--color-heading);
+}
+
+.sector-landing .checklist__text {
+  display: block;
+  margin-block-start: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
 /* The Data Trust Assessment band. */
 .sector-landing .sector-band {
   margin-block-start: var(--sector-gap);
@@ -557,6 +588,21 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* The deliverables' label (#98), which names their list: not a heading. */
+.sector-landing .sector-subheading--tight {
+  margin-block-end: var(--space-6);
+}
+
+.sector-landing .deliverables__label {
+  margin-block: 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
 }
 
 .sector-landing .deliverable {
@@ -588,6 +634,11 @@
   text-wrap: pretty;
 }
 
+/* Teal 800 lead lines, where a page asks for them (#98). */
+.sector-landing .service-card-lp__lead--accent {
+  color: var(--color-accent-text);
+}
+
 .sector-landing .service-card-lp__text + .service-card-lp__text {
   margin-block-start: var(--space-2);
 }
@@ -608,6 +659,173 @@
 .sector-landing .service-card-lp h3 a:hover,
 .sector-landing .service-card-lp h3 a:focus-visible {
   text-decoration-line: underline;
+}
+
+/* ---- Promise strip (#98) ---- */
+
+/* A white card of four numbered steps in two groups of two. Below 48em
+   one step per row, each group's label a small band above its first
+   step; from 48em each step is a two-row subgrid (label, body) and the
+   label in a group's first step spans both of its steps: two by two up
+   to 64em, one row of four from it. Hairlines divide the steps and the
+   label band from them. */
+.sector-landing .promise {
+  overflow: hidden;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface);
+}
+
+.sector-landing .promise__steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sector-landing .promise__step {
+  position: relative;
+}
+
+.sector-landing .promise__step + .promise__step {
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.sector-landing .promise__label {
+  display: block;
+  padding: var(--space-2) var(--space-4);
+  border-block-end: var(--border-width) solid var(--color-border);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  overflow-wrap: break-word;
+}
+
+/* The assessment's label on the lighter tint in teal 800 (7.37:1), the
+   one after it on paper in graphite 600 (6.00:1). */
+.sector-landing .promise__label--accent {
+  background-color: var(--landing-tint-bg);
+  color: var(--color-accent-text);
+}
+
+.sector-landing .promise__label--neutral {
+  background-color: var(--color-bg);
+  color: var(--color-text-muted);
+}
+
+.sector-landing .promise__body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+/* The numbered circle: teal 100 for the assessment's steps, graphite 100
+   after it, the number in graphite 600 (5.68 and 5.67:1); its transparent
+   border is drawn in forced-colours mode. */
+.sector-landing .promise__number {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: var(--space-6);
+  min-block-size: var(--space-6);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+}
+
+.sector-landing .promise__number--accent {
+  background-color: var(--landing-badge-teal-bg);
+}
+
+.sector-landing .promise__number--neutral {
+  background-color: var(--color-surface-alt);
+}
+
+.sector-landing .promise__words {
+  min-width: 0;
+}
+
+.sector-landing .promise__name {
+  display: block;
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  overflow-wrap: break-word;
+}
+
+.sector-landing .promise__text {
+  display: block;
+  margin-block-start: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  text-wrap: pretty;
+}
+
+/* ---- Reconciliation cards (#98) ---- */
+
+.sector-landing .reconciliation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sector-landing .reconciliation__card {
+  padding: var(--space-5) var(--landing-card-inset);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface);
+}
+
+.sector-landing .reconciliation__source,
+.sector-landing .reconciliation__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+/* The source in graphite 600 (6.61:1); the status in graphite 900
+   (16.39:1), its meaning always in its words. */
+.sector-landing .reconciliation__source {
+  margin-block-end: var(--space-2);
+  color: var(--color-text-muted);
+}
+
+.sector-landing .reconciliation__status {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+/* Teal 600 swap and check icons (3.60:1), the amber exception icon
+   (5.47:1). */
+.sector-landing .reconciliation__icon {
+  flex: none;
+  inline-size: var(--space-4);
+  block-size: var(--space-4);
+  color: var(--color-accent);
+}
+
+.sector-landing .reconciliation__icon--alert {
+  color: var(--landing-amber);
+}
+
+.sector-landing .reconciliation__caption {
+  margin-block: var(--space-3) 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
 }
 
 /* ---- Delivered in stages ---- */
@@ -706,7 +924,8 @@
    instead, and the ticks and icons stay in the text colour. */
 @media (forced-colors: active) {
   .sector-landing .checklist__tick,
-  .sector-landing .icon-badge {
+  .sector-landing .icon-badge,
+  .sector-landing .promise__number {
     border-color: CanvasText;
   }
 }
@@ -771,6 +990,41 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  /* The promise strip two by two: each step a subgrid of the label row
+     and the body row, so a group's label, in its first step, spans both
+     of its steps, and the labels in a row share one height. */
+  .sector-landing .promise__steps {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sector-landing .promise__step {
+    display: grid;
+    grid-row: span 2;
+    grid-template-rows: subgrid;
+  }
+
+  .sector-landing .promise__step + .promise__step {
+    border-block-start: 0;
+  }
+
+  .sector-landing .promise__label {
+    grid-row: 1;
+    inline-size: 200%;
+  }
+
+  .sector-landing .promise__body {
+    grid-row: 2;
+  }
+
+  .sector-landing .promise__step:nth-child(even) .promise__body {
+    border-inline-start: var(--border-width) solid var(--color-border);
+  }
+
+  .sector-landing .promise__step + .promise__step--group-start .promise__label {
+    border-block-start: var(--border-width) solid var(--color-border);
+  }
+
   .sector-landing .stage {
     padding-inline-end: var(--space-4);
   }
@@ -816,8 +1070,23 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .sector-landing .service-cards {
+  .sector-landing .service-cards,
+  .sector-landing .reconciliation {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* The promise strip in one row of four, the two labels side by side. */
+  .sector-landing .promise__steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .sector-landing .promise__step + .promise__step .promise__body {
+    border-inline-start: var(--border-width) solid var(--color-border);
+  }
+
+  .sector-landing .promise__step + .promise__step--group-start .promise__label {
+    border-block-start: 0;
+    border-inline-start: var(--border-width) solid var(--color-border);
   }
 
   .sector-landing .stages {

@@ -5,7 +5,8 @@ import IconBadge from './IconBadge.tsx'
 // Who we work with (#93): the section's h2 and subheading over one card on
 // the lighter teal tint, with a round badge, the h3, its text and a
 // checklist in two columns from 48em. A page may give the checklist a
-// label, which names the list (Health, #94).
+// label, which names the list (Health, #94), and may stack each named
+// item's name above its text (Financial Services, #98).
 function AudienceCard({ audience }: { audience: SectorLandingPage['audience'] }) {
   const { card } = audience
   return (
@@ -28,6 +29,7 @@ function AudienceCard({ audience }: { audience: SectorLandingPage['audience'] })
             )}
             <Checklist
               items={card.items}
+              stacked={card.itemsLayout === 'stacked'}
               className="audience-card__list"
               labelledBy={card.itemsLabel !== undefined ? 'audience-list-label' : undefined}
             />

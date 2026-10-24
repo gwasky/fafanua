@@ -10,6 +10,7 @@ type DeliverableCardsProps = {
 // The Data Trust Assessment band (#93): full-bleed white between two
 // hairlines, the eyebrow, h2 and text, then the four deliverables as
 // paper cards with square badges, four across from 64em, two from 48em.
+// A page may name the deliverables with a label above them (#98).
 function DeliverableCards({ assessment, id }: DeliverableCardsProps) {
   return (
     <section id={id} className="sector-band" aria-labelledby={`${id}-heading`}>
@@ -18,8 +19,23 @@ function DeliverableCards({ assessment, id }: DeliverableCardsProps) {
         <h2 id={`${id}-heading`} className="sector-heading">
           {assessment.heading}
         </h2>
-        <p className="sector-subheading">{assessment.text}</p>
-        <ul className="deliverables" role="list">
+        <p
+          className={
+            assessment.deliverablesLabel === undefined ? 'sector-subheading' : 'sector-subheading sector-subheading--tight'
+          }
+        >
+          {assessment.text}
+        </p>
+        {assessment.deliverablesLabel !== undefined && (
+          <p id={`${id}-deliverables-label`} className="deliverables__label">
+            {assessment.deliverablesLabel}
+          </p>
+        )}
+        <ul
+          className="deliverables"
+          role="list"
+          aria-labelledby={assessment.deliverablesLabel !== undefined ? `${id}-deliverables-label` : undefined}
+        >
           {assessment.deliverables.map((deliverable) => (
             <li key={deliverable.name} className="deliverable">
               <IconBadge icon={deliverable.icon} shape="square" />

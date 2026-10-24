@@ -15,8 +15,9 @@ type LandingHeroProps = {
 }
 
 // The landing-page hero (#93) on the hero tint, named by its h1: the
-// breadcrumbs, eyebrow, h1, lead and two buttons, then the trace diagram,
-// beside them from 64em. The primary button is the site's one call to
+// breadcrumbs, eyebrow, h1, lead (one paragraph, or two where the page
+// gives a second, #98) and two buttons, then the trace diagram, beside
+// them from 64em. The primary button is the site's one call to
 // action (contact.ts), opening an email; the secondary jumps to the
 // assessment section, and page.tsx moves focus to its heading
 // (data-focus-section).
@@ -30,7 +31,14 @@ function LandingHero({ hero, diagram, breadcrumb, trail, assessmentId }: Landing
           <h1 id="sector-hero-heading" className="sector-hero__heading">
             {hero.heading}
           </h1>
-          <p className="sector-hero__lead">{hero.lead}</p>
+          {hero.leadDetail === undefined ? (
+            <p className="sector-hero__lead">{hero.lead}</p>
+          ) : (
+            <>
+              <p className="sector-hero__lead sector-hero__lead--first">{hero.lead}</p>
+              <p className="sector-hero__lead">{hero.leadDetail}</p>
+            </>
+          )}
           <div className="sector-hero__actions">
             <a className="button" href={`mailto:${email}`}>
               {ctaLabel}

@@ -8,16 +8,19 @@ import type { ServiceKey } from './servicePages.ts'
 // the landing pages' entry imports, so the homepage, which shows the rows
 // and links to the pages, does not ship it. No clients, case studies,
 // metrics, certifications or performance claims (§18), and no DHIS2
-// positioning (§9). Public Sector and Health are on the shared
-// landing-page foundation (#93, #94): their copy is section 4 of
-// _docs/fafanua-public-sector-landing-page-plan.md and of
-// _docs/fafanua-health-landing-page-plan.md, which replaced their §18
-// sections, and solutionPages.publicSector.plan.test.ts and
-// solutionPages.health.plan.test.ts check it against the plans. The owner
-// added strings to them on 2026-10-23, marked below: on Public Sector
-// (#93) four carry the SEO plan §12 keywords the plan copy had dropped,
-// and on both one makes "trusted data foundation" visible in the closing
-// panel (#93, #94).
+// positioning (§9). Public Sector, Health and Financial Services are on
+// the shared landing-page foundation (#93, #94, #98): their copy is
+// section 4 of _docs/fafanua-public-sector-landing-page-plan.md, of
+// _docs/fafanua-health-landing-page-plan.md and of
+// _docs/fafanua-financial-services-landing-page-plan.md, which replaced
+// their §18 sections, and solutionPages.publicSector.plan.test.ts,
+// solutionPages.health.plan.test.ts and
+// solutionPages.financialServices.plan.test.ts check it against the
+// plans. The owner added strings to them on 2026-10-23, marked below: on
+// Public Sector (#93) four carry the SEO plan §12 keywords the plan copy
+// had dropped, and on both one makes "trusted data foundation" visible in
+// the closing panel (#93, #94). On Financial Services (#98) two proposed
+// strings, marked below and pending the owner's review, do the same.
 
 export type SolutionService = {
   readonly service: ServiceKey
@@ -27,7 +30,7 @@ export type SolutionService = {
 }
 
 /** The existing landing page (SEO plan §18, #67): context, problems,
- * services, governance and activation. Four sectors still use it. */
+ * services, governance and activation. Three sectors still use it. */
 export type SolutionSectionsPage = {
   readonly layout?: undefined
   /** The <title>. */
@@ -64,6 +67,16 @@ export type BadgeCard = {
   readonly icon: IconName
 }
 
+/** A paired card that may carry a label above its heading and a second
+ * paragraph after its text (Financial Services, #98). */
+export type PairedCard = BadgeCard & {
+  readonly label?: string
+  readonly detail?: string
+}
+
+/** A promise strip step: its name in bold and a short description. */
+export type PromiseStep = { readonly name: string; readonly text: string }
+
 /**
  * A page on the shared landing-page foundation (#93, section 2a of
  * _docs/fafanua-public-sector-landing-page-plan.md, styled as section 5 of
@@ -82,6 +95,8 @@ export type SectorLandingPage = {
     readonly eyebrow: string
     readonly heading: string
     readonly lead: string
+    /** An optional second lead paragraph (Financial Services, #98). */
+    readonly leadDetail?: string
     /** The secondary button's label; it jumps to #assessment. */
     readonly secondaryLabel: string
   }
@@ -100,16 +115,31 @@ export type SectorLandingPage = {
     /** The figure's accessible description (plan section 6). */
     readonly description: string
   }
-  readonly challenge: BadgeCard
-  readonly approach: BadgeCard
+  readonly challenge: PairedCard
+  readonly approach: PairedCard
+  /**
+   * The promise strip after the challenge and approach (Financial
+   * Services, #98); a page may leave it out. Two groups of two numbered
+   * steps, each group under its label: the first (the assessment) with
+   * teal-tint circles, the second (after it) with neutral ones.
+   */
+  readonly promise?: {
+    readonly groups: readonly [
+      { readonly label: string; readonly steps: readonly [PromiseStep, PromiseStep] },
+      { readonly label: string; readonly steps: readonly [PromiseStep, PromiseStep] },
+    ]
+  }
   readonly audience: {
     readonly heading: string
     readonly subheading: string
     /** `detail`: an optional paragraph after the card's text;
-     * `itemsLabel`: an optional label that names the checklist. */
+     * `itemsLabel`: an optional label that names the checklist;
+     * `itemsLayout`: 'stacked' shows each named item's name on its own
+     * line, its text below and no colon (Financial Services, #98). */
     readonly card: BadgeCard & {
       readonly detail?: string
       readonly itemsLabel?: string
+      readonly itemsLayout?: 'stacked'
       readonly items: readonly ChecklistItem[]
     }
   }
@@ -117,7 +147,30 @@ export type SectorLandingPage = {
     readonly eyebrow: string
     readonly heading: string
     readonly text: string
+    /** An optional label that names the deliverables list (#98). */
+    readonly deliverablesLabel?: string
     readonly deliverables: readonly { readonly name: string; readonly text: string; readonly icon: IconName }[]
+  }
+  /**
+   * The reconciliation cards after the assessment band (Financial
+   * Services, #98); a page may leave it out. Each card compares a record
+   * with a source and shows the status as text, with a decorative icon;
+   * `comparedLabel` is the visually hidden text before each source, which
+   * the decorative swap icon stands for.
+   */
+  readonly reconciliation?: {
+    readonly eyebrow: string
+    readonly heading: string
+    readonly text: string
+    readonly comparedLabel: string
+    readonly cards: readonly {
+      readonly record: string
+      readonly source: string
+      readonly status: string
+      /** A teal check-circle, or an amber alert-circle (an exception). */
+      readonly statusIcon: 'check' | 'alert'
+    }[]
+    readonly caption: string
   }
   /** Delivered in stages; a page may leave it out. */
   readonly stages?: {
@@ -141,6 +194,8 @@ export type SectorLandingPage = {
   readonly services: {
     readonly heading: string
     readonly subheading: string
+    /** 'accent' shows the cards' lead lines in teal 800 (#98). */
+    readonly leadTone?: 'accent'
     readonly items: readonly {
       readonly name: string
       readonly text: string
@@ -166,60 +221,197 @@ export type SolutionPage = SolutionSectionsPage | SectorLandingPage
 // Each sector's landing-page copy, by solution id.
 export const solutionPages: Readonly<Record<string, SolutionPage>> = {
   'financial-services': {
-    title: 'Financial Services & Banking Analytics Uganda | Fafanua',
+    layout: 'sector',
+    title: 'Reconciliation & Banking Analytics Uganda | Fafanua',
     description:
-      'Data engineering, reconciliation and business intelligence for banks, SACCOs, microfinance institutions, fintechs and insurers in Uganda and East Africa.',
-    lead: 'For banks, SACCOs, microfinance institutions, fintechs, payment processors and insurers.',
-    context: [
-      'Financial institutions run on many systems at once: a core banking or loan-management platform, mobile-money and agent channels, card and payment switches, CRM and accounting systems. Each holds part of the picture of a customer, a loan or a transaction, and management, risk and regulatory reporting all depend on bringing those parts together accurately.',
-      'Fafanua helps banks, SACCOs and microfinance institutions in Uganda and East Africa build the trusted data foundation behind that reporting: connecting the systems, reconciling transactions, and modelling portfolio and customer data once, so every report starts from the same numbers.',
-    ],
-    problems: [
-      'Customer and transaction data fragmented across core banking, mobile-money and payment platforms.',
-      'Portfolio monitoring that relies on monthly extracts rather than current data.',
-      'Payment and revenue reconciliation done by hand in spreadsheets.',
-      'Revenue leakage that stays hidden while channels do not reconcile.',
-      'Regulatory returns assembled manually from several systems each period.',
-      'Limited customer segmentation, because customer records are not linked across products.',
-    ],
-    services: [
-      {
-        service: 'data-engineering-and-integration',
-        label: 'Payment and core-system integration',
-        text: 'Connect core banking, loan-management, mobile-money, payment and CRM systems with monitored pipelines.',
+      'Financial figures you can reconcile: financial services analytics for banks, microfinance institutions, SACCOs and insurers in Uganda, on a trusted data foundation.',
+    breadcrumb: 'Financial services',
+    hero: {
+      eyebrow: 'Financial services solutions',
+      heading: 'Financial figures you can reconcile.',
+      lead: 'Banks, microfinance institutions, SACCOs, insurers and payment providers rely on information spread across multiple systems.',
+      leadDetail:
+        'Fafanua helps bring that information together, reconcile key figures and build a trusted foundation for financial reporting, operational visibility and better decisions.',
+      secondaryLabel: 'See how the assessment works',
+    },
+    diagram: {
+      sourcesHeading: 'Financial systems',
+      sources: [
+        { label: 'CRM', icon: 'chart', feeds: false },
+        { label: 'Card & ATM switch', icon: 'card', feeds: false },
+        { label: 'Loan management', icon: 'list', feeds: true },
+        { label: 'Payments & mobile money', icon: 'card', feeds: true },
+        { label: 'General ledger', icon: 'ledger', feeds: true },
+      ],
+      traceHeading: 'Traced to source',
+      steps: ['Report', 'Definition', 'Calculation', 'Data model', 'Source system'],
+      traceFootnote: 'Owner and trust rating for every number',
+      figuresHeading: 'Figures your board sees',
+      figures: [
+        { name: 'Portfolio at risk', rating: 'Trusted with caveats', marker: 'amber' },
+        { name: 'Mobile money settlements', rating: 'Trusted', marker: 'teal' },
+        { name: 'Loan book against ledger', rating: 'Not yet trusted', marker: 'hollow' },
+      ],
+      caption: 'Illustrative example. Sample data only.',
+      description:
+        'Illustrative example: portfolio at risk, mobile money settlements and loan book against ledger traced to loan, payment and ledger systems, with trust ratings.',
+    },
+    challenge: {
+      label: 'The challenge',
+      heading: 'Different systems. Different numbers.',
+      text: 'Financial information often sits across core banking platforms, loan management systems, payment channels and general ledgers.',
+      detail:
+        "When these systems don't agree, teams spend valuable time reconciling reports, investigating discrepancies and explaining figures to management, boards and regulators.",
+      icon: 'alert',
+    },
+    approach: {
+      label: 'Our approach',
+      heading: 'Start with the numbers that matter.',
+      text: 'We trace critical financial figures from management and regulatory reports back to their source systems, identifying where definitions, calculations or data quality issues create discrepancies.',
+      detail:
+        'The findings inform a prioritised roadmap for improving data integration, reconciliation and reporting.',
+      icon: 'check',
+    },
+    promise: {
+      groups: [
+        {
+          label: 'The data trust assessment',
+          steps: [
+            { name: 'Understand the numbers', text: 'Trace key figures to their source' },
+            { name: 'Establish trust', text: 'Rate each figure and agree definitions' },
+          ],
+        },
+        {
+          label: 'After the assessment',
+          steps: [
+            { name: 'Connect the systems', text: 'Integrate, model and reconcile' },
+            { name: 'Improve reporting and decisions', text: 'Dashboards built on trusted data' },
+          ],
+        },
+      ],
+    },
+    audience: {
+      heading: 'Who we work with',
+      subheading: 'Banks, microfinance institutions, SACCOs, insurers and payment service providers.',
+      card: {
+        heading: 'Financial institutions',
+        text: 'We help financial organisations connect fragmented information, improve confidence in their reporting and gain a clearer view of business performance.',
+        // Owner addition (2026-10-24, #98): proposed [A2], SEO plan §7 keywords and the visible "Uganda", pending the owner's review.
+        detail:
+          'In Uganda and East Africa, that includes banking analytics, payment and revenue reconciliation, and financial reporting automation.',
+        icon: 'ledger',
+        itemsLayout: 'stacked',
+        items: [
+          { name: 'Loan portfolio performance', text: 'Monitor portfolio quality, arrears and repayment trends.' },
+          {
+            name: 'Payments and reconciliation',
+            text: 'Identify discrepancies between transactions, settlements and ledger balances.',
+          },
+          {
+            name: 'Financial and regulatory reporting',
+            text: 'Improve consistency, traceability and reliability of reported figures.',
+          },
+          {
+            name: 'Customer and product insights',
+            text: 'Understand customer activity, product performance and business trends.',
+          },
+        ],
       },
-      {
-        service: 'data-warehousing-and-analytics-modelling',
-        label: 'Portfolio and customer data models',
-        text: 'Model loans, accounts, customers and transactions consistently, with their history preserved.',
-      },
-      {
-        service: 'data-quality-and-reliability',
-        label: 'Payment reconciliation controls',
-        text: 'Automated reconciliation between channels, switches and the ledger, with exceptions surfaced every day.',
-      },
-      {
-        service: 'data-governance-and-metadata',
-        label: 'Financial data governance',
-        text: 'Ownership, definitions and access policies for customer and financial data.',
-      },
-      {
-        service: 'business-intelligence-and-analytics',
-        label: 'Banking and portfolio dashboards',
-        text: 'Credit portfolio, risk-monitoring and management dashboards, and financial reporting automation.',
-      },
-    ],
-    governance: [
-      'Reconciliation tolerances and exception workflows agreed with finance.',
-      'Consistent definitions of active customers, portfolio at risk and other key measures.',
-      'Classification and access controls for personal and financial data.',
-      'Lineage from regulatory figures back to the source transactions.',
-    ],
-    activation: [
-      'Pushing customer segments and product eligibility into CRM and engagement tools.',
-      'Sharing arrears and risk flags with collections and relationship teams.',
-      'Exposing trusted portfolio metrics inside operational applications.',
-    ],
+    },
+    assessment: {
+      eyebrow: 'Start with trust',
+      heading: 'The Data Trust Assessment: three weeks, fixed fee',
+      text: 'Before building dashboards or integrating systems, we establish whether the numbers your organisation relies on can be trusted.',
+      deliverablesLabel: 'The assessment delivers',
+      deliverables: [
+        {
+          name: 'Lineage map',
+          text: 'Trace critical figures from reports through calculations to their originating systems.',
+          icon: 'map',
+        },
+        {
+          name: 'Trust scorecard',
+          text: 'Assess the reliability of each figure and document discrepancies or limitations.',
+          icon: 'score',
+        },
+        {
+          name: 'Shared definitions',
+          text: 'Identify inconsistent business definitions and recommend common standards.',
+          icon: 'book',
+        },
+        {
+          name: 'Prioritised roadmap',
+          text: 'Identify the improvements that matter most, based on business impact and implementation effort.',
+          icon: 'list',
+        },
+      ],
+    },
+    reconciliation: {
+      eyebrow: 'After the assessment · What we can implement',
+      heading: 'Know where your financial figures come from',
+      text: 'Automated controls can compare records across systems, flag discrepancies and help teams investigate differences before they reach management reports.',
+      comparedLabel: 'compared with',
+      cards: [
+        { record: 'Loan book', source: 'General ledger', status: 'Reconciled', statusIcon: 'check' },
+        { record: 'Mobile money', source: 'Settlement records', status: '3 exceptions', statusIcon: 'alert' },
+        { record: 'Board report', source: 'Source systems', status: 'Validated', statusIcon: 'check' },
+      ],
+      caption: 'Illustrative example. Not live customer data.',
+    },
+    ai: {
+      heading: 'What this means for AI',
+      text: 'AI and advanced analytics work only when metrics are clearly defined, inputs can be traced to their source, data quality is known and access is controlled. The assessment gives each use case a plain verdict.',
+      icon: 'gauge',
+      chips: [
+        { label: 'Ready now', marker: 'teal' },
+        { label: 'Ready after specific fixes', marker: 'amber' },
+        { label: 'Not ready yet', marker: 'hollow' },
+      ],
+    },
+    handling: {
+      heading: 'Handled responsibly',
+      icon: 'shield',
+      items: [
+        'Customer data is pseudonymised wherever the analysis allows.',
+        'Access follows your existing roles and approval processes.',
+        'We work alongside your risk, compliance and internal audit teams, not around them.',
+      ],
+    },
+    services: {
+      heading: 'After the assessment',
+      subheading: 'A practical roadmap to connect your systems, improve data reliability and strengthen reporting.',
+      leadTone: 'accent',
+      items: [
+        {
+          name: 'Integrate and model',
+          lead: 'Bring your financial data together.',
+          text: 'Connect core banking, loan management, payments and general ledger systems into a central data warehouse. Establish consistent definitions for customers, accounts, transactions and financial performance.',
+          icon: 'link',
+          service: 'data-engineering-and-integration',
+        },
+        {
+          name: 'Quality and governance',
+          lead: 'Build confidence in your financial data.',
+          text: 'Introduce automated checks for accuracy, completeness, consistency and timeliness. Establish clear ownership, access controls and business definitions so financial information remains reliable and traceable.',
+          icon: 'shield',
+          service: 'data-quality-and-reliability',
+        },
+        {
+          name: 'Reporting and dashboards',
+          lead: 'Turn trusted data into better decisions.',
+          text: 'Replace fragmented spreadsheets and manual reporting with reliable dashboards for portfolio performance, financial operations, payments, customer activity and regulatory reporting.',
+          icon: 'chart',
+          service: 'business-intelligence-and-analytics',
+        },
+      ],
+    },
+    closing: {
+      eyebrow: 'Get started',
+      heading: 'Build a financial data foundation you can trust',
+      text: 'Your next financial report should be easier to produce, explain and defend. Start by identifying which figures can be trusted, where discrepancies originate and what needs to improve.',
+      // Owner addition (2026-10-24, #98): proposed [A1], the protected phrase, visible, pending the owner's review.
+      followUp: 'Then we make sure your reports are built on a trusted data foundation.',
+    },
   },
   'retail-and-distribution': {
     title: 'Retail & Distribution Analytics Uganda | Fafanua',

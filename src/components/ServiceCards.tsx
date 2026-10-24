@@ -5,7 +5,8 @@ import IconBadge from './IconBadge.tsx'
 // The service cards after the assessment (#93): the h2 and subheading over three white
 // cards with square badges, three across from 64em. Each h3 links to its
 // service's landing page (owner note 4), in the heading's colour. A card
-// may have a bold lead line between its heading and text (Health, #94).
+// may have a bold lead line between its heading and text (Health, #94),
+// which a page may show in teal 800 (Financial Services, #98).
 function ServiceCards({ services }: { services: SectorLandingPage['services'] }) {
   return (
     <section className="sector-section" aria-labelledby="after-heading">
@@ -21,7 +22,17 @@ function ServiceCards({ services }: { services: SectorLandingPage['services'] })
               <h3 className="sector-card-heading sector-card-heading--small">
                 <a href={servicePath(item.service)}>{item.name}</a>
               </h3>
-              {item.lead !== undefined && <p className="service-card-lp__lead">{item.lead}</p>}
+              {item.lead !== undefined && (
+                <p
+                  className={
+                    services.leadTone === 'accent'
+                      ? 'service-card-lp__lead service-card-lp__lead--accent'
+                      : 'service-card-lp__lead'
+                  }
+                >
+                  {item.lead}
+                </p>
+              )}
               <p className="service-card-lp__text">{item.text}</p>
               {item.detail !== undefined && <p className="service-card-lp__text">{item.detail}</p>}
             </li>
