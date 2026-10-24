@@ -5,6 +5,7 @@ import { managedServices, services } from '../data/services.ts'
 import { footerSolutions, solutions } from '../data/solutions.ts'
 import { notFound, pages, type Page } from '../pages.ts'
 import { expectNoAxeViolations } from '../test/axe.ts'
+import * as fsPlan from '../test/financialServicesPlan.ts'
 import * as healthPlan from '../test/healthPlan.ts'
 import { buttonLabel, cell, figureDescription, list, marked, named, OWNER_ADDITIONS, stage } from '../test/publicSectorPlan.ts'
 import LandingPage from './LandingPage.tsx'
@@ -30,8 +31,9 @@ const solutionPages = pages.filter((page) => page.kind === 'solution')
 const sectionPages = solutionPages.filter((page) => page.kind === 'solution' && page.copy.layout !== 'sector')
 const publicSector = solutionPages.find((page) => page.path === '/solutions/public-sector')!
 const health = solutionPages.find((page) => page.path === '/solutions/health')!
-// The pages on the shared landing-page foundation (#93, #94).
-const foundationPages: readonly Page[] = [publicSector, health]
+const financialServices = solutionPages.find((page) => page.path === '/solutions/financial-services')!
+// The pages on the shared landing-page foundation (#93, #94, #98).
+const foundationPages: readonly Page[] = [publicSector, health, financialServices]
 
 // Each foundation page's closing panel: its heading, and its text after
 // the eyebrow (the plan's text and the owner's follow-up).
@@ -43,6 +45,10 @@ const CLOSING: Record<string, { heading: string; text: string }> = {
   '/solutions/health': {
     heading: 'Build a health data foundation you can trust',
     text: `${healthPlan.cell('Closing panel', 'Text')} ${healthPlan.OWNER_ADDITIONS.closingFollowUp}`,
+  },
+  '/solutions/financial-services': {
+    heading: 'Build a financial data foundation you can trust',
+    text: `${fsPlan.cell('Closing panel', 'Text')} ${fsPlan.OWNER_ADDITIONS.closingFollowUp}`,
   },
 }
 const paths = new Set(pages.map((page) => page.path))
@@ -98,7 +104,7 @@ describe.each(pages.map((page) => [page.path, page] as const))('%s', (_path, pag
     expect(within(footer).getByRole('link', { name: 'Solutions' })).toHaveAttribute('href', '/#solutions')
     expect(within(footer).getByRole('link', { name: 'Contact' })).toHaveAttribute('href', '#contact')
     if (page.kind === 'solution' && page.copy.layout === 'sector') {
-      // The page's own closing panel (#93, #94) replaces the Contact
+      // The page's own closing panel (#93, #94, #98) replaces the Contact
       // section: the button and the address, both opening an email.
       const expected = CLOSING[page.path]
       expect(expected, page.path).toBeDefined()
@@ -231,8 +237,9 @@ describe('service pages', () => {
 })
 
 describe('solution pages', () => {
-  // The four sectors still on the §18 sections; Public Sector and Health
-  // are on the shared landing-page foundation (#93, #94), checked below.
+  // The three sectors still on the §18 sections; Public Sector, Health and
+  // Financial Services are on the shared landing-page foundation (#93,
+  // #94, #98), checked below.
   it.each(sectionPages.map((page) => [page.path, page] as const))(
     '%s has the SEO plan §18 sections in order',
     (_path, page) => {
@@ -261,13 +268,15 @@ describe('solution pages', () => {
     expect(main).not.toHaveTextContent('Health Data & Analytics Solutions')
   })
 
-  it('links every other sector, and not itself', () => {
-    const page = solutionPages[0]
+  // Each §18 page (Financial Services was the first until #98, which
+  // moved it onto the foundation, with no Other sectors section).
+  it.each(sectionPages.map((page) => [page.path, page] as const))('%s links every other sector, and not itself', (_path, page) => {
     renderPage(page)
     const others = within(screen.getByRole('region', { name: 'Other sectors' })).getAllByRole('link')
     expect(others.map((link) => link.getAttribute('href'))).toEqual(
-      solutionPages.slice(1).map((other) => other.path),
+      solutionPages.filter((other) => other !== page).map((other) => other.path),
     )
+    expect(others).toHaveLength(5)
     expect(solutions).toHaveLength(6)
   })
 })
@@ -533,8 +542,12 @@ describe('Public Sector page', () => {
     expect(main().querySelector('a[href^="tel:"]')).toBeNull()
   })
 
-  it('puts main.sector-landing on the foundation pages (Public Sector and Health) only, and leaves out the Contact section there', () => {
-    expect(foundationPages.map((page) => page.path)).toEqual(['/solutions/public-sector', '/solutions/health'])
+  it('puts main.sector-landing on the foundation pages (Public Sector, Health and Financial Services) only, and leaves out the Contact section there', () => {
+    expect(foundationPages.map((page) => page.path)).toEqual([
+      '/solutions/public-sector',
+      '/solutions/health',
+      '/solutions/financial-services',
+    ])
     for (const page of [...pages, notFound]) {
       const { unmount } = renderPage(page)
       const onFoundation = foundationPages.includes(page)
@@ -544,7 +557,7 @@ describe('Public Sector page', () => {
     }
   })
 
-  it('marks the header\'s Solutions link as current on the foundation pages (Public Sector and Health) only', () => {
+  it('marks the header\'s Solutions link as current on the foundation pages (Public Sector, Health and Financial Services) only', () => {
     for (const page of [...pages, notFound]) {
       const { unmount } = renderPage(page)
       const onFoundation = foundationPages.includes(page)
@@ -865,6 +878,450 @@ describe('Health page', () => {
 
   it('has no img, lang, tabindex or contenteditable in main, and no axe violations', async () => {
     const { container } = renderPage(health)
+    expect(main().querySelectorAll('img, canvas, [lang], [tabindex], [contenteditable]')).toHaveLength(0)
+    await expectNoAxeViolations(container)
+  })
+})
+
+// The Financial Services page on the shared landing-page foundation
+// (#98), against section 4 of
+// _docs/fafanua-financial-services-landing-page-plan.md.
+describe('Financial Services page', () => {
+  const { cell: fcell, list: flist, marked: fmarked, named: fnamed, buttonLabel: fbutton, comparison } = fsPlan
+  const added = fsPlan.OWNER_ADDITIONS
+  const main = () => screen.getByRole('main')
+  const headings = (level: number) =>
+    within(main()).getAllByRole('heading', { level }).map((heading) => heading.textContent)
+
+  // Every text node in main, trimmed, in DOM order.
+  function texts(root: Element) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+    const out: string[] = []
+    while (walker.nextNode()) {
+      const text = walker.currentNode.textContent!.trim()
+      if (text) out.push(text)
+    }
+    return out
+  }
+
+  const upperIfPlan = (text: string, plan: string) => (text.toUpperCase() === plan ? plan : text)
+  const handlingItems = () => fcell('AI and responsible handling', 'Card 2 checklist').split(/(?<=\.); /)
+  const steps = () => [1, 2, 3, 4].map((n) => fnamed(fcell('Promise strip', `Step ${n}`)))
+  const groupLabels = () => [fcell('Promise strip', 'Group 1 label'), fcell('Promise strip', 'Group 2 label')]
+  const cards = () => [1, 2, 3].map((n) => comparison(fcell('Reconciliation (what we can implement)', `Card ${n}`)))
+
+  it('has the plan\'s h2s and h3s, in order', () => {
+    renderPage(financialServices)
+    expect(headings(1)).toEqual([fcell('Hero', 'Heading (`h1`)')])
+    expect(headings(1)).toEqual(['Financial figures you can reconcile.'])
+    expect(headings(2)).toEqual([
+      'Different systems. Different numbers.',
+      'Start with the numbers that matter.',
+      'Who we work with',
+      'The Data Trust Assessment: three weeks, fixed fee',
+      'Know where your financial figures come from',
+      'What this means for AI',
+      'Handled responsibly',
+      'After the assessment',
+      'Build a financial data foundation you can trust',
+    ])
+    expect(headings(3)).toEqual([
+      'Financial institutions',
+      'Lineage map',
+      'Trust scorecard',
+      'Shared definitions',
+      'Prioritised roadmap',
+      'Loan book',
+      'Mobile money',
+      'Board report',
+      'Integrate and model',
+      'Quality and governance',
+      'Reporting and dashboards',
+    ])
+  })
+
+  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description, the hidden group labels and comparison words, and [A1]–[A2] (#98)', () => {
+    renderPage(financialServices)
+    const [group1, group2] = groupLabels()
+    const plan = [
+      ...fcell('Hero', 'Breadcrumb').split(' › '),
+      fcell('Hero', 'Eyebrow'),
+      fcell('Hero', 'Heading (`h1`)'),
+      fcell('Hero', 'Lead, paragraph 1'),
+      fcell('Hero', 'Lead, paragraph 2'),
+      fbutton(fcell('Hero', 'Primary button')),
+      '→',
+      fbutton(fcell('Hero', 'Secondary button')),
+      fsPlan.figureDescription,
+      fcell('Trace diagram', 'Left column heading'),
+      ...flist(fcell('Trace diagram', 'Sources, in order')),
+      fcell('Trace diagram', 'Middle box heading'),
+      ...flist(fcell('Trace diagram', 'Middle steps')),
+      fcell('Trace diagram', 'Middle footnote'),
+      fcell('Trace diagram', 'Right column heading'),
+      ...flist(fcell('Trace diagram', 'Figures and ratings')).flatMap((entry) => {
+        const { name, rating } = fmarked(entry)
+        return [name, rating!]
+      }),
+      fcell('Trace diagram', 'Caption'),
+      ...[1, 2].flatMap((n) => [
+        fcell('Challenge and approach', `Card ${n} label`),
+        fcell('Challenge and approach', `Card ${n} heading`),
+        fcell('Challenge and approach', `Card ${n} paragraph 1`),
+        fcell('Challenge and approach', `Card ${n} paragraph 2`),
+      ]),
+      // Each step: its hidden group label, the visible label on a group's
+      // first step, its number, name and description.
+      ...steps().flatMap((step, index) => [
+        index < 2 ? group1 : group2,
+        ...(index % 2 === 0 ? [index < 2 ? group1 : group2] : []),
+        String(index + 1),
+        step.name,
+        step.text,
+      ]),
+      fcell('Who we work with', 'Heading'),
+      fcell('Who we work with', 'Subheading'),
+      fcell('Who we work with', 'Card heading'),
+      fcell('Who we work with', 'Card text'),
+      added.audienceDetail,
+      ...[1, 2, 3, 4].flatMap((n) => Object.values(fnamed(fcell('Who we work with', `Item ${n}`)))),
+      fcell('The Data Trust Assessment', 'Eyebrow'),
+      fcell('The Data Trust Assessment', 'Heading'),
+      fcell('The Data Trust Assessment', 'Text'),
+      fcell('The Data Trust Assessment', 'Deliverables label'),
+      ...[1, 2, 3, 4].flatMap((n) => Object.values(fnamed(fcell('The Data Trust Assessment', `Deliverable ${n}`)))),
+      fcell('Reconciliation (what we can implement)', 'Eyebrow'),
+      fcell('Reconciliation (what we can implement)', 'Heading'),
+      fcell('Reconciliation (what we can implement)', 'Text'),
+      ...cards().flatMap((card) => [card.record, 'compared with', card.source, card.status]),
+      fcell('Reconciliation (what we can implement)', 'Caption'),
+      fcell('AI and responsible handling', 'Card 1 heading'),
+      fcell('AI and responsible handling', 'Card 1 text'),
+      ...flist(fcell('AI and responsible handling', 'Card 1 chips')).map((chip) => fmarked(chip).name),
+      fcell('AI and responsible handling', 'Card 2 heading'),
+      ...handlingItems(),
+      fcell('After the assessment', 'Heading'),
+      fcell('After the assessment', 'Subheading'),
+      ...[1, 2, 3].flatMap((n) => fcell('After the assessment', `Card ${n}`).split(' / ')),
+      fcell('Closing panel', 'Eyebrow'),
+      fcell('Closing panel', 'Heading'),
+      `${fcell('Closing panel', 'Text')} ${added.closingFollowUp}`,
+      fbutton(fcell('Closing panel', 'Primary button')),
+      '→',
+      fbutton(fcell('Closing panel', 'Secondary link')),
+    ]
+    const shown = texts(main())
+    // Labels the plan writes in capitals are stored in sentence case and
+    // capitalised by CSS.
+    expect(shown.map((text, index) => upperIfPlan(text, plan[index]))).toEqual(plan)
+    expect(shown.filter((text, index) => text !== plan[index])).toEqual([
+      'Financial services solutions',
+      'The challenge',
+      'Our approach',
+      'The data trust assessment',
+      'The data trust assessment',
+      'The data trust assessment',
+      'After the assessment',
+      'After the assessment',
+      'After the assessment',
+      'Start with trust',
+      'The assessment delivers',
+      'After the assessment · What we can implement',
+      'Get started',
+    ])
+    // Digits only in the step numbers and "3 exceptions".
+    expect(main().textContent!.match(/\d+/g)).toEqual(['1', '2', '3', '4', '3'])
+    expect(main().textContent).toContain('3 exceptions')
+  })
+
+  it('shows the protected "trusted data foundation" in the closing panel ([A1], #98)', () => {
+    renderPage(financialServices)
+    const closing = screen.getByRole('region', { name: 'Build a financial data foundation you can trust' })
+    expect(closing).toHaveTextContent('trusted data foundation')
+    expect(closing.querySelector('.sector-closing__body')).not.toHaveClass('visually-hidden')
+  })
+
+  it('has the breadcrumbs Home › Solutions › Financial services', () => {
+    renderPage(financialServices)
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(within(trail).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      'Home',
+      'Solutions',
+      'Financial services',
+    ])
+    expect(within(trail).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/')
+    expect(within(trail).getByRole('link', { name: 'Solutions' })).toHaveAttribute('href', '/#solutions')
+    expect(within(trail).getAllByRole('listitem')[2]).toHaveAttribute('aria-current', 'page')
+    expect(trail.textContent).not.toContain('›')
+  })
+
+  it('shows the two hero lead paragraphs, and the paired cards\' labels above their h2s with two paragraphs each', () => {
+    renderPage(financialServices)
+    const hero = screen.getByRole('region', { name: 'Financial figures you can reconcile.' })
+    expect([...hero.querySelectorAll('.sector-hero__lead')].map((p) => [p.tagName, p.textContent])).toEqual([
+      ['P', fcell('Hero', 'Lead, paragraph 1')],
+      ['P', fcell('Hero', 'Lead, paragraph 2')],
+    ])
+    for (const n of [1, 2]) {
+      const t = 'Challenge and approach'
+      const heading = screen.getByRole('heading', { level: 2, name: fcell(t, `Card ${n} heading`) })
+      const body = heading.parentElement!
+      expect([...body.children].map((element) => [element.tagName, element.textContent])).toEqual([
+        ['P', expect.stringMatching(new RegExp(`^${fcell(t, `Card ${n} label`)}$`, 'i'))],
+        ['H2', fcell(t, `Card ${n} heading`)],
+        ['P', fcell(t, `Card ${n} paragraph 1`)],
+        ['P', fcell(t, `Card ${n} paragraph 2`)],
+      ])
+      expect(body.children[0]).toHaveClass('badge-card__label')
+    }
+  })
+
+  it('shows the promise strip as one ol of four steps in order, each beginning with its hidden group label, the visible labels hidden (#98)', () => {
+    renderPage(financialServices)
+    const strip = main().querySelector('.promise')!
+    const lists = within(strip as HTMLElement).getAllByRole('list')
+    expect(lists).toHaveLength(1)
+    const [ol] = lists
+    expect(ol.tagName).toBe('OL')
+    const items = within(ol).getAllByRole('listitem')
+    expect(items).toHaveLength(4)
+    const [group1, group2] = groupLabels()
+    items.forEach((item, index) => {
+      const group = index < 2 ? group1 : group2
+      const first = item.firstElementChild!
+      expect(first).toHaveClass('visually-hidden')
+      expect(first.textContent!.toUpperCase()).toBe(group)
+      const { name, text } = steps()[index]
+      expect(item.querySelector('.promise__number')!.textContent).toBe(String(index + 1))
+      expect(item.querySelector('.promise__name')!.textContent).toBe(name)
+      expect(item.querySelector('.promise__text')!.textContent).toBe(text)
+      // The circles: teal tint for the assessment's steps, neutral after.
+      expect(item.querySelector('.promise__number')).toHaveClass(index < 2 ? 'promise__number--accent' : 'promise__number--neutral')
+    })
+    // Visible labels on steps 1 and 3 only, hidden from assistive
+    // technology, not headings.
+    const visible = [...strip.querySelectorAll('.promise__label')]
+    expect(visible.map((label) => [label.closest('li') === items[0] ? 1 : label.closest('li') === items[2] ? 3 : 0, label.textContent!.toUpperCase()])).toEqual([
+      [1, group1],
+      [3, group2],
+    ])
+    for (const label of visible) {
+      expect(label).toHaveAttribute('aria-hidden', 'true')
+      expect(label.tagName).toBe('SPAN')
+    }
+    expect(within(strip as HTMLElement).queryByRole('heading')).toBeNull()
+    expect(strip.closest('section')).not.toHaveAttribute('aria-labelledby')
+  })
+
+  it('shows the stacked audience items: a strong name, then its text, with no colon', () => {
+    renderPage(financialServices)
+    const card = screen.getByRole('region', { name: 'Who we work with' }).querySelector('.audience-card')!
+    const t = 'Who we work with'
+    expect([...card.querySelectorAll('.audience-card__text')].map((p) => p.textContent)).toEqual([
+      fcell(t, 'Card text'),
+      added.audienceDetail,
+    ])
+    const list = card.querySelector('ul')!
+    expect(list).not.toHaveAttribute('aria-labelledby')
+    const items = within(list).getAllByRole('listitem')
+    expect(items).toHaveLength(4)
+    items.forEach((item, index) => {
+      const { name, text } = fnamed(fcell(t, `Item ${index + 1}`))
+      expect(item.querySelector('strong.checklist__name')!.textContent).toBe(name)
+      expect(item.querySelector('.checklist__text')!.textContent).toBe(text)
+      expect(item.textContent).toBe(`${name} ${text}`)
+      expect(item.textContent).not.toContain(':')
+    })
+    expect(within(card as HTMLElement).getAllByRole('heading').map((h) => h.textContent)).toEqual(['Financial institutions'])
+  })
+
+  it('labels section#assessment by its h2, and names its deliverables ul by the label', () => {
+    renderPage(financialServices)
+    const section = screen.getByRole('region', { name: 'The Data Trust Assessment: three weeks, fixed fee' })
+    expect(section.tagName).toBe('SECTION')
+    expect(section).toHaveAttribute('id', 'assessment')
+    expect(document.getElementById(section.getAttribute('aria-labelledby')!)!.tagName).toBe('H2')
+    const list = within(section).getByRole('list', { name: 'The assessment delivers' })
+    expect(list.tagName).toBe('UL')
+    expect(within(list).getAllByRole('listitem')).toHaveLength(4)
+    expect(document.getElementById(list.getAttribute('aria-labelledby')!)!.tagName).toBe('P')
+    expect(section.textContent).not.toMatch(/reconcil|automated controls|Validated/i)
+  })
+
+  it('shows the reconciliation ul after the assessment: three cards, their statuses as text with decorative icons, and the caption associated (#98)', () => {
+    renderPage(financialServices)
+    const section = screen.getByRole('region', { name: 'Know where your financial figures come from' })
+    expect(section.tagName).toBe('SECTION')
+    expect(section.compareDocumentPosition(document.getElementById('assessment')!) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
+    expect(section.querySelector('.sector-eyebrow')!.textContent).toBe('After the assessment · What we can implement')
+    const list = within(section).getByRole('list')
+    expect(list.tagName).toBe('UL')
+    expect(list).toHaveAccessibleDescription(fcell('Reconciliation (what we can implement)', 'Caption'))
+    const items = within(list).getAllByRole('listitem')
+    expect(items.map((item) => [
+      within(item).getByRole('heading', { level: 3 }).textContent,
+      item.querySelector('.reconciliation__source')!.textContent,
+      item.querySelector('.reconciliation__status')!.textContent,
+    ])).toEqual(cards().map((card) => [card.record, `compared with ${card.source}`, card.status]))
+    expect(items.map((item) => item.querySelector('.reconciliation__status svg')!.getAttribute('class'))).toEqual([
+      'reconciliation__icon reconciliation__icon--check',
+      'reconciliation__icon reconciliation__icon--alert',
+      'reconciliation__icon reconciliation__icon--check',
+    ])
+    for (const item of items) {
+      expect(item.querySelector('.reconciliation__source .visually-hidden')!.textContent).toBe('compared with')
+      for (const svg of item.querySelectorAll('svg')) {
+        expect(svg).toHaveAttribute('aria-hidden', 'true')
+        expect(svg.textContent).toBe('')
+      }
+    }
+    expect(within(section).getAllByRole('heading').map((h) => h.tagName)).toEqual(['H2', 'H3', 'H3', 'H3'])
+    expect(section.querySelectorAll('figure, svg:not(.reconciliation__icon)')).toHaveLength(0)
+  })
+
+  it('gives each service card its h3, then its teal lead line, then its text', () => {
+    renderPage(financialServices)
+    const cardItems = within(screen.getByRole('region', { name: 'After the assessment' })).getAllByRole('listitem')
+    expect(cardItems.map((card) => [...card.querySelectorAll('h3, p')].map((element) => [element.tagName, element.className, element.textContent]))).toEqual(
+      [1, 2, 3].map((n) => {
+        const [name, lead, text] = fcell('After the assessment', `Card ${n}`).split(' / ')
+        return [
+          ['H3', 'sector-card-heading sector-card-heading--small', name],
+          ['P', 'service-card-lp__lead service-card-lp__lead--accent', lead],
+          ['P', 'service-card-lp__text', text],
+        ]
+      }),
+    )
+  })
+
+  it('links the hero buttons to the email and #assessment, the service cards to their pages and the closing panel to the email', () => {
+    renderPage(financialServices)
+    const hero = screen.getByRole('region', { name: 'Financial figures you can reconcile.' })
+    expect(within(hero).getByRole('link', { name: 'Book a data trust assessment' })).toHaveAttribute('href', `mailto:${email}`)
+    const jump = within(hero).getByRole('link', { name: 'See how the assessment works' })
+    expect(jump).toHaveAttribute('href', '#assessment')
+    expect(jump).toHaveAttribute('data-focus-section', 'assessment')
+    const closing = screen.getByRole('region', { name: 'Build a financial data foundation you can trust' })
+    expect(within(closing).getByRole('link', { name: 'Book a data trust assessment' })).toHaveAttribute('href', `mailto:${email}`)
+    expect(within(closing).getByRole('link', { name: email })).toHaveAttribute('href', `mailto:${email}`)
+    expect(mainLinks()).toEqual([
+      ['Home', '/'],
+      ['Solutions', '/#solutions'],
+      ['Book a data trust assessment→', `mailto:${email}`],
+      ['See how the assessment works', '#assessment'],
+      ['Integrate and model', '/services/data-engineering-integration'],
+      ['Quality and governance', '/services/data-quality-reliability'],
+      ['Reporting and dashboards', '/services/business-intelligence-analytics'],
+      ['Book a data trust assessment→', `mailto:${email}`],
+      [email, `mailto:${email}`],
+    ])
+    const mailtos = main().querySelectorAll('a[href^="mailto:"]')
+    expect(mailtos).toHaveLength(3)
+    for (const link of mailtos) expect(link).toHaveAttribute('href', 'mailto:info@fafanua.tech')
+  })
+
+  it('has no Delivered in stages section', () => {
+    renderPage(financialServices)
+    // The ordered lists: the breadcrumbs, the trace's steps and the
+    // promise strip.
+    const ols = [...main().querySelectorAll('ol')]
+    expect(ols).toHaveLength(3)
+    expect(ols[0].closest('nav')).toHaveAccessibleName('Breadcrumb')
+    expect(ols[1].closest('figure')).not.toBeNull()
+    expect(ols[2]).toHaveClass('promise__steps')
+    expect(main().querySelector('ol.stages')).toBeNull()
+    expect(main().textContent).not.toMatch(/Delivered in stages|No big-bang projects|Moves on when|Stage/)
+  })
+
+  it('draws the figure with its caption, description, five sources, five steps and three rated figures', () => {
+    renderPage(financialServices)
+    const figure = screen.getByRole('figure')
+    expect(figure.querySelector(':scope > figcaption')!.textContent).toBe('Illustrative example. Sample data only.')
+    expect(figure).toHaveAccessibleDescription(fsPlan.figureDescription)
+    expect(document.getElementById(figure.getAttribute('aria-describedby')!)).toHaveClass('visually-hidden')
+    const [sources, traceSteps, figures] = within(figure).getAllByRole('list')
+    expect(within(sources).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      'CRM',
+      'Card & ATM switch',
+      'Loan management',
+      'Payments & mobile money',
+      'General ledger',
+    ])
+    expect(traceSteps.tagName).toBe('OL')
+    expect(within(traceSteps).getAllByRole('listitem').map((item) => item.textContent)).toEqual(
+      flist(fcell('Trace diagram', 'Middle steps')),
+    )
+    expect(within(figures).getAllByRole('listitem').map((item) => texts(item))).toEqual([
+      ['Portfolio at risk', 'Trusted with caveats'],
+      ['Mobile money settlements', 'Trusted'],
+      ['Loan book against ledger', 'Not yet trusted'],
+    ])
+    // CRM and Card & ATM switch do not feed the figures: faded, with
+    // dashed connectors; the other three solid.
+    expect([...sources.querySelectorAll('li')].map((item) => [
+      item.classList.contains('trace__source--faded'),
+      item.querySelector('.trace__connector--dashed') !== null,
+    ])).toEqual([
+      [true, true],
+      [true, true],
+      [false, false],
+      [false, false],
+      [false, false],
+    ])
+    for (const hidden of figure.querySelectorAll('.trace__connector, .rating-marker, svg')) {
+      expect(hidden).toHaveAttribute('aria-hidden', 'true')
+      expect(hidden.textContent).toBe('')
+    }
+    expect(within(figure).queryByRole('heading')).toBeNull()
+  })
+
+  it('has none of the removed sections or strings', () => {
+    renderPage(financialServices)
+    for (const name of [
+      'Financial Services Data & Analytics',
+      'Sector context',
+      'Common data problems',
+      'How Fafanua helps',
+      'Reporting and analytics use cases',
+      'Data quality and governance',
+      'Operational activation',
+      'Other sectors',
+    ]) {
+      expect(screen.queryByRole('heading', { name })).toBeNull()
+    }
+    expect(main().querySelector('#use-cases')).toBeNull()
+    const text = main().textContent!
+    for (const removed of [
+      'Financial Services Data & Analytics',
+      'For banks, SACCOs, microfinance institutions, fintechs',
+      'Financial institutions run on many systems at once',
+      'Payment and core-system integration',
+      'Portfolio and customer data models',
+      'Payment reconciliation controls',
+      'Financial data governance',
+      'Banking and portfolio dashboards',
+      'Revenue leakage',
+      'Let’s build a data foundation',
+      'Which number do you trust least?',
+      'Other sectors',
+      '+256',
+      'Reverse ETL',
+      'Fafanua Intelligence',
+      'AI-powered',
+    ]) {
+      expect(text).not.toContain(removed)
+    }
+    for (const theme of solutions.find((solution) => solution.id === 'financial-services')!.themes) {
+      expect(text).not.toContain(theme)
+    }
+    expect(text).not.toMatch(/compliant|certified|certification|guarantee|meets the requirements of|regulatory compliance|in line with the/i)
+    expect(text.match(/complian/gi)).toHaveLength(1)
+    expect(text).not.toMatch(fsPlan.FORBIDDEN_TERMS)
+    expect(main().querySelector('a[href^="tel:"]')).toBeNull()
+  })
+
+  it('has no img, lang, tabindex or contenteditable in main, and no axe violations', async () => {
+    const { container } = renderPage(financialServices)
     expect(main().querySelectorAll('img, canvas, [lang], [tabindex], [contenteditable]')).toHaveLength(0)
     await expectNoAxeViolations(container)
   })
