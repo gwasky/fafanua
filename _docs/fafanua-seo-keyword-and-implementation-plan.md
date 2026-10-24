@@ -368,6 +368,13 @@ Content should address problems such as:
 - customer segmentation;
 - management reporting.
 
+Added for the Financial Services landing page (owner, 2026-10-24, #98). Every keyword above is kept. Under `_docs/fafanua-financial-services-landing-page-plan.md`, the page's title carries banking analytics Uganda exactly, and its meta description carries financial services analytics … Uganda and the microfinance and SACCO audiences. The proposed Financial institutions line ([A2], pending the owner's review) carries banking analytics, revenue reconciliation and financial reporting automation exactly, payment reconciliation loosely ("payment and revenue reconciliation") and the page's only visible "Uganda". The plan copy carries loan portfolio analytics loosely ("Loan portfolio performance"), payment reconciliation loosely ("Payments and reconciliation"), credit portfolio dashboards loosely ("dashboards for portfolio performance"), microfinance analytics Uganda and SACCO analytics Uganda loosely (the hero lead and subheading name the audiences), and the content problems fragmented data, portfolio monitoring, payment reconciliation, regulatory reporting and management reporting. These keywords are no longer on the page: financial services business intelligence Uganda, banking dashboards Uganda and fintech analytics Uganda (the plan names "payment providers", not fintechs); banking data analytics Uganda, payment analytics Uganda and microfinance business intelligence were not carried before either; and the page no longer addresses revenue leakage or customer segmentation. Data Warehousing and Data Governance are no longer linked from the page (§22): its three service cards link Data Engineering & Integration, Data Quality & Reliability and Business Intelligence & Analytics. The new title, description and hero also target:
+
+- financial figures you can reconcile
+- reconciliation and banking analytics Uganda
+- financial services analytics for banks, microfinance institutions, SACCOs and insurers
+- trusted data foundation (protected phrase, §1)
+
 ---
 
 # 8. Development & Impact Keyword Cluster
