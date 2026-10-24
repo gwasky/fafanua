@@ -19,8 +19,10 @@ import type { ServiceKey } from './servicePages.ts'
 // plans. The owner added strings to them on 2026-10-23, marked below: on
 // Public Sector (#93) four carry the SEO plan §12 keywords the plan copy
 // had dropped, and on both one makes "trusted data foundation" visible in
-// the closing panel (#93, #94). On Financial Services (#98) two proposed
-// strings, marked below and pending the owner's review, do the same.
+// the closing panel (#93, #94). On Financial Services (#98) the owner
+// added two strings on 2026-10-24, marked below: one after the Financial
+// institutions card's text, and one that makes the protected phrase
+// visible in the closing panel.
 
 export type SolutionService = {
   readonly service: ServiceKey
@@ -296,9 +298,9 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
       card: {
         heading: 'Financial institutions',
         text: 'We help financial organisations connect fragmented information, improve confidence in their reporting and gain a clearer view of business performance.',
-        // Owner addition (2026-10-24, #98): proposed [A2], SEO plan §7 keywords and the visible "Uganda", pending the owner's review.
+        // Owner addition (2026-10-24, #98): what Fafanua does for financial institutions (A2).
         detail:
-          'In Uganda and East Africa, that includes banking analytics, payment and revenue reconciliation, and financial reporting automation.',
+          'We help financial institutions bring together data from banking, lending, payment and accounting systems to improve reconciliation, financial reporting and visibility into business performance.',
         icon: 'ledger',
         itemsLayout: 'stacked',
         items: [
@@ -409,8 +411,8 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
       eyebrow: 'Get started',
       heading: 'Build a financial data foundation you can trust',
       text: 'Your next financial report should be easier to produce, explain and defend. Start by identifying which figures can be trusted, where discrepancies originate and what needs to improve.',
-      // Owner addition (2026-10-24, #98): proposed [A1], the protected phrase, visible, pending the owner's review.
-      followUp: 'Then we make sure your reports are built on a trusted data foundation.',
+      // Owner addition (2026-10-24, #98): the protected phrase, visible (A1).
+      followUp: 'We help you build a trusted data foundation for reliable reporting and better decisions.',
     },
   },
   'retail-and-distribution': {

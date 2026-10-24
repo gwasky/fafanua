@@ -940,7 +940,7 @@ describe('Financial Services page', () => {
     ])
   })
 
-  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description, the hidden group labels and comparison words, and [A1]–[A2] (#98)', () => {
+  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description, the hidden group labels and comparison words, and the owner\'s A1 and A2 (#98)', () => {
     renderPage(financialServices)
     const [group1, group2] = groupLabels()
     const plan = [
@@ -1034,7 +1034,7 @@ describe('Financial Services page', () => {
     expect(main().textContent).toContain('3 exceptions')
   })
 
-  it('shows the protected "trusted data foundation" in the closing panel ([A1], #98)', () => {
+  it('shows the protected "trusted data foundation" in the closing panel (owner, A1, #98)', () => {
     renderPage(financialServices)
     const closing = screen.getByRole('region', { name: 'Build a financial data foundation you can trust' })
     expect(closing).toHaveTextContent('trusted data foundation')

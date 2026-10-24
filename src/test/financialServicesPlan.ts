@@ -16,17 +16,18 @@ export const DESCRIPTION =
   'Financial figures you can reconcile: financial services analytics for banks, microfinance institutions, SACCOs and insurers in Uganda, on a trusted data foundation.'
 
 /**
- * The proposed additions to the plan copy (2026-10-24, #98), pending the
- * owner's review: [A1] the closing panel's follow-up sentence, which makes
- * the protected "trusted data foundation" visible, and [A2] the
- * Financial institutions card's second paragraph, which carries the SEO
- * plan §7 keywords the plan copy dropped and the page's only visible
- * "Uganda".
+ * The owner's additions to the plan copy (2026-10-24, #98), which replaced
+ * the PM's first proposals: A1, the closing panel's follow-up sentence,
+ * which makes the protected "trusted data foundation" visible, and A2,
+ * the Financial institutions card's second paragraph. The withdrawn
+ * proposals are kept in solutionPages.financialServices.plan.test.ts, so
+ * it can check they are gone (test files are not scanned for old
+ * strings).
  */
 export const OWNER_ADDITIONS = {
-  closingFollowUp: 'Then we make sure your reports are built on a trusted data foundation.',
+  closingFollowUp: 'We help you build a trusted data foundation for reliable reporting and better decisions.',
   audienceDetail:
-    'In Uganda and East Africa, that includes banking analytics, payment and revenue reconciliation, and financial reporting automation.',
+    'We help financial institutions bring together data from banking, lending, payment and accounting systems to improve reconciliation, financial reporting and visibility into business performance.',
 } as const
 
 /** A reconciliation card cell, "Record; compared with Source; status

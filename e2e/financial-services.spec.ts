@@ -128,9 +128,9 @@ test.describe('links', () => {
     await expect(main.getByRole('link', { name: 'Book a data trust assessment', exact: true })).toHaveCount(2)
   })
 
-  test('shows "trusted data foundation" in the closing panel ([A1], #98)', async ({ page }) => {
+  test('shows "trusted data foundation" in the closing panel (owner, A1, #98)', async ({ page }) => {
     await openPath(page, PATH, 1440)
-    const line = page.locator('#contact').getByText(/built on a trusted data foundation\./)
+    const line = page.locator('#contact').getByText(/build a trusted data foundation for reliable reporting and better decisions\./)
     await expect(line).toBeVisible()
   })
 

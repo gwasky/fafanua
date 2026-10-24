@@ -5,7 +5,8 @@
 // case (CSS shows them so), the "Name: text" and list splits, the promise
 // strip's groups and steps, the reconciliation cards, the title and
 // description, the figure's accessible description (plan section 6) and
-// the two proposed additions [A1] and [A2]. It also checks that the old
+// the owner's two additions A1 and A2 (2026-10-24), and that the
+// withdrawn first proposals are gone. It also checks that the old
 // Financial Services strings are gone from src/, the naming and claims
 // rules (plan section 3), and that the call to action and address come
 // from contact.ts.
@@ -32,6 +33,13 @@ const entry = solutionPages['financial-services']
 if (entry.layout !== 'sector') throw new Error('Financial Services is not on the shared foundation')
 const page: SectorLandingPage = entry
 const upper = (text: string) => text.toUpperCase()
+
+// The PM's first proposals for A1 and A2 (#98), replaced by the owner's
+// own copy on 2026-10-24.
+const WITHDRAWN = [
+  'Then we make sure your reports are built on a trusted data foundation.',
+  'In Uganda and East Africa, that includes banking analytics, payment and revenue reconciliation, and financial reporting automation.',
+] as const
 
 describe('Financial Services plan section 4 parser', () => {
   it('finds the ten copy tables and the removed list in order', () => {
@@ -134,7 +142,7 @@ describe('Financial Services copy (plan section 4)', () => {
     for (const step of promise.groups.flatMap((group) => group.steps)) expect(step.text).not.toMatch(/\.$/)
   })
 
-  it('uses Who we work with: its card, [A2] and four stacked named items', () => {
+  it('uses Who we work with: its card, the owner\'s A2 and four stacked named items', () => {
     const t = 'Who we work with'
     expect(page.audience.heading).toBe(cell(t, 'Heading'))
     expect(page.audience.subheading).toBe(cell(t, 'Subheading'))
@@ -224,7 +232,7 @@ describe('Financial Services copy (plan section 4)', () => {
     ])
   })
 
-  it('uses the closing panel, with [A1], and the call to action and address from contact.ts', () => {
+  it('uses the closing panel, with the owner\'s A1, and the call to action and address from contact.ts', () => {
     const t = 'Closing panel'
     expect(upper(page.closing.eyebrow)).toBe(cell(t, 'Eyebrow'))
     expect(page.closing.heading).toBe(cell(t, 'Heading'))
@@ -235,12 +243,15 @@ describe('Financial Services copy (plan section 4)', () => {
     expect(cell(t, 'Secondary link')).toBe(`${email} (\`mailto:${email}\`)`)
   })
 
-  it('holds the two proposed additions [A1] and [A2] verbatim', () => {
+  it('holds the owner\'s two additions A1 and A2 verbatim, and neither withdrawn proposal', () => {
     expect(Object.values(OWNER_ADDITIONS)).toEqual([
-      'Then we make sure your reports are built on a trusted data foundation.',
-      'In Uganda and East Africa, that includes banking analytics, payment and revenue reconciliation, and financial reporting automation.',
+      'We help you build a trusted data foundation for reliable reporting and better decisions.',
+      'We help financial institutions bring together data from banking, lending, payment and accounting systems to improve reconciliation, financial reporting and visibility into business performance.',
     ])
     expect([page.closing.followUp, page.audience.card.detail]).toEqual(Object.values(OWNER_ADDITIONS))
+    expect(WITHDRAWN).toHaveLength(2)
+    const text = JSON.stringify(page)
+    for (const line of WITHDRAWN) expect(text, line).not.toContain(line)
   })
 
   it('stores the capitalised labels in sentence case', () => {

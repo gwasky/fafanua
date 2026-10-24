@@ -19,7 +19,7 @@ const solutionPaths = solutions.map((solution) => `/solutions/${solution.slug}`)
 const PATHS = [...servicePaths, ...solutionPaths]
 // The pages on the shared landing-page foundation (#93, #94, #98), each
 // with its closing panel's text: the plan's text and the owner's (or, on
-// Financial Services, the proposed [A1]) follow-up.
+// Financial Services, A1) follow-up.
 const PUBLIC_SECTOR = '/solutions/public-sector'
 const HEALTH = '/solutions/health'
 const FINANCIAL_SERVICES = '/solutions/financial-services'
@@ -29,7 +29,7 @@ const FOUNDATION: Record<string, string> = {
   [HEALTH]:
     'Which numbers do you trust least? Tell us about the reports your branches and head office rely on. Then we make sure they are built on a trusted data foundation.',
   [FINANCIAL_SERVICES]:
-    'Your next financial report should be easier to produce, explain and defend. Start by identifying which figures can be trusted, where discrepancies originate and what needs to improve. Then we make sure your reports are built on a trusted data foundation.',
+    'Your next financial report should be easier to produce, explain and defend. Start by identifying which figures can be trusted, where discrepancies originate and what needs to improve. We help you build a trusted data foundation for reliable reporting and better decisions.',
 }
 
 // The HTML as a crawler gets it: no JavaScript runs.
