@@ -495,18 +495,23 @@ describe('assessment source', () => {
   })
 })
 
-// The homepage strings solutionPages.ts repeats by design (#93, #94: the
-// Public Sector and Health pages' plan copy), as quoted literals, each
-// with the number of times it may occur there (once per foundation page). Only these are taken out of that
-// file before the scans below; everything else in it is scanned.
+// The homepage strings solutionPages.ts repeats by design (#93, #94, #98:
+// the Public Sector, Health and Financial Services pages' plan copy), as
+// quoted literals, each with the number of times it may occur there (once
+// per foundation page that uses it; Financial Services stores "After the
+// assessment" twice, as its services heading and its promise strip's
+// second group label, and its reconciliation eyebrow, plan copy, begins
+// with the words). Only these are taken out of that file before the scans
+// below; everything else in it is scanned.
 const LANDING_ALLOWED: Allowed = [
-  ["'Start with trust'", 2],
-  ["'Lineage map'", 2],
-  ["'Trust scorecard'", 2],
-  ["'Shared definitions'", 2],
+  ["'Start with trust'", 3],
+  ["'Lineage map'", 3],
+  ["'Trust scorecard'", 3],
+  ["'Shared definitions'", 3],
   ["'Fix list'", 2],
-  ["'Illustrative example. Sample data only.'", 2],
-  ["'After the assessment'", 2],
+  ["'Illustrative example. Sample data only.'", 3],
+  ["'After the assessment'", 4],
+  ["'After the assessment · What we can implement'", 1],
 ]
 const scanned = (file: string, source: string) => scannedWith(file, source, LANDING_ALLOWED)
 
@@ -530,7 +535,7 @@ describe('other source files', () => {
     for (const [literal, count] of LANDING_ALLOWED) expect(occurrences(raw, literal), literal).toBe(count)
     const stripped = sources.find(([file]) => file === LANDING_COPY)![1]
     for (const [literal] of LANDING_ALLOWED) expect(occurrences(stripped, literal), literal).toBe(0)
-    expect(LANDING_ALLOWED).toHaveLength(7)
+    expect(LANDING_ALLOWED).toHaveLength(8)
   })
 
   it('scans the rest of src/', () => {

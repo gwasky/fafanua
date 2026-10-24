@@ -61,7 +61,7 @@ describe('pageHead', () => {
 
   it('escapes the ampersands in titles', () => {
     const page = pages.find((item) => item.path === '/solutions/financial-services')!
-    expect(pageHead(page)).toContain('<title>Financial Services &amp; Banking Analytics Uganda | Fafanua</title>')
+    expect(pageHead(page)).toContain('<title>Reconciliation &amp; Banking Analytics Uganda | Fafanua</title>')
   })
 })
 

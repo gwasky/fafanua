@@ -8,18 +8,23 @@ import { activationIntro, solutionPages, type SolutionSectionsPage } from './sol
 
 const pages = solutions.map((solution) => ({ ...solution, page: solutionPages[solution.id] }))
 
-// The four sectors still on the SEO plan §18 sections. Public Sector and
-// Health are on the shared landing-page foundation (#93, #94), whose copy
-// is section 4 of _docs/fafanua-public-sector-landing-page-plan.md and of
-// _docs/fafanua-health-landing-page-plan.md, a change of approved
-// specification (section 2.1 of each): they have their own rules below,
-// and solutionPages.publicSector.plan.test.ts and
-// solutionPages.health.plan.test.ts check their copy.
+// The three sectors still on the SEO plan §18 sections. Public Sector,
+// Health and Financial Services are on the shared landing-page foundation
+// (#93, #94, #98), whose copy is section 4 of
+// _docs/fafanua-public-sector-landing-page-plan.md, of
+// _docs/fafanua-health-landing-page-plan.md and of
+// _docs/fafanua-financial-services-landing-page-plan.md, a change of
+// approved specification (section 2.1 of each, section 2 of the last):
+// they have their own rules below, and
+// solutionPages.publicSector.plan.test.ts,
+// solutionPages.health.plan.test.ts and
+// solutionPages.financialServices.plan.test.ts check their copy.
 const sectionPages = pages.flatMap((solution) =>
   solution.page.layout === 'sector' ? [] : [{ ...solution, page: solution.page as SolutionSectionsPage }],
 )
 const publicSector = solutionPages['public-sector']
 const health = solutionPages.health
+const financialServices = solutionPages['financial-services']
 
 describe('solution landing pages', () => {
   it('gives every page a unique title, description and h1', () => {
@@ -33,16 +38,20 @@ describe('solution landing pages', () => {
     expect(new Set(h1s).size).toBe(6)
   })
 
-  it('keeps the four §18 pages, and Public Sector and Health on the shared foundation', () => {
+  it('keeps the three §18 pages, and Public Sector, Health and Financial Services on the shared foundation', () => {
     expect(sectionPages.map((solution) => solution.id)).toEqual([
-      'financial-services',
       'retail-and-distribution',
       'development-and-impact',
       'education',
     ])
     expect(publicSector.layout).toBe('sector')
     expect(health.layout).toBe('sector')
-    expect(pages.filter(({ page }) => page.layout === 'sector').map((solution) => solution.id)).toEqual(['health', 'public-sector'])
+    expect(financialServices.layout).toBe('sector')
+    expect(pages.filter(({ page }) => page.layout === 'sector').map((solution) => solution.id)).toEqual([
+      'financial-services',
+      'health',
+      'public-sector',
+    ])
   })
 
   it('names Fafanua at the end of every title, and keeps titles to 60 characters', () => {
@@ -94,10 +103,10 @@ describe('solution landing pages', () => {
     }
   })
 
-  // SEO plan §22: the sectors it gives links for. Health's are its three
-  // service cards (#94, owner note 5), checked below.
+  // SEO plan §22: the sectors it gives links for. Health's and Financial
+  // Services' are their three service cards (#94 and #98, owner note 4 of
+  // each), checked below.
   it.each([
-    ['financial-services', ['data-engineering-and-integration', 'data-warehousing-and-analytics-modelling', 'data-quality-and-reliability', 'data-governance-and-metadata', 'business-intelligence-and-analytics']],
     ['development-and-impact', ['data-engineering-and-integration', 'data-quality-and-reliability', 'data-governance-and-metadata', 'business-intelligence-and-analytics']],
   ])('links %s to the services SEO plan §22 lists', (id, expected) => {
     const solution = sectionPages.find((item) => item.id === id)!
@@ -142,6 +151,22 @@ describe('solution landing pages', () => {
 
   it('keeps Health\'s assigned keyword in its title (SEO plan §9)', () => {
     expect(health.title).toContain('Health Data Analytics Uganda')
+  })
+
+  it('links Financial Services\' service cards to exactly its three real, distinct services (#98, SEO plan §22)', () => {
+    if (financialServices.layout !== 'sector') throw new Error('Financial Services is not on the foundation')
+    const keys = servicePages.map((page) => page.key)
+    const linked = financialServices.services.items.map((item) => item.service)
+    expect(linked).toEqual(['data-engineering-and-integration', 'data-quality-and-reliability', 'business-intelligence-and-analytics'])
+    for (const key of linked) expect(keys).toContain(key)
+    expect(new Set(linked).size).toBe(linked.length)
+  })
+
+  it('gives Financial Services "trusted data foundation", "financial services analytics" and Uganda in its description, and "Banking Analytics Uganda" in its title (SEO plan §7)', () => {
+    expect(financialServices.description).toMatch(/trusted data foundation/)
+    expect(financialServices.description).toContain('financial services analytics')
+    expect(financialServices.description).toContain('Uganda')
+    expect(financialServices.title).toContain('Banking Analytics Uganda')
   })
 
   it('introduces activation in buyer language, with Reverse ETL as the explanation', () => {
