@@ -22,7 +22,10 @@ describe('render', () => {
         // closing panel, at #contact, replaces the Contact section.
         expect(html).toContain(`<h2 id="contact-heading" class="sector-heading sector-closing__heading">${page.copy.closing.heading}</h2>`)
         expect(html).toContain(`<p class="sector-closing__body">${page.copy.closing.text} ${page.copy.closing.followUp}</p>`)
-        expect(html).toContain('trusted data foundation.</p>')
+        // The protected phrase, visible in that paragraph (#93, #94; on
+        // Financial Services the owner's A1, #98, which does not end on it).
+        expect(page.copy.closing.followUp).toContain('trusted data foundation')
+        expect(html).toMatch(/<p class="sector-closing__body">[^<]*trusted data foundation[^<]*<\/p>/)
         expect(html).not.toContain('Let’s build a data foundation your organisation can trust.')
         expect(html).not.toContain('class="contact__text"')
       } else {
