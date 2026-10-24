@@ -4,8 +4,9 @@ import type { IconName } from '../data/iconNames.ts'
 import Icon from './Icon.tsx'
 
 // The landing pages' icons (#93): the 13 names of plan section 2a and the
-// Health page's hospital, flask and pill (#94), each an inline, decorative
-// SVG in currentColor with no title and no text.
+// Health page's hospital, flask and pill (#94) and the Financial Services
+// page's swap (#98), each an inline, decorative SVG in currentColor with
+// no title and no text.
 const NAMES = [
   'book',
   'chart',
@@ -23,6 +24,7 @@ const NAMES = [
   'hospital',
   'flask',
   'pill',
+  'swap',
 ] as const satisfies readonly IconName[]
 
 // Fails to compile if IconName gains or loses a name.
@@ -30,9 +32,9 @@ type Exact<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false
 const exact: Exact<IconName, (typeof NAMES)[number]> = true
 
 describe('Icon', () => {
-  it('covers exactly the 16 names', () => {
+  it('covers exactly the 17 names', () => {
     expect(exact).toBe(true)
-    expect(new Set(NAMES).size).toBe(16)
+    expect(new Set(NAMES).size).toBe(17)
   })
 
   it.each(NAMES)('draws %s as a decorative 24 x 24 line icon in currentColor', (name) => {
@@ -65,6 +67,15 @@ describe('Icon', () => {
     const shapes = [...container.querySelectorAll('svg *')]
     expect(shapes.length).toBeGreaterThan(0)
     expect(shapes.every((shape) => shape.tagName.toLowerCase() === 'path')).toBe(true)
+  })
+
+  it('draws the Financial Services icon swap from paths only: two opposing horizontal arrows', () => {
+    const { container } = render(<Icon name="swap" />)
+    const shapes = [...container.querySelectorAll('svg *')]
+    expect(shapes).toHaveLength(2)
+    expect(shapes.every((shape) => shape.tagName.toLowerCase() === 'path')).toBe(true)
+    // One arrow points right along y 8.5, the other left along y 15.5.
+    expect(shapes.map((shape) => shape.getAttribute('d')!.split('m')[0])).toEqual(['M4.5 8.5h15', 'M19.5 15.5h-15'])
   })
 
   it('adds only the class it is given', () => {
