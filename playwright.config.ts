@@ -40,8 +40,9 @@ const MAIN_PROJECTS = [
 // action on the first screen (hero-fold.spec.ts, #63), and the capability
 // grid's titles and hover and focus state (service-cards.spec.ts,
 // #66, #83), and the SEO landing pages (landing-pages.spec.ts, #67), and
-// the Public Sector and Health pages on the shared foundation
-// (public-sector.spec.ts, #93; health.spec.ts, #94). They
+// the Public Sector, Health and Financial Services pages on the shared
+// foundation (public-sector.spec.ts, #93; health.spec.ts, #94;
+// financial-services.spec.ts, #98). They
 // use the Desktop Safari preset with its deviceScaleFactor of 2:
 // assertions are in CSS pixels, so only the screenshot size changes. The
 // a11y, italics, fonts, hash and forced-colours logo specs run in chromium
@@ -101,6 +102,7 @@ export default defineConfig({
         'landing-pages.spec.ts',
         'public-sector.spec.ts',
         'health.spec.ts',
+        'financial-services.spec.ts',
       ],
     },
     ...WIDTHS.map((width) => ({
