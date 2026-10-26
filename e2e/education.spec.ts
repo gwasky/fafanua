@@ -358,7 +358,9 @@ async function journey(page: Page) {
     const line = (pseudo: '::before' | '::after') => {
       const s = getComputedStyle(ol, pseudo)
       return {
-        display: s.display,
+        // Below 48em the ol's pseudo-elements have no content, so are not
+        // generated.
+        display: s.content === 'none' ? 'none' : s.display,
         width: parseFloat(s.borderTopWidth),
         style: s.borderTopStyle,
         colour: s.borderTopColor,
