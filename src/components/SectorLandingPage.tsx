@@ -5,6 +5,7 @@ import Checklist from './Checklist.tsx'
 import ClosingPanel from './ClosingPanel.tsx'
 import DeliverableCards from './DeliverableCards.tsx'
 import LandingHero from './LandingHero.tsx'
+import LearnerJourney from './LearnerJourney.tsx'
 import PairedCards from './PairedCards.tsx'
 import PromiseStrip from './PromiseStrip.tsx'
 import RatingMarker from './RatingMarker.tsx'
@@ -17,8 +18,9 @@ import './SectorLanding.css'
 // section 2a of _docs/fafanua-public-sector-landing-page-plan.md), top to
 // bottom: the hero with the trace diagram, the challenge and approach,
 // the promise strip where the page has one (#98), who we work with, the
-// Data Trust Assessment (#assessment), the reconciliation cards where the
-// page has them (#98), Delivered in stages where the page has them, the
+// Data Trust Assessment (#assessment), the learner journey where the page
+// has one (#100), the reconciliation cards where the page has them (#98),
+// Delivered in stages where the page has them, the
 // AI and handling cards, the service cards and the closing panel
 // (#contact). PageLayout puts it in
 // main.sector-landing, which scopes every style in SectorLanding.css, and
@@ -44,6 +46,7 @@ function SectorLandingPage({ page }: { page: SectorLandingPageCopy }) {
       {page.promise && <PromiseStrip promise={page.promise} />}
       <AudienceCard audience={page.audience} />
       <DeliverableCards assessment={page.assessment} id="assessment" />
+      {page.journey && <LearnerJourney journey={page.journey} />}
       {page.reconciliation && <ReconciliationCards reconciliation={page.reconciliation} />}
       {page.stages && <StagesList stages={page.stages} />}
       <PairedCards>

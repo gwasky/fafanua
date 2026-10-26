@@ -8,21 +8,28 @@ import type { ServiceKey } from './servicePages.ts'
 // the landing pages' entry imports, so the homepage, which shows the rows
 // and links to the pages, does not ship it. No clients, case studies,
 // metrics, certifications or performance claims (§18), and no DHIS2
-// positioning (§9). Public Sector, Health and Financial Services are on
-// the shared landing-page foundation (#93, #94, #98): their copy is
-// section 4 of _docs/fafanua-public-sector-landing-page-plan.md, of
-// _docs/fafanua-health-landing-page-plan.md and of
-// _docs/fafanua-financial-services-landing-page-plan.md, which replaced
-// their §18 sections, and solutionPages.publicSector.plan.test.ts,
-// solutionPages.health.plan.test.ts and
-// solutionPages.financialServices.plan.test.ts check it against the
-// plans. The owner added strings to them on 2026-10-23, marked below: on
-// Public Sector (#93) four carry the SEO plan §12 keywords the plan copy
-// had dropped, and on both one makes "trusted data foundation" visible in
-// the closing panel (#93, #94). On Financial Services (#98) the owner
-// added two strings on 2026-10-24, marked below: one after the Financial
+// positioning (§9). Public Sector, Health, Financial Services and
+// Education are on the shared landing-page foundation (#93, #94, #98,
+// #100): their copy is section 4 of
+// _docs/fafanua-public-sector-landing-page-plan.md, of
+// _docs/fafanua-health-landing-page-plan.md, of
+// _docs/fafanua-financial-services-landing-page-plan.md and of
+// _docs/fafanua-education-landing-page-plan.md, which replaced their §18
+// sections, and solutionPages.publicSector.plan.test.ts,
+// solutionPages.health.plan.test.ts,
+// solutionPages.financialServices.plan.test.ts and
+// solutionPages.education.plan.test.ts check it against the plans. The
+// owner added strings to them on 2026-10-23, marked below: on Public
+// Sector (#93) four carry the SEO plan §12 keywords the plan copy had
+// dropped, and on both one makes "trusted data foundation" visible in the
+// closing panel (#93, #94). On Financial Services (#98) the owner added
+// two strings on 2026-10-24, marked below: one after the Financial
 // institutions card's text, and one that makes the protected phrase
-// visible in the closing panel.
+// visible in the closing panel. On Education (#100) the owner added the
+// same two on 2026-10-26, replaced the item on learners under 18, put the
+// learner journey under "What happens next" and restored two service
+// links, all marked below; the journey's opening sentence and the two
+// added service cards' copy are proposals pending the owner's review.
 
 export type SolutionService = {
   readonly service: ServiceKey
@@ -32,7 +39,7 @@ export type SolutionService = {
 }
 
 /** The existing landing page (SEO plan §18, #67): context, problems,
- * services, governance and activation. Three sectors still use it. */
+ * services, governance and activation. Two sectors still use it. */
 export type SolutionSectionsPage = {
   readonly layout?: undefined
   /** The <title>. */
@@ -172,6 +179,28 @@ export type SectorLandingPage = {
       /** A teal check-circle, or an amber alert-circle (an exception). */
       readonly statusIcon: 'check' | 'alert'
     }[]
+    readonly caption: string
+  }
+  /**
+   * The learner journey after the assessment band (Education, #100); a
+   * page may leave it out. Each step is "name: system"; `highlight` is
+   * the index of the step whose definition the callout shows, and
+   * `highlightNote` the visually hidden text after that step's name. The
+   * callout and the caption sit inside the highlighted step.
+   */
+  readonly journey?: {
+    /** An optional label before the eyebrow, in the same line, after a
+     * middle dot (#100). */
+    readonly eyebrowLead?: string
+    readonly eyebrow: string
+    readonly heading: string
+    /** An optional sentence before the text, in the same paragraph. */
+    readonly intro?: string
+    readonly text: string
+    readonly steps: readonly { readonly name: string; readonly system: string }[]
+    readonly highlight: number
+    readonly highlightNote: string
+    readonly callout: { readonly label: string; readonly text: string }
     readonly caption: string
   }
   /** Delivered in stages; a page may leave it out. */
@@ -645,53 +674,178 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
     },
   },
   education: {
-    title: 'Education Data Analytics Uganda | Fafanua',
+    layout: 'sector',
+    title: 'Learner & Education Data Analytics Uganda | Fafanua',
     description:
-      'Learner, enrolment and progression analytics for universities, colleges, schools and education programmes in Uganda and East Africa.',
-    lead: 'For universities, colleges, school networks and education programmes.',
-    context: [
-      'Education institutions and programmes hold learner data across admissions, student-information and learning-management systems, fees and payment platforms, and examination records. Each office reports from its own system, which makes it hard to follow a learner from enrolment to completion.',
-      'Fafanua helps education organisations in Uganda and East Africa build a trusted data foundation that links learner records across the whole lifecycle, so enrolment, progression, retention and outcomes are reported consistently.',
-    ],
-    problems: [
-      'Learner records duplicated or inconsistent across admissions, academic and finance systems.',
-      'Enrolment and progression figures that differ between departments.',
-      'Fee and payment status checked by hand before registration or examinations.',
-      'Retention and drop-out risks identified too late to act on.',
-      'Little visibility of graduate or programme outcomes.',
-    ],
-    services: [
-      {
-        service: 'data-engineering-and-integration',
-        label: 'Student-system integration',
-        text: 'Connect admissions, student-information, learning-management and payment systems.',
+      'Every learner, counted the same way: education data analytics for universities, colleges, schools and training providers in Uganda, on a trusted data foundation.',
+    breadcrumb: 'Education',
+    hero: {
+      eyebrow: 'Education solutions',
+      heading: 'Every learner, counted the same way.',
+      lead: 'For universities, colleges, schools, training providers and education programmes in Uganda and East Africa. We trace the figures your leadership, ministry and funders see back to their source, so enrolment, progression and fees tell one consistent story.',
+      secondaryLabel: 'See how the assessment works',
+    },
+    diagram: {
+      sourcesHeading: 'Education systems',
+      sources: [
+        { label: 'Admissions', icon: 'list', feeds: false },
+        { label: 'Exams & grading', icon: 'score', feeds: false },
+        { label: 'Student information system', icon: 'cap', feeds: true },
+        { label: 'Learning platform', icon: 'chart', feeds: true },
+        { label: 'Fees & finance', icon: 'card', feeds: true },
+      ],
+      traceHeading: 'Traced to source',
+      steps: ['Report', 'Definition', 'Calculation', 'Data model', 'Source system'],
+      traceFootnote: 'Owner and trust rating for every number',
+      figuresHeading: 'Figures you report',
+      figures: [
+        { name: 'Active learners', rating: 'Trusted with caveats', marker: 'amber' },
+        { name: 'Fee collection rate', rating: 'Trusted', marker: 'teal' },
+        { name: 'Completion rate', rating: 'Not yet trusted', marker: 'hollow' },
+      ],
+      caption: 'Illustrative example. Sample data only.',
+      description:
+        'Illustrative example: active learners, fee collection rate and completion rate traced to student, learning and finance systems, with trust ratings.',
+    },
+    challenge: {
+      heading: 'The challenge',
+      text: 'Admissions, learning, exams and finance each keep their own records. The same learner appears differently in each system, ‘active’ means something different to every team, and ministry or funder reports take weeks to assemble.',
+      icon: 'alert',
+    },
+    approach: {
+      heading: 'Our approach',
+      text: 'We start by tracing the figures leadership and funders rely on back to their source. Then we connect each learner’s records across systems, so every report describes the same learner in the same way.',
+      icon: 'check',
+    },
+    audience: {
+      heading: 'Who we work with',
+      subheading: 'Universities, colleges, schools, training providers and education programmes.',
+      card: {
+        heading: 'Education institutions',
+        text: 'For institutions and programmes that report to a board, a ministry or a funder.',
+        // Owner addition (2026-10-26, #100): A2, the SEO plan §11 keywords.
+        detail:
+          'We help education institutions bring together data from admissions, learning, exams and finance systems for learner analytics, education dashboards and cohort analysis — giving teams a clearer view of student retention, learner progression and graduate outcomes.',
+        icon: 'cap',
+        items: [
+          'Enrolment and progression tracking',
+          'Fees, scholarships and payments reconciliation',
+          'Learner engagement and completion',
+          'Board, ministry and funder reporting',
+        ],
       },
-      {
-        service: 'data-warehousing-and-analytics-modelling',
-        label: 'Learner lifecycle data models',
-        text: 'Model learners, programmes, cohorts and terms, so progression can be followed over time.',
+    },
+    assessment: {
+      eyebrow: 'Start with trust',
+      heading: 'The Data Trust Assessment: three weeks, fixed fee',
+      text: 'The Data Trust Assessment takes the numbers your leadership relies on most and traces each one from the report back to its source.',
+      deliverables: [
+        { name: 'Lineage map', text: 'How each key number is produced, system by system', icon: 'map' },
+        { name: 'Trust scorecard', text: 'Each number rated trusted, with caveats, or not yet', icon: 'score' },
+        {
+          name: 'Shared definitions',
+          text: 'For terms like ‘active learner’ that teams define differently',
+          icon: 'book',
+        },
+        { name: 'Prioritised roadmap', text: 'Ranked by business impact and effort', icon: 'list' },
+      ],
+    },
+    journey: {
+      // Owner decision (2026-10-26, #100): the section reads as work that
+      // may follow the assessment, under "What happens next".
+      eyebrowLead: 'What happens next',
+      eyebrow: 'One learner, one record',
+      heading: 'Follow every learner, end to end',
+      // Owner decision (2026-10-26, #100): proposed sentence before the
+      // plan's text, pending the owner's review.
+      intro:
+        'Where the assessment identifies fragmented learner records, we can then help you unify admissions, learning, assessment, finance and outcomes data.',
+      text: 'We connect records across the learner journey, so admissions, learning, exams and finance describe the same person in the same way.',
+      steps: [
+        { name: 'Apply', system: 'Admissions' },
+        { name: 'Enrol', system: 'Student information system' },
+        { name: 'Learn', system: 'Learning platform' },
+        { name: 'Assess', system: 'Exams and grading' },
+        { name: 'Complete', system: 'Certification records' },
+      ],
+      highlight: 2,
+      // Plan section 6's example: Learn's highlight, in words.
+      highlightNote: '(definition shown below)',
+      callout: {
+        label: 'Definition agreed',
+        text: 'An active learner has recorded learning activity in the last 30 days.',
       },
-      {
-        service: 'data-governance-and-metadata',
-        label: 'Education data governance',
-        text: 'Ownership, definitions and access rules for learner and staff data.',
-      },
-      {
-        service: 'business-intelligence-and-analytics',
-        label: 'Education dashboards',
-        text: 'Enrolment, progression, cohort and programme-performance reporting.',
-      },
-    ],
-    governance: [
-      'Consistent learner identifiers across systems.',
-      'Agreed definitions of enrolment, progression, completion and retention.',
-      'Access controls for personal learner data.',
-    ],
-    activation: [
-      'Synchronising learner lifecycle and payment status with student services and communication tools.',
-      'Flagging learners at risk of dropping out to academic advisers.',
-      'Sharing cohort progress with programme teams.',
-    ],
+      caption: 'Illustrative example. Sample definition only.',
+    },
+    ai: {
+      heading: 'What this means for AI',
+      text: 'AI and advanced analytics work only when metrics are clearly defined, inputs can be traced to their source, data quality is known and access is controlled. The assessment gives each use case a plain verdict.',
+      icon: 'gauge',
+      chips: [
+        { label: 'Ready now', marker: 'teal' },
+        { label: 'Ready after specific fixes', marker: 'amber' },
+        { label: 'Not ready yet', marker: 'hollow' },
+      ],
+    },
+    handling: {
+      heading: 'Handled responsibly',
+      icon: 'shield',
+      items: [
+        'Learner data is pseudonymised wherever the analysis allows.',
+        // Owner decision (2026-10-26, #100): replaces the plan's item on
+        // learners under 18.
+        'Education data can be sensitive, particularly where it relates to children and young people. We design access, governance and reporting controls around the organisation’s policies, legal obligations and the sensitivity of the data.',
+        'Ownership and access rules are agreed before any pipeline is built.',
+      ],
+    },
+    services: {
+      heading: 'After the assessment',
+      subheading: 'What we fix, once we know where trust breaks down.',
+      items: [
+        {
+          name: 'Integrate and model',
+          text: 'Connect admissions, student information, learning, exams and finance systems into one consistent view of each learner.',
+          icon: 'link',
+          service: 'data-engineering-and-integration',
+        },
+        {
+          name: 'Quality and governance',
+          text: 'Completeness and timeliness checks, plus clear ownership and access rules.',
+          icon: 'shield',
+          service: 'data-quality-and-reliability',
+        },
+        {
+          name: 'Reporting and dashboards',
+          text: 'Enrolment, progression, completion and finance reporting for leadership, ministries and funders.',
+          icon: 'chart',
+          service: 'business-intelligence-and-analytics',
+        },
+        // Owner decision (2026-10-26, #100): the links to Data Warehousing
+        // & Analytics Modelling and Data Governance & Metadata restored as
+        // two more cards; their copy is proposed, pending the owner's
+        // review.
+        {
+          name: 'Learner data warehouse',
+          text: 'Model learners, programmes, cohorts and terms in one data warehouse, so progression and completion can be followed over time.',
+          icon: 'ledger',
+          service: 'data-warehousing-and-analytics-modelling',
+        },
+        {
+          name: 'Data governance and definitions',
+          text: 'Agree ownership, shared definitions and access rules for learner and staff data, and keep them documented.',
+          icon: 'book',
+          service: 'data-governance-and-metadata',
+        },
+      ],
+    },
+    closing: {
+      eyebrow: 'Get started',
+      heading: 'Build an education data foundation you can trust',
+      text: 'Which learner figure do you trust least? Tell us about the reports your leadership, ministry and funders rely on.',
+      // Owner addition (2026-10-26, #100): A1, the protected phrase, visible.
+      followUp:
+        'We help education organisations build a trusted data foundation for reliable reporting, clearer learner journeys and better decisions.',
+    },
   },
   'public-sector': {
     layout: 'sector',

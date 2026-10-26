@@ -828,6 +828,143 @@
   line-height: var(--leading-snug);
 }
 
+/* ---- Learner journey and definition callout (#100) ---- */
+
+/* An ol of steps on paper, each a decorative dot, the step name and its
+   system. Below 48em one step per row, the dot on the start side and a
+   vertical hairline from each dot down to the next; from 48em the ol is
+   a grid and each step a subgrid of its rows (dot, name, system), with a
+   horizontal hairline (the ol's ::before, and ::after for a second line)
+   through the dots. The highlighted step spans the whole grid, so the
+   callout and the caption inside it can take their own cells; its dot,
+   name and system (.journey__point) take the step's cell. */
+.sector-landing .journey {
+  --journey-dot: var(--space-3);
+  --journey-gap: var(--space-5);
+  /* The name's first line's centre, where the dot and the line sit. */
+  --journey-dot-centre: calc(var(--text-base) * var(--leading-snug) / 2);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--journey-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sector-landing .journey__step {
+  position: relative;
+  min-width: 0;
+}
+
+/* The vertical hairline, graphite 200, from this step's dot centre to
+   the next one's. */
+.sector-landing .journey__step:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  inset-block: var(--journey-dot-centre) calc(-1 * (var(--journey-gap) + var(--journey-dot-centre)));
+  inset-inline-start: calc(var(--journey-dot) / 2);
+  border-inline-start: var(--border-width) solid var(--color-border);
+  translate: -50% 0;
+}
+
+.sector-landing .journey__point {
+  display: grid;
+  grid-template-columns: var(--journey-dot) minmax(0, 1fr);
+  column-gap: var(--space-3);
+}
+
+/* A 12px dot: hollow, a 2px teal 600 border on a white fill that hides
+   the line (3.27:1 on paper); the highlighted one filled by its border,
+   so forced-colours mode keeps it filled, with a soft teal 100 ring.
+   Positioned, so it paints over the line. */
+.sector-landing .journey__dot {
+  position: relative;
+  grid-row: 1 / span 2;
+  grid-column: 1;
+  inline-size: var(--journey-dot);
+  block-size: var(--journey-dot);
+  margin-block-start: calc(var(--journey-dot-centre) - var(--journey-dot) / 2);
+  border: calc(2 * var(--border-width)) solid var(--color-accent);
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+}
+
+.sector-landing .journey__step--highlight .journey__dot {
+  border-width: calc(var(--journey-dot) / 2);
+  box-shadow: 0 0 0 var(--space-1) var(--landing-badge-teal-bg);
+}
+
+.sector-landing .journey__name,
+.sector-landing .journey__system {
+  grid-column: 2;
+  overflow-wrap: break-word;
+}
+
+/* The step name in graphite 900 (14.87:1), its system in graphite 600
+   (6.00:1). */
+.sector-landing .journey__name {
+  color: var(--color-heading);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+}
+
+.sector-landing .journey__system {
+  margin-block-start: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+/* Below 48em the callout and caption sit under the step's text. */
+.sector-landing .journey__step > .definition-callout,
+.sector-landing .journey__caption {
+  margin-inline-start: calc(var(--journey-dot) + var(--space-3));
+}
+
+.sector-landing .journey__step > .definition-callout {
+  margin-block-start: var(--space-3);
+}
+
+/* The caption in graphite 600 (6.00:1). */
+.sector-landing .journey__caption {
+  margin-block: var(--space-2) 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+}
+
+/* The definition callout: white, a 3px teal 600 rule on the start side
+   (3.60:1), graphite 200 hairlines on the others; the label in teal 800
+   (8.06:1), the definition in graphite 900 (16.39:1). */
+.sector-landing .definition-callout {
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-inline-start: calc(3 * var(--border-width)) solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+}
+
+.sector-landing .definition-callout__label {
+  margin: 0 0 var(--space-1);
+  color: var(--color-accent-text);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  overflow-wrap: break-word;
+}
+
+.sector-landing .definition-callout__text {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  overflow-wrap: break-word;
+}
+
 /* ---- Delivered in stages ---- */
 
 .sector-landing .stages {
@@ -926,6 +1063,16 @@
   .sector-landing .checklist__tick,
   .sector-landing .icon-badge,
   .sector-landing .promise__number {
+    border-color: CanvasText;
+  }
+
+  /* The journey's dots keep their borders (the highlighted one filled),
+     and the hairlines and the callout's border and rule stay drawn. */
+  .sector-landing .journey__dot,
+  .sector-landing .journey::before,
+  .sector-landing .journey::after,
+  .sector-landing .journey__step::before,
+  .sector-landing .definition-callout {
     border-color: CanvasText;
   }
 }
@@ -1034,6 +1181,109 @@
     border-inline-start: var(--border-width) solid var(--color-border);
   }
 
+  /* The learner journey: three steps on the first line and two on the
+     second, each line with its own hairline, then the callout across
+     both and the caption. Rows: dot, name, system; a gap; dot, name,
+     system; callout; caption. */
+  .sector-landing .journey {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: auto auto auto var(--space-6) auto auto auto auto auto;
+    column-gap: var(--space-4);
+    row-gap: 0;
+  }
+
+  .sector-landing .journey::before,
+  .sector-landing .journey::after {
+    content: '';
+    grid-column: 1 / -1;
+    grid-row: 1;
+    align-self: center;
+    margin-inline-start: calc(var(--journey-dot) / 2);
+    border-block-start: var(--border-width) solid var(--color-border);
+  }
+
+  .sector-landing .journey::after {
+    grid-row: 5;
+  }
+
+  .sector-landing .journey__step:not(:last-child)::before {
+    display: none;
+  }
+
+  .sector-landing .journey__step {
+    display: grid;
+    grid-template-rows: subgrid;
+  }
+
+  .sector-landing .journey__point {
+    display: grid;
+    grid-row: span 3;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: subgrid;
+  }
+
+  .sector-landing .journey__dot {
+    grid-row: 1;
+    margin-block-start: 0;
+  }
+
+  .sector-landing .journey__name,
+  .sector-landing .journey__system {
+    grid-column: 1;
+  }
+
+  .sector-landing .journey__name {
+    margin-block-start: var(--space-3);
+  }
+
+  /* Each step's cell: its li, or, in the highlighted step, its point. */
+  .sector-landing .journey__step:nth-child(1),
+  .sector-landing .journey__step--highlight:nth-child(1) > .journey__point {
+    grid-area: 1 / 1 / span 3;
+  }
+
+  .sector-landing .journey__step:nth-child(2),
+  .sector-landing .journey__step--highlight:nth-child(2) > .journey__point {
+    grid-area: 1 / 2 / span 3;
+  }
+
+  .sector-landing .journey__step:nth-child(3),
+  .sector-landing .journey__step--highlight:nth-child(3) > .journey__point {
+    grid-area: 1 / 3 / span 3;
+  }
+
+  .sector-landing .journey__step:nth-child(4),
+  .sector-landing .journey__step--highlight:nth-child(4) > .journey__point {
+    grid-area: 5 / 1 / span 3;
+  }
+
+  .sector-landing .journey__step:nth-child(5),
+  .sector-landing .journey__step--highlight:nth-child(5) > .journey__point {
+    grid-area: 5 / 2 / span 3;
+  }
+
+  /* The highlighted step spans the grid, its columns and rows shared. */
+  .sector-landing .journey__step.journey__step--highlight {
+    grid-area: 1 / 1 / -1 / -1;
+    grid-template-columns: subgrid;
+  }
+
+  .sector-landing .journey__step > .definition-callout,
+  .sector-landing .journey__caption {
+    grid-column: 1 / -1;
+    margin-inline-start: 0;
+  }
+
+  .sector-landing .journey__step > .definition-callout {
+    grid-row: 8;
+    margin-block-start: var(--space-5);
+  }
+
+  .sector-landing .journey__caption {
+    grid-row: 9;
+    margin-block-start: var(--space-3);
+  }
+
   .sector-landing .sector-closing__panel {
     padding-inline: var(--space-10);
   }
@@ -1096,6 +1346,60 @@
   .sector-landing .stage + .stage {
     padding-inline-start: var(--space-4);
     border-inline-start: var(--border-width) solid var(--color-border);
+  }
+
+  /* The learner journey in one row of five, one hairline, the callout
+     from the highlighted step's column to the row's end, the caption
+     from the row's start. Rows: dot, name, system, callout, caption. */
+  .sector-landing .journey {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: auto auto auto auto auto;
+  }
+
+  .sector-landing .journey::after {
+    display: none;
+  }
+
+  .sector-landing .journey__step:nth-child(4),
+  .sector-landing .journey__step--highlight:nth-child(4) > .journey__point {
+    grid-area: 1 / 4 / span 3;
+  }
+
+  .sector-landing .journey__step:nth-child(5),
+  .sector-landing .journey__step--highlight:nth-child(5) > .journey__point {
+    grid-area: 1 / 5 / span 3;
+  }
+
+  .sector-landing .journey__step.journey__step--highlight {
+    grid-area: 1 / 1 / -1 / -1;
+  }
+
+  .sector-landing .journey__step > .definition-callout {
+    grid-row: 4;
+  }
+
+  .sector-landing .journey__step--highlight:nth-child(1) > .definition-callout {
+    grid-column: 1 / -1;
+  }
+
+  .sector-landing .journey__step--highlight:nth-child(2) > .definition-callout {
+    grid-column: 2 / -1;
+  }
+
+  .sector-landing .journey__step--highlight:nth-child(3) > .definition-callout {
+    grid-column: 3 / -1;
+  }
+
+  .sector-landing .journey__step--highlight:nth-child(4) > .definition-callout {
+    grid-column: 4 / -1;
+  }
+
+  .sector-landing .journey__step--highlight:nth-child(5) > .definition-callout {
+    grid-column: 5 / -1;
+  }
+
+  .sector-landing .journey__caption {
+    grid-row: 5;
   }
 
   .sector-landing .sector-closing__panel {
