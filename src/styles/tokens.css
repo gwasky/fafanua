@@ -322,10 +322,6 @@
      margins keep it in view (global.css). */
   --focus-ring-extent: calc(var(--focus-ring-width) + var(--focus-ring-offset));
 
-  /* The Data Trust Assessment's decorative contour lines (#82), drawn in
-     --color-accent: graphics only, faint. */
-  --opacity-contour: 0.4;
-
   /* Technical grid (TechnicalGrid): a rem pitch and whole-pixel lines,
      so the pattern stays even at any width and pixel ratio. */
   --grid-size: 4rem;
