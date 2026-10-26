@@ -71,10 +71,10 @@ Add a section directly after the problem section, with this copy.
 
 **What you receive:**
 
-- A lineage map showing how each key number is produced, system by system
-- A trust scorecard rating each number as trusted, trusted with caveats, or not yet trusted, with the reasons
-- Shared definitions for the terms your teams or branches use differently
-- A prioritised fix list, ranked by impact and effort
+- Lineage map: See where each key number comes from and how it is produced.
+- Trust scorecard: Know which figures are trusted, trusted with caveats, or not yet trusted.
+- Shared definitions: Align the terms different teams or branches use differently.
+- Prioritised roadmap: Know what to fix first, based on impact and effort.
 
 **After the assessment:** Most organisations continue with integration and modelling, quality and governance, or reporting built on the traced numbers.
 
@@ -94,6 +94,8 @@ This supersedes the sample figure "Monthly revenue by branch": the example now s
 **Owner update (2026-10-14, #79):** `_docs/fafanua-data-trust-assessment-homepage-enhancement.md` supersedes the caption (now "Illustrative example"), the metrics label (now "Example leadership metrics") and the five steps (now its seven-step sequence, Report to Trust rating), and replaces the "After the assessment" line with its statement and supporting copy. It also adds the START WITH TRUST eyebrow and the DATA TRUST ASSESSMENT engagement name above the heading.
 
 **Owner update (2026-10-15):** W11 supersedes the layout of this section and of its illustrative example. The Data Trust Assessment Dark Panel plan (#82) now supersedes W11.
+
+**Owner update (2026-10-23, #99):** the revised Data Trust Assessment Dark Panel plan replaces the seven-step sequence with five trace steps (Report to Source system) plus "What we establish" (Accountable owner and Trust rating), and gives the four deliverables above in its §3 wording. The example metrics are removed from the homepage. The #77 rule above (labels only, stored in one shared source) still governs any future example metrics.
 
 **Acceptance:** the section sits directly after the problem section. The button uses the W1 label. Copy lives in a `src/data/` file, not inside components. The section passes the axe checks.
 

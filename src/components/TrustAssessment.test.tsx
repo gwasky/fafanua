@@ -1,70 +1,84 @@
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import {
-  assessmentDeliverableLabels,
   assessmentDeliverables,
-  assessmentFacts,
   assessmentLead,
   assessmentNextStatement,
   assessmentNextSupporting,
-  exampleMetrics,
-  lineageExample,
+  lineageTrace,
 } from '../data/assessment.ts'
 import { expectNoAxeViolations } from '../test/axe.ts'
 import TrustAssessment from './TrustAssessment.tsx'
 
 // W4 in the trust and lineage plan (#71), the homepage enhancement plan
-// (#79) and the dark panel plan (#82), character for character
-// (assessment.plan.test.ts checks the data module against the plans).
+// (#79) and the dark panel plan (#82, revised for #99), character for
+// character (assessment.plan.test.ts checks the data module against the
+// plans).
 const EYEBROW = 'Start with trust'
 const NAME = 'Data Trust Assessment'
 const HEADING = 'Know where every number comes from.'
-const FACTS = '3 weeks \u00b7 fixed fee'
-// The closing strip (#82), which replaces the after-assessment block.
+const RECEIVE = 'What you receive'
+// The closing strip (#82), with the statement of the revised plan (#99).
 const NEXT_EYEBROW = 'What happens next'
-const NEXT_STATEMENT = 'Turn findings into a prioritised roadmap.'
+const NEXT_STATEMENT = 'From findings to meaningful improvements.'
 const NEXT_SUPPORTING =
-  'The assessment shows where trust breaks down and what matters most. From there, Fafanua can strengthen the parts of your data foundation that need attention \u2014 from integration and modelling to quality, governance and analytics.'
-// Removed by the dark panel plan (#82).
-const AFTER_HEADING = 'After the assessment'
-const AFTER_STATEMENT = 'The assessment tells us what to fix first.'
-const AFTER_SUPPORTING =
-  'The findings become a prioritised roadmap. From there, Fafanua can strengthen the parts of your data foundation that need attention \u2014 from integration and modelling to quality, governance and analytics.'
-const OLD_OWNER_ROLE = 'One role per metric'
-const OLD_AFTER =
-  'Most organisations continue with integration and modelling, quality and governance, or reporting built on the traced numbers.'
-const CAPTION = 'Illustrative example'
-// The owner's metric names (#77), the seven-step sequence (#79) with the
-// dark panel plan's descriptions (#82), and the three ratings.
-const METRICS = ['Revenue', 'Active Customers', 'Portfolio at Risk', 'Programme Outcomes', 'Cost per Customer']
-const STEPS = ['Report', 'Definition', 'Calculation', 'Data model', 'Source system', 'Owner', 'Trust rating']
-const DESCRIPTIONS = [
-  'The leadership report where the number appears',
-  'How the number is defined',
-  'The logic and rules that produce it',
-  'The tables the calculation reads from',
-  'Where the data is first recorded',
-  'Who is accountable for the number',
-  'How far the number can be trusted, and why',
+  'The assessment shows where trust breaks down and what matters most. From there, Fafanua can strengthen the parts of your data foundation that need attention — from integration and modelling to quality, governance and analytics.'
+// The four tiles (#99), each a label over its description.
+const TILES = [
+  ['Lineage map', 'See where each key number comes from and how it is produced.'],
+  ['Trust scorecard', 'Know which figures are trusted, trusted with caveats, or not yet trusted.'],
+  ['Shared definitions', 'Align the terms different teams or branches use differently.'],
+  ['Prioritised roadmap', 'Know what to fix first, based on impact and effort.'],
+]
+// The card (#99): its heading, five steps, What we establish and the
+// three ratings.
+const CARD_HEADING = 'How we trace your numbers'
+const STEPS = [
+  ['Report', 'The leadership report where the number appears'],
+  ['Definition', 'How the number is defined'],
+  ['Calculation', 'The logic and rules that produce it'],
+  ['Data model', 'The tables the calculation reads from'],
+  ['Source system', 'Where the data is first recorded'],
+]
+const ESTABLISH_LABEL = 'What we establish'
+const ESTABLISH = [
+  ['Accountable owner', 'Who is responsible for the number'],
+  ['Trust rating', 'How far the number can be trusted, and why'],
 ]
 const RATING = 'Trust rating'
 const RATINGS = ['Trusted', 'Trusted with caveats', 'Not yet trusted']
-// W11's tile labels (#81), each above its deliverable.
-const TILE_LABELS = ['Lineage map', 'Trust scorecard', 'Shared definitions', 'Fix list']
-const DELIVERABLES = [
-  'A lineage map showing how each key number is produced, system by system',
-  'A trust scorecard rating each number as trusted, trusted with caveats, or not yet trusted, with the reasons',
-  'Shared definitions for the terms your teams or branches use differently',
-  'A prioritised fix list, ranked by impact and effort',
+// Removed by the dark panel plan (#82) and its revision (#99).
+const REMOVED = [
+  'After the assessment',
+  'The assessment tells us what to fix first.',
+  'The findings become a prioritised roadmap.',
+  'One role per metric',
+  'Most organisations continue',
+  '3 weeks',
+  'fixed fee ',
+  'Illustrative example',
+  'Example leadership metrics',
+  'Each traced through',
+  'Who is accountable for the number',
+  'Turn findings into a prioritised roadmap.',
+  'Fix list',
+  'A lineage map showing',
+  'A trust scorecard rating',
+  'Shared definitions for the terms',
+  'A prioritised fix list',
 ]
-// The two list labels: the enhancement plan §8's, and W4's concept that
-// its §9 retains (#79).
-const METRICS_LABEL = 'Example leadership metrics'
-const STEPS_LABEL = 'Each traced through'
+const METRICS = ['Revenue', 'Active Customers', 'Portfolio at Risk', 'Programme Outcomes', 'Cost per Customer']
 
 function renderSection() {
   const result = render(<TrustAssessment />)
   return { ...result, section: screen.getByRole('region', { name: HEADING }) }
+}
+
+/** The panel's three parts: the left column, the card and the strip. */
+function parts(section: HTMLElement) {
+  const panel = section.querySelector('.surface-dark')!
+  const [intro, card, next, ...rest] = [...panel.children] as HTMLElement[]
+  return { panel, intro, card, next, rest }
 }
 
 describe('TrustAssessment', () => {
@@ -74,59 +88,58 @@ describe('TrustAssessment', () => {
 
     expect(section.tagName).toBe('SECTION')
     expect(section).toHaveAttribute('id', 'data-trust-assessment')
-    expect(section).toHaveAttribute('aria-labelledby', heading.id)
+    expect(heading).toHaveAttribute('id', 'data-trust-assessment-heading')
+    expect(section).toHaveAttribute('aria-labelledby', 'data-trust-assessment-heading')
     expect(heading).toHaveTextContent(HEADING)
     expect(section).toHaveAttribute('data-reveal', 'section')
   })
 
-  it('has the h2, then the h3s What you receive and the closing statement (#82)', () => {
+  it('has the h2, then the card h3 How we trace your numbers and the closing h3 (#99)', () => {
     const { section } = renderSection()
     const headings = within(section).getAllByRole('heading')
 
     expect(headings.map((heading) => [heading.tagName, heading.textContent])).toEqual([
       ['H2', HEADING],
-      ['H3', 'What you receive'],
+      ['H3', CARD_HEADING],
       ['H3', NEXT_STATEMENT],
     ])
   })
 
-  it('holds one dark panel, the container\'s only child, laid out in rows: intro and card, tiles, closing strip (#82)', () => {
+  it('holds one dark panel, the container\'s only child, in two parts: the left column and the card, then the closing strip (#99)', () => {
     const { section } = renderSection()
     const container = section.firstElementChild!
-    const panel = container.firstElementChild!
-    const [intro, figure, receive, next, ...rest] = [...panel.children]
+    const { panel, intro, card, next, rest } = parts(section)
 
     expect(section.children).toHaveLength(1)
     expect(container).toHaveClass('container')
     expect(container.children).toHaveLength(1)
+    expect(container.firstElementChild).toBe(panel)
     expect(panel.tagName).toBe('DIV')
     expect(panel).toHaveClass('surface-dark')
     expect(rest).toEqual([])
     expect(intro).toContainElement(within(section).getByRole('heading', { level: 2 }))
-    expect(figure).toBe(within(section).getByRole('figure'))
-    expect(receive.firstElementChild).toBe(within(section).getByRole('heading', { name: 'What you receive' }))
+    expect(intro).toContainElement(within(section).getByRole('list', { name: RECEIVE }))
+    expect(card).toHaveClass('surface-light')
+    expect(card.firstElementChild).toBe(within(section).getByRole('heading', { name: CARD_HEADING }))
     expect(next.firstElementChild).toContainElement(within(section).getByRole('heading', { name: NEXT_STATEMENT }))
   })
 
-  it('shows the eyebrow in its own row, then the engagement name, the h2, the lead, the facts pill and the contour lines, in the intro (#79, #82)', () => {
+  it('shows, in the left column, the eyebrow in its own row, the engagement name, the h2, the lead, the label and the tiles, in order (#99)', () => {
     const { section } = renderSection()
-    const h2 = within(section).getByRole('heading', { level: 2 })
-    const intro = h2.parentElement!
-    const [eyebrowRow, name, heading, lead, facts, contours, ...rest] = [...intro.children]
+    const { intro } = parts(section)
+    const [eyebrowRow, name, heading, lead, label, tiles, ...rest] = [...intro.children]
     const [eyebrow, ...more] = [...eyebrowRow.children]
 
     expect(rest).toEqual([])
     expect(more).toEqual([])
-    expect(intro).toBe(section.querySelector('.surface-dark')!.firstElementChild)
     expect(eyebrowRow.tagName).toBe('DIV')
     expect([eyebrow.tagName, eyebrow.textContent]).toEqual(['P', EYEBROW])
     expect(eyebrow).toHaveClass('section-eyebrow')
     expect([name.tagName, name.textContent]).toEqual(['P', NAME])
-    expect(heading).toBe(h2)
+    expect(heading).toBe(within(section).getByRole('heading', { level: 2 }))
     expect([lead.tagName, lead.textContent]).toEqual(['P', assessmentLead])
-    expect([facts.tagName, facts.textContent]).toEqual(['P', FACTS])
-    expect(assessmentFacts).toBe(FACTS)
-    expect(contours.tagName.toLowerCase()).toBe('svg')
+    expect([label.tagName, label.textContent]).toEqual(['P', RECEIVE])
+    expect(tiles.tagName).toBe('UL')
   })
 
   it('shows the closing strip\'s text group (eyebrow, h3, paragraph), then the button, in reading order, the button last in the section (#82)', () => {
@@ -149,7 +162,7 @@ describe('TrustAssessment', () => {
     expect([supporting.tagName, supporting.textContent]).toEqual(['P', NEXT_SUPPORTING])
     expect(actions.tagName).toBe('DIV')
     expect([...actions.children]).toEqual([link])
-    // The strip is the panel's last row, and the button its last element:
+    // The strip is the panel's last part, and the button its last element:
     // nothing in the section follows it.
     expect(strip).toBe(section.querySelector('.surface-dark')!.lastElementChild)
     const all = [...section.querySelectorAll('*')]
@@ -158,13 +171,14 @@ describe('TrustAssessment', () => {
     expect(assessmentNextSupporting).toBe(NEXT_SUPPORTING)
   })
 
-  it('no longer shows the after-assessment block or W11\'s owner row value (#82)', () => {
+  it('no longer shows any removed string: the after-assessment block, the facts pill, the caption, the metrics, the trace label, the Owner step, the old sentences, Fix list or the old statement (#82, #99)', () => {
     const { section } = renderSection()
 
-    for (const text of [AFTER_HEADING, AFTER_STATEMENT, AFTER_SUPPORTING, OLD_OWNER_ROLE]) {
-      expect(section.textContent).not.toContain(text)
+    for (const text of [...REMOVED, ...METRICS]) {
+      expect(section.textContent, text).not.toContain(text)
     }
-    expect(within(section).queryByRole('heading', { name: AFTER_HEADING })).toBeNull()
+    expect(within(section).queryByRole('heading', { name: 'After the assessment' })).toBeNull()
+    expect(within(section).queryByRole('heading', { name: RECEIVE })).toBeNull()
   })
 
   it('shows the eyebrow and engagement name as paragraphs above the h2, not headings and not in it, so the region keeps the h2\'s name (#79)', () => {
@@ -179,7 +193,7 @@ describe('TrustAssessment', () => {
       expect(h2.contains(label)).toBe(false)
       expect(label.compareDocumentPosition(h2) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     }
-    // The eyebrow alone in its row, then the name, then the h2 (#82).
+    // The eyebrow alone in its row, then the name, then the h2.
     expect(eyebrow.nextElementSibling).toBeNull()
     expect(eyebrow.parentElement!.nextElementSibling).toBe(name)
     expect(name.nextElementSibling).toBe(h2)
@@ -188,40 +202,36 @@ describe('TrustAssessment', () => {
     expect(within(section).queryByRole('heading', { name: new RegExp(NAME, 'i') })).toBeNull()
   })
 
-  it('no longer shows the W4 after-line (#79)', () => {
+  it('shows the four deliverables in order as tiles, a list named by the What you receive label, each its label over its description (#99)', () => {
     const { section } = renderSection()
+    const label = within(section).getByText(RECEIVE)
+    const list = within(section).getByRole('list', { name: RECEIVE })
 
-    expect(section.textContent).not.toContain(OLD_AFTER)
-    expect(section.textContent).not.toContain('Most organisations continue')
-  })
-
-  it('shows the four deliverables in order as tiles under What you receive, each with its W11 label above it (#81)', () => {
-    const { section } = renderSection()
-    const receive = within(section).getByRole('heading', { name: 'What you receive' })
-    const list = receive.nextElementSibling as HTMLElement
-
-    expect(receive.tagName).toBe('H3')
+    expect(label.tagName).toBe('P')
+    expect(label.id).not.toBe('')
+    expect(label.nextElementSibling).toBe(list)
     expect(list.tagName).toBe('UL')
     expect(list).toHaveAttribute('role', 'list')
+    expect(list).toHaveAttribute('aria-labelledby', label.id)
     expect(list.nextElementSibling).toBeNull()
     const tiles = within(list).getAllByRole('listitem')
     expect(tiles.map((tile) => [...tile.children].map((child) => [child.tagName, child.textContent]))).toEqual(
-      TILE_LABELS.map((label, i) => [
-        ['P', label],
-        ['P', DELIVERABLES[i]],
+      TILES.map(([name, description]) => [
+        ['P', name],
+        ['P', description],
       ]),
     )
-    // The labels are not headings.
+    // The labels are not headings, and the colon is not shown.
     expect(within(list).queryAllByRole('heading')).toHaveLength(0)
-    expect(assessmentDeliverables).toEqual(DELIVERABLES)
-    expect(assessmentDeliverableLabels).toEqual(TILE_LABELS)
+    expect(list.textContent).not.toContain(':')
+    expect(assessmentDeliverables.map((item) => [item.label, item.description])).toEqual(TILES)
   })
 
-  it('shows exactly this text outside the figure, in order (#81, #82)', () => {
+  it('shows exactly this text outside the card, in order (#99)', () => {
     const { section } = renderSection()
-    const figure = within(section).getByRole('figure')
+    const { card } = parts(section)
     const outside = [...section.querySelectorAll('*')]
-      .filter((element) => !figure.contains(element) && element.children.length === 0)
+      .filter((element) => !card.contains(element) && element.children.length === 0)
       .map((element) => element.textContent)
 
     expect(outside).toEqual([
@@ -229,12 +239,8 @@ describe('TrustAssessment', () => {
       NAME,
       HEADING,
       assessmentLead,
-      FACTS,
-      // The contour lines' two paths: no text.
-      '',
-      '',
-      'What you receive',
-      ...TILE_LABELS.flatMap((label, i) => [label, DELIVERABLES[i]]),
+      RECEIVE,
+      ...TILES.flat(),
       NEXT_EYEBROW,
       NEXT_STATEMENT,
       NEXT_SUPPORTING,
@@ -253,12 +259,12 @@ describe('TrustAssessment', () => {
     expect(links[0]).not.toHaveClass('button--secondary')
     expect(links[0].lastElementChild).toHaveTextContent('→')
     expect(links[0].lastElementChild).toHaveAttribute('aria-hidden', 'true')
-    // After the closing paragraph and after the example (#82).
+    // After the closing paragraph and after the card.
     expect(
       links[0].compareDocumentPosition(within(section).getByText(assessmentNextSupporting)) &
         Node.DOCUMENT_POSITION_PRECEDING,
     ).toBeTruthy()
-    expect(links[0].compareDocumentPosition(within(section).getByRole('figure')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
+    expect(links[0].compareDocumentPosition(parts(section).card) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
   })
 
   it('has no tab stop but the button, and nothing only shown on hover or focus', () => {
@@ -269,201 +275,163 @@ describe('TrustAssessment', () => {
 
     expect([...focusable]).toEqual([within(section).getByRole('link')])
     expect(within(section).queryAllByRole('button')).toHaveLength(0)
-    // The only hidden things: the arrow and the one decorative SVG (#82).
-    expect([...section.querySelectorAll('[hidden], [aria-hidden="true"]:not(.button__arrow)')]).toEqual([
-      section.querySelector('svg.trust-assessment__contours'),
+    // The only hidden thing: the button's arrow (#99: no contour SVG).
+    expect([...section.querySelectorAll('[hidden], [aria-hidden="true"]')]).toEqual([
+      section.querySelector('.button__arrow'),
     ])
-    expect(section.querySelector('[hidden]')).toBeNull()
   })
 
-  it('holds one figure, captioned "Illustrative example" (#79)', () => {
+  it('holds no figure or figcaption: the card is a div with no caption (#99)', () => {
     const { section } = renderSection()
-    const figures = within(section).getAllByRole('figure')
-    const caption = figures[0].querySelector('figcaption')
+    const { card } = parts(section)
 
-    expect(figures).toHaveLength(1)
-    expect(caption).not.toBeNull()
-    expect(caption!.textContent).toBe(CAPTION)
-    expect(figures[0]).toHaveAccessibleName(CAPTION)
+    expect(within(section).queryAllByRole('figure')).toHaveLength(0)
+    expect(section.querySelector('figure, figcaption')).toBeNull()
+    expect(card.tagName).toBe('DIV')
+    expect(card).not.toHaveAttribute('role')
+    expect(card).not.toHaveAttribute('aria-labelledby')
   })
 
-  it('lists the example leadership metrics, then the trace of seven steps, then the ratings, each list named by the label before it (#77, #79, #82)', () => {
+  it('shows, in the card, the h3, the five steps, What we establish and the ratings, in order (#99)', () => {
     const { section } = renderSection()
-    const figure = within(section).getByRole('figure')
-    const [caption, metricsLabel, metrics, trace, ratings, ...rest] = [...figure.children]
+    const { card } = parts(section)
+    const [heading, steps, establish, ratings, ...rest] = [...card.children]
 
     expect(rest).toEqual([])
-    expect(caption.tagName).toBe('FIGCAPTION')
-    expect(within(figure).queryAllByRole('heading')).toHaveLength(0)
-
-    expect([metricsLabel.tagName, metricsLabel.textContent]).toEqual(['P', METRICS_LABEL])
-    expect(metricsLabel.id).not.toBe('')
-    expect(metrics.tagName).toBe('UL')
-    expect(metrics).toHaveAttribute('role', 'list')
-    expect(metrics).toHaveAttribute('aria-labelledby', metricsLabel.id)
-    expect(within(figure).getByRole('list', { name: METRICS_LABEL })).toBe(metrics)
-    const metricItems = [...metrics.children]
-    expect(metricItems.map((item) => item.tagName)).toEqual(METRICS.map(() => 'LI'))
-    // Each metric is its name as text, and nothing else.
-    expect(metricItems.map((item) => item.textContent)).toEqual(METRICS)
-    for (const item of metricItems) expect(item.children).toHaveLength(0)
-
-    // The trace: its label and the seven-item ol, each step its name and
-    // then its description, text only.
-    const [stepsLabel, steps, ...traceRest] = [...trace.children]
-    expect(traceRest).toEqual([])
-    expect(trace.tagName).toBe('DIV')
-    expect([stepsLabel.tagName, stepsLabel.textContent]).toEqual(['P', STEPS_LABEL])
-    expect(stepsLabel.id).not.toBe('')
+    expect([heading.tagName, heading.textContent]).toEqual(['H3', CARD_HEADING])
     expect(steps.tagName).toBe('OL')
-    expect(steps).toHaveAttribute('role', 'list')
-    expect(steps).toHaveAttribute('aria-labelledby', stepsLabel.id)
-    expect(within(figure).getByRole('list', { name: STEPS_LABEL })).toBe(steps)
-    expect(
-      [...steps.children].map((item) => [item.tagName, ...[...item.children].map((child) => [child.tagName, child.textContent, child.children.length])]),
-    ).toEqual(
-      STEPS.map((step, i) => [
-        'LI',
-        ['P', step, 0],
-        ['P', DESCRIPTIONS[i], 0],
-      ]),
-    )
-
-    // The ratings, after the trace and inside the figure, not the trace.
+    expect(establish.tagName).toBe('DIV')
+    const [label, list, ...more] = [...establish.children]
+    expect(more).toEqual([])
+    expect([label.tagName, label.textContent]).toEqual(['P', ESTABLISH_LABEL])
+    expect(list.tagName).toBe('UL')
     expect(ratings.tagName).toBe('UL')
-    expect(ratings).toBe(figure.lastElementChild)
+    expect(ratings).toBe(card.lastElementChild)
+    // The card's only lists: the steps, the establish items and the
+    // ratings.
+    expect(card.querySelectorAll('ul, ol')).toHaveLength(3)
+    expect(card.querySelector('dl, dt, dd')).toBeNull()
   })
 
-  it('names the ratings list by the Trust rating step, the last step\'s name (#82)', () => {
+  it('lists the five steps as an ol named by the card h3, each li its name and its description (#99)', () => {
     const { section } = renderSection()
-    const figure = within(section).getByRole('figure')
-    const steps = within(figure).getByRole('list', { name: STEPS_LABEL })
-    const ratingName = steps.lastElementChild!.firstElementChild!
-    const ratings = within(figure).getByRole('list', { name: RATING })
+    const heading = within(section).getByRole('heading', { name: CARD_HEADING })
+    const steps = within(section).getByRole('list', { name: CARD_HEADING })
+
+    expect(heading.id).not.toBe('')
+    expect(steps.tagName).toBe('OL')
+    expect(steps).toHaveAttribute('role', 'list')
+    expect(steps).toHaveAttribute('aria-labelledby', heading.id)
+    expect(heading.nextElementSibling).toBe(steps)
+    expect(
+      [...steps.children].map((item) => [
+        item.tagName,
+        ...[...item.children].map((child) => [child.tagName, child.textContent, child.children.length]),
+      ]),
+    ).toEqual(
+      STEPS.map(([name, description]) => [
+        'LI',
+        ['SPAN', name, 0],
+        ['SPAN', description, 0],
+      ]),
+    )
+  })
+
+  it('reads each step as its name, a space and its description, by containment, not run together (#99)', () => {
+    const { section } = renderSection()
+    const steps = [...within(section).getByRole('list', { name: CARD_HEADING }).children]
+
+    expect(steps.map((step) => step.textContent)).toEqual(STEPS.map(([name, description]) => `${name} ${description}`))
+    for (const step of steps) {
+      expect(step.querySelector('[aria-describedby], [aria-hidden], [role]')).toBeNull()
+      expect(step.attributes).toHaveLength(1)
+      expect(step).toHaveClass('lineage-trace__step')
+    }
+    expect(lineageTrace.steps.map((step) => [step.name, step.description])).toEqual(STEPS)
+  })
+
+  it('lists What we establish as a ul named by its label, each item its name over its description (#99)', () => {
+    const { section } = renderSection()
+    const label = within(section).getByText(ESTABLISH_LABEL)
+    const list = within(section).getByRole('list', { name: ESTABLISH_LABEL })
+
+    expect(label.tagName).toBe('P')
+    expect(label.closest('h1, h2, h3, h4, h5, h6')).toBeNull()
+    expect(list).toHaveAttribute('role', 'list')
+    expect(list).toHaveAttribute('aria-labelledby', label.id)
+    expect([...list.children].map((item) => [item.tagName, ...[...item.children].map((child) => [child.tagName, child.textContent])])).toEqual(
+      ESTABLISH.map(([name, description]) => [
+        'LI',
+        ['P', name],
+        ['P', description],
+      ]),
+    )
+    expect(lineageTrace.establish.map((item) => [item.name, item.description])).toEqual(ESTABLISH)
+  })
+
+  it('names the ratings list by the Trust rating item\'s name (#99)', () => {
+    const { section } = renderSection()
+    const establish = within(section).getByRole('list', { name: ESTABLISH_LABEL })
+    const ratingName = establish.lastElementChild!.firstElementChild!
+    const ratings = within(section).getByRole('list', { name: RATING })
 
     expect(ratingName.textContent).toBe(RATING)
     expect(ratingName.id).not.toBe('')
     expect(ratings).toHaveAttribute('aria-labelledby', ratingName.id)
     expect(ratings).toHaveAttribute('role', 'list')
-    expect(steps.contains(ratings)).toBe(false)
+    expect(establish.contains(ratings)).toBe(false)
     expect([...ratings.children].map((item) => [item.tagName, item.textContent, item.children.length])).toEqual(
       RATINGS.map((text) => ['LI', text, 0]),
     )
-    // The figure's only lists: the metrics, the steps and the ratings.
-    expect(figure.querySelectorAll('ul, ol')).toHaveLength(3)
-    expect(figure.querySelector('dl, dt, dd')).toBeNull()
   })
 
-  it('reads the seven-step sequence in DOM order, each name with its description, the last two marked as attributes by class alone (#79, #82)', () => {
+  it('gives no rating to any number: the three chips are bare list items, none marked (#77)', () => {
     const { section } = renderSection()
-    const figure = within(section).getByRole('figure')
-    const steps = [...within(figure).getByRole('list', { name: STEPS_LABEL }).children]
+    const { card } = parts(section)
+    const items = [...within(section).getByRole('list', { name: RATING }).children]
 
-    expect(steps.map((step) => step.textContent)).toEqual(STEPS.map((step, i) => `${step}${DESCRIPTIONS[i]}`))
-    expect(steps.map((step) => step.classList.contains('lineage-example__step--attribute'))).toEqual([
-      false,
-      false,
-      false,
-      false,
-      false,
-      true,
-      true,
-    ])
-    expect(lineageExample.steps.filter((step) => step.attribute).map((step) => step.name)).toEqual(['Owner', 'Trust rating'])
-    // Nothing hidden or described apart: the description is read with its
-    // step by containment.
-    for (const step of steps) {
-      expect(step.querySelector('[aria-describedby], [aria-hidden], [role]')).toBeNull()
-    }
-  })
-
-  it('shows the five metrics alike, none selected: no class, role, state, tab stop or hidden text (#82)', () => {
-    const { section } = renderSection()
-    const figure = within(section).getByRole('figure')
-    const chips = [...within(figure).getByRole('list', { name: METRICS_LABEL }).children]
-
-    expect(chips.map((chip) => chip.textContent)).toEqual([...exampleMetrics])
-    expect(chips).toHaveLength(5)
-    for (const chip of chips) {
+    for (const item of items) {
       // A bare list item: no class, role, ARIA state, tabindex or
       // aria-hidden, and only its text.
-      expect(chip.attributes).toHaveLength(0)
-      expect(chip.children).toHaveLength(0)
+      expect(item.attributes).toHaveLength(0)
+      expect(item.children).toHaveLength(0)
     }
     expect(
-      figure.querySelector('[aria-current], [aria-selected], [aria-checked], [aria-pressed], [tabindex], [aria-hidden], [role]:not(ul):not(ol)'),
+      card.querySelector('[aria-current], [aria-selected], [aria-checked], [aria-pressed], [tabindex], [aria-hidden], [role]:not(ul):not(ol)'),
     ).toBeNull()
+    // No rating sits beside a step or an establish item.
+    for (const list of [within(section).getByRole('list', { name: CARD_HEADING }), within(section).getByRole('list', { name: ESTABLISH_LABEL })]) {
+      for (const rating of RATINGS) expect(within(list).queryByText(rating)).toBeNull()
+    }
   })
 
-  it('gives no rating to any metric: the three look alike and none is marked (#77)', () => {
+  it('holds exactly the heading, the steps with their descriptions, the establish label and items and the ratings, in order (#99)', () => {
     const { section } = renderSection()
-    const figure = within(section).getByRole('figure')
-    const items = [...within(figure).getByRole('list', { name: 'Trust rating' }).children]
-
-    // Alike in markup: their markers differ only by position, in CSS.
-    for (const item of items) {
-      expect(item.attributes).toHaveLength(0)
-      expect(item).not.toHaveAttribute('aria-current')
-      expect(item).not.toHaveAttribute('aria-selected')
-      expect(item).not.toHaveAttribute('aria-checked')
-    }
-    expect(figure.querySelector('[aria-current], [aria-selected], [aria-checked]')).toBeNull()
-    // No rating sits in the metrics list or beside a metric name.
-    const metrics = within(figure).getByRole('list', { name: METRICS_LABEL })
-    for (const rating of RATINGS) {
-      expect(within(metrics).queryByText(rating)).toBeNull()
-    }
-    expect(metrics.contains(items[0])).toBe(false)
-  })
-
-  it('holds exactly the caption, the two list labels, the metrics, the steps with their descriptions and the ratings, in order (#77, #82)', () => {
-    const { section } = renderSection()
-    const figure = within(section).getByRole('figure')
-    const expected = [
-      CAPTION,
-      METRICS_LABEL,
-      ...METRICS,
-      STEPS_LABEL,
-      ...STEPS.flatMap((step, i) => [step, DESCRIPTIONS[i]]),
-      ...RATINGS,
-    ]
-    const texts = [...figure.querySelectorAll('*')]
+    const { card } = parts(section)
+    const expected = [CARD_HEADING, ...STEPS.flat(), ESTABLISH_LABEL, ...ESTABLISH.flat(), ...RATINGS]
+    const texts = [...card.querySelectorAll('*')]
       .filter((element) => element.children.length === 0)
       .map((element) => element.textContent)
 
     expect(texts).toEqual(expected)
-    expect(figure.textContent!.replace(/\s+/g, ' ').trim()).toBe(expected.join(''))
   })
 
-  it('shows the owner\'s metric names, the seven steps with their descriptions and the three ratings, labels only (#77, #79, #82)', () => {
-    expect(exampleMetrics).toEqual(METRICS)
-    expect(lineageExample.metrics).toBe(exampleMetrics)
-    expect(lineageExample.steps.map((step) => step.name)).toEqual(STEPS)
-    expect(lineageExample.steps.map((step) => step.description)).toEqual(DESCRIPTIONS)
-    expect(lineageExample.ratings).toEqual(RATINGS)
-    expect(lineageExample.metricsLabel).toBe(METRICS_LABEL)
-    expect(lineageExample.stepsLabel).toBe(STEPS_LABEL)
-  })
-
-  it('shows no price, currency or figure anywhere, the facts pill\'s three weeks aside (#82)', () => {
+  it('shows no price, currency or figure anywhere: the section has no digit (#99)', () => {
     const { section } = renderSection()
-    const facts = within(section).getByText(FACTS)
-    const text = section.textContent!.replace(FACTS, '')
 
-    expect(section.textContent!.split(FACTS)).toHaveLength(2)
-    expect(text).not.toMatch(/\d|[$€£¥]|\b(UGX|USD|KES|TZS|RWF|EUR|GBP|shillings?|dollars?|price)\b/i)
-    expect(facts.textContent!.match(/\d/g)).toEqual(['3'])
-    expect(facts.textContent).not.toMatch(/[$€£¥]|\b(UGX|USD|KES|TZS|RWF|EUR|GBP|shillings?|dollars?|price)\b/i)
+    expect(section.textContent).not.toMatch(/\d|[$€£¥]|\b(UGX|USD|KES|TZS|RWF|EUR|GBP|shillings?|dollars?|price)\b/i)
+    expect(section.textContent).toContain('three weeks at a fixed fee')
   })
 
-  it('never calls the example a product, tool, dashboard, app, platform or live demo', () => {
+  it('never calls the card a product, tool, dashboard, app, platform or live demo', () => {
     const { section } = renderSection()
+    const { card } = parts(section)
 
     expect(section.textContent).not.toMatch(/\b(products?|tools?|dashboards?|apps?|platforms?|demos?)\b/i)
-    // The figure says nothing of AI or analytics. The section names no
+    // The card says nothing of AI or analytics. The section names no
     // Fafanua Intelligence or AI, and says "analytics" once, in the
     // closing paragraph (#82).
-    expect(within(section).getByRole('figure').textContent).not.toMatch(/Fafanua Intelligence|\bAI\b|analytics/i)
+    expect(card.textContent).not.toMatch(/Fafanua Intelligence|\bAI\b|analytics/i)
     expect(section.textContent).not.toMatch(/Fafanua Intelligence|\bAI\b/i)
     expect(section.textContent!.match(/analytics/gi)).toHaveLength(1)
     const mentions = [...section.querySelectorAll('*')].filter(
@@ -472,35 +440,20 @@ describe('TrustAssessment', () => {
     expect(mentions).toEqual([within(section).getByText(NEXT_SUPPORTING)])
   })
 
-  it('labels its steps with text only: the line, rings and dots are drawn in CSS, with no arrow characters (#79, #82)', () => {
+  it('labels its steps with text only: the line, rings and dots are drawn in CSS, with no arrow characters (#79, #99)', () => {
     const { section } = renderSection()
-    const figure = within(section).getByRole('figure')
+    const { card } = parts(section)
 
-    expect(figure.textContent).not.toMatch(/[→↓←↑⟶⇣]/)
-    expect(within(figure).getByRole('list', { name: STEPS_LABEL }).children).toHaveLength(7)
-    expect(figure.querySelectorAll('svg, img')).toHaveLength(0)
+    expect(card.textContent).not.toMatch(/[→↓←↑⟶⇣]/)
+    expect(within(section).getByRole('list', { name: CARD_HEADING }).children).toHaveLength(5)
+    expect(card.querySelectorAll('svg, img')).toHaveLength(0)
   })
 
-  it('is built from HTML, with one decorative SVG, the contour lines, as the intro\'s last child: no image, canvas or inline style (#82)', () => {
+  it('is built from HTML, with no inline SVG, image, canvas or inline style (#99)', () => {
     const { section } = renderSection()
-    const svgs = section.querySelectorAll('svg')
-    const intro = within(section).getByRole('heading', { level: 2 }).parentElement!
 
-    expect(svgs).toHaveLength(1)
-    const [svg] = svgs
-    expect(svg).toHaveClass('trust-assessment__contours')
-    expect(svg).toHaveAttribute('aria-hidden', 'true')
-    expect(svg).toHaveAttribute('focusable', 'false')
-    expect(svg.querySelector('title, desc, text')).toBeNull()
-    expect(svg.textContent).toBe('')
-    expect(intro.lastElementChild).toBe(svg)
-    const paths = [...svg.children]
-    expect(paths.map((path) => path.tagName.toLowerCase())).toEqual(['path', 'path'])
-    for (const path of paths) {
-      expect(path).toHaveAttribute('fill', 'none')
-      expect(path).toHaveAttribute('stroke', 'currentColor')
-      expect(path).toHaveAttribute('vector-effect', 'non-scaling-stroke')
-    }
+    expect(section.querySelectorAll('svg')).toHaveLength(0)
+    expect(section.querySelector('.trust-assessment__contours')).toBeNull()
     expect(section.querySelectorAll('img, picture, canvas, video, iframe, object, animate, animateTransform')).toHaveLength(0)
     expect(section.querySelector('[style]')).toBeNull()
   })
@@ -517,10 +470,38 @@ describe('TrustAssessment', () => {
     expect(dark).toHaveLength(1)
     expect(dark[0].parentElement).toBe(section.firstElementChild)
     expect(light).toHaveLength(1)
-    expect(light[0]).toBe(within(section).getByRole('figure'))
+    expect(light[0]).toBe(parts(section).card)
     expect(light[0].querySelector('.surface-dark, .surface-alt')).toBeNull()
     expect([...eyebrows].map((eyebrow) => eyebrow.textContent)).toEqual([EYEBROW, NEXT_EYEBROW])
     for (const eyebrow of eyebrows) expect(eyebrow.textContent).not.toMatch(/\d|—/)
+  })
+
+  it('shows the small labels What you receive and What we establish as paragraphs, not headings (#99)', () => {
+    const { section } = renderSection()
+
+    for (const text of [RECEIVE, ESTABLISH_LABEL]) {
+      const label = within(section).getByText(text)
+      expect(label.tagName).toBe('P')
+      expect(label.closest('h1, h2, h3, h4, h5, h6, [role="heading"]')).toBeNull()
+      expect(within(section).queryByRole('heading', { name: text })).toBeNull()
+    }
+  })
+
+  it('reads the panel in order: left column, card, then the strip (#99)', () => {
+    const { section } = renderSection()
+    const order = [
+      within(section).getByRole('heading', { level: 2 }),
+      within(section).getByRole('list', { name: RECEIVE }),
+      within(section).getByRole('heading', { name: CARD_HEADING }),
+      within(section).getByRole('list', { name: CARD_HEADING }),
+      within(section).getByRole('list', { name: ESTABLISH_LABEL }),
+      within(section).getByRole('list', { name: RATING }),
+      within(section).getByRole('heading', { name: NEXT_STATEMENT }),
+      within(section).getByRole('link'),
+    ]
+    for (let i = 1; i < order.length; i++) {
+      expect(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING, `${i}`).toBeTruthy()
+    }
   })
 
   it('has no axe violations', async () => {

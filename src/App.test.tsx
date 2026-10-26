@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
 import { aboutPrinciples } from './data/about.ts'
 import {
-  assessmentDeliverablesHeading,
   assessmentHeading,
   assessmentLead,
   assessmentNextStatement,
+  lineageTrace,
 } from './data/assessment.ts'
 import { futureReadyLinkText } from './data/futureReady.ts'
 import { footerNavigation, navigation, navigationCta } from './data/navigation.ts'
@@ -200,15 +200,15 @@ describe('App', () => {
     ).not.toContain(ASSESSMENT)
   })
 
-  // The inline SVG illustrations the design system allows are the system
-  // diagram's return loop (owner decision on #63) and the decorative
-  // contour lines in the assessment's dark panel (#82); the only other
+  // The one inline SVG illustration the design system allows is the
+  // system diagram's return loop (owner decision on #63); the assessment's
+  // contour lines left with the revised dark panel (#99). The only other
   // inline SVG is the header logo (#86), the one SVG with role="img" and
   // a name. The capability cells have no chevrons since the open grid
   // (#83), and the Solutions rows none since they became links (#89). Its sprite is in
   // index.html, not rendered by App. No canvas anywhere, and the only
   // image is the footer logo.
-  it('has no inline SVG but the header logo, the diagram\'s loop and the assessment\'s contours, and no canvas', () => {
+  it('has no inline SVG but the header logo and the diagram\'s loop, and no canvas', () => {
     render(<App />)
     const svgs = [...document.querySelectorAll('svg')]
     const count = (name: string) => svgs.filter((svg) => svg.getAttribute('class') === name).length
@@ -220,10 +220,10 @@ describe('App', () => {
     // The Solutions rows are links with a text arrow, no chevron (#89).
     expect(count('solution-row__chevron')).toBe(0)
     expect(document.querySelector('#solutions svg')).toBeNull()
-    expect(count('trust-assessment__contours')).toBe(1)
-    expect(document.querySelector('#data-trust-assessment svg')).toHaveClass('trust-assessment__contours')
+    expect(count('trust-assessment__contours')).toBe(0)
+    expect(document.querySelector('#data-trust-assessment svg')).toBeNull()
     expect(count('site-header__logo-art')).toBe(1)
-    expect(svgs).toHaveLength(1 + 1 + 1)
+    expect(svgs).toHaveLength(1 + 1)
     const logo = within(screen.getByRole('banner')).getByRole('img', { name: 'Fafanua Technologies' })
     expect(logo).toHaveClass('site-header__logo-art')
     for (const svg of svgs) {
@@ -766,6 +766,23 @@ describe('App', () => {
 
     expect(text).not.toContain('Illustrative example. Sample data only.')
     expect(text).not.toContain('After the assessment')
+    // Nor, since the revised dark panel plan (#99), the facts pill, the
+    // caption, the example metrics, the trace label, the tile label Fix
+    // list or the old closing statement, anywhere on the homepage.
+    for (const removed of [
+      '3 weeks · fixed fee',
+      'Illustrative example',
+      'Example leadership metrics',
+      'Active Customers',
+      'Portfolio at Risk',
+      'Programme Outcomes',
+      'Cost per Customer',
+      'Each traced through',
+      'Fix list',
+      'Turn findings into a prioritised roadmap.',
+    ]) {
+      expect(text, removed).not.toContain(removed)
+    }
   })
 
   it('orders headings h1, h2 Data Trust Assessment, its two h3s, h2 Services intro heading, six h3s, the system diagram h3, h2 Managed, its four verb h3s, h2 Solutions heading, four h3s, h2 How We Work heading, four h3s, h2 future-ready, h2 About heading, its three principle h3s, h2 Contact', () => {
@@ -784,7 +801,7 @@ describe('App', () => {
     }
     expect(headings.slice(1, 4).map((heading) => heading.textContent)).toEqual([
       ASSESSMENT,
-      assessmentDeliverablesHeading,
+      lineageTrace.heading,
       assessmentNextStatement,
     ])
     expect(headings[4].textContent).toBe(servicesIntro.heading)

@@ -24,11 +24,11 @@ import './TrustAssessment.css'
 // Row 1: the left column (the unnumbered eyebrow in a row that draws a
 // short hairline after it; the engagement name, a paragraph, not a
 // heading and not in the h2, so the region keeps the h2's name; the h2;
-// the lead; the small label What you receive; and the four tiles, each a
+// the lead; the small deliverables label; and the four tiles, each a
 // label over its description) and the light card (.surface-light): its
 // h3, the five trace steps, each its name and description; after a
-// hairline, the label What we establish over its two items; and the
-// scorecard's three rating categories, named by the Trust rating item.
+// hairline, the establish label over its two items; and the scorecard's
+// three rating categories, named by the second establish item.
 // Then, after a hairline, the closing strip: its text group (the eyebrow,
 // the h3 and the paragraph) and the one call to action (to #contact, like
 // the hero's). Each list is named by the label or heading before it, so it

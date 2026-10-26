@@ -1,21 +1,18 @@
 // Checks assessment.ts against W4 in the trust and lineage plan (#71) and
 // the Data Trust Assessment homepage enhancement plan (#79), so the
 // section's wording on the site cannot drift from them: from W4 the
-// heading, the lead, the two h3s with the four deliverables, and the
-// owner's metric names (#77) and three ratings in the illustrative
-// example; from the enhancement plan the eyebrow and engagement name (§2),
-// the after-assessment statement and supporting copy (§11), the caption
-// and metrics label (§8) and the seven trace steps (§9). The button's
-// label is W1's, read from contact.ts (#68). The steps label is W4's
-// concept, retained by §9, so it is checked here only for the owner's
-// rules: labels only, no names, figures or amounts. W11 (#81) adds five
-// labels, the tiles' and the owner row's value, checked against its "New
-// copy approved by the owner" list, and moves the last two of §9's seven
-// steps into the example's footer. The Data Trust Assessment dark panel
-// plan (#82) supersedes W11 and §11's block: its §3 "Unchanged" and "New"
-// tables and its "Removed" list are parsed too, so the seven steps with
-// their descriptions, the facts pill and the closing strip are checked
-// against it, and the removed strings against every source file. The ?raw imports
+// heading, the lead and the four deliverables (in the dark panel plan's
+// wording since #99), and the owner's labels-only rule (#77); from the
+// enhancement plan the eyebrow and engagement name (§2) and the trace
+// sequence (§9). The button's label is W1's, read from contact.ts (#68).
+// The Data Trust Assessment dark panel plan (#82, revised by the owner on
+// 2026-10-23 for #99) supersedes W11 and the enhancement plan on the
+// card: its §3 table is parsed, so every string, the five trace steps,
+// "What we establish", the ratings and the closing strip are checked
+// against it, and its "Removed" list, so the strings it removes (the
+// facts pill, the caption, the metrics and their label, the trace label,
+// the Owner step, the old deliverable sentences and the old closing
+// statement) are checked gone from every source file. The ?raw imports
 // resolve relative to this file and are never part of the production
 // bundle.
 import { describe, expect, it } from 'vitest'
@@ -24,21 +21,19 @@ import darkPanelPlan from '../../_docs/fafanua-data-trust-assessment-dark-panel-
 import enhancement from '../../_docs/fafanua-data-trust-assessment-homepage-enhancement.md?raw'
 import trustPlan from '../../_docs/fafanua-trust-lineage-positioning-plan.md?raw'
 import assessmentSource from './assessment.ts?raw'
+import * as assessment from './assessment.ts'
 import {
   assessmentCtaLabel,
-  assessmentDeliverableLabels,
   assessmentDeliverables,
-  assessmentDeliverablesHeading,
+  assessmentDeliverablesLabel,
   assessmentEyebrow,
-  assessmentFacts,
   assessmentHeading,
   assessmentLead,
   assessmentName,
   assessmentNextEyebrow,
   assessmentNextStatement,
   assessmentNextSupporting,
-  exampleMetrics,
-  lineageExample,
+  lineageTrace,
 } from './assessment.ts'
 import { ctaLabel } from './contact.ts'
 
@@ -55,19 +50,22 @@ function field(label: string): string {
   return match[1].trimEnd()
 }
 
-// The `- ` items directly under "**What you receive:**".
+// The `- Label: Description` items directly under "**What you receive:**"
+// (in the dark panel plan's wording since #99), split on the first ": ".
 const receiveAt = w4.indexOf('\n**What you receive:**\n')
 const deliverables = [
   ...w4
     .slice(receiveAt)
     .split('\n\n')[1]
     .matchAll(/^- (.+)$/gm),
-].map((match) => match[1].trimEnd())
+].map((match) => {
+  const line = match[1].trimEnd()
+  const at = line.indexOf(': ')
+  return { label: line.slice(0, at), description: line.slice(at + 2) }
+})
 
-// The enhancement plan (#79): the text of a `# N. ` section, up to the
-// next `# ` heading, and its one-line `> ` quotes, without bold markers.
-// W11 (#81): its "New copy approved by the owner" list, the quoted
-// strings on each `- Label: ` line.
+// W11 (#81, superseded by #82): its "New copy approved by the owner"
+// list, the quoted strings on each `- Label: ` line.
 const w11Start = doc.indexOf('\n### W11. Data Trust Assessment section layout (owner proposal)\n')
 const w11 = doc.slice(w11Start, doc.indexOf('\n## ', w11Start + 1))
 const newCopyAt = w11.indexOf('\n**New copy approved by the owner in this item**')
@@ -81,6 +79,8 @@ function w11Quotes(label: string): string[] {
 const w11TileLabels = w11Quotes('Tile labels')
 const w11OwnerValue = w11Quotes('Owner row value')
 
+// The enhancement plan (#79): the text of a `# N. ` section, up to the
+// next `# ` heading, and its one-line `> ` quotes, without bold markers.
 const enhancementDoc = enhancement.replace(/\r\n/g, '\n')
 
 function enhancementSection(number: number): string {
@@ -107,52 +107,67 @@ const s9Sequence = (s9Blocks.find((block) => block.includes('↓')) ?? '')
   .map((line) => line.trim())
   .filter((line) => line && line !== '↓')
 
-// The dark panel plan (#82): the `| Element | Text |` rows of its §3
-// "Unchanged" and "New, approved by the owner" tables, and the `- ` items
-// of its "Removed" list, each up to the next `### ` or `## ` heading.
+// The dark panel plan (#82, revised for #99): the rows of its one §3
+// `| Element | Text | Status |` table, and the `- ` items of its
+// "**Removed:**" list, both in "## 3. Copy", up to "## 4.".
 const darkDoc = darkPanelPlan.replace(/\r\n/g, '\n')
+const darkCopyAt = darkDoc.indexOf('\n## 3. Copy\n')
+const darkCopy = darkDoc.slice(darkCopyAt, darkDoc.indexOf('\n## 4. ', darkCopyAt))
+const darkHeader = darkCopy.match(/^\| Element \| Text \| Status \|$/gm) ?? []
+const darkRows = [...darkCopy.matchAll(/^\| (.+?) \| (.+?) \| (.+?) \|$/gm)]
+  .map((match) => [match[1].trim(), match[2].trim(), match[3].trim()] as const)
+  .filter(([element]) => element !== 'Element' && !/^-+$/.test(element))
+const darkTable = new Map(darkRows.map(([element, text]) => [element, text]))
+const darkStatus = new Map(darkRows.map(([element, , status]) => [element, status]))
+const removedAt = darkCopy.indexOf('\n**Removed:**\n')
+const darkRemoved = [...darkCopy.slice(removedAt + '\n**Removed:**\n'.length).split('\n\n')[0].matchAll(/^- (.+)$/gm)].map((match) =>
+  match[1].trimEnd().replace(/[;.]$/, ''),
+)
 
-function darkSubsection(heading: string): string {
-  const at = darkDoc.indexOf(`\n### ${heading}\n`)
-  if (at === -1) throw new Error(`"### ${heading}" not found in the dark panel plan`)
-  const rest = darkDoc.slice(at + 1)
-  const end = rest.slice(1).search(/\n##+ /)
-  return end === -1 ? rest : rest.slice(0, end + 1)
-}
-
-function darkTable(heading: string): Map<string, string> {
-  const rows = [...darkSubsection(heading).matchAll(/^\| (.+?) \| (.+?) \|$/gm)]
-    .map((match) => [match[1].trim(), match[2].trim()] as const)
-    .filter(([element]) => element !== 'Element' && !/^-+$/.test(element))
-  return new Map(rows)
-}
-
-const darkUnchanged = darkTable('Unchanged')
-const darkNew = darkTable('New, approved by the owner')
-const darkRemoved = [...darkSubsection('Removed').matchAll(/^- (.+)$/gm)].map((match) => match[1].trimEnd())
-
-/** A row of a dark panel plan table, failing loudly when it is missing. */
-function darkRow(table: Map<string, string>, element: string): string {
-  const text = table.get(element)
+/** A row of the §3 table, failing loudly when it is missing. */
+function darkRow(element: string): string {
+  const text = darkTable.get(element)
   if (text === undefined) throw new Error(`"${element}" row not found in the dark panel plan`)
   return text
 }
 
-/** A comma-separated row, such as the metrics, as its items. */
-const darkList = (table: Map<string, string>, element: string) =>
-  darkRow(table, element).split(', ').map((item) => item.trim())
+/** A `Name: Description` row as its two parts, split on the first ": ". */
+function pair(text: string) {
+  const at = text.indexOf(': ')
+  if (at === -1) throw new Error(`"${text}" has no ": "`)
+  return { name: text.slice(0, at), description: text.slice(at + 2) }
+}
 
-describe('dark panel plan parser (#82)', () => {
-  it('finds §3\'s unchanged and new tables and its removed list', () => {
-    expect(darkUnchanged.size).toBe(14)
-    expect(darkNew.size).toBe(11)
-    expect(darkRemoved).toHaveLength(2)
-    for (const text of [...darkUnchanged.values(), ...darkNew.values(), ...darkRemoved]) {
+const darkSteps = darkRow('Steps, in order').split('; ').map(pair)
+const darkDeliverables = [1, 2, 3, 4].map((n) => pair(darkRow(`Deliverable ${n}`)))
+const darkEstablish = [1, 2].map((n) => pair(darkRow(`Establish item ${n}`)))
+const darkRatings = darkRow('Ratings').split('; ')
+
+describe('dark panel plan parser (#82, #99)', () => {
+  it('finds §3\'s one table of 19 rows and its removed list of 7 items', () => {
+    expect(darkCopyAt).toBeGreaterThan(-1)
+    expect(darkHeader).toHaveLength(1)
+    expect(darkRows).toHaveLength(19)
+    expect(darkTable.size).toBe(19)
+    expect(removedAt).toBeGreaterThan(-1)
+    expect(darkRemoved).toHaveLength(7)
+    for (const text of [...darkTable.values(), ...darkStatus.values(), ...darkRemoved]) {
       expect(text).not.toBe('')
       expect(text).not.toContain('|')
     }
-    expect(darkList(darkUnchanged, 'Steps, in order')).toHaveLength(7)
-    expect(darkList(darkUnchanged, 'Metrics')).toHaveLength(5)
+  })
+
+  it('splits the steps, the deliverables, the establish items and the ratings', () => {
+    expect(darkSteps).toHaveLength(5)
+    expect(darkDeliverables).toHaveLength(4)
+    expect(darkEstablish).toHaveLength(2)
+    expect(darkRatings).toHaveLength(3)
+    for (const { name, description } of [...darkSteps, ...darkDeliverables, ...darkEstablish]) {
+      expect(name).not.toBe('')
+      expect(description).not.toBe('')
+      expect(name).not.toContain(':')
+      expect(description).not.toContain(';')
+    }
   })
 })
 
@@ -192,7 +207,7 @@ describe('W4 parser', () => {
     expect(w4Start).toBeGreaterThan(-1)
     expect(receiveAt).toBeGreaterThan(-1)
     expect(deliverables).toHaveLength(4)
-    for (const text of [field('Heading'), field('Lead'), field('After the assessment'), ...deliverables]) {
+    for (const text of [field('Heading'), field('Lead'), field('After the assessment'), ...deliverables.flatMap((d) => [d.label, d.description])]) {
       expect(text).not.toBe('')
       expect(text).not.toContain('*')
     }
@@ -209,27 +224,48 @@ describe('Data Trust Assessment wording', () => {
     expect(assessmentLead).toBe(field('Lead'))
   })
 
-  it('uses the W4 "What you receive" label and its four deliverables, in order', () => {
-    expect(w4).toContain(`\n**${assessmentDeliverablesHeading}:**\n`)
+  it('uses the W4 "What you receive" label and its four deliverables, in order, in the dark panel plan\'s wording (#99)', () => {
+    expect(w4).toContain(`\n**${assessmentDeliverablesLabel}:**\n`)
     expect(assessmentDeliverables).toEqual(deliverables)
   })
 
-  it('labels the four deliverable tiles with W11\'s new copy, each label naming its deliverable (#81)', () => {
-    expect(assessmentDeliverableLabels).toEqual(['Lineage map', 'Trust scorecard', 'Shared definitions', 'Fix list'])
-    expect(assessmentDeliverableLabels).toEqual(w11TileLabels)
-    // Kept by the dark panel plan (#82).
-    expect(assessmentDeliverableLabels).toEqual(darkList(darkUnchanged, 'Tile labels (approved in W11)'))
-    expect(assessmentDeliverableLabels).toHaveLength(assessmentDeliverables.length)
-    assessmentDeliverableLabels.forEach((label, i) => {
-      expect(assessmentDeliverables[i].toLowerCase(), label).toContain(label.toLowerCase())
-    })
+  it('gives each tile the dark panel plan §3\'s label and description, in order, character for character (#99)', () => {
+    expect(assessmentDeliverables).toEqual(darkDeliverables.map(({ name, description }) => ({ label: name, description })))
+    expect(assessmentDeliverables.map((item) => item.label)).toEqual([
+      'Lineage map',
+      'Trust scorecard',
+      'Shared definitions',
+      'Prioritised roadmap',
+    ])
+    for (const item of assessmentDeliverables) {
+      expect(Object.keys(item)).toEqual(['label', 'description'])
+      // The colon is the plan's separator, stored in neither part.
+      expect(item.label).not.toMatch(/:/)
+      expect(item.description).not.toMatch(/^:|^\s/)
+      expect(item.description).toMatch(/\.$/)
+    }
+    for (let n = 1; n <= 4; n++) expect(darkStatus.get(`Deliverable ${n}`)).toBe('New description')
   })
 
-  it('drops the W4 "After the assessment" label kept by the enhancement plan §11, as the dark panel plan removes it (#82)', () => {
+  it('keeps W11\'s first three tile labels and replaces "Fix list" with "Prioritised roadmap" (#81, #99)', () => {
+    expect(w11TileLabels).toEqual(['Lineage map', 'Trust scorecard', 'Shared definitions', 'Fix list'])
+    const labels = assessmentDeliverables.map((item) => item.label)
+    expect(labels.slice(0, 3)).toEqual(w11TileLabels.slice(0, 3))
+    expect(labels[3]).toBe('Prioritised roadmap')
+    expect(labels).not.toContain('Fix list')
+  })
+
+  it('stores the deliverables label as a small label, "What you receive", shown in capitals (#99)', () => {
+    expect(assessmentDeliverablesLabel).toBe('What you receive')
+    expect(assessmentDeliverablesLabel.toUpperCase()).toBe(darkRow('Deliverables label'))
+    expect(darkStatus.get('Deliverables label')).toMatch(/^Changed: was the heading "What you receive"$/)
+  })
+
+  it('drops the W4 "After the assessment" label kept by the enhancement plan §11 (#82)', () => {
     const label = 'After the assessment'
     expect(w4).toContain(`\n**${label}:** `)
     expect(enhancementSection(11)).toContain(`\n## ${label}\n`)
-    expect(darkRemoved[0]).toContain(`The "${label}" label`)
+    expect(Object.values(assessment).flatMap(strings)).not.toContain(label)
   })
 
   it('shows the enhancement plan §2\'s eyebrow and engagement name, in capitals, above the heading (#79)', () => {
@@ -237,34 +273,39 @@ describe('Data Trust Assessment wording', () => {
     expect(assessmentName).toBe('Data Trust Assessment')
     expect(assessmentEyebrow.toUpperCase()).toBe(s2[0])
     expect(assessmentName.toUpperCase()).toBe(s2[1])
-    // Unchanged by the dark panel plan (#82).
-    expect(assessmentEyebrow.toUpperCase()).toBe(darkRow(darkUnchanged, 'Eyebrow'))
-    expect(assessmentName.toUpperCase()).toBe(darkRow(darkUnchanged, 'Product line'))
-    expect(assessmentHeading).toBe(darkRow(darkUnchanged, 'Headline'))
-    expect(assessmentLead).toBe(darkRow(darkUnchanged, 'Lead'))
-    expect(assessmentDeliverablesHeading).toBe(darkRow(darkUnchanged, 'Deliverables heading'))
-    expect(assessmentCtaLabel).toBe(darkRow(darkUnchanged, 'Button'))
+    // Unchanged by the dark panel plan (#82, #99).
+    expect(assessmentEyebrow.toUpperCase()).toBe(darkRow('Eyebrow'))
+    expect(assessmentName.toUpperCase()).toBe(darkRow('Product line'))
+    expect(assessmentHeading).toBe(darkRow('Headline'))
+    expect(assessmentLead).toBe(darkRow('Lead'))
+    expect(assessmentCtaLabel).toBe(darkRow('Button'))
+    for (const element of ['Eyebrow', 'Product line', 'Headline', 'Lead', 'Button', 'Ratings', 'Closing eyebrow', 'Closing paragraph']) {
+      expect(darkStatus.get(element), element).toBe('Unchanged')
+    }
     // The heading under them is unchanged.
     expect(s2[2]).toBe(assessmentHeading)
   })
 
-  it('replaces the enhancement plan §11\'s statement and supporting copy, which the dark panel plan removes (#79, #82)', () => {
+  it('no longer holds the enhancement plan §11\'s statement and supporting copy (#79, #82)', () => {
     // §11 quotes the W4 line it strengthens first.
     expect(s11[0]).toBe(field('After the assessment'))
     expect(s11[1]).toBe('The assessment tells us what to fix first.')
     expect(s11[2]).toMatch(/^The findings become a prioritised roadmap\. /)
-    expect(darkRemoved[0]).toContain(`the statement "${s11[1]}" and its paragraph`)
+    const all = Object.values(assessment).flatMap(strings)
+    expect(all).not.toContain(s11[1])
+    expect(all).not.toContain(s11[2])
   })
 
-  it('closes on the dark panel plan\'s strip: the eyebrow, the statement and the paragraph, exactly (#82)', () => {
+  it('closes on the dark panel plan\'s strip: the eyebrow, the new statement and the paragraph, exactly (#82, #99)', () => {
     expect(assessmentNextEyebrow).toBe('What happens next')
-    expect(assessmentNextEyebrow.toUpperCase()).toBe(darkRow(darkNew, 'Closing eyebrow'))
-    expect(assessmentNextStatement).toBe(darkRow(darkNew, 'Closing statement'))
-    expect(assessmentNextStatement).toBe('Turn findings into a prioritised roadmap.')
-    expect(assessmentNextSupporting).toBe(darkRow(darkNew, 'Closing paragraph'))
+    expect(assessmentNextEyebrow.toUpperCase()).toBe(darkRow('Closing eyebrow'))
+    expect(assessmentNextStatement).toBe(darkRow('Closing statement'))
+    expect(assessmentNextStatement).toBe('From findings to meaningful improvements.')
+    expect(darkStatus.get('Closing statement')).toContain('replaces "Turn findings into a prioritised roadmap."')
+    expect(assessmentNextSupporting).toBe(darkRow('Closing paragraph'))
     // A spaced em dash (U+2014), not a hyphen or an en dash.
-    expect(assessmentNextSupporting).toContain(' \u2014 ')
-    expect(assessmentNextSupporting).not.toMatch(/ - | \u2013 /)
+    expect(assessmentNextSupporting).toContain(' — ')
+    expect(assessmentNextSupporting).not.toMatch(/ - | – /)
   })
 
   it('keeps the homepage keywords of the removed paragraph: its second sentence is §11\'s, word for word (#82)', () => {
@@ -273,9 +314,10 @@ describe('Data Trust Assessment wording', () => {
     expect(second(assessmentNextSupporting)).toMatch(/^From there, Fafanua can strengthen /)
   })
 
-  it('shows the dark panel plan\'s facts pill, with a middle dot (#82)', () => {
-    expect(assessmentFacts).toBe(darkRow(darkNew, 'Facts pill'))
-    expect(assessmentFacts).toBe('3 weeks \u00b7 fixed fee')
+  it('no longer has the facts pill: no export holds "3 weeks · fixed fee" (#99)', () => {
+    expect(darkRemoved[0]).toBe('the facts pill "3 weeks · fixed fee"')
+    expect(Object.keys(assessment)).not.toContain('assessmentFacts')
+    expect(Object.values(assessment).flatMap(strings)).not.toContain('3 weeks · fixed fee')
   })
 
   it('labels its button with the W1 label, read from contact.ts (#68)', () => {
@@ -284,30 +326,37 @@ describe('Data Trust Assessment wording', () => {
     expect(field('Acceptance')).toContain('The button uses the W1 label.')
   })
 
-  it('names no fee amount, price or currency', () => {
-    const copy = [
-      assessmentEyebrow,
-      assessmentName,
-      assessmentHeading,
-      assessmentLead,
-      ...assessmentDeliverables,
-      assessmentNextEyebrow,
-      assessmentNextStatement,
-      assessmentNextSupporting,
-    ].join(' ')
+  it('names no fee amount, price or currency, and has no digit at all (#99)', () => {
+    const copy = Object.values(assessment).flatMap(strings).join(' ')
 
     expect(copy).toContain('at a fixed fee.')
     expect(copy).not.toMatch(/\d|[$€£¥]|\b(UGX|USD|KES|TZS|RWF|EUR|GBP|shillings?|dollars?)\b/i)
-    // The pill's only digit is the three weeks' 3 (#82): still no amount.
-    expect(assessmentFacts).toBe('3 weeks · fixed fee')
-    expect(assessmentFacts.replace(/^3 weeks/, '')).not.toMatch(/\d/)
-    expect(assessmentFacts).not.toMatch(/[$€£¥]|\b(UGX|USD|KES|TZS|RWF|EUR|GBP|shillings?|dollars?)\b/i)
+  })
+
+  it('has exactly these exports (#99)', () => {
+    expect(Object.keys(assessment).sort()).toEqual(
+      [
+        'assessmentCtaLabel',
+        'assessmentDeliverables',
+        'assessmentDeliverablesLabel',
+        'assessmentEyebrow',
+        'assessmentHeading',
+        'assessmentLead',
+        'assessmentName',
+        'assessmentNextEyebrow',
+        'assessmentNextStatement',
+        'assessmentNextSupporting',
+        'lineageTrace',
+      ].sort(),
+    )
   })
 })
 
 // The owner's instruction on #77, the blockquote under the dated note in W4.
 const ownerAt = w4.indexOf('\n**Owner update (2026-10-14, #77):**\n')
 const ownerNote = (w4.slice(ownerAt).match(/^> (.+)$/m) ?? [])[1] ?? ''
+// The dated note for #99 under W4.
+const update99 = (w4.match(/^\*\*Owner update \(2026-10-23, #99\):\*\* (.+)$/m) ?? [])[1] ?? ''
 
 /** Every string in a value, found recursively through arrays and objects. */
 function strings(value: unknown): string[] {
@@ -317,154 +366,139 @@ function strings(value: unknown): string[] {
   return []
 }
 
-const exampleStrings = strings(lineageExample)
-// The labels (#77) and, apart, the steps' descriptions (#82).
-const stepDescriptions = lineageExample.steps.map((step) => step.description)
-const exampleLabels = exampleStrings.filter((text) => !stepDescriptions.includes(text))
+const traceStrings = strings(lineageTrace)
+const stepNames = lineageTrace.steps.map((step) => step.name)
+const stepDescriptions = lineageTrace.steps.map((step) => step.description)
+const establishNames = lineageTrace.establish.map((item) => item.name)
+const establishDescriptions = lineageTrace.establish.map((item) => item.description)
+// The labels (#77): everything but the descriptions.
+const traceLabels = traceStrings.filter(
+  (text) => !stepDescriptions.includes(text) && !establishDescriptions.includes(text),
+)
 
-describe('illustrative example', () => {
-  it('uses the enhancement plan §8\'s caption in place of W4\'s, character for character (#79)', () => {
-    expect(lineageExample.caption).toBe('Illustrative example')
-    expect(lineageExample.caption).toBe(s8[0])
-    // W4's caption, which §8 replaces.
-    expect(w4).toContain(`- Caption: "${s8[1]}"`)
-    expect(lineageExample.caption).not.toBe(s8[1])
+describe('the trace card', () => {
+  it('has the dark panel plan\'s card heading, "How we trace your numbers" (#99)', () => {
+    expect(lineageTrace.heading).toBe('How we trace your numbers')
+    expect(lineageTrace.heading).toBe(darkRow('Card heading'))
+    expect(darkStatus.get('Card heading')).toBe('New')
   })
 
-  it('uses the enhancement plan §8\'s metrics label in place of "Sample metrics" (#79)', () => {
-    expect(lineageExample.metricsLabel).toBe('Example leadership metrics')
-    expect(lineageExample.metricsLabel).toBe(s8[3])
-    expect(s8[2]).toBe('Sample metrics')
+  it('no longer has the enhancement plan §8\'s caption or metrics label (#79, #99)', () => {
+    expect(s8[0]).toBe('Illustrative example')
+    expect(s8[3]).toBe('Example leadership metrics')
+    expect(darkRemoved[1]).toBe(`the card caption "${s8[0]}"`)
+    expect(darkRemoved[2]).toBe(`the label "${s8[3]}" and the five metric chips`)
+    for (const text of [s8[0], s8[1], s8[2], s8[3]]) expect(traceStrings).not.toContain(text)
   })
 
-  it('has exactly the caption, the two list labels, the metrics, the steps with their descriptions and the ratings, and no value or finding field (#77, #82)', () => {
-    expect(Object.keys(lineageExample)).toEqual([
-      'caption',
-      'metricsLabel',
-      'metrics',
-      'stepsLabel',
-      'steps',
-      'ratings',
-    ])
-    for (const key of ['caption', 'metricsLabel', 'stepsLabel'] as const) {
-      expect(typeof lineageExample[key]).toBe('string')
-    }
-    for (const list of [lineageExample.metrics, lineageExample.ratings]) {
+  it('has exactly the heading, the steps, the establish label and items and the ratings, and no value, figure, finding or caption field (#77, #99)', () => {
+    expect(Object.keys(lineageTrace)).toEqual(['heading', 'steps', 'establishLabel', 'establish', 'ratings'])
+    expect(typeof lineageTrace.heading).toBe('string')
+    expect(typeof lineageTrace.establishLabel).toBe('string')
+    for (const list of [lineageTrace.steps, lineageTrace.establish]) {
       expect(Array.isArray(list)).toBe(true)
-      for (const item of list) expect(typeof item).toBe('string')
+      for (const item of list) {
+        expect(Object.keys(item)).toEqual(['name', 'description'])
+        expect(typeof item.name).toBe('string')
+        expect(typeof item.description).toBe('string')
+      }
     }
-    expect(Array.isArray(lineageExample.steps)).toBe(true)
-    for (const step of lineageExample.steps) {
-      expect(Object.keys(step)).toEqual(['name', 'description', 'attribute'])
-      expect(typeof step.name).toBe('string')
-      expect(typeof step.description).toBe('string')
-      expect(typeof step.attribute).toBe('boolean')
-    }
-    expect(lineageExample.caption).toBe(darkRow(darkUnchanged, 'Card caption'))
-    expect(lineageExample.metricsLabel).toBe(darkRow(darkUnchanged, 'Card label'))
-    expect(lineageExample.stepsLabel).toBe(darkRow(darkUnchanged, 'Trace label'))
-    expect(lineageExample.metricsLabel).toBe('Example leadership metrics')
-    expect(lineageExample.stepsLabel).toBe('Each traced through')
-    // §9 quotes the steps label as current and retains it.
-    expect(enhancementSection(9)).toContain(`> ${lineageExample.stepsLabel}`)
-    expect(assessmentSource).not.toMatch(/\bfigure\b\s*:|\bvalue\b\s*:|\breason\b\s*:|LineageStep/)
+    expect(Array.isArray(lineageTrace.ratings)).toBe(true)
+    for (const rating of lineageTrace.ratings) expect(typeof rating).toBe('string')
+    expect(assessmentSource).not.toMatch(/\bfigure\b\s*:|\bvalue\b\s*:|\breason\b\s*:|\bcaption\b\s*:|\bmetrics?\b\s*:|\battribute\b\s*:|LineageStep/)
   })
 
-  it('shows the owner\'s representative metric names, in order, from the one shared export (#77)', () => {
-    expect(ownerAt).toBeGreaterThan(-1)
-    expect(ownerNote).toContain('Example metrics are illustrative labels only.')
-    expect(exampleMetrics).toEqual([
-      'Revenue',
-      'Active Customers',
-      'Portfolio at Risk',
-      'Programme Outcomes',
-      'Cost per Customer',
+  it('traces through the dark panel plan\'s five steps, in order, each with its description, exactly (#99)', () => {
+    expect(lineageTrace.steps).toEqual(darkSteps)
+    expect(stepNames).toEqual(['Report', 'Definition', 'Calculation', 'Data model', 'Source system'])
+    expect(stepDescriptions).toEqual([
+      'The leadership report where the number appears',
+      'How the number is defined',
+      'The logic and rules that produce it',
+      'The tables the calculation reads from',
+      'Where the data is first recorded',
     ])
-    for (const metric of exampleMetrics) expect(ownerNote).toContain(metric)
-    expect(exampleMetrics).toEqual(darkList(darkUnchanged, 'Metrics'))
-    // The same array, not a copy.
-    expect(lineageExample.metrics).toBe(exampleMetrics)
-  })
-
-  it('traces them through the enhancement plan §9\'s seven-step sequence, in order, the last two marked as attributes (#79, #82)', () => {
-    const names = lineageExample.steps.map((step) => step.name)
-    expect(names).toEqual([
-      'Report',
-      'Definition',
-      'Calculation',
-      'Data model',
-      'Source system',
-      'Owner',
-      'Trust rating',
-    ])
-    expect(names).toEqual(s9Sequence)
-    expect(names).toEqual(darkList(darkUnchanged, 'Steps, in order'))
-    expect(lineageExample.steps.map((step) => step.attribute)).toEqual([false, false, false, false, false, true, true])
+    expect(darkStatus.get('Steps, in order')).toBe('Five steps')
     // The labels are text only: the line and rings are drawn in CSS.
-    for (const text of [...names, ...stepDescriptions]) expect(text).not.toMatch(/[→↓←↑]/)
-    // W4's five steps, which the sequence supersedes.
+    for (const text of [...stepNames, ...stepDescriptions]) expect(text).not.toMatch(/[→↓←↑]/)
+  })
+
+  it('maps the enhancement plan §9\'s seven-step sequence to the five steps plus Accountable owner and Trust rating (#79, #99)', () => {
+    expect(s9Sequence).toEqual(['Report', 'Definition', 'Calculation', 'Data model', 'Source system', 'Owner', 'Trust rating'])
+    expect(stepNames).toEqual(s9Sequence.slice(0, 5))
+    // Owner becomes Accountable owner, and Trust rating keeps its name.
+    expect(establishNames).toEqual(['Accountable owner', 'Trust rating'])
+    expect(establishNames[0].endsWith(s9Sequence[5].toLowerCase())).toBe(true)
+    expect(establishNames[1]).toBe(s9Sequence[6])
+    expect(darkRemoved[4]).toBe('the Owner and Trust rating steps from the chain, which move to "What we establish"')
+    expect(stepNames).not.toContain('Owner')
+    expect(stepNames).not.toContain('Trust rating')
+    // W4's original five steps, which the sequence superseded.
     expect(w4).toContain('through its definition, calculation, source systems, owner and trust rating')
   })
 
-  it('gives each step the dark panel plan\'s description, in order, exactly (#82)', () => {
-    const elements = [
-      'Report description',
-      'Definition description',
-      'Calculation description',
-      'Data model description',
-      'Source system description',
-      'Owner description',
-      'Trust rating description',
-    ]
-    expect(stepDescriptions).toEqual(elements.map((element) => darkRow(darkNew, element)))
-    expect(lineageExample.steps.map((step) => `${step.name} description`)).toEqual(elements)
+  it('lists What we establish: its label and the two items, exactly (#99)', () => {
+    expect(lineageTrace.establishLabel).toBe('What we establish')
+    expect(lineageTrace.establishLabel.toUpperCase()).toBe(darkRow('Establish label'))
+    expect(lineageTrace.establish).toEqual(darkEstablish)
+    expect(lineageTrace.establish).toEqual([
+      { name: 'Accountable owner', description: 'Who is responsible for the number' },
+      { name: 'Trust rating', description: 'How far the number can be trusted, and why' },
+    ])
+    expect(darkStatus.get('Establish item 1')).toBe('New, replaces the Owner step')
+    expect(darkStatus.get('Establish item 2')).toBe('Replaces the Trust rating step')
   })
 
-  it('drops W11\'s owner row value, which the Owner description replaces (#81, #82)', () => {
+  it('no longer has the trace label "Each traced through" or the Owner step\'s description (#99)', () => {
+    expect(darkRemoved[3]).toBe('the trace label "Each traced through"')
+    expect(traceStrings).not.toContain('Each traced through')
+    expect(traceStrings).not.toContain('Who is accountable for the number')
+    expect(enhancementSection(9)).toContain('> Each traced through')
+  })
+
+  it('drops W11\'s owner row value (#81, #82)', () => {
     expect(w11OwnerValue).toEqual(['One role per metric'])
-    expect(darkRemoved[1]).toContain(`"${w11OwnerValue[0]}" (from W11)`)
-    expect(exampleStrings).not.toContain(w11OwnerValue[0])
-    // No key names a role value or finding.
-    expect(Object.keys(lineageExample)).not.toContain('ownerValue')
-    expect(Object.keys(lineageExample)).not.toContain('ownerRole')
+    expect(traceStrings).not.toContain(w11OwnerValue[0])
+    expect(Object.keys(lineageTrace)).not.toContain('ownerValue')
+    expect(Object.keys(lineageTrace)).not.toContain('ownerRole')
   })
 
-  it('lists the scorecard\'s three rating categories and gives none of them to a metric', () => {
-    expect(lineageExample.ratings).toEqual(['Trusted', 'Trusted with caveats', 'Not yet trusted'])
-    expect(lineageExample.ratings).toEqual(darkList(darkUnchanged, 'Ratings'))
-    const [a, b, c] = lineageExample.ratings.map((rating) => rating.toLowerCase())
-    // The scorecard deliverable names the same three ratings.
-    expect(assessmentDeliverables[1]).toContain(`${a}, ${b}, or ${c}`)
+  it('lists the scorecard\'s three rating categories and gives none of them to a number', () => {
+    expect(lineageTrace.ratings).toEqual(['Trusted', 'Trusted with caveats', 'Not yet trusted'])
+    expect(lineageTrace.ratings).toEqual(darkRatings)
+    const [a, b, c] = lineageTrace.ratings.map((rating) => rating.toLowerCase())
+    // The scorecard tile names the same three ratings.
+    expect(assessmentDeliverables[1].description).toContain(`${a}, ${b}, or ${c}`)
     expect(w4).toContain('trusted, trusted with caveats, or not yet trusted')
-    // No field pairs a rating with a metric: the ratings are one list of
-    // their own, and nothing else in the example holds a rating name.
-    const elsewhere = strings({ ...lineageExample, ratings: [] })
-    for (const rating of lineageExample.ratings) expect(elsewhere).not.toContain(rating)
+    // Nothing else in the card holds a rating name: the Trust rating item
+    // names the category, and its description gives none.
+    const elsewhere = strings({ ...lineageTrace, ratings: [] })
+    for (const rating of lineageTrace.ratings) expect(elsewhere).not.toContain(rating)
   })
 
-  it('walks every string in the example: labels of letters, spaces and full stops only, no currency (#77)', () => {
-    expect(exampleStrings).toHaveLength(1 + 1 + 5 + 1 + 7 + 7 + 3)
-    expect(exampleLabels).toHaveLength(1 + 1 + 5 + 1 + 7 + 3)
-    expect(exampleLabels).toHaveLength(18)
-    for (const text of exampleLabels) {
-      expect(text).toMatch(/^[A-Za-z .]+$/)
+  it('walks every string in the card: labels of letters and spaces only, no currency (#77)', () => {
+    expect(traceStrings).toHaveLength(1 + 5 * 2 + 1 + 2 * 2 + 3)
+    expect(traceLabels).toHaveLength(1 + 5 + 1 + 2 + 3)
+    for (const text of traceLabels) {
+      expect(text).toMatch(/^[A-Za-z ]+$/)
       expect(text).not.toMatch(/\d|[$€£¥%]/)
       expect(text).not.toMatch(/\b(UGX|USD|KES|TZS|RWF|EUR|GBP|shillings?|dollars?)\b/i)
     }
   })
 
-  it('gives every label, the caption included, at most four words, not a sentence or finding (#77, #79)', () => {
-    expect(exampleLabels).toContain(lineageExample.caption)
-    for (const text of exampleLabels) {
-      expect(text.split(' ').length, text).toBeLessThanOrEqual(4)
+  it('gives every label at most five words, not a sentence or finding (#77)', () => {
+    for (const text of traceLabels) {
+      expect(text.split(' ').length, text).toBeLessThanOrEqual(5)
       expect(text, text).not.toMatch(/\.$/)
     }
   })
 
-  it('gives each step a short description, not a figure or finding: letters, spaces and one comma at most (#77, #82)', () => {
-    expect(stepDescriptions).toHaveLength(7)
-    for (const text of stepDescriptions) {
+  it('gives each step and establish item a short description, not a figure or finding: letters, spaces and one comma at most, no full stop (#77, #99)', () => {
+    const descriptions = [...stepDescriptions, ...establishDescriptions]
+    expect(descriptions).toHaveLength(7)
+    for (const text of descriptions) {
       expect(text).toMatch(/^[A-Za-z ,]+$/)
+      expect((text.match(/,/g) ?? []).length, text).toBeLessThanOrEqual(1)
       expect(text.split(' ').length, text).toBeLessThanOrEqual(9)
       expect(text, text).not.toMatch(/\.$/)
       expect(text).not.toMatch(/\d|[$€£¥%]/)
@@ -473,9 +507,26 @@ describe('illustrative example', () => {
   })
 
   it('names no person or organisation, and never a product, tool or live demo', () => {
-    for (const text of exampleStrings) {
+    for (const text of [...traceStrings, ...strings(assessmentDeliverables)]) {
       expect(text).not.toMatch(/\b(product|tool|dashboard|app|platform|demo|software|Fafanua)\b/i)
       expect(text).not.toMatch(/\b(Ltd|Limited|Inc|Bank|Hospital|Clinic|University|Mr|Mrs|Ms|Dr)\b/)
+    }
+  })
+
+  it('records the #99 owner update under W4: five steps plus What we establish, the metrics removed, the #77 rule kept (#99)', () => {
+    expect(ownerAt).toBeGreaterThan(-1)
+    expect(ownerNote).toContain('Example metrics are illustrative labels only.')
+    expect(update99).toContain('five trace steps')
+    expect(update99).toContain('"What we establish"')
+    expect(update99).toContain('The example metrics are removed from the homepage.')
+    expect(update99).toContain('#77')
+  })
+
+  it('no longer shows the owner\'s example metric names on the homepage (#77, #99)', () => {
+    expect(Object.keys(assessment)).not.toContain('exampleMetrics')
+    for (const metric of ['Revenue', 'Active Customers', 'Portfolio at Risk', 'Programme Outcomes', 'Cost per Customer']) {
+      expect(ownerNote).toContain(metric)
+      expect(Object.values(assessment).flatMap(strings)).not.toContain(metric)
     }
   })
 })
@@ -488,6 +539,11 @@ describe('assessment source', () => {
     const imports = code.match(/^import .*$/gm) ?? []
     expect(imports).toEqual(["import { ctaLabel } from './contact.ts'"])
     expect(code.replace(imports[0] ?? '', '')).not.toMatch(/\bimport\b|\brequire\(|\bfetch\(|readFile|plan\.md/)
+    // Every string a literal in the file.
+    for (const text of Object.values(assessment).flatMap(strings)) {
+      if (text === ctaLabel) continue
+      expect(assessmentSource.includes(`'${text}'`), text).toBe(true)
+    }
   })
 
   it('has no JSX, React, class names, colours or tokens', () => {
@@ -501,7 +557,10 @@ describe('assessment source', () => {
 // per foundation page that uses it; Financial Services stores "After the
 // assessment" twice, as its services heading and its promise strip's
 // second group label, and its reconciliation eyebrow, plan copy, begins
-// with the words). Only these are taken out of that file before the scans
+// with the words). 'Fix list' is no longer a homepage string (#99), but the
+// Public Sector and Health pages still use it, so it stays listed; the
+// Financial Services page's 'Prioritised roadmap' is now also a homepage
+// tile label (#99). Only these are taken out of that file before the scans
 // below; everything else in it is scanned.
 const LANDING_ALLOWED: Allowed = [
   ["'Start with trust'", 3],
@@ -512,13 +571,14 @@ const LANDING_ALLOWED: Allowed = [
   ["'Illustrative example. Sample data only.'", 3],
   ["'After the assessment'", 4],
   ["'After the assessment · What we can implement'", 1],
+  ["'Prioritised roadmap'", 1],
 ]
 const scanned = (file: string, source: string) => scannedWith(file, source, LANDING_ALLOWED)
 
 describe('other source files', () => {
   // Every source file under src/ except assessment.ts and test files.
-  // solutionPages.ts is scanned without the homepage strings its Public
-  // Sector entry repeats by design (#93, src/test/landingCopy.ts).
+  // solutionPages.ts is scanned without the homepage strings its
+  // foundation pages repeat by design (#93, src/test/landingCopy.ts).
   const sources = Object.entries(
     import.meta.glob<string>('/src/**/*.{ts,tsx,css,html}', {
       query: '?raw',
@@ -535,7 +595,7 @@ describe('other source files', () => {
     for (const [literal, count] of LANDING_ALLOWED) expect(occurrences(raw, literal), literal).toBe(count)
     const stripped = sources.find(([file]) => file === LANDING_COPY)![1]
     for (const [literal] of LANDING_ALLOWED) expect(occurrences(stripped, literal), literal).toBe(0)
-    expect(LANDING_ALLOWED).toHaveLength(8)
+    expect(LANDING_ALLOWED).toHaveLength(9)
   })
 
   it('scans the rest of src/', () => {
@@ -545,25 +605,26 @@ describe('other source files', () => {
   it.each([
     ['the heading', assessmentHeading],
     ['the lead', assessmentLead],
-    ['the facts pill', assessmentFacts],
     ['the closing statement', assessmentNextStatement],
     ['the closing paragraph', assessmentNextSupporting],
     ['the closing eyebrow', `'${assessmentNextEyebrow}'`],
-    // The eyebrow and name as string literals: the words also name the
-    // section in comments.
+    // The eyebrow, name and labels as string literals: the words also
+    // name the section in comments.
     ['the eyebrow', `'${assessmentEyebrow}'`],
     ['the engagement name', `'${assessmentName}'`],
-    ...assessmentDeliverables.map((item, index) => [`deliverable ${index + 1}`, item]),
-    // W11's tile labels as string literals (#81).
-    ...assessmentDeliverableLabels.map((label) => [`the tile label ${label}`, `'${label}'`]),
+    ['the deliverables label', `'${assessmentDeliverablesLabel}'`],
+    ['the card heading', `'${lineageTrace.heading}'`],
+    ['the establish label', `'${lineageTrace.establishLabel}'`],
+    ...assessmentDeliverables.map((item, index) => [`deliverable ${index + 1}`, item.description]),
+    ...assessmentDeliverables.map((item) => [`the tile label ${item.label}`, `'${item.label}'`]),
   ])('do not hold %s', (_name, text) => {
     for (const [file, source] of sources) {
       expect(source.includes(text), `${file} holds "${text}"`).toBe(false)
     }
   })
 
-  // The components and App hold none of the example's strings anywhere,
-  // not even in a comment (#77).
+  // The components and App hold none of the card's or tiles' strings
+  // anywhere, not even in a comment (#77).
   const components = sources.filter(([file]) => file.startsWith('/src/components/') || file === '/src/App.tsx')
 
   it('scans the components and App', () => {
@@ -573,15 +634,20 @@ describe('other source files', () => {
   })
 
   it.each([
-    ['the caption', lineageExample.caption],
-    ['the metrics label', lineageExample.metricsLabel],
-    ['the steps label', lineageExample.stepsLabel],
-    ...lineageExample.metrics.map((metric) => [`the metric ${metric}`, metric]),
-    ...lineageExample.steps.map((step) => [`the step ${step.name}`, step.name]),
-    ...lineageExample.steps.map((step) => [`the ${step.name} description`, step.description]),
-    ...lineageExample.ratings.map((rating) => [`the rating ${rating}`, rating]),
-    // W11's tile labels (#81).
-    ...assessmentDeliverableLabels.map((label) => [`the tile label ${label}`, label]),
+    ['the card heading', lineageTrace.heading],
+    ['the establish label', lineageTrace.establishLabel],
+    ...lineageTrace.steps.map((step) => [`the step ${step.name}`, step.name]),
+    ...lineageTrace.steps.map((step) => [`the ${step.name} description`, step.description]),
+    ...lineageTrace.establish.map((item) => [`the establish item ${item.name}`, item.name]),
+    ...lineageTrace.establish.map((item) => [`the ${item.name} description`, item.description]),
+    ...lineageTrace.ratings.map((rating) => [`the rating ${rating}`, rating]),
+    ...assessmentDeliverables.map((item) => [`the tile label ${item.label}`, item.label]),
+    // Removed from the homepage (#99): gone from the components too.
+    ['the old tile label Fix list', 'Fix list'],
+    ...['Revenue', 'Active Customers', 'Portfolio at Risk', 'Programme Outcomes', 'Cost per Customer'].map((metric) => [
+      `the removed metric ${metric}`,
+      metric,
+    ]),
   ])('components do not hold %s', (_name, text) => {
     // As a whole word or phrase: the step "Report" (#79) is part of
     // "Reporting", a Solutions landing page heading in SolutionPage.tsx.
@@ -591,21 +657,11 @@ describe('other source files', () => {
     }
   })
 
-  // The caption is now two common words, so it is checked as a string
-  // literal; the old caption and after-line are gone from every source
-  // file, assessment.ts included (#79).
-  it('only assessment.ts holds the caption as a string literal', () => {
-    for (const [file, source] of sources) {
-      expect(source.includes(`'${lineageExample.caption}'`), file).toBe(false)
-    }
-  })
-
   // Every source file but tests, assessment.ts included;
-  // solutionPages.ts without its allowed literals (#93): the Public Sector
-  // plan copy brings back the old caption and the after-assessment label
-  // on that page only, checked against its plan in
-  // solutionPages.publicSector.plan.test.ts. The homepage still shows
-  // neither (App.test.tsx).
+  // solutionPages.ts without its allowed literals (#93): the foundation
+  // pages' plan copy brings back the old caption and the after-assessment
+  // label on those pages only, checked against their plans. The homepage
+  // still shows neither (App.test.tsx).
   const allSources = Object.entries(
     import.meta.glob<string>('/src/**/*.{ts,tsx,css,html}', {
       query: '?raw',
@@ -634,7 +690,23 @@ describe('other source files', () => {
     ['the after-assessment statement', 'The assessment tells us what to fix first.'],
     ['the after-assessment paragraph', s11[2]],
     ['W11\'s owner row value', 'One role per metric'],
-  ])('no source file holds %s (#79, #82)', (_name, text) => {
+    // Removed by the revised dark panel plan (#99).
+    ['the facts pill', '3 weeks · fixed fee'],
+    ['the caption', `'Illustrative example'`],
+    ['the metrics label', 'Example leadership metrics'],
+    ['the trace label', 'Each traced through'],
+    ['the Owner step\'s description', 'Who is accountable for the number'],
+    ['the old closing statement', 'Turn findings into a prioritised roadmap.'],
+    ['the old lineage map sentence', 'A lineage map showing how each key number is produced, system by system'],
+    ['the old trust scorecard sentence', 'A trust scorecard rating each number as trusted, trusted with caveats, or not yet trusted, with the reasons'],
+    ['the old shared definitions sentence', 'Shared definitions for the terms your teams or branches use differently'],
+    ['the old fix list sentence', 'A prioritised fix list, ranked by impact and effort'],
+    ['the attribute flag', 'attribute:'],
+    ['the old facts export', 'assessmentFacts'],
+    ['the old metrics export', 'exampleMetrics'],
+    ['the old card export', 'lineageExample'],
+    ['the contour token', '--opacity-contour'],
+  ])('no source file holds %s (#79, #82, #99)', (_name, text) => {
     expect(allSources.map(([file]) => file)).toContain('/src/data/assessment.ts')
     for (const [file, source] of allSources) {
       expect(source.includes(text), `${file} holds "${text}"`).toBe(false)
@@ -642,11 +714,17 @@ describe('other source files', () => {
   })
 
   it.each(['Active Customers', 'Portfolio at Risk', 'Programme Outcomes', 'Cost per Customer'])(
-    'only assessment.ts holds "%s"',
+    'no source file holds "%s", assessment.ts included (#99)',
     (metric) => {
-      for (const [file, source] of sources) {
+      for (const [file, source] of allSources) {
         expect(source.includes(metric), `${file} holds "${metric}"`).toBe(false)
       }
     },
   )
+
+  it('assessment.ts holds neither the tile label \'Fix list\' nor any metric name (#99)', () => {
+    for (const text of ['Fix list', 'Revenue', 'Active Customers', 'Portfolio at Risk', 'Programme Outcomes', 'Cost per Customer']) {
+      expect(assessmentSource.includes(text), text).toBe(false)
+    }
+  })
 })
