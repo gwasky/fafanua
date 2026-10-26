@@ -548,6 +548,13 @@ Supporting:
 - education data systems
 - education reporting automation
 
+Added for the Education landing page (owner, 2026-10-26, #100). Every keyword above is kept. Under `_docs/fafanua-education-landing-page-plan.md`, the page's title carries education data analytics Uganda exactly and learner … analytics Uganda and education analytics Uganda loosely ("Learner & Education Data Analytics Uganda"), and its meta description carries education data analytics … in Uganda and the universities, colleges, schools and training providers audiences. The owner's Education institutions line (A2) carries learner analytics and education dashboards exactly (without Uganda), cohort analytics loosely ("cohort analysis"), student retention analytics loosely ("student retention"), learner progression analytics loosely ("learner progression") and graduate outcomes tracking loosely ("graduate outcomes"); the owner's closing line (A1) makes the protected phrase visible. The plan copy carries enrolment analytics loosely ("Enrolment and progression tracking", "Enrolment, progression, completion and finance reporting"), learner progression analytics loosely (the hero lead's "progression"), education dashboards Uganda loosely ("Reporting and dashboards") and education data systems loosely (the diagram's "Education systems"); the hero lead keeps "Uganda and East Africa" visible. These keywords are no longer on the page or were never carried: student data analytics and education reporting automation (gaps before and after; "reports take weeks to assemble" names the problem), and the seven homepage themes (among them "Enrolment dashboards", "Cohort analysis", "Graduate-outcome tracking" and "Learner lifecycle analytics"), which the page no longer lists; the old link labels "Education dashboards", "Learner lifecycle data models", "Education data governance" and "Student-system integration" are gone. By the owner's decision the page still links Data Warehousing & Analytics Modelling and Data Governance & Metadata (§22), through two service cards added after the plan's three (Learner data warehouse; Data governance and definitions, copy proposed for the owner's review), so its five service cards link Data Engineering & Integration, Data Quality & Reliability, Business Intelligence & Analytics, Data Warehousing & Analytics Modelling and Data Governance & Metadata. The new title, description and hero also target:
+
+- every learner, counted the same way
+- learner and education data analytics Uganda
+- education data analytics for universities, colleges, schools and training providers
+- trusted data foundation (protected phrase, §1)
+
 ---
 
 # 12. Public Sector Keyword Cluster
