@@ -17,12 +17,13 @@ const servicePaths = [
 ]
 const solutionPaths = solutions.map((solution) => `/solutions/${solution.slug}`)
 const PATHS = [...servicePaths, ...solutionPaths]
-// The pages on the shared landing-page foundation (#93, #94, #98), each
-// with its closing panel's text: the plan's text and the owner's (or, on
-// Financial Services, A1) follow-up.
+// The pages on the shared landing-page foundation (#93, #94, #98, #100),
+// each with its closing panel's text: the plan's text and the owner's (or,
+// on Financial Services and Education, A1) follow-up.
 const PUBLIC_SECTOR = '/solutions/public-sector'
 const HEALTH = '/solutions/health'
 const FINANCIAL_SERVICES = '/solutions/financial-services'
+const EDUCATION = '/solutions/education'
 const FOUNDATION: Record<string, string> = {
   [PUBLIC_SECTOR]:
     'Which figure in your next statutory report do you trust least? Tell us about the reports leadership answers for. Then we make sure they are built on a trusted data foundation.',
@@ -30,6 +31,8 @@ const FOUNDATION: Record<string, string> = {
     'Which numbers do you trust least? Tell us about the reports your branches and head office rely on. Then we make sure they are built on a trusted data foundation.',
   [FINANCIAL_SERVICES]:
     'Your next financial report should be easier to produce, explain and defend. Start by identifying which figures can be trusted, where discrepancies originate and what needs to improve. We help you build a trusted data foundation for reliable reporting and better decisions.',
+  [EDUCATION]:
+    'Which learner figure do you trust least? Tell us about the reports your leadership, ministry and funders rely on. We help education organisations build a trusted data foundation for reliable reporting, clearer learner journeys and better decisions.',
 }
 
 // The HTML as a crawler gets it: no JavaScript runs.
@@ -118,7 +121,7 @@ test.describe('one call to action', () => {
       const html = await (await page.request.get(path, { maxRedirects: 0 })).text()
 
       if (path in FOUNDATION) {
-        // The shared landing-page foundation (#93, #94, #98): the header's
+        // The shared landing-page foundation (#93, #94, #98, #100): the header's
         // button, the hero's and the closing panel's, which replaces
         // Contact.
         expect(all(html, CTA)).toEqual(['#contact', 'mailto:info@fafanua.tech', 'mailto:info@fafanua.tech'])
@@ -176,7 +179,7 @@ test.describe('closing supporting line', () => {
       const html = await (await page.request.get(path, { maxRedirects: 0 })).text()
 
       if (path in FOUNDATION) {
-        // Its closing panel's own text (#93, #94, #98: plan section 4,
+        // Its closing panel's own text (#93, #94, #98, #100: plan section 4,
         // with the follow-up), not W9's.
         expect(html.split(`<p class="sector-closing__body">${FOUNDATION[path]}</p>`)).toHaveLength(2)
         expect(html).not.toContain(LINE)
@@ -255,7 +258,7 @@ test.describe('crawl from the homepage', () => {
 
       await expect(page).toHaveURL(new RegExp(`/solutions/${solution.slug}$`))
       // The page's h1, from its data: the foundation hero's (Health, #94;
-      // Financial Services, #98) or the sector's heading.
+      // Financial Services, #98; Education, #100) or the sector's heading.
       const copy = solutionPages[solution.id]
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(
         copy.layout === 'sector' ? copy.hero.heading : solution.heading,
@@ -265,6 +268,9 @@ test.describe('crawl from the homepage', () => {
       }
       if (solution.id === 'financial-services') {
         await expect(page.getByRole('heading', { level: 1 })).toHaveText('Financial figures you can reconcile.')
+      }
+      if (solution.id === 'education') {
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText('Every learner, counted the same way.')
       }
     })
 
@@ -277,8 +283,9 @@ test.describe('crawl from the homepage', () => {
     // check 1): the sector's seven themes, on its page under "Reporting and
     // analytics use cases", in data order.
     // The Health plan removes the use-case list (#94, owner note 9), and
-    // so does the Financial Services plan (#98, owner note 11): their
-    // pages have no #use-cases and none of the seven themes.
+    // so does the Financial Services plan (#98, owner note 11) and the
+    // Education plan (#100, owner note 11): their pages have no #use-cases
+    // and none of the seven themes.
     if (solutionPages[solution.id].layout === 'sector') {
       test(`/solutions/${solution.slug} no longer lists the seven themes, as its plan removes them`, async ({ page }) => {
         await openPath(page, `/solutions/${solution.slug}`, 1440)
@@ -313,7 +320,7 @@ test.describe('crawl from the homepage', () => {
 test.describe('in the browser', () => {
   // The not-found page is checked at /404, its own address, as a document
   // that answers 404 always logs a console error in the browser.
-  for (const path of [servicePaths[1], HEALTH, PUBLIC_SECTOR, FINANCIAL_SERVICES, '/404']) {
+  for (const path of [servicePaths[1], HEALTH, PUBLIC_SECTOR, FINANCIAL_SERVICES, EDUCATION, '/404']) {
     for (const width of WIDTHS) {
       test(`${path} has no horizontal scroll and no axe violations at ${width}px`, async ({ page }, testInfo) => {
         await openPath(page, path, width)
@@ -343,9 +350,9 @@ test.describe('in the browser', () => {
     })
   }
 
-  // The shared landing-page foundation (#93, #94, #98) with 200% text at
-  // the other widths too.
-  for (const path of [PUBLIC_SECTOR, HEALTH, FINANCIAL_SERVICES]) for (const width of [390, 1024, 1440]) {
+  // The shared landing-page foundation (#93, #94, #98, #100) with 200%
+  // text at the other widths too.
+  for (const path of [PUBLIC_SECTOR, HEALTH, FINANCIAL_SERVICES, EDUCATION]) for (const width of [390, 1024, 1440]) {
     test(`${path} has no horizontal scroll with 200% text at ${width}px`, async ({ page }) => {
       await openPath(page, path, width)
       await page.addStyleTag({ content: 'html { font-size: 200%; }' })
@@ -451,10 +458,11 @@ test.describe('in the browser', () => {
     )
   })
 
+  // On a §18 page (Education until #100).
   test('Book a data trust assessment lands on the closing call to action of the same page', async ({ page }) => {
-    await openPath(page, '/solutions/education', 1440)
+    await openPath(page, '/solutions/retail-distribution', 1440)
     await page.getByRole('banner').getByRole('link', { name: 'Book a data trust assessment' }).click()
-    await expect(page).toHaveURL(/\/solutions\/education#contact$/)
+    await expect(page).toHaveURL(/\/solutions\/retail-distribution#contact$/)
     await expect(
       page.locator('#contact').getByRole('link', { name: '+256 752 008 822' }),
     ).toHaveAttribute('href', 'tel:+256752008822')
