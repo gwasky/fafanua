@@ -222,7 +222,8 @@ describe('Process', () => {
       expect(outputParagraph.children).toHaveLength(0)
     })
     expect(stages.map((stage) => stage.querySelector('.process__output-text')!.textContent)).toEqual([
-      'Lineage map, trust scorecard, shared definitions and a fix list',
+      // "a fix list" became "a prioritised roadmap" (the owner's decision on #99).
+      'Lineage map, trust scorecard, shared definitions and a prioritised roadmap',
       'Architecture & delivery roadmap',
       'Pipelines, models & analytical products',
       'Ownership, monitoring & continuous improvement',

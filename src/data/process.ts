@@ -28,7 +28,7 @@ export const processStages: readonly ProcessStage[] = [
     name: 'Assess',
     description:
       'The Data Trust Assessment: trace the numbers leadership relies on most back to their source, and rate how far to trust them.',
-    output: 'Lineage map, trust scorecard, shared definitions and a fix list',
+    output: 'Lineage map, trust scorecard, shared definitions and a prioritised roadmap',
     phase: 0,
   },
   {

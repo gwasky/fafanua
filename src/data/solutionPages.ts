@@ -587,7 +587,7 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
         { name: 'Lineage map', text: 'How each key number is produced, system by system', icon: 'map' },
         { name: 'Trust scorecard', text: 'Each number rated trusted, with caveats, or not yet', icon: 'score' },
         { name: 'Shared definitions', text: 'For the terms your branches use differently', icon: 'book' },
-        { name: 'Fix list', text: 'Prioritised by impact and effort', icon: 'list' },
+        { name: 'Prioritised roadmap', text: 'Prioritised by impact and effort', icon: 'list' },
       ],
     },
     ai: {
@@ -762,7 +762,7 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
         { name: 'Lineage map', text: 'How each key number is produced, system by system', icon: 'map' },
         { name: 'Trust scorecard', text: 'Each number rated trusted, with caveats, or not yet', icon: 'score' },
         { name: 'Shared definitions', text: 'For the terms your departments use differently', icon: 'book' },
-        { name: 'Fix list', text: 'Prioritised by impact and effort', icon: 'list' },
+        { name: 'Prioritised roadmap', text: 'Prioritised by impact and effort', icon: 'list' },
       ],
     },
     stages: {

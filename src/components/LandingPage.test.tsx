@@ -335,7 +335,8 @@ describe('Public Sector page', () => {
       'Lineage map',
       'Trust scorecard',
       'Shared definitions',
-      'Fix list',
+      // Fix list until the owner's decision on #99.
+      'Prioritised roadmap',
       'Assess',
       'Foundation',
       'First use cases',
@@ -625,7 +626,8 @@ describe('Health page', () => {
       'Lineage map',
       'Trust scorecard',
       'Shared definitions',
-      'Fix list',
+      // Fix list until the owner's decision on #99.
+      'Prioritised roadmap',
       'Integrate and model',
       'Quality and governance',
       'Reporting and dashboards',

@@ -557,21 +557,20 @@ describe('assessment source', () => {
 // per foundation page that uses it; Financial Services stores "After the
 // assessment" twice, as its services heading and its promise strip's
 // second group label, and its reconciliation eyebrow, plan copy, begins
-// with the words). 'Fix list' is no longer a homepage string (#99), but the
-// Public Sector and Health pages still use it, so it stays listed; the
-// Financial Services page's 'Prioritised roadmap' is now also a homepage
-// tile label (#99). Only these are taken out of that file before the scans
+// with the words). 'Fix list' is no longer a homepage string, and since
+// the owner's decision on #99 no page uses it, so it left the list; the
+// Financial Services, Public Sector and Health pages' 'Prioritised
+// roadmap' is now also a homepage tile label (#99). Only these are taken out of that file before the scans
 // below; everything else in it is scanned.
 const LANDING_ALLOWED: Allowed = [
   ["'Start with trust'", 3],
   ["'Lineage map'", 3],
   ["'Trust scorecard'", 3],
   ["'Shared definitions'", 3],
-  ["'Fix list'", 2],
   ["'Illustrative example. Sample data only.'", 3],
   ["'After the assessment'", 4],
   ["'After the assessment · What we can implement'", 1],
-  ["'Prioritised roadmap'", 1],
+  ["'Prioritised roadmap'", 3],
 ]
 const scanned = (file: string, source: string) => scannedWith(file, source, LANDING_ALLOWED)
 
@@ -595,7 +594,7 @@ describe('other source files', () => {
     for (const [literal, count] of LANDING_ALLOWED) expect(occurrences(raw, literal), literal).toBe(count)
     const stripped = sources.find(([file]) => file === LANDING_COPY)![1]
     for (const [literal] of LANDING_ALLOWED) expect(occurrences(stripped, literal), literal).toBe(0)
-    expect(LANDING_ALLOWED).toHaveLength(9)
+    expect(LANDING_ALLOWED).toHaveLength(8)
   })
 
   it('scans the rest of src/', () => {
@@ -706,6 +705,9 @@ describe('other source files', () => {
     ['the old metrics export', 'exampleMetrics'],
     ['the old card export', 'lineageExample'],
     ['the contour token', '--opacity-contour'],
+    // Gone from every page by the owner's decision on #99.
+    ['the label Fix list', 'Fix list'],
+    ['the old Assess output', 'and a fix list'],
   ])('no source file holds %s (#79, #82, #99)', (_name, text) => {
     expect(allSources.map(([file]) => file)).toContain('/src/data/assessment.ts')
     for (const [file, source] of allSources) {

@@ -106,7 +106,9 @@ Each list item's name (in bold) is followed by a colon and its description.
 | Deliverable 1 | Lineage map: How each key number is produced, system by system |
 | Deliverable 2 | Trust scorecard: Each number rated trusted, with caveats, or not yet |
 | Deliverable 3 | Shared definitions: For the terms your branches use differently |
-| Deliverable 4 | Fix list: Prioritised by impact and effort |
+| Deliverable 4 | Prioritised roadmap: Prioritised by impact and effort |
+
+Owner update (2026-10-26, #99): Deliverable 4's label, Fix list, becomes Prioritised roadmap on every page, as on the homepage's Data Trust Assessment tiles; its description is unchanged.
 
 ### AI and responsible handling
 

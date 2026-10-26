@@ -105,7 +105,7 @@ The heading is the section's `h2`, and the rows are a `ul`. Each row's link text
 | Build description | Unchanged | Unchanged |
 | Govern description | Establish ownership, monitoring, documentation, lineage, and continuous improvement. | Amended: "traceability" becomes "lineage" |
 | Output label | YOU GET | New |
-| Assess output | Lineage map, trust scorecard, shared definitions and a fix list | New |
+| Assess output | Lineage map, trust scorecard, shared definitions and a prioritised roadmap | New; owner update (2026-10-26, #99): "a fix list" becomes "a prioritised roadmap" |
 | Design, Build and Govern outputs | Unchanged | Unchanged |
 | Step 01 tag | START HERE | New |
 
