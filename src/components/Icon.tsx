@@ -9,8 +9,9 @@ export type { IconName }
 // the badge, source row or tick it sits in. Always decorative: hidden from
 // assistive technology, with no title and no text, as every one sits next
 // to the words it illustrates. No icon library. The Health page (#94)
-// added hospital, flask and pill, and the Financial Services page (#98)
-// swap, two opposing horizontal arrows, in the same style.
+// added hospital, flask and pill, the Financial Services page (#98) swap,
+// two opposing horizontal arrows, and the Education page (#100) cap, a
+// mortarboard, in the same style.
 const paths = {
   book: (
     <>
@@ -114,6 +115,13 @@ const paths = {
     <>
       <path d="M4.5 8.5h15m-3.5-3.5 3.5 3.5-3.5 3.5" />
       <path d="M19.5 15.5h-15m3.5-3.5-3.5 3.5 3.5 3.5" />
+    </>
+  ),
+  cap: (
+    <>
+      <path d="M12 5 2.75 9.5 12 14l9.25-4.5Z" />
+      <path d="M6.5 11.35v4.4c0 1.4 2.45 2.75 5.5 2.75s5.5-1.35 5.5-2.75v-4.4" />
+      <path d="M21.25 9.5v5" />
     </>
   ),
 } satisfies Record<IconName, ReactNode>
