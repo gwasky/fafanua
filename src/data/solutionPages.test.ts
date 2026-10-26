@@ -8,23 +8,26 @@ import { activationIntro, solutionPages, type SolutionSectionsPage } from './sol
 
 const pages = solutions.map((solution) => ({ ...solution, page: solutionPages[solution.id] }))
 
-// The three sectors still on the SEO plan §18 sections. Public Sector,
-// Health and Financial Services are on the shared landing-page foundation
-// (#93, #94, #98), whose copy is section 4 of
+// The two sectors still on the SEO plan §18 sections. Public Sector,
+// Health, Financial Services and Education are on the shared landing-page
+// foundation (#93, #94, #98, #100), whose copy is section 4 of
 // _docs/fafanua-public-sector-landing-page-plan.md, of
-// _docs/fafanua-health-landing-page-plan.md and of
-// _docs/fafanua-financial-services-landing-page-plan.md, a change of
-// approved specification (section 2.1 of each, section 2 of the last):
+// _docs/fafanua-health-landing-page-plan.md, of
+// _docs/fafanua-financial-services-landing-page-plan.md and of
+// _docs/fafanua-education-landing-page-plan.md, a change of approved
+// specification (section 2.1 of the first two, section 2 of the others):
 // they have their own rules below, and
 // solutionPages.publicSector.plan.test.ts,
-// solutionPages.health.plan.test.ts and
-// solutionPages.financialServices.plan.test.ts check their copy.
+// solutionPages.health.plan.test.ts,
+// solutionPages.financialServices.plan.test.ts and
+// solutionPages.education.plan.test.ts check their copy.
 const sectionPages = pages.flatMap((solution) =>
   solution.page.layout === 'sector' ? [] : [{ ...solution, page: solution.page as SolutionSectionsPage }],
 )
 const publicSector = solutionPages['public-sector']
 const health = solutionPages.health
 const financialServices = solutionPages['financial-services']
+const education = solutionPages.education
 
 describe('solution landing pages', () => {
   it('gives every page a unique title, description and h1', () => {
@@ -38,18 +41,19 @@ describe('solution landing pages', () => {
     expect(new Set(h1s).size).toBe(6)
   })
 
-  it('keeps the three §18 pages, and Public Sector, Health and Financial Services on the shared foundation', () => {
+  it('keeps the two §18 pages, and Public Sector, Health, Financial Services and Education on the shared foundation', () => {
     expect(sectionPages.map((solution) => solution.id)).toEqual([
       'retail-and-distribution',
       'development-and-impact',
-      'education',
     ])
     expect(publicSector.layout).toBe('sector')
     expect(health.layout).toBe('sector')
     expect(financialServices.layout).toBe('sector')
+    expect(education.layout).toBe('sector')
     expect(pages.filter(({ page }) => page.layout === 'sector').map((solution) => solution.id)).toEqual([
       'financial-services',
       'health',
+      'education',
       'public-sector',
     ])
   })
@@ -167,6 +171,33 @@ describe('solution landing pages', () => {
     expect(financialServices.description).toContain('financial services analytics')
     expect(financialServices.description).toContain('Uganda')
     expect(financialServices.title).toContain('Banking Analytics Uganda')
+  })
+
+  it('gives Education "trusted data foundation", "education data analytics" and Uganda in its description, "Education Data Analytics Uganda" in its title and Uganda and East Africa in its lead (SEO plan §11)', () => {
+    if (education.layout !== 'sector') throw new Error('Education is not on the foundation')
+    expect(education.description).toMatch(/trusted data foundation/)
+    expect(education.description).toContain('education data analytics')
+    expect(education.description).toContain('Uganda')
+    expect(education.title).toContain('Education Data Analytics Uganda')
+    expect(education.hero.lead).toMatch(/Uganda and East Africa/)
+  })
+
+  // The plan's three service cards, and the two the owner restored on
+  // 2026-10-26 (#100), which link the data warehousing and data
+  // governance pages again (SEO plan §22).
+  it('links Education\'s service cards to exactly its five real, distinct services (#100, SEO plan §22)', () => {
+    if (education.layout !== 'sector') throw new Error('Education is not on the foundation')
+    const keys = servicePages.map((page) => page.key)
+    const linked = education.services.items.map((item) => item.service)
+    expect(linked).toEqual([
+      'data-engineering-and-integration',
+      'data-quality-and-reliability',
+      'business-intelligence-and-analytics',
+      'data-warehousing-and-analytics-modelling',
+      'data-governance-and-metadata',
+    ])
+    for (const key of linked) expect(keys).toContain(key)
+    expect(new Set(linked).size).toBe(linked.length)
   })
 
   it('introduces activation in buyer language, with Reverse ETL as the explanation', () => {

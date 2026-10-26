@@ -820,10 +820,9 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
           icon: 'chart',
           service: 'business-intelligence-and-analytics',
         },
-        // Owner decision (2026-10-26, #100): the links to Data Warehousing
-        // & Analytics Modelling and Data Governance & Metadata restored as
-        // two more cards; their copy is proposed, pending the owner's
-        // review.
+        // Owner decision (2026-10-26, #100): the links to the data
+        // warehousing and data governance service pages restored as two
+        // more cards; their copy is proposed, pending the owner's review.
         {
           name: 'Learner data warehouse',
           text: 'Model learners, programmes, cohorts and terms in one data warehouse, so progression and completion can be followed over time.',

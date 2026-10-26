@@ -551,26 +551,30 @@ describe('assessment source', () => {
   })
 })
 
-// The homepage strings solutionPages.ts repeats by design (#93, #94, #98:
-// the Public Sector, Health and Financial Services pages' plan copy), as
-// quoted literals, each with the number of times it may occur there (once
-// per foundation page that uses it; Financial Services stores "After the
-// assessment" twice, as its services heading and its promise strip's
-// second group label, and its reconciliation eyebrow, plan copy, begins
-// with the words). 'Fix list' is no longer a homepage string, and since
-// the owner's decision on #99 no page uses it, so it left the list; the
-// Financial Services, Public Sector and Health pages' 'Prioritised
-// roadmap' is now also a homepage tile label (#99). Only these are taken out of that file before the scans
-// below; everything else in it is scanned.
+// The homepage strings solutionPages.ts repeats by design (#93, #94, #98,
+// #100: the Public Sector, Health, Financial Services and Education
+// pages' plan copy), as quoted literals, each with the number of times it
+// may occur there (once per foundation page that uses it; Financial
+// Services stores "After the assessment" twice, as its services heading
+// and its promise strip's second group label, and its reconciliation
+// eyebrow, plan copy, begins with the words). 'Fix list' is no longer a
+// homepage string, and since the owner's decision on #99 no page uses
+// it, so it left the list; the foundation pages' 'Prioritised roadmap' is
+// now also a homepage tile label (#99). 'What happens next', the
+// homepage's closing eyebrow, is also the Education learner journey's
+// eyebrow lead, by the owner's decision (2026-10-26, #100). Only these
+// are taken out of that file before the scans below; everything else in
+// it is scanned.
 const LANDING_ALLOWED: Allowed = [
-  ["'Start with trust'", 3],
-  ["'Lineage map'", 3],
-  ["'Trust scorecard'", 3],
-  ["'Shared definitions'", 3],
-  ["'Illustrative example. Sample data only.'", 3],
-  ["'After the assessment'", 4],
+  ["'Start with trust'", 4],
+  ["'Lineage map'", 4],
+  ["'Trust scorecard'", 4],
+  ["'Shared definitions'", 4],
+  ["'Illustrative example. Sample data only.'", 4],
+  ["'After the assessment'", 5],
   ["'After the assessment · What we can implement'", 1],
-  ["'Prioritised roadmap'", 3],
+  ["'Prioritised roadmap'", 4],
+  ["'What happens next'", 1],
 ]
 const scanned = (file: string, source: string) => scannedWith(file, source, LANDING_ALLOWED)
 
@@ -594,7 +598,7 @@ describe('other source files', () => {
     for (const [literal, count] of LANDING_ALLOWED) expect(occurrences(raw, literal), literal).toBe(count)
     const stripped = sources.find(([file]) => file === LANDING_COPY)![1]
     for (const [literal] of LANDING_ALLOWED) expect(occurrences(stripped, literal), literal).toBe(0)
-    expect(LANDING_ALLOWED).toHaveLength(8)
+    expect(LANDING_ALLOWED).toHaveLength(9)
   })
 
   it('scans the rest of src/', () => {

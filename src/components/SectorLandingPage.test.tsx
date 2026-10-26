@@ -7,8 +7,8 @@ import SectorLandingPage from './SectorLandingPage.tsx'
 
 // The shared landing-page foundation's components (#93) hold no copy:
 // rendered with another sector's data (a fixture, neither Public Sector,
-// Health nor Financial Services), they show that data and none of those
-// pages' (#94, #98).
+// Health, Financial Services nor Education), they show that data and none
+// of those pages' (#94, #98, #100).
 
 beforeEach(() => {
   vi.stubGlobal('matchMedia', (media: string) => ({
@@ -74,7 +74,7 @@ const renderFixture = (copy: Copy = FIXTURE) =>
   )
 
 describe('SectorLandingPage with another sector\'s data', () => {
-  it('shows only the fixture\'s copy, with no Public Sector, Health or Financial Services string', () => {
+  it('shows only the fixture\'s copy, with no Public Sector, Health, Financial Services or Education string', () => {
     renderFixture()
     const main = screen.getByRole('main')
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Fixture heading.')
@@ -131,6 +131,106 @@ describe('SectorLandingPage with another sector\'s data', () => {
     ]) {
       expect(main.textContent, text).not.toContain(text)
     }
+    const education = solutionPages.education as Copy
+    const journey = education.journey!
+    for (const text of [
+      education.hero.heading,
+      education.diagram.sourcesHeading,
+      education.diagram.sources[2].label,
+      education.audience.card.heading,
+      education.audience.card.detail!,
+      journey.eyebrowLead!,
+      journey.intro!,
+      journey.heading,
+      journey.steps[0].name,
+      journey.steps[3].system,
+      journey.callout.label,
+      journey.callout.text,
+      journey.caption,
+      journey.highlightNote,
+      education.handling.heading,
+      education.handling.items[1],
+      education.services.items[3].name,
+      education.closing.heading,
+      education.closing.followUp!,
+    ]) {
+      expect(main.textContent, text).not.toContain(text)
+    }
+    expect(main.querySelectorAll('.journey, .definition-callout')).toHaveLength(0)
+  })
+
+  it('renders the learner journey from the data when given, right after the assessment band, with the callout and caption in the highlighted step (#100)', () => {
+    renderFixture({
+      ...FIXTURE,
+      journey: {
+        eyebrow: 'Fixture journey eyebrow',
+        heading: 'Fixture journey',
+        text: 'Journey text.',
+        steps: [
+          { name: 'Step one', system: 'System one' },
+          { name: 'Step two', system: 'System two' },
+        ],
+        highlight: 0,
+        highlightNote: '(note)',
+        callout: { label: 'Callout label', text: 'Callout text.' },
+        caption: 'Journey caption.',
+      },
+      reconciliation: {
+        eyebrow: 'E',
+        heading: 'Fixture reconciliation',
+        text: 'T.',
+        comparedLabel: 'versus',
+        cards: [{ record: 'R', source: 'S', status: 'Ok', statusIcon: 'check' }],
+        caption: 'C.',
+      },
+    })
+    expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual([
+      'Fixture challenge',
+      'Fixture approach',
+      'Fixture audience',
+      'Fixture assessment',
+      'Fixture journey',
+      'Fixture reconciliation',
+      'Fixture AI',
+      'Fixture handling',
+      'Fixture services',
+      'Fixture closing',
+    ])
+    const section = screen.getByRole('region', { name: 'Fixture journey' })
+    // No eyebrow lead or intro unless the data has them.
+    expect(section.querySelector('.sector-eyebrow')!.textContent).toBe('Fixture journey eyebrow')
+    expect(section.querySelector('.sector-subheading')!.textContent).toBe('Journey text.')
+    const ol = within(section).getByRole('list')
+    expect(ol.tagName).toBe('OL')
+    const [first, second] = within(ol).getAllByRole('listitem')
+    expect(first).toHaveClass('journey__step--highlight')
+    expect(second).not.toHaveClass('journey__step--highlight')
+    expect(first).toHaveAccessibleDescription('Callout label Callout text.')
+    expect(first.querySelector('.visually-hidden')!.textContent).toBe('(note)')
+    expect(first.querySelector('.definition-callout')).toHaveTextContent('Callout labelCallout text.')
+    expect(first.querySelector('.journey__caption')!.textContent).toBe('Journey caption.')
+    expect(second.querySelectorAll('.definition-callout, .journey__caption, .visually-hidden')).toHaveLength(0)
+    expect(second).not.toHaveAttribute('aria-describedby')
+    expect(within(section).queryAllByRole('heading')).toHaveLength(1)
+    cleanup()
+    renderFixture({
+      ...FIXTURE,
+      journey: {
+        eyebrowLead: 'Lead label',
+        eyebrow: 'Fixture journey eyebrow',
+        heading: 'Fixture journey',
+        intro: 'Journey intro.',
+        text: 'Journey text.',
+        steps: [{ name: 'Step one', system: 'System one' }],
+        highlight: 0,
+        highlightNote: '(note)',
+        callout: { label: 'L', text: 'T.' },
+        caption: 'C.',
+      },
+    })
+    const withLead = screen.getByRole('region', { name: 'Fixture journey' })
+    expect(withLead.querySelector('.sector-eyebrow')!.textContent).toBe('Lead label · Fixture journey eyebrow')
+    expect(withLead.querySelector('.sector-subheading')!.textContent).toBe('Journey intro. Journey text.')
   })
 
   it('leaves Delivered in stages out when the page has none', () => {

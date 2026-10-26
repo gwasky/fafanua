@@ -63,6 +63,11 @@ describe('pageHead', () => {
     const page = pages.find((item) => item.path === '/solutions/financial-services')!
     expect(pageHead(page)).toContain('<title>Reconciliation &amp; Banking Analytics Uganda | Fafanua</title>')
   })
+
+  it('gives Education the title of its issue, its ampersand escaped (#100)', () => {
+    const page = pages.find((item) => item.path === '/solutions/education')!
+    expect(pageHead(page)).toContain('<title>Learner &amp; Education Data Analytics Uganda | Fafanua</title>')
+  })
 })
 
 describe('pageStructuredData', () => {
