@@ -423,9 +423,13 @@
   margin-block-end: var(--space-3);
 }
 
-/* Paper, weight 300 and --text-2xl from the global heading styles. */
+/* Paper, weight 300 and --text-2xl from the global heading styles.
+   Below 48em no larger than 10vw, so with 200% page text its longest
+   word, "improvements.", still fits on a line of its own at 320px; at
+   the default text size --text-2xl is always the smaller. */
 .trust-assessment__next-statement {
   margin-block-end: var(--space-3);
+  font-size: min(var(--text-2xl), 10vw);
 }
 
 .trust-assessment__next-supporting {
@@ -455,15 +459,15 @@
   }
 
   /* Two per row, or one when a tile would be narrower than 12rem (with
-     200% page text), so no word breaks. */
+     200% page text), so no word breaks; never wider than the column. */
   .trust-assessment__tiles {
-    grid-template-columns: repeat(auto-fit, minmax(max(12rem, calc((100% - var(--space-4)) / 2)), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, max(12rem, calc((100% - var(--space-4)) / 2))), 1fr));
   }
 
   /* Accountable owner and Trust rating side by side, or stacked when one
      would be narrower than 10rem (at 1024px, and with 200% page text). */
   .lineage-trace__establish-list {
-    grid-template-columns: repeat(auto-fit, minmax(max(10rem, calc((100% - var(--space-6)) / 2)), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, max(10rem, calc((100% - var(--space-6)) / 2))), 1fr));
   }
 
   .trust-assessment__next {
@@ -481,6 +485,10 @@
 
   .trust-assessment__actions > .button {
     inline-size: auto;
+  }
+
+  .trust-assessment__next-statement {
+    font-size: var(--text-2xl);
   }
 }
 

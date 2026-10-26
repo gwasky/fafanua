@@ -211,8 +211,9 @@ test.describe('axe, a capability cell hovered', () => {
 })
 
 test.describe('axe, Data Trust Assessment in view (#71)', () => {
-  // The section and its illustrative example scrolled into view, at the
-  // default text size and with 200% page text.
+  // The section and its trace card scrolled into view, at the default
+  // text size and with 200% page text. The card is a div with no caption
+  // since the revised dark panel plan (#99): no figure or figcaption.
   for (const width of [320, 360, 1024, 1440]) {
     for (const text of ['100%', '200%'] as const) {
       test(`example in view with ${text} text at ${width}px`, async ({ page }, testInfo) => {
@@ -224,10 +225,12 @@ test.describe('axe, Data Trust Assessment in view (#71)', () => {
             .toBe('32px')
         }
         const section = page.getByRole('region', { name: assessmentHeading })
-        const figure = section.getByRole('figure')
-        await figure.scrollIntoViewIfNeeded()
-        await expect(figure).toBeInViewport()
-        await expect(figure.locator('figcaption')).toHaveText('Illustrative example')
+        const card = section.locator('.lineage-trace')
+        await card.scrollIntoViewIfNeeded()
+        await expect(card).toBeInViewport()
+        await expect(card.getByRole('heading', { level: 3 })).toHaveText('How we trace your numbers')
+        await expect(section.getByRole('figure')).toHaveCount(0)
+        await expect(section.locator('figure, figcaption')).toHaveCount(0)
 
         await expectNoAxeViolations(page, testInfo)
         // The section fits the page. (At 1024px with 200% page text the
@@ -241,27 +244,44 @@ test.describe('axe, Data Trust Assessment in view (#71)', () => {
       })
     }
   }
+
+  // The browser's own text size at 200% (Chromium's font size setting,
+  // through CDP), at 320, 1024 and 1440px: axe stays clean (#99).
+  for (const width of [320, 1024, 1440]) {
+    test(`example in view with the browser text size at 200% at ${width}px`, async ({ page }, testInfo) => {
+      const session = await page.context().newCDPSession(page)
+      await session.send('Page.enable')
+      await session.send('Page.setFontSizes', { fontSizes: { standard: 32 } })
+      await openPage(page, width)
+      await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize)).toBe('32px')
+      const card = page.getByRole('region', { name: assessmentHeading }).locator('.lineage-trace')
+      await card.scrollIntoViewIfNeeded()
+      await expect(card).toBeInViewport()
+
+      await expectNoAxeViolations(page, testInfo)
+    })
+  }
 })
 
-test.describe('axe, Data Trust Assessment in forced colours (#81, #82)', () => {
+test.describe('axe, Data Trust Assessment in forced colours (#81, #82, #99)', () => {
   // Every rule but color-contrast, as for the Managed Services panel
   // below (owner decision on #58: Chromium's emulation leaves
   // -webkit-text-fill-color authored, which axe pairs with the forced
-  // background). Then every drawing in the dark panel (#82) is checked as
-  // still drawn: the seven steps' rings and dots, the line joining them,
-  // the rating markers, the tiles' rules, the eyebrow row's and the closing
-  // strip's hairlines, the facts pill's outline, and the card's and the
-  // Trusted chip's transparent borders, each a non-zero solid border in a
-  // visible colour; the hollow marker still hollow; and the contour lines
-  // not drawn at all.
+  // background). Then every drawing in the dark panel is checked as still
+  // drawn: the five steps' rings and dots, the line joining them, the
+  // rating markers, the tiles' rules and borders, the eyebrow row's, the
+  // establish block's and the closing strip's hairlines, and the card's,
+  // the chips' and the Trusted chip's borders, each a non-zero solid
+  // border in a visible colour; the hollow marker still hollow; and no
+  // SVG at all (#99: the contour lines are gone).
   for (const width of [390, 1440]) {
     test(`example in view, forced colours, at ${width}px`, async ({ page }, testInfo) => {
       await page.emulateMedia({ forcedColors: 'active' })
       await openPage(page, width)
       const section = page.getByRole('region', { name: assessmentHeading })
-      const figure = section.getByRole('figure')
-      await figure.scrollIntoViewIfNeeded()
-      await expect(figure).toBeInViewport()
+      const card = section.locator('.lineage-trace')
+      await card.scrollIntoViewIfNeeded()
+      await expect(card).toBeInViewport()
 
       const results = await new AxeBuilder({ page })
         .withTags(AXE_TAGS)
@@ -283,24 +303,23 @@ test.describe('axe, Data Trust Assessment in forced colours (#81, #82)', () => {
             content: pseudo ? style.content : '""',
           }
         }
-        const figure = root.querySelector('figure')!
-        const names = [...figure.querySelectorAll('ol > li > p:first-child')]
+        const card = root.querySelector('.lineage-trace')!
+        const names = [...card.querySelectorAll('ol > li > span:first-child')]
+        const ratings = [...card.querySelectorAll(':scope > ul:last-child > li')]
+        const tiles = [...root.querySelectorAll('.trust-assessment__tiles > li')]
         return {
           rings: names.map((name) => border(name, '::before', 'Top')),
           dots: names.map((name) => border(name, '::after', 'Top')),
-          line: [...figure.querySelectorAll('ol > li:not(:last-child)')].map((step) =>
-            border(step, '::before', 'Left'),
-          ),
-          markers: [...figure.querySelectorAll(':scope > ul:last-child > li')].map((chip) =>
-            border(chip, '::before', 'Top'),
-          ),
-          tileRules: [...root.querySelectorAll('h3 + ul > li')].map((tile) => border(tile, '::before', 'Top')),
+          line: [...card.querySelectorAll('ol > li:not(:last-child)')].map((step) => border(step, '::before', 'Left')),
+          markers: ratings.map((chip) => border(chip, '::before', 'Top')),
+          chips: ratings.map((chip) => border(chip, null, 'Top')),
+          tileRules: tiles.map((tile) => border(tile, '::before', 'Top')),
+          tileBorders: tiles.map((tile) => border(tile, null, 'Top')),
           eyebrowRule: border(root.querySelector('.section-eyebrow')!.parentElement!, '::after', 'Top'),
+          establishRule: border(card.querySelector(':scope > div')!, null, 'Top'),
           stripRule: border(root.querySelector('.button')!.parentElement!.parentElement!, null, 'Top'),
-          pill: border(root.querySelector('h2 + p + p')!, null, 'Top'),
-          card: border(figure, null, 'Top'),
-          trusted: border(figure.querySelector(':scope > ul:last-child > li')!, null, 'Top'),
-          contours: getComputedStyle(root.querySelector('svg')!).display,
+          card: border(card, null, 'Top'),
+          svgs: root.querySelectorAll('svg').length,
           canvas: getComputedStyle(root).backgroundColor,
         }
       })
@@ -310,20 +329,23 @@ test.describe('axe, Data Trust Assessment in forced colours (#81, #82)', () => {
         ...drawn.dots,
         ...drawn.line,
         ...drawn.markers,
+        ...drawn.chips,
         ...drawn.tileRules,
+        ...drawn.tileBorders,
         drawn.eyebrowRule,
+        drawn.establishRule,
         drawn.stripRule,
-        drawn.pill,
         drawn.card,
-        drawn.trusted,
       ]
-      expect(drawn.rings, detail).toHaveLength(7)
-      expect(drawn.dots, detail).toHaveLength(7)
-      // Six segments join the seven markers into one line.
-      expect(drawn.line, detail).toHaveLength(6)
+      expect(drawn.rings, detail).toHaveLength(5)
+      expect(drawn.dots, detail).toHaveLength(5)
+      // Four segments join the five markers into one line.
+      expect(drawn.line, detail).toHaveLength(4)
       expect(drawn.markers, detail).toHaveLength(3)
+      expect(drawn.chips, detail).toHaveLength(3)
       expect(drawn.tileRules, detail).toHaveLength(4)
-      expect(drawn.contours, detail).toBe('none')
+      expect(drawn.tileBorders, detail).toHaveLength(4)
+      expect(drawn.svgs, detail).toBe(0)
       for (const line of all) {
         expect(line.content, detail).toBe('""')
         expect(line.width, detail).toBeGreaterThan(0)
