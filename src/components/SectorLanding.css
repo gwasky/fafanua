@@ -828,7 +828,7 @@
   line-height: var(--leading-snug);
 }
 
-/* ---- Learner journey and definition callout (#100) ---- */
+/* ---- Learner journey and definition callout (issue 100) ---- */
 
 /* An ol of steps on paper, each a decorative dot, the step name and its
    system. Below 48em one step per row, the dot on the start side and a

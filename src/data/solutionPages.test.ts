@@ -10,7 +10,7 @@ const pages = solutions.map((solution) => ({ ...solution, page: solutionPages[so
 
 // The two sectors still on the SEO plan §18 sections. Public Sector,
 // Health, Financial Services and Education are on the shared landing-page
-// foundation (#93, #94, #98, #100), whose copy is section 4 of
+// foundation (#93, #94, #98, issue 100), whose copy is section 4 of
 // _docs/fafanua-public-sector-landing-page-plan.md, of
 // _docs/fafanua-health-landing-page-plan.md, of
 // _docs/fafanua-financial-services-landing-page-plan.md and of
@@ -183,9 +183,9 @@ describe('solution landing pages', () => {
   })
 
   // The plan's three service cards, and the two the owner restored on
-  // 2026-10-26 (#100), which link the data warehousing and data
+  // 2026-10-26 (issue 100), which link the data warehousing and data
   // governance pages again (SEO plan §22).
-  it('links Education\'s service cards to exactly its five real, distinct services (#100, SEO plan §22)', () => {
+  it('links Education\'s service cards to exactly its five real, distinct services (issue 100, SEO plan §22)', () => {
     if (education.layout !== 'sector') throw new Error('Education is not on the foundation')
     const keys = servicePages.map((page) => page.key)
     const linked = education.services.items.map((item) => item.service)

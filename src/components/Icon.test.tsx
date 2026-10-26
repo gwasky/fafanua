@@ -5,7 +5,7 @@ import Icon from './Icon.tsx'
 
 // The landing pages' icons (#93): the 13 names of plan section 2a and the
 // Health page's hospital, flask and pill (#94), the Financial Services
-// page's swap (#98) and the Education page's cap (#100), each an inline,
+// page's swap (#98) and the Education page's cap (issue 100), each an inline,
 // decorative SVG in currentColor with no title and no text.
 const NAMES = [
   'book',

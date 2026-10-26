@@ -1,5 +1,5 @@
 // Checks the Education page's entry in solutionPages.ts against section 4
-// of _docs/fafanua-education-landing-page-plan.md (#100), so its wording
+// of _docs/fafanua-education-landing-page-plan.md (issue 100), so its wording
 // cannot drift from the plan: every string character for character, the
 // labels the plan writes in capitals compared in upper case (CSS shows
 // them so), the "; " and "Name: text" splits, the diagram's solid and
@@ -43,7 +43,7 @@ const page: SectorLandingPage = entry
 const journey = page.journey!
 const upper = (text: string) => text.toUpperCase()
 
-// The PM's first proposals for A1 and A2 (#100), replaced by the owner's
+// The PM's first proposals for A1 and A2 (issue 100), replaced by the owner's
 // own copy on 2026-10-26, and the plan's handling item the owner
 // replaced.
 const WITHDRAWN = [
@@ -198,8 +198,9 @@ describe('Education copy (plan section 4)', () => {
     expect(journey.caption).toBe('Illustrative example. Sample definition only.')
   })
 
-  it('places the journey after the assessment, under the owner\'s "What happens next", with the proposed opening sentence (#100)', () => {
+  it('places the journey after the assessment, under the owner\'s "What happens next", with the proposed opening sentence (issue 100)', () => {
     expect(journey.eyebrowLead).toBe(OWNER_DECISIONS.journeyEyebrowLead)
+    expect(journey.eyebrowLead).toBe('What happens next')
     expect(journey.intro).toBe(PROPOSALS.journeyIntro)
     // Both recorded in the plan's owner update for the section.
     expect(copySection).toContain(`"${OWNER_DECISIONS.journeyEyebrowLead}" before "${journey.eyebrow}"`)
@@ -225,7 +226,7 @@ describe('Education copy (plan section 4)', () => {
     expect([page.ai.icon, page.handling.icon]).toEqual(['gauge', 'shield'])
   })
 
-  it('uses After the assessment: its subheading, the plan\'s three service cards with no lead or detail, then the two restored links (#100)', () => {
+  it('uses After the assessment: its subheading, the plan\'s three service cards with no lead or detail, then the two restored links (issue 100)', () => {
     const t = 'After the assessment'
     expect(page.services.heading).toBe(cell(t, 'Heading'))
     expect(page.services.subheading).toBe(cell(t, 'Subheading'))
@@ -323,7 +324,7 @@ describe('Education copy (plan section 4)', () => {
 })
 
 describe('old Education strings', () => {
-  // The page's copy before #100: its description, lead, context, problems,
+  // The page's copy before issue 100: its description, lead, context, problems,
   // service links and texts, governance and activation. The old title is
   // a part of the new one, so it is checked by value. The solutions.ts
   // heading, summary and themes stay (homepage data), so their wording is

@@ -154,7 +154,7 @@ describe('future-ready source', () => {
 })
 
 // The one homepage string solutionPages.ts repeats here by design (#93,
-// #94, #98, #100): the Public Sector, Health, Financial Services and
+// #94, #98, issue 100): the Public Sector, Health, Financial Services and
 // Education heroes' secondary button, as a quoted literal, with the
 // number of times it may occur there (once per page). Only it is taken
 // out of that file before the scan below.

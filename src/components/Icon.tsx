@@ -10,7 +10,7 @@ export type { IconName }
 // assistive technology, with no title and no text, as every one sits next
 // to the words it illustrates. No icon library. The Health page (#94)
 // added hospital, flask and pill, the Financial Services page (#98) swap,
-// two opposing horizontal arrows, and the Education page (#100) cap, a
+// two opposing horizontal arrows, and the Education page (issue 100) cap, a
 // mortarboard, in the same style.
 const paths = {
   book: (

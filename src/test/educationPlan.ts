@@ -1,8 +1,9 @@
-// Section 4 of _docs/fafanua-education-landing-page-plan.md (#100),
+// Section 4 of _docs/fafanua-education-landing-page-plan.md (issue 100),
 // parsed into the Education page's copy, for the tests that check the
 // data and the rendered page against it. The ?raw import resolves
 // relative to this file and is never part of the production bundle.
 import planSource from '../../_docs/fafanua-education-landing-page-plan.md?raw'
+import { assessmentNextEyebrow } from '../data/assessment.ts'
 import { parseLandingPlan } from './landingPlan.ts'
 
 export { buttonLabel, list, marked, named } from './landingPlan.ts'
@@ -19,13 +20,13 @@ const connectors = (kind: string, end: string) =>
 export const SOLID_SOURCES = connectors('Solid teal', ' to the middle box')
 export const DASHED_SOURCES = connectors('Faint dashed', '\\.')
 
-/** The title and description the issue fixes (#100, section 1). */
+/** The title and description the issue fixes (issue 100, section 1). */
 export const TITLE = 'Learner & Education Data Analytics Uganda | Fafanua'
 export const DESCRIPTION =
   'Every learner, counted the same way: education data analytics for universities, colleges, schools and training providers in Uganda, on a trusted data foundation.'
 
 /**
- * The owner's additions to the plan copy (2026-10-26, #100), which
+ * The owner's additions to the plan copy (2026-10-26, issue 100), which
  * replaced the PM's first proposals: A1, the closing panel's follow-up
  * sentence, which makes the protected "trusted data foundation" visible,
  * and A2, the Education institutions card's second paragraph. Both are
@@ -39,14 +40,16 @@ export const OWNER_ADDITIONS = {
 } as const
 
 /**
- * The owner's other decisions (2026-10-26, #100): the learner journey's
+ * The owner's other decisions (2026-10-26, issue 100): the learner journey's
  * eyebrow lead, which places it after the assessment, and the strings
  * proposed to carry them out, pending the owner's review: the journey's
  * opening sentence, and the two service cards that link the data
  * warehousing and data governance pages again.
  */
 export const OWNER_DECISIONS = {
-  journeyEyebrowLead: 'What happens next',
+  // The same words as the homepage's closing eyebrow, which the scans
+  // keep to assessment.ts and the one allow-listed use in solutionPages.ts.
+  journeyEyebrowLead: assessmentNextEyebrow,
 } as const
 
 export const PROPOSALS = {

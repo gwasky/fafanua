@@ -19,7 +19,7 @@ import './SectorLanding.css'
 // bottom: the hero with the trace diagram, the challenge and approach,
 // the promise strip where the page has one (#98), who we work with, the
 // Data Trust Assessment (#assessment), the learner journey where the page
-// has one (#100), the reconciliation cards where the page has them (#98),
+// has one (issue 100), the reconciliation cards where the page has them (#98),
 // Delivered in stages where the page has them, the
 // AI and handling cards, the service cards and the closing panel
 // (#contact). PageLayout puts it in

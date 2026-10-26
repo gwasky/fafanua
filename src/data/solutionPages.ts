@@ -10,7 +10,7 @@ import type { ServiceKey } from './servicePages.ts'
 // metrics, certifications or performance claims (§18), and no DHIS2
 // positioning (§9). Public Sector, Health, Financial Services and
 // Education are on the shared landing-page foundation (#93, #94, #98,
-// #100): their copy is section 4 of
+// issue 100): their copy is section 4 of
 // _docs/fafanua-public-sector-landing-page-plan.md, of
 // _docs/fafanua-health-landing-page-plan.md, of
 // _docs/fafanua-financial-services-landing-page-plan.md and of
@@ -25,7 +25,7 @@ import type { ServiceKey } from './servicePages.ts'
 // closing panel (#93, #94). On Financial Services (#98) the owner added
 // two strings on 2026-10-24, marked below: one after the Financial
 // institutions card's text, and one that makes the protected phrase
-// visible in the closing panel. On Education (#100) the owner added the
+// visible in the closing panel. On Education (issue 100) the owner added the
 // same two on 2026-10-26, replaced the item on learners under 18, put the
 // learner journey under "What happens next" and restored two service
 // links, all marked below; the journey's opening sentence and the two
@@ -182,7 +182,7 @@ export type SectorLandingPage = {
     readonly caption: string
   }
   /**
-   * The learner journey after the assessment band (Education, #100); a
+   * The learner journey after the assessment band (Education, issue 100); a
    * page may leave it out. Each step is "name: system"; `highlight` is
    * the index of the step whose definition the callout shows, and
    * `highlightNote` the visually hidden text after that step's name. The
@@ -190,7 +190,7 @@ export type SectorLandingPage = {
    */
   readonly journey?: {
     /** An optional label before the eyebrow, in the same line, after a
-     * middle dot (#100). */
+     * middle dot (issue 100). */
     readonly eyebrowLead?: string
     readonly eyebrow: string
     readonly heading: string
@@ -723,7 +723,7 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
       card: {
         heading: 'Education institutions',
         text: 'For institutions and programmes that report to a board, a ministry or a funder.',
-        // Owner addition (2026-10-26, #100): A2, the SEO plan §11 keywords.
+        // Owner addition (2026-10-26, issue 100): A2, the SEO plan §11 keywords.
         detail:
           'We help education institutions bring together data from admissions, learning, exams and finance systems for learner analytics, education dashboards and cohort analysis — giving teams a clearer view of student retention, learner progression and graduate outcomes.',
         icon: 'cap',
@@ -751,12 +751,12 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
       ],
     },
     journey: {
-      // Owner decision (2026-10-26, #100): the section reads as work that
+      // Owner decision (2026-10-26, issue 100): the section reads as work that
       // may follow the assessment, under "What happens next".
       eyebrowLead: 'What happens next',
       eyebrow: 'One learner, one record',
       heading: 'Follow every learner, end to end',
-      // Owner decision (2026-10-26, #100): proposed sentence before the
+      // Owner decision (2026-10-26, issue 100): proposed sentence before the
       // plan's text, pending the owner's review.
       intro:
         'Where the assessment identifies fragmented learner records, we can then help you unify admissions, learning, assessment, finance and outcomes data.',
@@ -792,7 +792,7 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
       icon: 'shield',
       items: [
         'Learner data is pseudonymised wherever the analysis allows.',
-        // Owner decision (2026-10-26, #100): replaces the plan's item on
+        // Owner decision (2026-10-26, issue 100): replaces the plan's item on
         // learners under 18.
         'Education data can be sensitive, particularly where it relates to children and young people. We design access, governance and reporting controls around the organisation’s policies, legal obligations and the sensitivity of the data.',
         'Ownership and access rules are agreed before any pipeline is built.',
@@ -820,7 +820,7 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
           icon: 'chart',
           service: 'business-intelligence-and-analytics',
         },
-        // Owner decision (2026-10-26, #100): the links to the data
+        // Owner decision (2026-10-26, issue 100): the links to the data
         // warehousing and data governance service pages restored as two
         // more cards; their copy is proposed, pending the owner's review.
         {
@@ -841,7 +841,7 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
       eyebrow: 'Get started',
       heading: 'Build an education data foundation you can trust',
       text: 'Which learner figure do you trust least? Tell us about the reports your leadership, ministry and funders rely on.',
-      // Owner addition (2026-10-26, #100): A1, the protected phrase, visible.
+      // Owner addition (2026-10-26, issue 100): A1, the protected phrase, visible.
       followUp:
         'We help education organisations build a trusted data foundation for reliable reporting, clearer learner journeys and better decisions.',
     },

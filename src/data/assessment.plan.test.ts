@@ -552,7 +552,7 @@ describe('assessment source', () => {
 })
 
 // The homepage strings solutionPages.ts repeats by design (#93, #94, #98,
-// #100: the Public Sector, Health, Financial Services and Education
+// issue 100: the Public Sector, Health, Financial Services and Education
 // pages' plan copy), as quoted literals, each with the number of times it
 // may occur there (once per foundation page that uses it; Financial
 // Services stores "After the assessment" twice, as its services heading
@@ -562,7 +562,7 @@ describe('assessment source', () => {
 // it, so it left the list; the foundation pages' 'Prioritised roadmap' is
 // now also a homepage tile label (#99). 'What happens next', the
 // homepage's closing eyebrow, is also the Education learner journey's
-// eyebrow lead, by the owner's decision (2026-10-26, #100). Only these
+// eyebrow lead, by the owner's decision (2026-10-26, issue 100). Only these
 // are taken out of that file before the scans below; everything else in
 // it is scanned.
 const LANDING_ALLOWED: Allowed = [

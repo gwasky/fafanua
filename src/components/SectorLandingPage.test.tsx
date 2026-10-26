@@ -8,7 +8,7 @@ import SectorLandingPage from './SectorLandingPage.tsx'
 // The shared landing-page foundation's components (#93) hold no copy:
 // rendered with another sector's data (a fixture, neither Public Sector,
 // Health, Financial Services nor Education), they show that data and none
-// of those pages' (#94, #98, #100).
+// of those pages' (#94, #98, issue 100).
 
 beforeEach(() => {
   vi.stubGlobal('matchMedia', (media: string) => ({
@@ -159,7 +159,7 @@ describe('SectorLandingPage with another sector\'s data', () => {
     expect(main.querySelectorAll('.journey, .definition-callout')).toHaveLength(0)
   })
 
-  it('renders the learner journey from the data when given, right after the assessment band, with the callout and caption in the highlighted step (#100)', () => {
+  it('renders the learner journey from the data when given, right after the assessment band, with the callout and caption in the highlighted step (issue 100)', () => {
     renderFixture({
       ...FIXTURE,
       journey: {

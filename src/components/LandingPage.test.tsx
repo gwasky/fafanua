@@ -5,6 +5,7 @@ import { managedServices, services } from '../data/services.ts'
 import { footerSolutions, solutions } from '../data/solutions.ts'
 import { notFound, pages, type Page } from '../pages.ts'
 import { expectNoAxeViolations } from '../test/axe.ts'
+import * as eduPlan from '../test/educationPlan.ts'
 import * as fsPlan from '../test/financialServicesPlan.ts'
 import * as healthPlan from '../test/healthPlan.ts'
 import { buttonLabel, cell, figureDescription, list, marked, named, OWNER_ADDITIONS, stage } from '../test/publicSectorPlan.ts'
@@ -32,8 +33,9 @@ const sectionPages = solutionPages.filter((page) => page.kind === 'solution' && 
 const publicSector = solutionPages.find((page) => page.path === '/solutions/public-sector')!
 const health = solutionPages.find((page) => page.path === '/solutions/health')!
 const financialServices = solutionPages.find((page) => page.path === '/solutions/financial-services')!
-// The pages on the shared landing-page foundation (#93, #94, #98).
-const foundationPages: readonly Page[] = [publicSector, health, financialServices]
+const education = solutionPages.find((page) => page.path === '/solutions/education')!
+// The pages on the shared landing-page foundation (#93, #94, #98, issue 100).
+const foundationPages: readonly Page[] = [publicSector, health, financialServices, education]
 
 // Each foundation page's closing panel: its heading, and its text after
 // the eyebrow (the plan's text and the owner's follow-up).
@@ -49,6 +51,10 @@ const CLOSING: Record<string, { heading: string; text: string }> = {
   '/solutions/financial-services': {
     heading: 'Build a financial data foundation you can trust',
     text: `${fsPlan.cell('Closing panel', 'Text')} ${fsPlan.OWNER_ADDITIONS.closingFollowUp}`,
+  },
+  '/solutions/education': {
+    heading: 'Build an education data foundation you can trust',
+    text: `${eduPlan.cell('Closing panel', 'Text')} ${eduPlan.OWNER_ADDITIONS.closingFollowUp}`,
   },
 }
 const paths = new Set(pages.map((page) => page.path))
@@ -104,7 +110,7 @@ describe.each(pages.map((page) => [page.path, page] as const))('%s', (_path, pag
     expect(within(footer).getByRole('link', { name: 'Solutions' })).toHaveAttribute('href', '/#solutions')
     expect(within(footer).getByRole('link', { name: 'Contact' })).toHaveAttribute('href', '#contact')
     if (page.kind === 'solution' && page.copy.layout === 'sector') {
-      // The page's own closing panel (#93, #94, #98) replaces the Contact
+      // The page's own closing panel (#93, #94, #98, issue 100) replaces the Contact
       // section: the button and the address, both opening an email.
       const expected = CLOSING[page.path]
       expect(expected, page.path).toBeDefined()
@@ -237,9 +243,9 @@ describe('service pages', () => {
 })
 
 describe('solution pages', () => {
-  // The three sectors still on the §18 sections; Public Sector, Health and
-  // Financial Services are on the shared landing-page foundation (#93,
-  // #94, #98), checked below.
+  // The two sectors still on the §18 sections; Public Sector, Health,
+  // Financial Services and Education are on the shared landing-page
+  // foundation (#93, #94, #98, issue 100), checked below.
   it.each(sectionPages.map((page) => [page.path, page] as const))(
     '%s has the SEO plan §18 sections in order',
     (_path, page) => {
@@ -268,8 +274,9 @@ describe('solution pages', () => {
     expect(main).not.toHaveTextContent('Health Data & Analytics Solutions')
   })
 
-  // Each §18 page (Financial Services was the first until #98, which
-  // moved it onto the foundation, with no Other sectors section).
+  // Each §18 page (Financial Services was the first until #98, and
+  // Education the last until issue 100, which moved them onto the foundation,
+  // with no Other sectors section).
   it.each(sectionPages.map((page) => [page.path, page] as const))('%s links every other sector, and not itself', (_path, page) => {
     renderPage(page)
     const others = within(screen.getByRole('region', { name: 'Other sectors' })).getAllByRole('link')
@@ -543,12 +550,14 @@ describe('Public Sector page', () => {
     expect(main().querySelector('a[href^="tel:"]')).toBeNull()
   })
 
-  it('puts main.sector-landing on the foundation pages (Public Sector, Health and Financial Services) only, and leaves out the Contact section there', () => {
+  it('puts main.sector-landing on the foundation pages (Public Sector, Health, Financial Services and Education) only, and leaves out the Contact section there', () => {
     expect(foundationPages.map((page) => page.path)).toEqual([
       '/solutions/public-sector',
       '/solutions/health',
       '/solutions/financial-services',
+      '/solutions/education',
     ])
+    expect(sectionPages.map((page) => page.path)).toEqual(['/solutions/retail-distribution', '/solutions/development-impact'])
     for (const page of [...pages, notFound]) {
       const { unmount } = renderPage(page)
       const onFoundation = foundationPages.includes(page)
@@ -558,7 +567,7 @@ describe('Public Sector page', () => {
     }
   })
 
-  it('marks the header\'s Solutions link as current on the foundation pages (Public Sector, Health and Financial Services) only', () => {
+  it('marks the header\'s Solutions link as current on the foundation pages (Public Sector, Health, Financial Services and Education) only', () => {
     for (const page of [...pages, notFound]) {
       const { unmount } = renderPage(page)
       const onFoundation = foundationPages.includes(page)
@@ -1324,6 +1333,383 @@ describe('Financial Services page', () => {
 
   it('has no img, lang, tabindex or contenteditable in main, and no axe violations', async () => {
     const { container } = renderPage(financialServices)
+    expect(main().querySelectorAll('img, canvas, [lang], [tabindex], [contenteditable]')).toHaveLength(0)
+    await expectNoAxeViolations(container)
+  })
+})
+
+// The Education page on the shared landing-page foundation (issue 100),
+// against section 4 of _docs/fafanua-education-landing-page-plan.md, with
+// the owner's A1, A2 and decisions (2026-10-26) and the strings proposed
+// to carry them out.
+describe('Education page', () => {
+  const { cell: ecell, list: elist, marked: emarked, named: enamed, buttonLabel: ebutton } = eduPlan
+  const added = eduPlan.OWNER_ADDITIONS
+  const main = () => screen.getByRole('main')
+  const headings = (level: number) =>
+    within(main()).getAllByRole('heading', { level }).map((heading) => heading.textContent)
+
+  // Every text node in main, trimmed, in DOM order.
+  function texts(root: Element) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+    const out: string[] = []
+    while (walker.nextNode()) {
+      const text = walker.currentNode.textContent!.trim()
+      if (text) out.push(text)
+    }
+    return out
+  }
+
+  const upperIfPlan = (text: string, plan: string) => (text.toUpperCase() === plan ? plan : text)
+  const t = 'One learner, one record'
+  const steps = () => elist(ecell(t, 'Journey steps, in order')).map(enamed)
+  const journeyList = () => screen.getByRole('region', { name: ecell(t, 'Heading') }).querySelector('ol')!
+
+  it('has the plan\'s h2s and h3s, in order, with the two restored service cards', () => {
+    renderPage(education)
+    expect(headings(1)).toEqual([ecell('Hero', 'Heading (`h1`)')])
+    expect(headings(1)).toEqual(['Every learner, counted the same way.'])
+    expect(headings(2)).toEqual([
+      'The challenge',
+      'Our approach',
+      'Who we work with',
+      'The Data Trust Assessment: three weeks, fixed fee',
+      'Follow every learner, end to end',
+      'What this means for AI',
+      'Handled responsibly',
+      'After the assessment',
+      'Build an education data foundation you can trust',
+    ])
+    expect(headings(3)).toEqual([
+      'Education institutions',
+      'Lineage map',
+      'Trust scorecard',
+      'Shared definitions',
+      'Prioritised roadmap',
+      'Integrate and model',
+      'Quality and governance',
+      'Reporting and dashboards',
+      'Learner data warehouse',
+      'Data governance and definitions',
+    ])
+  })
+
+  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description, the hidden note, the owner\'s A1, A2 and decisions, and the proposals (issue 100)', () => {
+    renderPage(education)
+    const plan = [
+      ...ecell('Hero', 'Breadcrumb').split(' › '),
+      ecell('Hero', 'Eyebrow'),
+      ecell('Hero', 'Heading (`h1`)'),
+      ecell('Hero', 'Lead'),
+      ebutton(ecell('Hero', 'Primary button')),
+      '→',
+      ebutton(ecell('Hero', 'Secondary button')),
+      eduPlan.figureDescription,
+      ecell('Trace diagram', 'Left column heading'),
+      ...elist(ecell('Trace diagram', 'Sources, in order')),
+      ecell('Trace diagram', 'Middle box heading'),
+      ...elist(ecell('Trace diagram', 'Middle steps')),
+      ecell('Trace diagram', 'Middle footnote'),
+      ecell('Trace diagram', 'Right column heading'),
+      ...elist(ecell('Trace diagram', 'Figures and ratings')).flatMap((entry) => {
+        const { name, rating } = emarked(entry)
+        return [name, rating!]
+      }),
+      ecell('Trace diagram', 'Caption'),
+      ...[1, 2].flatMap((n) => [ecell('Challenge and approach', `Card ${n} heading`), ecell('Challenge and approach', `Card ${n} text`)]),
+      ecell('Who we work with', 'Heading'),
+      ecell('Who we work with', 'Subheading'),
+      ecell('Who we work with', 'Card heading'),
+      ecell('Who we work with', 'Card text'),
+      added.audienceDetail,
+      ...elist(ecell('Who we work with', 'Checklist')),
+      ecell('The Data Trust Assessment', 'Eyebrow'),
+      ecell('The Data Trust Assessment', 'Heading'),
+      ecell('The Data Trust Assessment', 'Text'),
+      ...[1, 2, 3, 4].flatMap((n) => Object.values(enamed(ecell('The Data Trust Assessment', `Deliverable ${n}`)))),
+      `${eduPlan.OWNER_DECISIONS.journeyEyebrowLead.toUpperCase()} · ${ecell(t, 'Eyebrow')}`,
+      ecell(t, 'Heading'),
+      `${eduPlan.PROPOSALS.journeyIntro} ${ecell(t, 'Text')}`,
+      ...steps().flatMap((step) =>
+        step.name === 'Learn'
+          ? [step.name, eduPlan.HIGHLIGHT_NOTE, step.text, ecell(t, 'Callout label'), ecell(t, 'Callout text'), ecell(t, 'Caption')]
+          : [step.name, step.text],
+      ),
+      ecell('AI and responsible handling', 'Card 1 heading'),
+      ecell('AI and responsible handling', 'Card 1 text'),
+      ...elist(ecell('AI and responsible handling', 'Card 1 chips')).map((chip) => emarked(chip).name),
+      ecell('AI and responsible handling', 'Card 2 heading'),
+      ...eduPlan.handlingItems(ecell('AI and responsible handling', 'Card 2 checklist')),
+      ecell('After the assessment', 'Heading'),
+      ecell('After the assessment', 'Subheading'),
+      ...[1, 2, 3].flatMap((n) => Object.values(enamed(ecell('After the assessment', `Card ${n}`)))),
+      ...eduPlan.PROPOSALS.services.flatMap((card) => [card.name, card.text]),
+      ecell('Closing panel', 'Eyebrow'),
+      ecell('Closing panel', 'Heading'),
+      `${ecell('Closing panel', 'Text')} ${added.closingFollowUp}`,
+      ebutton(ecell('Closing panel', 'Primary button')),
+      '→',
+      ebutton(ecell('Closing panel', 'Secondary link')),
+    ]
+    const shown = texts(main())
+    // Labels the plan writes in capitals are stored in sentence case and
+    // capitalised by CSS.
+    expect(shown.map((text, index) => upperIfPlan(text, plan[index]))).toEqual(plan)
+    expect(shown.filter((text, index) => text !== plan[index])).toEqual([
+      'Education solutions',
+      'Start with trust',
+      'What happens next · One learner, one record',
+      'Definition agreed',
+      'Get started',
+    ])
+    // Digits only in the callout's "30".
+    expect(main().textContent!.match(/\d+/g)).toEqual(['30'])
+  })
+
+  it('shows the protected "trusted data foundation" in the closing panel (owner, A1, issue 100)', () => {
+    renderPage(education)
+    const closing = screen.getByRole('region', { name: 'Build an education data foundation you can trust' })
+    expect(closing).toHaveTextContent('trusted data foundation')
+    expect(closing.querySelector('.sector-closing__body')).not.toHaveClass('visually-hidden')
+  })
+
+  it('has the breadcrumbs Home › Solutions › Education', () => {
+    renderPage(education)
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(within(trail).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['Home', 'Solutions', 'Education'])
+    expect(within(trail).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/')
+    expect(within(trail).getByRole('link', { name: 'Solutions' })).toHaveAttribute('href', '/#solutions')
+    expect(within(trail).getAllByRole('listitem')[2]).toHaveAttribute('aria-current', 'page')
+    expect(trail.textContent).not.toContain('›')
+  })
+
+  it('shows one hero lead, plain paired cards, and the audience card with its cap badge, A2 and four plain items', () => {
+    renderPage(education)
+    const hero = screen.getByRole('region', { name: 'Every learner, counted the same way.' })
+    expect([...hero.querySelectorAll('.sector-hero__lead')].map((p) => p.textContent)).toEqual([ecell('Hero', 'Lead')])
+    for (const n of [1, 2]) {
+      const body = screen.getByRole('heading', { level: 2, name: ecell('Challenge and approach', `Card ${n} heading`) }).parentElement!
+      expect([...body.children].map((element) => element.tagName)).toEqual(['H2', 'P'])
+    }
+    const card = screen.getByRole('region', { name: 'Who we work with' }).querySelector('.audience-card')!
+    expect([...card.querySelectorAll('.audience-card__text')].map((p) => [p.tagName, p.textContent])).toEqual([
+      ['P', ecell('Who we work with', 'Card text')],
+      ['P', added.audienceDetail],
+    ])
+    // The cap badge: the same paths as the cap icon.
+    const badge = card.querySelector(':scope > .icon-badge svg')!
+    expect([...badge.querySelectorAll('path')].map((path) => path.getAttribute('d'))[0]).toBe('M12 5 2.75 9.5 12 14l9.25-4.5Z')
+    const items = within(card.querySelector('ul')!).getAllByRole('listitem')
+    expect(items.map((item) => item.textContent)).toEqual(elist(ecell('Who we work with', 'Checklist')))
+    expect(card.querySelectorAll('strong, .audience-card__label')).toHaveLength(0)
+  })
+
+  it('labels section#assessment by its h2, and keeps implementation work and the journey out of it', () => {
+    renderPage(education)
+    const section = screen.getByRole('region', { name: 'The Data Trust Assessment: three weeks, fixed fee' })
+    expect(section.tagName).toBe('SECTION')
+    expect(section).toHaveAttribute('id', 'assessment')
+    expect(document.getElementById(section.getAttribute('aria-labelledby')!)!.tagName).toBe('H2')
+    expect(within(within(section).getByRole('list')).getAllByRole('listitem')).toHaveLength(4)
+    expect(section.textContent).not.toMatch(/connect|integrat|reconcil|pipeline|dashboard|build/i)
+    expect(section.querySelector('.journey, .definition-callout')).toBeNull()
+  })
+
+  it('shows the journey as its own section after the assessment band: an ol of exactly five steps in plan order, no headings in it', () => {
+    renderPage(education)
+    const section = screen.getByRole('region', { name: ecell(t, 'Heading') })
+    expect(section.tagName).toBe('SECTION')
+    const assessment = document.getElementById('assessment')!
+    expect(assessment.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(assessment.nextElementSibling).toBe(section)
+    expect(section.querySelector('.sector-eyebrow')!.textContent).toBe('What happens next · One learner, one record')
+    const ol = journeyList()
+    expect(ol).toHaveAttribute('role', 'list')
+    const items = within(ol).getAllByRole('listitem')
+    expect(items).toHaveLength(5)
+    expect(ol.children).toHaveLength(5)
+    expect(items.map((item) => [item.querySelector('.journey__name')!.textContent, item.querySelector('.journey__system')!.textContent])).toEqual(
+      steps().map((step) => [step.name, step.text]),
+    )
+    expect(within(ol).queryAllByRole('heading')).toHaveLength(0)
+    expect(ol.querySelectorAll('h1, h2, h3, h4, h5, h6')).toHaveLength(0)
+    for (const item of items) {
+      const dot = item.querySelector('.journey__dot')!
+      expect(dot).toHaveAttribute('aria-hidden', 'true')
+      expect(dot.textContent).toBe('')
+    }
+    expect(section.querySelectorAll('svg, img')).toHaveLength(0)
+  })
+
+  it('highlights only Learn: its class, the hidden "(definition shown below)" after its name, then its system, the callout and the caption inside it, described by the callout', () => {
+    renderPage(education)
+    const items = within(journeyList()).getAllByRole('listitem')
+    expect(items.map((item) => item.classList.contains('journey__step--highlight'))).toEqual([false, false, true, false, false])
+    const learn = items[2]
+    const order = [...learn.querySelectorAll('.journey__name, .visually-hidden, .journey__system, .definition-callout, .journey__caption')]
+    expect(order.map((element) => element.className)).toEqual([
+      'journey__name',
+      'visually-hidden',
+      'journey__system',
+      'definition-callout',
+      'journey__caption',
+    ])
+    expect(order[1].textContent).toBe('(definition shown below)')
+    const callout = learn.querySelector('.definition-callout')!
+    expect(callout.id).toBeTruthy()
+    expect(learn).toHaveAttribute('aria-describedby', callout.id)
+    expect([...callout.children].map((element) => [element.tagName, element.textContent])).toEqual([
+      ['P', 'Definition agreed'],
+      ['P', ecell(t, 'Callout text')],
+    ])
+    expect(learn).toHaveAccessibleDescription(`Definition agreed ${ecell(t, 'Callout text')}`)
+    expect(learn.querySelector('.journey__caption')!.tagName).toBe('P')
+    expect(learn.querySelector('.journey__caption')!.textContent).toBe('Illustrative example. Sample definition only.')
+    for (const item of [items[0], items[1], items[3], items[4]]) {
+      expect(item).not.toHaveAttribute('aria-describedby')
+      expect(item.querySelectorAll('.visually-hidden, .definition-callout, .journey__caption')).toHaveLength(0)
+    }
+    // Neither the callout nor the caption repeats.
+    expect(main().querySelectorAll('.definition-callout')).toHaveLength(1)
+    expect(main().textContent!.split(ecell(t, 'Callout text'))).toHaveLength(2)
+    expect(main().textContent!.split('Sample definition only.')).toHaveLength(2)
+  })
+
+  it('gives each service card its h3 link, then its text, with no lead or detail', () => {
+    renderPage(education)
+    const cardItems = within(screen.getByRole('region', { name: 'After the assessment' })).getAllByRole('listitem')
+    expect(cardItems.map((card) => [...card.querySelectorAll('h3, p')].map((element) => [element.tagName, element.className, element.textContent]))).toEqual(
+      [...[1, 2, 3].map((n) => enamed(ecell('After the assessment', `Card ${n}`))), ...eduPlan.PROPOSALS.services].map(({ name, text }) => [
+        ['H3', 'sector-card-heading sector-card-heading--small', name],
+        ['P', 'service-card-lp__text', text],
+      ]),
+    )
+  })
+
+  it('links the hero buttons to the email and #assessment, the five service cards to their pages and the closing panel to the email', () => {
+    renderPage(education)
+    const hero = screen.getByRole('region', { name: 'Every learner, counted the same way.' })
+    expect(within(hero).getByRole('link', { name: 'Book a data trust assessment' })).toHaveAttribute('href', `mailto:${email}`)
+    const jump = within(hero).getByRole('link', { name: 'See how the assessment works' })
+    expect(jump).toHaveAttribute('href', '#assessment')
+    expect(jump).toHaveAttribute('data-focus-section', 'assessment')
+    const closing = screen.getByRole('region', { name: 'Build an education data foundation you can trust' })
+    expect(within(closing).getByRole('link', { name: 'Book a data trust assessment' })).toHaveAttribute('href', `mailto:${email}`)
+    expect(within(closing).getByRole('link', { name: email })).toHaveAttribute('href', `mailto:${email}`)
+    expect(mainLinks()).toEqual([
+      ['Home', '/'],
+      ['Solutions', '/#solutions'],
+      ['Book a data trust assessment→', `mailto:${email}`],
+      ['See how the assessment works', '#assessment'],
+      ['Integrate and model', '/services/data-engineering-integration'],
+      ['Quality and governance', '/services/data-quality-reliability'],
+      ['Reporting and dashboards', '/services/business-intelligence-analytics'],
+      ['Learner data warehouse', '/services/data-warehousing-analytics-modelling'],
+      ['Data governance and definitions', '/services/data-governance-metadata'],
+      ['Book a data trust assessment→', `mailto:${email}`],
+      [email, `mailto:${email}`],
+    ])
+    const mailtos = main().querySelectorAll('a[href^="mailto:"]')
+    expect(mailtos).toHaveLength(3)
+    for (const link of mailtos) expect(link).toHaveAttribute('href', 'mailto:info@fafanua.tech')
+  })
+
+  it('has no Delivered in stages, promise strip or reconciliation section', () => {
+    renderPage(education)
+    // The ordered lists: the breadcrumbs, the trace's steps and the
+    // journey.
+    const ols = [...main().querySelectorAll('ol')]
+    expect(ols).toHaveLength(3)
+    expect(ols[0].closest('nav')).toHaveAccessibleName('Breadcrumb')
+    expect(ols[1].closest('figure')).not.toBeNull()
+    expect(ols[2]).toHaveClass('journey')
+    expect(main().querySelectorAll('ol.stages, .promise, .reconciliation')).toHaveLength(0)
+    expect(main().textContent).not.toMatch(/Delivered in stages|No big-bang projects|Moves on when|Stage/)
+  })
+
+  it('draws the figure with its caption, description, five sources (two faded), five steps and three rated figures', () => {
+    renderPage(education)
+    const figure = screen.getByRole('figure')
+    expect(figure.querySelector(':scope > figcaption')!.textContent).toBe('Illustrative example. Sample data only.')
+    expect(figure).toHaveAccessibleDescription(eduPlan.figureDescription)
+    expect(document.getElementById(figure.getAttribute('aria-describedby')!)).toHaveClass('visually-hidden')
+    const [sources, traceSteps, figures] = within(figure).getAllByRole('list')
+    expect(within(sources).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      'Admissions',
+      'Exams & grading',
+      'Student information system',
+      'Learning platform',
+      'Fees & finance',
+    ])
+    expect(traceSteps.tagName).toBe('OL')
+    expect(within(traceSteps).getAllByRole('listitem').map((item) => item.textContent)).toEqual(elist(ecell('Trace diagram', 'Middle steps')))
+    expect(within(figures).getAllByRole('listitem').map((item) => texts(item))).toEqual([
+      ['Active learners', 'Trusted with caveats'],
+      ['Fee collection rate', 'Trusted'],
+      ['Completion rate', 'Not yet trusted'],
+    ])
+    expect([...sources.querySelectorAll('li')].map((item) => [
+      item.classList.contains('trace__source--faded'),
+      item.querySelector('.trace__connector--dashed') !== null,
+    ])).toEqual([
+      [true, true],
+      [true, true],
+      [false, false],
+      [false, false],
+      [false, false],
+    ])
+    for (const hidden of figure.querySelectorAll('.trace__connector, .rating-marker, svg')) {
+      expect(hidden).toHaveAttribute('aria-hidden', 'true')
+      expect(hidden.textContent).toBe('')
+    }
+    expect(within(figure).queryByRole('heading')).toBeNull()
+  })
+
+  it('has none of the removed sections or strings, no compliance claim and no name', () => {
+    renderPage(education)
+    for (const name of [
+      'Education Data & Analytics',
+      'Sector context',
+      'Common data problems',
+      'How Fafanua helps',
+      'Reporting and analytics use cases',
+      'Data quality and governance',
+      'Operational activation',
+      'Other sectors',
+    ]) {
+      expect(screen.queryByRole('heading', { name })).toBeNull()
+    }
+    expect(main().querySelector('#use-cases')).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Education dashboards' })).toBeNull()
+    const text = main().textContent!
+    for (const removed of [
+      'Education Data & Analytics',
+      'For universities, colleges, school networks',
+      'Student-system integration',
+      'Learner lifecycle data models',
+      'Education data governance',
+      'Let’s build a data foundation',
+      'Which number do you trust least?',
+      'Other sectors',
+      'under 18',
+      '+256',
+      'Reverse ETL',
+      'Fafanua Intelligence',
+      'AI-powered',
+    ]) {
+      expect(text).not.toContain(removed)
+    }
+    for (const theme of solutions.find((solution) => solution.id === 'education')!.themes) {
+      expect(text).not.toContain(theme)
+    }
+    // The plan's "Certification records" is the only "certification".
+    expect(text.replace('Certification records', '')).not.toMatch(eduPlan.COMPLIANCE_TERMS)
+    expect(text).not.toMatch(eduPlan.NAMING_TERMS)
+    expect(main().querySelector('a[href^="tel:"]')).toBeNull()
+  })
+
+  it('has no img, lang, tabindex or contenteditable in main, and no axe violations', async () => {
+    const { container } = renderPage(education)
     expect(main().querySelectorAll('img, canvas, [lang], [tabindex], [contenteditable]')).toHaveLength(0)
     await expectNoAxeViolations(container)
   })

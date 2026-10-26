@@ -3,7 +3,7 @@ import DefinitionCallout from './DefinitionCallout.tsx'
 
 type Journey = NonNullable<SectorLandingPage['journey']>
 
-// The learner journey after the assessment band (Education, #100), on
+// The learner journey after the assessment band (Education, issue 100), on
 // paper and named by its h2: the eyebrow (after an optional lead label
 // and a middle dot), the h2 and the text (after an optional opening
 // sentence), then an ol of the steps, each a decorative dot, its name and
