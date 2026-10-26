@@ -11,6 +11,7 @@ import {
   assessmentNextSupporting,
   lineageTrace,
 } from '../data/assessment.ts'
+import { focusSectionOnClick } from '../focusSectionHeading.ts'
 import SectionEyebrow from './SectionEyebrow.tsx'
 import './TrustAssessment.css'
 
@@ -31,7 +32,8 @@ import './TrustAssessment.css'
 // three rating categories, named by the second establish item.
 // Then, after a hairline, the closing strip: its text group (the eyebrow,
 // the h3 and the paragraph) and the one call to action (to #contact, like
-// the hero's). Each list is named by the label or heading before it, so it
+// the hero's; a plain click or Enter also moves focus to the Contact
+// heading, the owner's decision on #99). Each list is named by the label or heading before it, so it
 // reads in order without CSS, and every line, ring and marker is drawn
 // with borders in CSS. Nothing is interactive but the button. Not in the
 // navigation.
@@ -114,7 +116,7 @@ function TrustAssessment() {
               <p className="trust-assessment__next-supporting">{assessmentNextSupporting}</p>
             </div>
             <div className="trust-assessment__actions">
-              <a className="button" href="#contact">
+              <a className="button" href="#contact" onClick={focusSectionOnClick('contact')}>
                 {assessmentCtaLabel}
                 <span className="button__arrow" aria-hidden="true">
                   →

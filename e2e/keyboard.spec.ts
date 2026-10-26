@@ -174,6 +174,10 @@ test.describe('focus after in-page links', () => {
       await scope.getByRole('link', { name: link, exact: true }).focus()
       await page.keyboard.press('Enter')
       await expect(page).toHaveURL(new RegExp(`${hash}$`))
+      // The calls to action also move focus to the Contact h2, a frame
+      // after the jump (the owner's decision on #99): wait for it, so the
+      // Tab starts from there.
+      if (link === 'Book a data trust assessment') await expect(page.locator('#contact-heading')).toBeFocused()
 
       await tabTo(page, next)
     })
@@ -186,6 +190,35 @@ test.describe('focus after in-page links', () => {
     { link: managedServices.journey[0], hash: '#data-trust-assessment', heading: assessmentHeading, next: 'Book a data trust assessment' },
     { link: managedServices.journey[1], hash: '#capabilities', heading: servicesIntro.heading, next: firstTitle },
   ] as const
+
+  // The homepage's three "Book a data trust assessment" buttons (the
+  // owner's decision on #99) also move focus to the Contact h2, so the
+  // next Tab goes to the Contact section's own button.
+  const contactCases = ['header', 'hero', 'assessment'] as const
+
+  for (const from of contactCases) {
+    test(`${from} "Book a data trust assessment" focuses the Contact h2, then Tab goes to its button at 1440px`, async ({ page }) => {
+      await openPage(page, 1440)
+      const scope =
+        from === 'header'
+          ? page.getByRole('banner')
+          : from === 'assessment'
+            ? page.getByRole('region', { name: assessmentHeading })
+            : page.getByRole('region', { name: 'Trusted Data. Better Decisions.' })
+      await scope.getByRole('link', { name: 'Book a data trust assessment', exact: true }).focus()
+      await page.keyboard.press('Enter')
+      await expect(page).toHaveURL(/#contact$/)
+
+      const target = page.locator('#contact-heading')
+      await expect(target).toBeFocused()
+      await expect(target).toHaveAttribute('tabindex', '-1')
+
+      await tabTo(page, 'Book a data trust assessment')
+      await expect(page.locator('#contact').getByRole('link', { name: 'Book a data trust assessment', exact: true })).toBeFocused()
+      // Once the heading has lost focus, it keeps no tabindex.
+      await expect(target).not.toHaveAttribute('tabindex')
+    })
+  }
 
   for (const { link, hash, heading, next } of journeyCases) {
     test(`managed services "${link}" focuses the section's h2, then Tab goes to "${next}" at 1440px`, async ({ page }) => {

@@ -95,7 +95,7 @@ Before merging, report any keyword the SEO plan assigns to the homepage that a r
 
 - A hairline across the panel, then the text on the left and the button on the right.
 - The text is WHAT HAPPENS NEXT in the teal eyebrow style, then the statement (weight 300), then the paragraph in the muted light token.
-- The button keeps its existing `mailto:info@fafanua.tech` link.
+- The button links to `#contact`, the homepage's closing section, with the in-page jump behaviour: a smooth scroll only without a reduced-motion preference, and focus moved to the Contact heading. Owner update (2026-10-26, #99): this replaces the earlier wording that the button keeps a `mailto:info@fafanua.tech` link; the homepage nav button and hero primary button do the same, and the Contact section's own button keeps the `mailto:` link.
 
 ### Not included
 

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.tsx'
 import { aboutPrinciples } from './data/about.ts'
@@ -523,6 +523,55 @@ describe('App', () => {
       expect(link).toHaveAttribute('href', '#contact')
     }
     expect(document.querySelectorAll('#contact')).toHaveLength(1)
+  })
+
+  // The owner's decision on #99: the homepage's three "Book a data trust
+  // assessment" buttons (the header's, the hero's and the assessment's)
+  // jump to #contact like the in-page links, so a plain click also moves
+  // focus to the Contact heading, after the frame the browser applies the
+  // fragment in. The Contact section's own button still opens an email.
+  it('moves focus to the Contact heading after a plain click of the header, hero or assessment button (#99)', async () => {
+    render(<App />)
+    const contactHeading = within(screen.getByRole('region', { name: CONTACT })).getByRole('heading', { level: 2 })
+    const buttons = [
+      within(screen.getByRole('banner')).getByRole('link', { name: 'Book a data trust assessment' }),
+      within(screen.getByRole('region', { name: HERO })).getByRole('link', { name: 'Book a data trust assessment' }),
+      within(screen.getByRole('region', { name: ASSESSMENT })).getByRole('link', { name: 'Book a data trust assessment' }),
+    ]
+
+    expect(contactHeading.id).toBe('contact-heading')
+    expect(contactHeading).not.toHaveAttribute('tabindex')
+    for (const button of buttons) {
+      expect(button).toHaveAttribute('href', '#contact')
+      button.focus()
+      fireEvent.click(button)
+      await waitFor(() => expect(document.activeElement).toBe(contactHeading))
+      expect(contactHeading).toHaveAttribute('tabindex', '-1')
+      // Once it loses focus it keeps no tabindex.
+      button.focus()
+      expect(contactHeading).not.toHaveAttribute('tabindex')
+    }
+    expect(within(screen.getByRole('region', { name: CONTACT })).getByRole('link', { name: 'Book a data trust assessment' })).toHaveAttribute(
+      'href',
+      'mailto:info@fafanua.tech',
+    )
+  })
+
+  it('leaves focus alone on a modified or non-primary click of those buttons (#99)', async () => {
+    render(<App />)
+    const contactHeading = within(screen.getByRole('region', { name: CONTACT })).getByRole('heading', { level: 2 })
+    const button = within(screen.getByRole('region', { name: ASSESSMENT })).getByRole('link', {
+      name: 'Book a data trust assessment',
+    })
+
+    button.focus()
+    for (const init of [{ ctrlKey: true }, { metaKey: true }, { shiftKey: true }, { altKey: true }, { button: 1 }]) {
+      fireEvent.click(button, init)
+    }
+    // Longer than the frame and task a plain click waits for.
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(document.activeElement).toBe(button)
+    expect(contactHeading).not.toHaveAttribute('tabindex')
   })
 
   it('renders the footer after main, outside it, as the only contentinfo', () => {

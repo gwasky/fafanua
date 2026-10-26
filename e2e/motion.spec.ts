@@ -610,6 +610,59 @@ test.describe('the Managed Services journey jump', () => {
   }
 })
 
+// The homepage's "Book a data trust assessment" buttons (the owner's
+// decision on #99): the header's, the hero's and the assessment's each
+// jump to #contact with the global smooth scrolling only without a motion
+// preference, and in one step under reduce; either way focus ends on the
+// Contact heading.
+test.describe('the homepage call to action jump', () => {
+  const buttons = [
+    { from: 'header', selector: '.site-header a.button[href="#contact"]' },
+    { from: 'hero', selector: '.hero a.button[href="#contact"]' },
+    { from: 'assessment', selector: '#data-trust-assessment a.button[href="#contact"]' },
+  ] as const
+  for (const { from, selector } of buttons) {
+    for (const motion of ['no-preference', 'reduce'] as const) {
+      test(`the ${from} button scrolls ${motion === 'reduce' ? 'in one step' : 'smoothly'} to #contact and focuses its h2 (${motion})`, async ({ page }) => {
+        await page.emulateMedia({ reducedMotion: motion })
+        await openPage(page, 1440)
+        const link = page.locator(selector)
+        await expect(link).toHaveCount(1)
+        await link.scrollIntoViewIfNeeded()
+        await waitForMotion(page)
+        await link.focus()
+
+        const positions = await page.evaluate(async (target) => {
+          const anchor = document.querySelector<HTMLAnchorElement>(target)!
+          const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
+          const start = window.scrollY
+          anchor.click()
+          const seen = [start]
+          let still = 0
+          for (let i = 0; i < 600 && still < 10; i++) {
+            await frame()
+            still = window.scrollY === seen.at(-1) ? still + 1 : 0
+            seen.push(window.scrollY)
+          }
+          return seen
+        }, selector)
+        const distinct = [...new Set(positions)]
+
+        expect(positions.at(-1)! - positions[0], 'scrolled down').toBeGreaterThan(500)
+        if (motion === 'reduce') {
+          expect(distinct).toHaveLength(2)
+          expect(positions[1]).toBe(positions.at(-1))
+        } else {
+          expect(distinct.length).toBeGreaterThan(3)
+        }
+        await expect(page).toHaveURL(/#contact$/)
+        await expectLanded(page, '#contact')
+        await expect(page.locator('#contact-heading')).toBeFocused()
+      })
+    }
+  }
+})
+
 // The motion from earlier phases, checked for consistency in both
 // engines (#61); a11y.spec.ts and hero.spec.ts check each in Chromium.
 test.describe('earlier motion, consistent (no-preference)', () => {

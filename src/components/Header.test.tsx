@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import App from '../App.tsx'
@@ -129,6 +129,35 @@ describe('Header', () => {
     const arrow = cta.querySelector('.button__arrow')
     expect(arrow?.textContent).toBe('→')
     expect(arrow).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  // The owner's decision on #99: on the homepage the call to action also
+  // moves focus to the Contact heading; on a landing page (home="/") it
+  // keeps its behaviour and leaves focus alone.
+  it('moves focus to the Contact heading on the homepage, and not on a landing page (#99)', async () => {
+    const { unmount } = render(<App />)
+    const heading = document.getElementById('contact-heading')!
+    const cta = within(screen.getByRole('banner')).getByRole('link', { name: navigationCta.label })
+    cta.focus()
+    fireEvent.click(cta)
+    await waitFor(() => expect(document.activeElement).toBe(heading))
+    unmount()
+
+    render(
+      <>
+        <Header home="/" />
+        <section id="contact" aria-labelledby="landing-contact-heading">
+          <h2 id="landing-contact-heading">Contact</h2>
+        </section>
+      </>,
+    )
+    const landingCta = within(screen.getByRole('banner')).getByRole('link', { name: navigationCta.label })
+    expect(landingCta).toHaveAttribute('href', '#contact')
+    landingCta.focus()
+    fireEvent.click(landingCta)
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(document.activeElement).toBe(landingCta)
+    expect(document.getElementById('landing-contact-heading')).not.toHaveAttribute('tabindex')
   })
 
   it('has one list item per link, with the call to action last', () => {

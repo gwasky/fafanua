@@ -5,9 +5,11 @@ import {
   useState,
   useSyncExternalStore,
   type KeyboardEvent,
+  type MouseEvent,
 } from 'react'
 import { flushSync } from 'react-dom'
 import { navigation, navigationCta } from '../data/navigation.ts'
+import { focusSectionOnClick } from '../focusSectionHeading.ts'
 import Logo from './Logo.tsx'
 import './Header.css'
 
@@ -72,7 +74,10 @@ const STATIC_CLASS = 'header-static'
 // `home` is the homepage's path on the landing pages (#67), so the logo
 // and the section links lead back to the homepage's sections; on the
 // homepage it is left out and they stay in-page. The call to action always
-// goes to #contact, which every page has.
+// goes to #contact, which every page has; on the homepage a plain click or
+// Enter also moves focus to the Contact heading (the owner's decision on
+// #99, as the hero's and the assessment's calls to action do). The landing
+// pages keep their behaviour.
 //
 // `current` is the id of the section link to mark as the current one, on
 // a landing page on the shared foundation (#93: Solutions on the Public
@@ -146,6 +151,11 @@ function Header({ overlay = false, home, current }: HeaderProps) {
     if (menuOpen) flushSync(() => setMenuOpen(false))
   }
 
+  const onCtaClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    onLinkClick()
+    if (home === undefined) focusSectionOnClick(navigationCta.id)(event)
+  }
+
   return (
     <header
       ref={headerRef}
@@ -191,7 +201,7 @@ function Header({ overlay = false, home, current }: HeaderProps) {
               <a
                 className="button"
                 href={`#${navigationCta.id}`}
-                onClick={onLinkClick}
+                onClick={onCtaClick}
               >
                 {navigationCta.label}
                 <span className="button__arrow" aria-hidden="true">

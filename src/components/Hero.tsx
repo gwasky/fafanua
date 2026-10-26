@@ -5,13 +5,16 @@ import {
   heroSecondaryLabel,
   heroSupporting,
 } from '../data/hero.ts'
+import { focusSectionOnClick } from '../focusSectionHeading.ts'
 import TechnicalGrid from './TechnicalGrid.tsx'
 import './Hero.css'
 
 // The hero's copy is in src/data/hero.ts: the headline, the core brand
 // promise, the supporting copy, the one call to action (#68) and, after
 // it, a quiet text link to the capabilities section, which the owner
-// restored on #83: a link, not a second button. Each sentence
+// restored on #83: a link, not a second button. The call to action goes
+// to #contact and, on a plain click or Enter, also moves focus to the
+// Contact heading (the owner's decision on #99, as the in-page links do). Each sentence
 // of the headline is a block-level span, so it starts on its own line at
 // every width; the space between them keeps a space between the sentences
 // in the heading's accessible name. The brand promise is a paragraph, not
@@ -38,7 +41,7 @@ function Hero() {
         <p className="hero__promise">{heroPromise}</p>
         <p className="hero__lead">{heroSupporting}</p>
         <div className="hero__actions">
-          <a className="button" href="#contact">
+          <a className="button" href="#contact" onClick={focusSectionOnClick('contact')}>
             {heroPrimaryLabel}
             <span className="button__arrow" aria-hidden="true">
               →
