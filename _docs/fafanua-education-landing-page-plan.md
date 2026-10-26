@@ -72,6 +72,8 @@ Copy all wording exactly. Store it in the Education page's entry in the solution
 | Card text | For institutions and programmes that report to a board, a ministry or a funder. |
 | Checklist | Enrolment and progression tracking; Fees, scholarships and payments reconciliation; Learner engagement and completion; Board, ministry and funder reporting |
 
+Owner update (2026-10-26, #100): a second paragraph follows the card text, before the checklist: "We help education institutions bring together data from admissions, learning, exams and finance systems for learner analytics, education dashboards and cohort analysis — giving teams a clearer view of student retention, learner progression and graduate outcomes."
+
 ### The Data Trust Assessment
 
 | Element | Text |
@@ -85,6 +87,8 @@ Copy all wording exactly. Store it in the Education page's entry in the solution
 | Deliverable 4 | Prioritised roadmap: Ranked by business impact and effort |
 
 ### One learner, one record
+
+Owner update (2026-10-26, #100): this section must read as work that may follow the assessment, not as part of the three-week assessment. The eyebrow reads "What happens next" before "One learner, one record", in the same line after a middle dot (WHAT HAPPENS NEXT · ONE LEARNER, ONE RECORD). An opening sentence, proposed for the owner's review, comes before the text in the same paragraph: "Where the assessment identifies fragmented learner records, we can then help you unify admissions, learning, assessment, finance and outcomes data."
 
 | Element | Text |
 |---|---|
@@ -104,7 +108,9 @@ Copy all wording exactly. Store it in the Education page's entry in the solution
 | Card 1 text | AI and advanced analytics work only when metrics are clearly defined, inputs can be traced to their source, data quality is known and access is controlled. The assessment gives each use case a plain verdict. |
 | Card 1 chips | Ready now (teal dot); Ready after specific fixes (amber dot); Not ready yet (hollow dot) |
 | Card 2 heading | Handled responsibly |
-| Card 2 checklist | Learner data is pseudonymised wherever the analysis allows.; Records of learners under 18 get extra care, with access limited to named roles.; Ownership and access rules are agreed before any pipeline is built. |
+| Card 2 checklist | Learner data is pseudonymised wherever the analysis allows.; Education data can be sensitive, particularly where it relates to children and young people. We design access, governance and reporting controls around the organisation’s policies, legal obligations and the sensitivity of the data.; Ownership and access rules are agreed before any pipeline is built. |
+
+Owner update (2026-10-26, #100): the second checklist item replaces the earlier commitment about learners under 18.
 
 ### After the assessment
 
@@ -116,6 +122,8 @@ Copy all wording exactly. Store it in the Education page's entry in the solution
 | Card 2 | Quality and governance: Completeness and timeliness checks, plus clear ownership and access rules. |
 | Card 3 | Reporting and dashboards: Enrolment, progression, completion and finance reporting for leadership, ministries and funders. |
 
+Owner update (2026-10-26, #100): the page links the Data Warehousing & Analytics Modelling and Data Governance & Metadata service pages again, as two more service cards after Card 3. Their copy is proposed for the owner's review: "Learner data warehouse: Model learners, programmes, cohorts and terms in one data warehouse, so progression and completion can be followed over time." and "Data governance and definitions: Agree ownership, shared definitions and access rules for learner and staff data, and keep them documented."
+
 ### Closing panel
 
 | Element | Text |
@@ -125,6 +133,8 @@ Copy all wording exactly. Store it in the Education page's entry in the solution
 | Text | Which learner figure do you trust least? Tell us about the reports your leadership, ministry and funders rely on. |
 | Primary button | Book a data trust assessment → (`mailto:info@fafanua.tech`) |
 | Secondary link | info@fafanua.tech (`mailto:info@fafanua.tech`) |
+
+Owner update (2026-10-26, #100): the text is followed, in the same paragraph, by "We help education organisations build a trusted data foundation for reliable reporting, clearer learner journeys and better decisions."
 
 ### Removed from the current Education page
 
@@ -206,7 +216,7 @@ Everything else follows the shared landing-page rules. Nothing may overflow from
 1. Find the current Education solution page's route in the SEO plan and confirm it keeps its route, canonical URL and sitemap entry. If no such page exists, stop and report it to the owner.
 2. Update the page title and meta description to match the new hero, keeping any keywords the SEO plan assigns to this page. List any assigned keyword the removed content carried, and report it to the owner before merging.
 3. Confirm the homepage Solutions row "Education" links to this page.
-4. Mark the issue "pending owner review" until the owner confirms the "Handled responsibly" wording, in particular the commitment about learners under 18.
+4. Mark the issue "pending owner review" until the owner confirms the "Handled responsibly" wording, in particular the commitment about learners under 18. (Owner update, 2026-10-26, #100: the owner replaced that commitment; see section 4.)
 5. Check the naming and claims rules in section 3 across the page, metadata, tests and commit messages.
 
 ## 8. Documentation updates (same pull request)
