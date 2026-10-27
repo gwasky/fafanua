@@ -8,29 +8,34 @@ import type { ServiceKey } from './servicePages.ts'
 // the landing pages' entry imports, so the homepage, which shows the rows
 // and links to the pages, does not ship it. No clients, case studies,
 // metrics, certifications or performance claims (§18), and no DHIS2
-// positioning (§9). Public Sector, Health, Financial Services and
-// Education are on the shared landing-page foundation (#93, #94, #98,
-// issue 100): their copy is section 4 of
+// positioning (§9). Public Sector, Health, Financial Services, Education
+// and Retail & Distribution are on the shared landing-page foundation
+// (#93, #94, #98, issue 100, issue 101): their copy is section 4 of
 // _docs/fafanua-public-sector-landing-page-plan.md, of
 // _docs/fafanua-health-landing-page-plan.md, of
-// _docs/fafanua-financial-services-landing-page-plan.md and of
-// _docs/fafanua-education-landing-page-plan.md, which replaced their §18
-// sections, and solutionPages.publicSector.plan.test.ts,
+// _docs/fafanua-financial-services-landing-page-plan.md, of
+// _docs/fafanua-education-landing-page-plan.md and of
+// _docs/fafanua-retail-distribution-landing-page-plan.md, which replaced
+// their §18 sections, and solutionPages.publicSector.plan.test.ts,
 // solutionPages.health.plan.test.ts,
-// solutionPages.financialServices.plan.test.ts and
-// solutionPages.education.plan.test.ts check it against the plans. The
-// owner added strings to them on 2026-10-23, marked below: on Public
-// Sector (#93) four carry the SEO plan §12 keywords the plan copy had
-// dropped, and on both one makes "trusted data foundation" visible in the
-// closing panel (#93, #94). On Financial Services (#98) the owner added
-// two strings on 2026-10-24, marked below: one after the Financial
+// solutionPages.financialServices.plan.test.ts,
+// solutionPages.education.plan.test.ts and
+// solutionPages.retailDistribution.plan.test.ts check it against the
+// plans. The owner added strings to them on 2026-10-23, marked below: on
+// Public Sector (#93) four carry the SEO plan §12 keywords the plan copy
+// had dropped, and on both one makes "trusted data foundation" visible in
+// the closing panel (#93, #94). On Financial Services (#98) the owner
+// added two strings on 2026-10-24, marked below: one after the Financial
 // institutions card's text, and one that makes the protected phrase
-// visible in the closing panel. On Education (issue 100) the owner added the
-// same two on 2026-10-26, replaced the item on learners under 18 and
+// visible in the closing panel. On Education (issue 100) the owner added
+// the same two on 2026-10-26, replaced the item on learners under 18 and
 // restored two service links, and on 2026-10-27 put the learner journey
 // under "What happens next", approved its opening sentence and the two
 // added service cards' copy and replaced the first handling item, all
-// marked below and recorded in the plan's section 4.
+// marked below and recorded in the plan's section 4. On Retail &
+// Distribution (issue 101) the title, the description and three added
+// strings, A1 to A3, are proposals pending the owner's decision, each
+// marked below.
 
 export type SolutionService = {
   readonly service: ServiceKey
@@ -40,7 +45,8 @@ export type SolutionService = {
 }
 
 /** The existing landing page (SEO plan §18, #67): context, problems,
- * services, governance and activation. Two sectors still use it. */
+ * services, governance and activation. One sector (Development &
+ * Impact) still uses it. */
 export type SolutionSectionsPage = {
   readonly layout?: undefined
   /** The <title>. */
@@ -82,6 +88,26 @@ export type BadgeCard = {
 export type PairedCard = BadgeCard & {
   readonly label?: string
   readonly detail?: string
+}
+
+/** Who we work with's single card. `detail`: an optional paragraph after
+ * the card's text; `itemsLabel`: an optional label that names the
+ * checklist; `itemsLayout`: 'stacked' shows each named item's name on its
+ * own line, its text below and no colon (Financial Services, #98). */
+export type AudienceCardData = BadgeCard & {
+  readonly detail?: string
+  readonly itemsLabel?: string
+  readonly itemsLayout?: 'stacked'
+  readonly items: readonly ChecklistItem[]
+}
+
+/** One segment's card in Who we work with (Retail & Distribution, issue
+ * 101): its heading, a one-line description, its icon and a checklist. */
+export type AudienceSegment = {
+  readonly heading: string
+  readonly text: string
+  readonly icon: IconName
+  readonly items: readonly string[]
 }
 
 /** A promise strip step: its name in bold and a short description. */
@@ -139,20 +165,15 @@ export type SectorLandingPage = {
       { readonly label: string; readonly steps: readonly [PromiseStep, PromiseStep] },
     ]
   }
+  /** Who we work with: one card, or a card per segment (Retail &
+   * Distribution, issue 101); exactly one of the two. */
   readonly audience: {
     readonly heading: string
     readonly subheading: string
-    /** `detail`: an optional paragraph after the card's text;
-     * `itemsLabel`: an optional label that names the checklist;
-     * `itemsLayout`: 'stacked' shows each named item's name on its own
-     * line, its text below and no colon (Financial Services, #98). */
-    readonly card: BadgeCard & {
-      readonly detail?: string
-      readonly itemsLabel?: string
-      readonly itemsLayout?: 'stacked'
-      readonly items: readonly ChecklistItem[]
-    }
-  }
+  } & (
+    | { readonly card: AudienceCardData; readonly segments?: never }
+    | { readonly segments: readonly AudienceSegment[]; readonly card?: never }
+  )
   readonly assessment: {
     readonly eyebrow: string
     readonly heading: string
@@ -200,6 +221,10 @@ export type SectorLandingPage = {
     readonly highlightNote: string
     readonly callout: { readonly label: string; readonly text: string }
     readonly caption: string
+    /** 'end' puts the callout at the row's end, across the last two
+     * columns from 64em, with the caption end-aligned under it (Retail &
+     * Distribution, issue 101). */
+    readonly calloutAlign?: 'end'
   }
   /** Delivered in stages; a page may leave it out. */
   readonly stages?: {
@@ -211,8 +236,12 @@ export type SectorLandingPage = {
     readonly exitLabel: string
     readonly items: readonly { readonly name: string; readonly description: string; readonly exit: string }[]
   }
+  /** The readiness card. `label`: an optional eyebrow above its heading,
+   * and `chips` optional (Retail & Distribution, issue 101, has neither
+   * chips nor their list). */
   readonly ai: BadgeCard & {
-    readonly chips: readonly { readonly label: string; readonly marker: Marker }[]
+    readonly label?: string
+    readonly chips?: readonly { readonly label: string; readonly marker: Marker }[]
   }
   /** The second card beside the AI card: a checklist under a heading. */
   readonly handling: {
@@ -221,6 +250,9 @@ export type SectorLandingPage = {
     readonly items: readonly string[]
   }
   readonly services: {
+    /** An optional eyebrow above the heading (Retail & Distribution,
+     * issue 101). */
+    readonly eyebrow?: string
     readonly heading: string
     readonly subheading: string
     /** 'accent' shows the cards' lead lines in teal 800 (#98). */
@@ -443,53 +475,181 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
     },
   },
   'retail-and-distribution': {
-    title: 'Retail & Distribution Analytics Uganda | Fafanua',
+    layout: 'sector',
+    // Pending the owner's decision (owner note 1, issue 101): the plan's
+    // title and description break the length rules, so these are the
+    // recommended resolutions, which keep its keywords and wording.
+    title: 'Retail Analytics Uganda: Sales, Stock & Margin | Fafanua',
     description:
-      'Sales, inventory and branch-performance analytics for supermarkets, pharmacy chains, wholesalers and distributors in Uganda and East Africa.',
-    lead: 'For supermarkets, pharmacy chains, wholesalers, distributors, multi-branch retailers and consumer-goods businesses.',
-    context: [
-      'Retail and distribution businesses generate data at every till, warehouse and delivery route: point-of-sale systems, ERP and stock tools, card and mobile-money payments, distributor orders and loyalty programmes. Margins depend on knowing what is selling, where the stock is, and which branches, products and customers are performing.',
-      'Fafanua helps retailers and distributors in Uganda and East Africa build a trusted data foundation that joins sales, stock, payment and customer data across branches and channels, so performance reporting is consistent and on time.',
-    ],
-    problems: [
-      'Sales, stock and payment data held in separate systems for each branch or channel.',
-      'Inventory positions that do not match the stock on the shelf or in the warehouse.',
-      'Card and mobile-money takings reconciled against sales by hand.',
-      'Branches and products compared using different definitions.',
-      'Little view of customer retention or repeat purchasing.',
-    ],
-    services: [
-      {
-        service: 'data-engineering-and-integration',
-        label: 'Point-of-sale, ERP and payment integration',
-        text: 'Bring point-of-sale, ERP, stock, payment and distributor data together across branches.',
+      'Retail business intelligence in Uganda and East Africa: sales analytics, inventory analytics and distribution analytics built on figures you can trace.',
+    breadcrumb: 'Retail & distribution',
+    hero: {
+      eyebrow: 'Retail and distribution solutions',
+      heading: 'Sales, stock and margin you can trace.',
+      lead: 'Fafanua helps retailers, wholesalers, distributors and FMCG businesses in Uganda and East Africa build trusted retail analytics across sales, inventory, margin and distribution performance.',
+      leadDetail:
+        'We trace the figures your leadership relies on back to their source, so sales, stock and margin agree from the shelf to the ledger.',
+      secondaryLabel: 'See how the assessment works',
+    },
+    diagram: {
+      sourcesHeading: 'Retail systems',
+      sources: [
+        { label: 'Loyalty & CRM', icon: 'list', feeds: false },
+        { label: 'Distribution & delivery', icon: 'truck', feeds: false },
+        { label: 'Point of sale', icon: 'card', feeds: true },
+        { label: 'Inventory & warehouse', icon: 'box', feeds: true },
+        { label: 'Finance ledger', icon: 'ledger', feeds: true },
+      ],
+      traceHeading: 'Traced to source',
+      steps: ['Report', 'Definition', 'Calculation', 'Data model', 'Source system'],
+      traceFootnote: 'Owner and trust rating for every number',
+      figuresHeading: 'Figures you report',
+      figures: [
+        { name: 'Sales by outlet', rating: 'Trusted', marker: 'teal' },
+        { name: 'Gross margin by product', rating: 'Trusted with caveats', marker: 'amber' },
+        { name: 'Stock accuracy', rating: 'Not yet trusted', marker: 'hollow' },
+      ],
+      caption: 'Illustrative example. Sample data only.',
+      description:
+        'Illustrative example: sales by outlet, gross margin by product and stock accuracy traced to point-of-sale, inventory and finance systems, with trust ratings.',
+    },
+    challenge: {
+      heading: 'The challenge',
+      text: 'Sales, stock and finance each tell a different story. The till shows one sales figure and the ledger another, and stock on hand rarely matches what is on the shelf, so margin and shrinkage are hard to explain.',
+      icon: 'alert',
+    },
+    approach: {
+      heading: 'Our approach',
+      text: 'We start by tracing the figures leadership relies on most, sales, margin and stock, back to their source. Then we connect purchasing, warehouse, sales and finance, so every branch reports the same way.',
+      icon: 'check',
+    },
+    audience: {
+      heading: 'Who we work with',
+      subheading: 'Retailers, wholesalers, distributors and FMCG businesses.',
+      segments: [
+        {
+          heading: 'Retailers and supermarket chains',
+          text: 'For businesses running several outlets.',
+          icon: 'card',
+          items: [
+            'Sales analytics by outlet, product and channel',
+            'Branch performance and comparability',
+            'Stock accuracy and shrinkage',
+          ],
+        },
+        {
+          heading: 'Wholesalers and distributors',
+          text: 'For businesses running depots, routes and trade customers.',
+          icon: 'truck',
+          items: [
+            'Inventory analytics across warehouses and depots',
+            'Distribution analytics by route and customer',
+            'Supplier and purchasing performance',
+          ],
+        },
+        {
+          heading: 'FMCG and consumer brands',
+          text: 'For brands selling through distributors and retailers.',
+          icon: 'box',
+          items: ['Sell-in and sell-out visibility', 'Distributor stock and coverage', 'Margin by product and channel'],
+        },
+      ],
+    },
+    assessment: {
+      eyebrow: 'Start with trust',
+      heading: 'The Data Trust Assessment: three weeks, fixed fee',
+      text: 'The Data Trust Assessment takes the numbers your leadership relies on most and traces each one from the report back to its source.',
+      deliverables: [
+        { name: 'Lineage map', text: 'How each key number is produced, system by system', icon: 'map' },
+        { name: 'Trust scorecard', text: 'Each number rated trusted, with caveats, or not yet', icon: 'score' },
+        {
+          name: 'Shared definitions',
+          text: 'For terms like ‘net sales’ that branches define differently',
+          icon: 'book',
+        },
+        { name: 'Prioritised roadmap', text: 'Ranked by business impact and effort', icon: 'list' },
+      ],
+    },
+    journey: {
+      eyebrow: 'One stock figure',
+      heading: 'Follow every unit, from supplier to shelf',
+      // Proposed owner addition (pending the owner's decision, issue 101):
+      // A3, so the journey reads as work that follows the assessment.
+      intro:
+        'Where the assessment finds stock figures that do not agree, we can then help you follow each unit across the systems that record it.',
+      text: 'We connect purchasing, warehouse, distribution and sales records, so stock on hand can be explained, not just counted.',
+      steps: [
+        { name: 'Ordered', system: 'Purchasing' },
+        { name: 'Received', system: 'Warehouse' },
+        { name: 'Transferred', system: 'Distribution' },
+        { name: 'Sold', system: 'Point of sale' },
+        { name: 'On hand', system: 'Stock count' },
+      ],
+      highlight: 4,
+      // On hand's highlight, in words (owner note 6), as on Education.
+      highlightNote: '(variance shown below)',
+      callout: {
+        label: 'Variance explained',
+        text: 'System stock 1,240 · counted 1,182 · the 58-unit gap traced to unrecorded transfers and damaged goods.',
       },
-      {
-        service: 'data-warehousing-and-analytics-modelling',
-        label: 'Sales and inventory data models',
-        text: 'Model products, branches, customers and stock movements, so every report uses the same structure.',
-      },
-      {
-        service: 'data-quality-and-reliability',
-        label: 'Retail payment reconciliation',
-        text: 'Automated reconciliation of card and mobile-money payments against sales.',
-      },
-      {
-        service: 'business-intelligence-and-analytics',
-        label: 'Sales and branch-performance dashboards',
-        text: 'Branch, product, sales and margin reporting for management and operations.',
-      },
-    ],
-    governance: [
-      'One product and branch master, with clear ownership of changes.',
-      'Agreed definitions of sales, margin and stock measures.',
-      'Reconciliation rules and tolerances for payments and stock.',
-    ],
-    activation: [
-      'Sending replenishment and low-stock signals to purchasing and branch teams.',
-      'Pushing customer segments into loyalty and marketing tools.',
-      'Sharing distributor and route performance with field sales teams.',
-    ],
+      caption: 'Illustrative example. Sample data only.',
+      calloutAlign: 'end',
+    },
+    ai: {
+      label: 'Ready for what comes next',
+      heading: 'Trusted data makes advanced analytics possible.',
+      text: 'Once sales, stock, product and branch data is consistently defined and traceable, the same foundation can support demand forecasting, replenishment, anomaly detection and other advanced analytics.',
+      icon: 'gauge',
+    },
+    handling: {
+      heading: 'Handled responsibly',
+      icon: 'shield',
+      items: [
+        'Where appropriate, analysis can use pseudonymised customer and loyalty data to reduce exposure of directly identifying information.',
+        'Access follows your existing roles, by branch and by function.',
+        'Ownership and access rules are agreed before any pipeline is built.',
+      ],
+    },
+    services: {
+      eyebrow: 'What happens next',
+      heading: 'From findings to a stronger retail data foundation.',
+      subheading:
+        'The assessment shows where trust breaks down and what matters most. From there, Fafanua can strengthen the parts of your retail data foundation that need attention.',
+      items: [
+        {
+          name: 'Integrate & model',
+          text: 'Connect point-of-sale, warehouse, purchasing, distribution and finance systems into one consistent view of products, outlets and stock.',
+          // Proposed owner addition (pending the owner's decision, issue
+          // 101): A2, the SEO plan §10 keywords on customer retention and
+          // payment reconciliation, as follow-on work.
+          detail:
+            'Payment and loyalty data can be connected too, so customer retention can be tracked and card and mobile-money takings reconcile with sales.',
+          icon: 'link',
+          service: 'data-engineering-and-integration',
+        },
+        {
+          name: 'Quality & governance',
+          text: 'Completeness and timeliness checks, plus clear ownership and access rules.',
+          icon: 'shield',
+          service: 'data-quality-and-reliability',
+        },
+        {
+          name: 'Reporting & dashboards',
+          text: 'Retail business intelligence for sales, margin, stock and branch performance, built on the traced numbers.',
+          icon: 'chart',
+          service: 'business-intelligence-and-analytics',
+        },
+      ],
+    },
+    closing: {
+      eyebrow: 'Get started',
+      heading: 'Build a retail data foundation you can trust',
+      text: 'Sales, stock or margin: which do you trust least? Tell us about the reports your branches and head office rely on.',
+      // Proposed owner addition (pending the owner's decision, issue 101):
+      // A1, the protected phrase, visible.
+      followUp:
+        'We help retailers, wholesalers and distributors build a trusted data foundation, so every branch, depot and head office works from the same figures.',
+    },
   },
   'development-and-impact': {
     title: 'NGO & Development Data Analytics Uganda | Fafanua',

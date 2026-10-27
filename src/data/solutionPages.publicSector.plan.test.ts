@@ -102,13 +102,13 @@ describe('Public Sector copy (plan section 4)', () => {
     const t = 'Who we work with'
     expect(page.audience.heading).toBe(cell(t, 'Heading'))
     expect(page.audience.subheading).toBe(cell(t, 'Subheading'))
-    expect(page.audience.card.heading).toBe(cell(t, 'Card heading'))
-    expect(page.audience.card.text).toBe(cell(t, 'Card text'))
-    expect(page.audience.card.items).toEqual(list(cell(t, 'Checklist')))
-    for (const item of page.audience.card.items) expect(item).not.toMatch(/\.$/)
-    expect(page.audience.card.icon).toBe('book')
+    expect(page.audience.card!.heading).toBe(cell(t, 'Card heading'))
+    expect(page.audience.card!.text).toBe(cell(t, 'Card text'))
+    expect(page.audience.card!.items).toEqual(list(cell(t, 'Checklist')))
+    for (const item of page.audience.card!.items) expect(item).not.toMatch(/\.$/)
+    expect(page.audience.card!.icon).toBe('book')
     // The owner's addition after the card's text (#93).
-    expect(page.audience.card.detail).toBe(OWNER_ADDITIONS.audienceDetail)
+    expect(page.audience.card!.detail).toBe(OWNER_ADDITIONS.audienceDetail)
   })
 
   it('uses the Data Trust Assessment\'s eyebrow, heading, text and deliverables (no full stops)', () => {
@@ -192,7 +192,7 @@ describe('Public Sector copy (plan section 4)', () => {
       ...page,
       title: undefined,
       description: undefined,
-      audience: { ...page.audience, card: { ...page.audience.card, detail: undefined } },
+      audience: { ...page.audience, card: { ...page.audience.card!, detail: undefined } },
       services: { ...page.services, items: page.services.items.map((item) => ({ ...item, detail: undefined })) },
       closing: { ...page.closing, followUp: undefined },
     })

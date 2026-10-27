@@ -21,8 +21,9 @@ import './SectorLanding.css'
 // Data Trust Assessment (#assessment), the learner journey where the page
 // has one (issue 100), the reconciliation cards where the page has them (#98),
 // Delivered in stages where the page has them, the
-// AI and handling cards, the service cards and the closing panel
-// (#contact). PageLayout puts it in
+// AI (or readiness) and handling cards, the service cards and the closing
+// panel (#contact). Who we work with may show segment cards, and the
+// readiness card an eyebrow and no chips (Retail & Distribution, issue 101). PageLayout puts it in
 // main.sector-landing, which scopes every style in SectorLanding.css, and
 // leaves out the Contact section. All copy comes from the page's entry in
 // solutionPages.ts, and the call to action from contact.ts.
@@ -50,15 +51,23 @@ function SectorLandingPage({ page }: { page: SectorLandingPageCopy }) {
       {page.reconciliation && <ReconciliationCards reconciliation={page.reconciliation} />}
       {page.stages && <StagesList stages={page.stages} />}
       <PairedCards>
-        <BadgeCard heading={page.ai.heading} text={page.ai.text} icon={page.ai.icon} layout="stacked">
-          <ul className="chips" role="list">
-            {page.ai.chips.map((chip) => (
-              <li key={chip.label} className="chip">
-                <RatingMarker marker={chip.marker} />
-                <span>{chip.label}</span>
-              </li>
-            ))}
-          </ul>
+        <BadgeCard
+          heading={page.ai.heading}
+          text={page.ai.text}
+          label={page.ai.label}
+          icon={page.ai.icon}
+          layout="stacked"
+        >
+          {page.ai.chips && (
+            <ul className="chips" role="list">
+              {page.ai.chips.map((chip) => (
+                <li key={chip.label} className="chip">
+                  <RatingMarker marker={chip.marker} />
+                  <span>{chip.label}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </BadgeCard>
         <BadgeCard heading={page.handling.heading} icon={page.handling.icon} layout="stacked">
           <Checklist items={page.handling.items} />

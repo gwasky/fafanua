@@ -7,8 +7,8 @@ import SectorLandingPage from './SectorLandingPage.tsx'
 
 // The shared landing-page foundation's components (#93) hold no copy:
 // rendered with another sector's data (a fixture, neither Public Sector,
-// Health, Financial Services nor Education), they show that data and none
-// of those pages' (#94, #98, issue 100).
+// Health, Financial Services, Education nor Retail & Distribution), they
+// show that data and none of those pages' (#94, #98, issue 100, issue 101).
 
 beforeEach(() => {
   vi.stubGlobal('matchMedia', (media: string) => ({
@@ -86,7 +86,7 @@ describe('SectorLandingPage with another sector\'s data', () => {
       publicSector.hero.heading,
       publicSector.diagram.sourcesHeading,
       publicSector.challenge.text,
-      publicSector.audience.card.heading,
+      publicSector.audience.card!.heading,
       publicSector.assessment.heading,
       publicSector.stages!.heading,
       publicSector.handling.heading,
@@ -102,7 +102,7 @@ describe('SectorLandingPage with another sector\'s data', () => {
       health.hero.heading,
       health.diagram.sourcesHeading,
       health.challenge.text,
-      health.audience.card.heading,
+      health.audience.card!.heading,
       health.assessment.text,
       health.handling.heading,
       health.closing.heading,
@@ -118,7 +118,7 @@ describe('SectorLandingPage with another sector\'s data', () => {
       financialServices.challenge.heading,
       financialServices.promise!.groups[0].label,
       financialServices.promise!.groups[1].steps[0].name,
-      financialServices.audience.card.heading,
+      financialServices.audience.card!.heading,
       financialServices.assessment.deliverablesLabel!,
       financialServices.reconciliation!.heading,
       financialServices.reconciliation!.cards[0].record,
@@ -137,8 +137,8 @@ describe('SectorLandingPage with another sector\'s data', () => {
       education.hero.heading,
       education.diagram.sourcesHeading,
       education.diagram.sources[2].label,
-      education.audience.card.heading,
-      education.audience.card.detail!,
+      education.audience.card!.heading,
+      education.audience.card!.detail!,
       journey.eyebrow,
       journey.intro!,
       journey.heading,
@@ -157,6 +157,34 @@ describe('SectorLandingPage with another sector\'s data', () => {
       expect(main.textContent, text).not.toContain(text)
     }
     expect(main.querySelectorAll('.journey, .definition-callout')).toHaveLength(0)
+  })
+
+  it('shows no Retail & Distribution string either (issue 101)', () => {
+    renderFixture()
+    const main = screen.getByRole('main')
+    const retail = solutionPages['retail-and-distribution'] as Copy
+    const journey = retail.journey!
+    const segment = retail.audience.segments![1]
+    for (const text of [
+      retail.hero.heading,
+      retail.hero.leadDetail!,
+      retail.diagram.sourcesHeading,
+      retail.diagram.sources[1].label,
+      segment.heading,
+      segment.items[2],
+      journey.heading,
+      journey.steps[4].name,
+      journey.steps[3].system,
+      journey.callout.label,
+      journey.callout.text,
+      journey.highlightNote,
+      retail.ai.label!,
+      retail.services.eyebrow!,
+      retail.closing.heading,
+    ]) {
+      expect(main.textContent, text).not.toContain(text)
+    }
+    expect(main.querySelectorAll('.segment-cards, .segment-card, .journey--callout-end')).toHaveLength(0)
   })
 
   it('renders the learner journey from the data when given, right after the assessment band, with the callout and caption in the highlighted step (issue 100)', () => {
@@ -272,7 +300,8 @@ describe('SectorLandingPage with another sector\'s data', () => {
       ...FIXTURE,
       audience: {
         ...FIXTURE.audience,
-        card: { ...FIXTURE.audience.card, itemsLabel: 'Fixture label', items: [{ name: 'Name A', text: 'Text A.' }, 'Item B'] },
+        segments: undefined,
+        card: { ...FIXTURE.audience.card!, itemsLabel: 'Fixture label', items: [{ name: 'Name A', text: 'Text A.' }, 'Item B'] },
       },
       services: { ...FIXTURE.services, items: [{ ...FIXTURE.services.items[0], lead: 'Lead A.' }] },
     })
@@ -313,7 +342,8 @@ describe('SectorLandingPage with another sector\'s data', () => {
       },
       audience: {
         ...FIXTURE.audience,
-        card: { ...FIXTURE.audience.card, itemsLayout: 'stacked', items: [{ name: 'Name A', text: 'Text A.' }] },
+        segments: undefined,
+        card: { ...FIXTURE.audience.card!, itemsLayout: 'stacked', items: [{ name: 'Name A', text: 'Text A.' }] },
       },
       assessment: { ...FIXTURE.assessment, deliverablesLabel: 'Fixture delivers' },
       reconciliation: {
@@ -375,6 +405,118 @@ describe('SectorLandingPage with another sector\'s data', () => {
       'Fixture closing',
     ])
     expect(screen.getByText('Lead A.')).toHaveClass('service-card-lp__lead service-card-lp__lead--accent')
+  })
+
+  it('renders segment cards instead of the single card only when the data has them (issue 101)', () => {
+    renderFixture()
+    const single = screen.getByRole('region', { name: 'Fixture audience' })
+    expect(single.querySelectorAll('.audience-card')).toHaveLength(1)
+    expect(single.querySelectorAll('.segment-cards, .segment-card')).toHaveLength(0)
+    cleanup()
+    renderFixture({
+      ...FIXTURE,
+      audience: {
+        heading: 'Fixture audience',
+        subheading: 'Audience subheading.',
+        segments: [
+          { heading: 'Segment A', text: 'Segment A text.', icon: 'card', items: ['A one', 'A two'] },
+          { heading: 'Segment B', text: 'Segment B text.', icon: 'truck', items: ['B one'] },
+        ],
+      },
+    })
+    const section = screen.getByRole('region', { name: 'Fixture audience' })
+    expect(section.querySelectorAll('.audience-card')).toHaveLength(0)
+    expect([...section.querySelector('.container')!.children].map((element) => [element.tagName, element.className])).toEqual([
+      ['H2', 'sector-heading'],
+      ['P', 'sector-subheading'],
+      ['UL', 'segment-cards'],
+    ])
+    const list = section.querySelector('ul.segment-cards') as HTMLElement
+    expect(list).toHaveAttribute('role', 'list')
+    const cards = within(list).getAllByRole('listitem').filter((item) => item.parentElement === list)
+    expect(cards).toHaveLength(2)
+    expect(cards.map((card) => [...card.children].map((element) => element.tagName))).toEqual([
+      ['SPAN', 'H3', 'P', 'UL'],
+      ['SPAN', 'H3', 'P', 'UL'],
+    ])
+    expect(cards.map((card) => card.querySelector('h3')!.textContent)).toEqual(['Segment A', 'Segment B'])
+    expect(cards.map((card) => card.querySelector('.segment-card__text')!.textContent)).toEqual([
+      'Segment A text.',
+      'Segment B text.',
+    ])
+    expect(cards.map((card) => within(card.querySelector('ul') as HTMLElement).getAllByRole('listitem').map((item) => item.textContent))).toEqual([
+      ['A one', 'A two'],
+      ['B one'],
+    ])
+    for (const card of cards) {
+      expect(card.querySelector('.icon-badge')).toHaveClass('icon-badge icon-badge--round icon-badge--teal')
+      expect(card.querySelector('.icon-badge')).toHaveAttribute('aria-hidden', 'true')
+    }
+  })
+
+  it('gives the readiness card a label only when given, and draws no chips list when it has no chips (issue 101)', () => {
+    renderFixture()
+    const card = () => screen.getByRole('heading', { level: 2, name: 'Fixture AI' }).parentElement!
+    expect([...card().children].map((element) => element.tagName)).toEqual(['H2', 'P', 'UL'])
+    expect(card().querySelectorAll('.chips')).toHaveLength(1)
+    cleanup()
+    renderFixture({ ...FIXTURE, ai: { heading: 'Fixture AI', text: 'AI text.', icon: 'gauge', label: 'Fixture ready' } })
+    expect([...card().children].map((element) => [element.tagName, element.className, element.textContent])).toEqual([
+      ['P', 'sector-eyebrow badge-card__label', 'Fixture ready'],
+      ['H2', 'badge-card__heading', 'Fixture AI'],
+      ['P', 'badge-card__text', 'AI text.'],
+    ])
+    expect(screen.getByRole('main').querySelectorAll('.chips, .chip')).toHaveLength(0)
+  })
+
+  it('puts an eyebrow above the services heading only when given (issue 101)', () => {
+    renderFixture()
+    const children = () =>
+      [...screen.getByRole('region', { name: 'Fixture services' }).querySelector('.container')!.children].map((element) => [
+        element.tagName,
+        element.className,
+      ])
+    expect(children()).toEqual([
+      ['H2', 'sector-heading'],
+      ['P', 'sector-subheading'],
+      ['UL', 'service-cards'],
+    ])
+    cleanup()
+    renderFixture({ ...FIXTURE, services: { ...FIXTURE.services, eyebrow: 'Fixture next' } })
+    expect(children()).toEqual([
+      ['P', 'sector-eyebrow'],
+      ['H2', 'sector-heading'],
+      ['P', 'sector-subheading'],
+      ['UL', 'service-cards'],
+    ])
+    expect(screen.getByText('Fixture next')).toHaveClass('sector-eyebrow')
+  })
+
+  it('changes only the journey\'s placement class when the callout is aligned to the end (issue 101)', () => {
+    const journey: NonNullable<Copy['journey']> = {
+      eyebrow: 'Fixture journey eyebrow',
+      heading: 'Fixture journey',
+      text: 'Journey text.',
+      steps: [
+        { name: 'Step one', system: 'System one' },
+        { name: 'Step two', system: 'System two' },
+      ],
+      highlight: 1,
+      highlightNote: '(note)',
+      callout: { label: 'Callout label', text: 'Callout text.' },
+      caption: 'Journey caption.',
+    }
+    const html = (copy: Copy) => {
+      const { container } = renderFixture(copy)
+      const section = container.querySelector('section[aria-labelledby="journey-heading"]')!.outerHTML
+      cleanup()
+      return section
+    }
+    const start = html({ ...FIXTURE, journey })
+    const end = html({ ...FIXTURE, journey: { ...journey, calloutAlign: 'end' } })
+    expect(start).toContain('<ol class="journey" role="list">')
+    expect(end).toContain('<ol class="journey journey--callout-end" role="list">')
+    expect(end.replace(' journey--callout-end', '')).toBe(start)
   })
 
   it('takes the service card link, the jump target and the closing id from its own wiring', () => {

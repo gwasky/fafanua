@@ -121,18 +121,18 @@ describe('Health copy (plan section 4)', () => {
     const t = 'Who we work with'
     expect(page.audience.heading).toBe(cell(t, 'Heading'))
     expect(page.audience.subheading).toBe(cell(t, 'Subheading'))
-    expect(page.audience.card.heading).toBe(cell(t, 'Card heading'))
-    expect(page.audience.card.text).toBe(cell(t, 'Card text 1'))
-    expect(page.audience.card.detail).toBe(cell(t, 'Card text 2'))
-    expect(page.audience.card.detail).toContain(' — ')
-    expect(page.audience.card.itemsLabel).toBe(cell(t, 'List label'))
-    expect(page.audience.card.items).toEqual([1, 2, 3, 4].map((n) => boldNamed(cell(t, `List item ${n}`))))
-    for (const item of page.audience.card.items) {
+    expect(page.audience.card!.heading).toBe(cell(t, 'Card heading'))
+    expect(page.audience.card!.text).toBe(cell(t, 'Card text 1'))
+    expect(page.audience.card!.detail).toBe(cell(t, 'Card text 2'))
+    expect(page.audience.card!.detail).toContain(' — ')
+    expect(page.audience.card!.itemsLabel).toBe(cell(t, 'List label'))
+    expect(page.audience.card!.items).toEqual([1, 2, 3, 4].map((n) => boldNamed(cell(t, `List item ${n}`))))
+    for (const item of page.audience.card!.items) {
       if (typeof item === 'string') throw new Error(`"${item}" has no bold name`)
       expect(item.text).toMatch(/\.$/)
       expect(item.name).not.toMatch(/\*|—/)
     }
-    expect(page.audience.card.icon).toBe('hospital')
+    expect(page.audience.card!.icon).toBe('hospital')
   })
 
   it('uses the Data Trust Assessment\'s eyebrow, heading, text and deliverables (no full stops)', () => {

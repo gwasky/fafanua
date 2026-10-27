@@ -12,7 +12,9 @@ type Journey = NonNullable<SectorLandingPage['journey']>
 // order is the visual order at every width and the sample label is read
 // with the definition; aria-describedby points it at the callout. One row
 // from 64em, three and two from 48em, one step per row below it, with a
-// decorative hairline through the dots.
+// decorative hairline through the dots. A page may put the callout at the
+// row's end, across the last two columns from 64em, with the caption
+// end-aligned under it (Retail & Distribution, issue 101).
 function LearnerJourney({ journey }: { journey: Journey }) {
   return (
     <section className="sector-section" aria-labelledby="journey-heading">
@@ -24,7 +26,7 @@ function LearnerJourney({ journey }: { journey: Journey }) {
         <p className="sector-subheading">
           {journey.intro === undefined ? journey.text : `${journey.intro} ${journey.text}`}
         </p>
-        <ol className="journey" role="list">
+        <ol className={journey.calloutAlign === 'end' ? 'journey journey--callout-end' : 'journey'} role="list">
           {journey.steps.map((step, index) => {
             const highlighted = index === journey.highlight
             return (

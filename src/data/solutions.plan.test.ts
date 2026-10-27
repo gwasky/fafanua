@@ -253,7 +253,7 @@ describe('Health (SEO plan §9 and §21, #67)', () => {
   // (#94), as §9's dated note records.
   it('serves healthcare providers only, as the dated §9 note records', () => {
     expect(section(plan, 9)).toContain('Added for the Health landing page (owner, 2026-10-23, #94).')
-    expect(healthPage.audience.card.heading).toBe('Healthcare providers')
+    expect(healthPage.audience.card!.heading).toBe('Healthcare providers')
     expect(JSON.stringify(healthPage)).not.toMatch(/Public and global-health programmes|global-health/)
   })
 

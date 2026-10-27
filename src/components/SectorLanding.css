@@ -7,8 +7,8 @@
  * this file, so the build ships it with the pre-rendered pages.
  *
  * Surfaces: the hero on the hero tint, the body on paper, white cards
- * with a graphite 200 hairline and --radius-card, the audience card and
- * the exit boxes on the lighter tint, the assessment band white between
+ * with a graphite 200 hairline and --radius-card, the audience card, the
+ * segment cards (issue 101) and the exit boxes on the lighter tint, the assessment band white between
  * two hairlines, and the closing panel graphite 900 (.surface-dark), inset
  * in the container with paper below it before the dark footer.
  *
@@ -553,6 +553,41 @@
   font-weight: var(--weight-semibold);
 }
 
+/* Who we work with's segment cards (issue 101): a card per segment on the
+   lighter tint, a graphite 200 hairline, the round badge above the h3,
+   the description in graphite 600 (6.04:1) and the checklist, its text
+   in graphite 900 (14.98:1) and its tick circles teal 700 (4.75:1). One
+   column below 64em, three from it. */
+.sector-landing .segment-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sector-landing .segment-card {
+  min-width: 0;
+  padding: var(--space-6) var(--landing-card-inset);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--landing-tint-bg);
+}
+
+.sector-landing .segment-card .icon-badge {
+  margin-block-end: var(--space-5);
+}
+
+.sector-landing .segment-card__text {
+  margin-block: 0;
+  color: var(--color-text-muted);
+}
+
+.sector-landing .segment-card__text + .checklist {
+  margin-block-start: var(--space-5);
+}
+
 /* A checklist item's name, in bold before its colon (Health, #94). */
 .sector-landing .checklist__name {
   font-weight: var(--weight-semibold);
@@ -932,6 +967,12 @@
   color: var(--color-text-muted);
   font-size: var(--text-xs);
   line-height: var(--leading-snug);
+}
+
+/* The callout at the row's end (issue 101): the caption's text
+   end-aligned, so it ends with the callout at every width. */
+.sector-landing .journey--callout-end .journey__caption {
+  text-align: end;
 }
 
 /* The definition callout: white, a 3px teal 600 rule on the start side
@@ -1321,7 +1362,8 @@
   }
 
   .sector-landing .service-cards,
-  .sector-landing .reconciliation {
+  .sector-landing .reconciliation,
+  .sector-landing .segment-cards {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
@@ -1400,6 +1442,13 @@
 
   .sector-landing .journey__caption {
     grid-row: 5;
+  }
+
+  /* The callout at the row's end (issue 101): across the last two
+     columns, whichever step is highlighted, the caption under it. */
+  .sector-landing .journey--callout-end .journey__step--highlight > .definition-callout,
+  .sector-landing .journey--callout-end .journey__caption {
+    grid-column: -3 / -1;
   }
 
   .sector-landing .sector-closing__panel {

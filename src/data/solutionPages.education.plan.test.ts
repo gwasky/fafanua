@@ -151,14 +151,14 @@ describe('Education copy (plan section 4)', () => {
     const t = 'Who we work with'
     expect(page.audience.heading).toBe(cell(t, 'Heading'))
     expect(page.audience.subheading).toBe(cell(t, 'Subheading'))
-    expect(page.audience.card.heading).toBe(cell(t, 'Card heading'))
-    expect(page.audience.card.text).toBe(cell(t, 'Card text'))
-    expect(page.audience.card.detail).toBe(OWNER_ADDITIONS.audienceDetail)
-    expect(page.audience.card.itemsLabel).toBeUndefined()
-    expect(page.audience.card.itemsLayout).toBeUndefined()
-    expect(page.audience.card.items).toEqual(list(cell(t, 'Checklist')))
-    for (const item of page.audience.card.items) expect(typeof item).toBe('string')
-    expect(page.audience.card.icon).toBe('cap')
+    expect(page.audience.card!.heading).toBe(cell(t, 'Card heading'))
+    expect(page.audience.card!.text).toBe(cell(t, 'Card text'))
+    expect(page.audience.card!.detail).toBe(OWNER_ADDITIONS.audienceDetail)
+    expect(page.audience.card!.itemsLabel).toBeUndefined()
+    expect(page.audience.card!.itemsLayout).toBeUndefined()
+    expect(page.audience.card!.items).toEqual(list(cell(t, 'Checklist')))
+    for (const item of page.audience.card!.items) expect(typeof item).toBe('string')
+    expect(page.audience.card!.icon).toBe('cap')
   })
 
   it('uses the Data Trust Assessment\'s eyebrow, heading, text and deliverables (no full stops, no label)', () => {
@@ -272,7 +272,7 @@ describe('Education copy (plan section 4)', () => {
       'We help education organisations build a trusted data foundation for reliable reporting, clearer learner journeys and better decisions.',
       'We help education institutions bring together data from admissions, learning, exams and finance systems for learner analytics, education dashboards and cohort analysis — giving teams a clearer view of student retention, learner progression and graduate outcomes.',
     ])
-    expect([page.closing.followUp, page.audience.card.detail]).toEqual(Object.values(OWNER_ADDITIONS))
+    expect([page.closing.followUp, page.audience.card!.detail]).toEqual(Object.values(OWNER_ADDITIONS))
     for (const text of Object.values(OWNER_ADDITIONS)) expect(copySection).toContain(`"${text}"`)
     expect(WITHDRAWN).toHaveLength(7)
     const text = JSON.stringify(page)

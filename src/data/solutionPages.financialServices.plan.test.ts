@@ -146,13 +146,13 @@ describe('Financial Services copy (plan section 4)', () => {
     const t = 'Who we work with'
     expect(page.audience.heading).toBe(cell(t, 'Heading'))
     expect(page.audience.subheading).toBe(cell(t, 'Subheading'))
-    expect(page.audience.card.heading).toBe(cell(t, 'Card heading'))
-    expect(page.audience.card.text).toBe(cell(t, 'Card text'))
-    expect(page.audience.card.detail).toBe(OWNER_ADDITIONS.audienceDetail)
-    expect(page.audience.card.itemsLabel).toBeUndefined()
-    expect(page.audience.card.itemsLayout).toBe('stacked')
-    expect(page.audience.card.items).toEqual([1, 2, 3, 4].map((n) => named(cell(t, `Item ${n}`))))
-    expect(page.audience.card.icon).toBe('ledger')
+    expect(page.audience.card!.heading).toBe(cell(t, 'Card heading'))
+    expect(page.audience.card!.text).toBe(cell(t, 'Card text'))
+    expect(page.audience.card!.detail).toBe(OWNER_ADDITIONS.audienceDetail)
+    expect(page.audience.card!.itemsLabel).toBeUndefined()
+    expect(page.audience.card!.itemsLayout).toBe('stacked')
+    expect(page.audience.card!.items).toEqual([1, 2, 3, 4].map((n) => named(cell(t, `Item ${n}`))))
+    expect(page.audience.card!.icon).toBe('ledger')
   })
 
   it('uses the Data Trust Assessment\'s eyebrow, heading, text, deliverables label and deliverables (with full stops)', () => {
@@ -248,7 +248,7 @@ describe('Financial Services copy (plan section 4)', () => {
       'We help you build a trusted data foundation for reliable reporting and better decisions.',
       'We help financial institutions bring together data from banking, lending, payment and accounting systems to improve reconciliation, financial reporting and visibility into business performance.',
     ])
-    expect([page.closing.followUp, page.audience.card.detail]).toEqual(Object.values(OWNER_ADDITIONS))
+    expect([page.closing.followUp, page.audience.card!.detail]).toEqual(Object.values(OWNER_ADDITIONS))
     expect(WITHDRAWN).toHaveLength(2)
     const text = JSON.stringify(page)
     for (const line of WITHDRAWN) expect(text, line).not.toContain(line)

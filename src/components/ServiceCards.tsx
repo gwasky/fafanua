@@ -6,11 +6,13 @@ import IconBadge from './IconBadge.tsx'
 // cards with square badges, three across from 64em. Each h3 links to its
 // service's landing page (owner note 4), in the heading's colour. A card
 // may have a bold lead line between its heading and text (Health, #94),
-// which a page may show in teal 800 (Financial Services, #98).
+// which a page may show in teal 800 (Financial Services, #98). A page may
+// put an eyebrow above the h2 (Retail & Distribution, issue 101).
 function ServiceCards({ services }: { services: SectorLandingPage['services'] }) {
   return (
     <section className="sector-section" aria-labelledby="after-heading">
       <div className="container">
+        {services.eyebrow !== undefined && <p className="sector-eyebrow">{services.eyebrow}</p>}
         <h2 id="after-heading" className="sector-heading">
           {services.heading}
         </h2>
