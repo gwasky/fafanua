@@ -21,30 +21,52 @@ export const SOLID_SOURCES = connectors('Solid teal', ' to the middle box')
 export const DASHED_SOURCES = connectors('Faint dashed', '\\.')
 
 /**
- * The title and description the issue recommends (issue 101, owner note
- * 1), pending the owner's decision: the plan's title (75 characters,
- * ending " · Fafanua") and description (212) break the length rules, so
- * these keep its keywords and wording within them.
+ * The owner's title and description (2026-10-27, issue 101), recorded in
+ * the plan's section 4 as an owner update: the plan's own title (75
+ * characters, ending " · Fafanua") and description (212) broke the
+ * length rules.
  */
-export const TITLE = 'Retail Analytics Uganda: Sales, Stock & Margin | Fafanua'
+export const TITLE = 'Retail & Distribution Data Analytics Uganda | Fafanua'
 export const DESCRIPTION =
-  'Retail business intelligence in Uganda and East Africa: sales analytics, inventory analytics and distribution analytics built on figures you can trace.'
+  'Retailers, wholesalers, distributors and FMCG businesses in Uganda and East Africa: build a trusted data foundation for sales, stock, margin and distribution analytics.'
+
+/** The owner's closing follow-up (2026-10-27, issue 101), a proposal
+ * pending the owner's approval, recorded in the plan's section 4: it keeps
+ * "trusted data foundation" visible without repeating the heading. */
+export const PROPOSED_FOLLOW_UP =
+  'We help retail and distribution businesses build a trusted data foundation across every branch, depot and head office.'
 
 /**
- * The strings the issue proposes adding to the plan copy (issue 101),
- * pending the owner's decision, each in an existing optional field: A1,
- * the closing panel's follow-up sentence, which makes the protected
- * "trusted data foundation" visible; A2, the Integrate & model card's
- * second paragraph; A3, the journey's opening sentence, so it reads as
- * work that follows the assessment.
+ * The strings the issue proposed adding (A1 to A3), its recommended
+ * title and description, and the two handling items the owner replaced,
+ * all withdrawn on 2026-10-27 (issue 101): none is on the page. The owner's
+ * replacements for A2 and A3 are already plan copy (the hero's first lead
+ * and What happens next's supporting line), so they are not repeated.
  */
-export const PROPOSED = {
-  closingFollowUp:
-    'We help retailers, wholesalers and distributors build a trusted data foundation, so every branch, depot and head office works from the same figures.',
-  serviceDetail:
-    'Payment and loyalty data can be connected too, so customer retention can be tracked and card and mobile-money takings reconcile with sales.',
-  journeyIntro:
-    'Where the assessment finds stock figures that do not agree, we can then help you follow each unit across the systems that record it.',
+export const WITHDRAWN = [
+  'We help retailers, wholesalers and distributors build a trusted data foundation, so every branch, depot and head office works from the same figures.',
+  'Payment and loyalty data can be connected too, so customer retention can be tracked and card and mobile-money takings reconcile with sales.',
+  'Where the assessment finds stock figures that do not agree, we can then help you follow each unit across the systems that record it.',
+  'Retail Analytics Uganda: Sales, Stock & Margin | Fafanua',
+  'Retail business intelligence in Uganda and East Africa: sales analytics, inventory analytics and distribution analytics built on figures you can trace.',
+  'Access follows your existing roles, by branch and by function.',
+  'Ownership and access rules are agreed before any pipeline is built.',
+] as const
+
+/** The owner's other decisions (2026-10-27, issue 101), each recorded in
+ * the plan's section 4: the A2 and A3 replacements, which are plan copy,
+ * and the fourth service card, which links the data warehousing page. */
+export const OWNER_DECISIONS = {
+  sectorStatement:
+    'Fafanua helps retailers, wholesalers, distributors and FMCG businesses in Uganda and East Africa build trusted retail analytics across sales, inventory, margin and distribution performance.',
+  assessmentLine:
+    'The assessment shows where trust breaks down and what matters most. From there, Fafanua can strengthen the parts of your retail data foundation that need attention.',
+  service: {
+    name: 'Retail data warehouse',
+    text: 'Model products, outlets, stock movements and sales in one data warehouse, so margin and stock can be tracked over time.',
+    icon: 'ledger',
+    service: 'data-warehousing-and-analytics-modelling',
+  },
 } as const
 
 /** The visually hidden note after the highlighted step (owner note 6),

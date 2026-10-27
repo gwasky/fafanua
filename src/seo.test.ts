@@ -69,9 +69,9 @@ describe('pageHead', () => {
     expect(pageHead(page)).toContain('<title>Learner &amp; Education Data Analytics Uganda | Fafanua</title>')
   })
 
-  it('gives Retail & Distribution the recommended title of its issue, its ampersand escaped, pending the owner (issue 101)', () => {
+  it('gives Retail & Distribution the owner\'s title, its ampersand escaped (issue 101)', () => {
     const page = pages.find((item) => item.path === '/solutions/retail-distribution')!
-    expect(pageHead(page)).toContain('<title>Retail Analytics Uganda: Sales, Stock &amp; Margin | Fafanua</title>')
+    expect(pageHead(page)).toContain('<title>Retail &amp; Distribution Data Analytics Uganda | Fafanua</title>')
   })
 })
 

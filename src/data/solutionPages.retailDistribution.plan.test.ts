@@ -6,9 +6,11 @@
 // case (CSS shows them so), the "; ", " / " and "Name: text" splits, the
 // diagram's solid and dashed sources (plan section 5), the segment cards,
 // the stock journey, the figure's accessible description (plan section
-// 6), and the recommended title and description and the proposed A1 to
-// A3, pending the owner's decision. It also checks the plan's metadata
-// conflicts, the section 7 terms, that the old Retail & Distribution
+// 6), the owner's decisions of 2026-10-27 (title, description, the
+// handling items, the fourth service card, A1 to A3 dropped), each
+// recorded in the plan as an owner update, and the owner's proposed
+// closing follow-up. It also checks the plan's metadata conflicts, the
+// section 7 terms, that the old Retail & Distribution
 // strings are gone from src/, the naming and claims rules (plan section
 // 3) without naming anyone, that the assessment claims no implementation
 // work, and that the call to action and address come from contact.ts.
@@ -17,6 +19,7 @@ import {
   buttonLabel,
   cell,
   COMPLIANCE_TERMS,
+  copySection,
   DASHED_SOURCES,
   DESCRIPTION,
   figureDescription,
@@ -26,12 +29,14 @@ import {
   marked,
   named,
   NAMING_TERMS,
-  PROPOSED,
+  OWNER_DECISIONS,
+  PROPOSED_FOLLOW_UP,
   SECTION_7_TERMS,
   segment,
   SOLID_SOURCES,
   tables,
   TITLE,
+  WITHDRAWN,
 } from '../test/retailDistributionPlan.ts'
 import { ctaLabel, email } from './contact.ts'
 import { solutionPages, type SectorLandingPage } from './solutionPages.ts'
@@ -86,20 +91,22 @@ describe('Retail & Distribution metadata (plan section 4, owner note 1)', () => 
     expect(description).toHaveLength(212)
   })
 
-  it('has the issue\'s recommended title and description, pending the owner, within the rules and with the plan\'s keywords', () => {
+  it('has the owner\'s title and description (2026-10-27), recorded in the plan, within the rules', () => {
     expect(page.title).toBe(TITLE)
     expect(page.description).toBe(DESCRIPTION)
-    expect(page.title).toHaveLength(56)
-    expect(page.description).toHaveLength(151)
+    expect(page.title).toBe('Retail & Distribution Data Analytics Uganda | Fafanua')
+    expect(page.description).toBe(
+      'Retailers, wholesalers, distributors and FMCG businesses in Uganda and East Africa: build a trusted data foundation for sales, stock, margin and distribution analytics.',
+    )
+    expect(page.title).toHaveLength(53)
+    expect(page.description).toHaveLength(168)
     expect(page.title).toMatch(/ \| Fafanua$/)
-    expect(page.title).toContain('Retail Analytics Uganda')
-    for (const keyword of ['Retail business intelligence', 'sales analytics', 'inventory analytics', 'distribution analytics', 'Uganda and East Africa']) {
+    for (const keyword of ['distribution analytics', 'trusted data foundation', 'Uganda and East Africa']) {
       expect(page.description).toContain(keyword)
     }
-    // The plan's description with only the audience list taken out.
-    expect(cell('Metadata', 'Meta description').replace(' for retailers, wholesalers, distributors and FMCG businesses', '')).toBe(
-      page.description,
-    )
+    expect(copySection).toContain(`"${TITLE}"`)
+    expect(copySection).toContain(`"${DESCRIPTION}"`)
+    expect(copySection).toMatch(/Owner update \(2026-10-27, #1\d\d\): the title above/)
     expect(`${page.title} ${page.description}`).not.toMatch(/\bAI\b/)
     expect(`${page.title} ${page.description}`).not.toMatch(COMPLIANCE_TERMS)
   })
@@ -198,12 +205,13 @@ describe('Retail & Distribution copy (plan section 4)', () => {
     expect(JSON.stringify(page.assessment)).not.toMatch(/connect|integrat|reconcil|pipeline|dashboard|build/i)
   })
 
-  it('uses the stock journey: eyebrow, heading, the proposed A3 then the text, five "Name: System" steps in order, On hand highlighted, the callout and the caption, aligned to the end', () => {
+  it('uses the stock journey: eyebrow, heading, the text (no opening sentence, owner), five "Name: System" steps in order, On hand highlighted, the callout and the caption, aligned to the end', () => {
     const t = 'One stock figure'
     expect(upper(journey.eyebrow)).toBe(cell(t, 'Eyebrow'))
     expect(journey.eyebrow).toBe('One stock figure')
     expect(journey.heading).toBe(cell(t, 'Heading'))
-    expect(journey.intro).toBe(PROPOSED.journeyIntro)
+    expect(journey.intro).toBeUndefined()
+    expect(journey).not.toHaveProperty('intro')
     expect(journey.text).toBe(cell(t, 'Text'))
     expect(journey.steps).toEqual(
       list(cell(t, 'Journey steps, in order')).map(named).map(({ name, text }) => ({ name, system: text })),
@@ -223,7 +231,7 @@ describe('Retail & Distribution copy (plan section 4)', () => {
     expect(journey.calloutAlign).toBe('end')
   })
 
-  it('uses the readiness card, with its eyebrow and no chips, and the Handled responsibly checklist (with full stops)', () => {
+  it('uses the readiness card, with its eyebrow and no chips, and the Handled responsibly checklist (with full stops), with the owner\'s reworded items', () => {
     const t = 'Readiness and responsible handling'
     expect(upper(page.ai.label!)).toBe(cell(t, 'Card 1 eyebrow'))
     expect(page.ai.label).toBe('Ready for what comes next')
@@ -232,7 +240,11 @@ describe('Retail & Distribution copy (plan section 4)', () => {
     expect(page.ai).not.toHaveProperty('chips')
     expect(page.handling.heading).toBe(cell(t, 'Card 2 heading'))
     expect(page.handling.items).toEqual(handlingItems(cell(t, 'Card 2 checklist')))
-    expect(page.handling.items).toHaveLength(3)
+    expect(page.handling.items).toEqual([
+      'Where appropriate, analysis can use pseudonymised customer and loyalty data to reduce exposure of directly identifying information.',
+      'Access follows agreed roles and responsibilities, by branch and by function.',
+      'Ownership and access rules are defined as part of the solution design.',
+    ])
     for (const item of page.handling.items) expect(item).toMatch(/\.$/)
     expect([page.ai.icon, page.handling.icon]).toEqual(['gauge', 'shield'])
   })
@@ -247,57 +259,80 @@ describe('Retail & Distribution copy (plan section 4)', () => {
     expect(text).not.toMatch(/\bAI\b|Fafanua Intelligence|AI-powered|Reverse ETL/)
   })
 
-  it('uses What happens next: its eyebrow, heading, supporting line and three service cards, the first with the proposed A2', () => {
+  it('uses What happens next: its eyebrow, heading, the supporting line and the plan\'s four service cards, the fourth the owner\'s restored link, with no lead or detail', () => {
     const t = 'What happens next'
     expect(upper(page.services.eyebrow!)).toBe(cell(t, 'Eyebrow'))
     expect(page.services.eyebrow).toBe('What happens next')
     expect(page.services.heading).toBe(cell(t, 'Heading'))
     expect(page.services.subheading).toBe(cell(t, 'Supporting line'))
     expect(page.services.leadTone).toBeUndefined()
-    expect(page.services.items.map(({ name, text }) => ({ name, text }))).toEqual([1, 2, 3].map((n) => named(cell(t, `Card ${n}`))))
-    expect(page.services.items.map((item) => item.detail)).toEqual([PROPOSED.serviceDetail, undefined, undefined])
-    for (const item of page.services.items) expect(item.lead).toBeUndefined()
+    expect(page.services.subheading).toBe(OWNER_DECISIONS.assessmentLine)
+    expect(page.services.items.map(({ name, text }) => ({ name, text }))).toEqual([1, 2, 3, 4].map((n) => named(cell(t, `Card ${n}`))))
+    expect(page.services.items[3]).toEqual(OWNER_DECISIONS.service)
+    for (const item of page.services.items) {
+      expect(item.lead).toBeUndefined()
+      expect(item.detail).toBeUndefined()
+    }
     expect(page.services.items.map((item) => [item.icon, item.service])).toEqual([
       ['link', 'data-engineering-and-integration'],
       ['shield', 'data-quality-and-reliability'],
       ['chart', 'business-intelligence-and-analytics'],
+      ['ledger', 'data-warehousing-and-analytics-modelling'],
     ])
   })
 
-  it('uses the closing panel, with the proposed A1, and the call to action and address from contact.ts', () => {
+  it('uses the closing panel, with the owner\'s proposed follow-up, and the call to action and address from contact.ts', () => {
     const t = 'Closing panel'
     expect(upper(page.closing.eyebrow)).toBe(cell(t, 'Eyebrow'))
     expect(page.closing.heading).toBe(cell(t, 'Heading'))
     expect(page.closing.text).toBe(cell(t, 'Text'))
-    expect(page.closing.followUp).toBe(PROPOSED.closingFollowUp)
+    expect(page.closing.followUp).toBe(PROPOSED_FOLLOW_UP)
     expect(buttonLabel(cell(t, 'Primary button'))).toBe(ctaLabel)
     expect(cell(t, 'Secondary link')).toBe(`${email} (\`mailto:${email}\`)`)
   })
 
-  it('holds the proposed A1 to A3 verbatim, each in an existing optional field, and makes the protected phrase visible only through A1', () => {
-    expect(Object.values(PROPOSED)).toEqual([
-      'We help retailers, wholesalers and distributors build a trusted data foundation, so every branch, depot and head office works from the same figures.',
-      'Payment and loyalty data can be connected too, so customer retention can be tracked and card and mobile-money takings reconcile with sales.',
-      'Where the assessment finds stock figures that do not agree, we can then help you follow each unit across the systems that record it.',
-    ])
-    expect(Object.values(PROPOSED).map((text) => text.length)).toEqual([148, 139, 132])
-    expect([page.closing.followUp, page.services.items[0].detail, journey.intro]).toEqual(Object.values(PROPOSED))
-    const strings = JSON.stringify(page)
-    expect(strings.match(/trusted data foundation/g)).toHaveLength(1)
+  it('holds the owner\'s proposed closing follow-up verbatim, recorded in the plan, which keeps the protected phrase visible without repeating the heading', () => {
+    expect(PROPOSED_FOLLOW_UP).toBe(
+      'We help retail and distribution businesses build a trusted data foundation across every branch, depot and head office.',
+    )
+    expect(PROPOSED_FOLLOW_UP).toHaveLength(118)
+    expect(copySection).toContain(`"${PROPOSED_FOLLOW_UP}"`)
     expect(page.closing.followUp).toContain('trusted data foundation')
-    expect(page.description).not.toContain('trusted data foundation')
-    for (const text of Object.values(PROPOSED)) {
-      expect(text).not.toMatch(COMPLIANCE_TERMS)
-      expect(text).not.toMatch(/Uganda|East Africa/)
-    }
+    expect(page.closing.followUp).not.toContain(page.closing.heading)
+    expect(page.closing.followUp!.toLowerCase()).not.toContain('build a retail data foundation you can trust')
+    expect(PROPOSED_FOLLOW_UP).not.toMatch(COMPLIANCE_TERMS)
+    // Visible once, in the closing panel; the description carries it too.
+    expect(visible().join(' ').match(/trusted data foundation/g)).toHaveLength(1)
+    expect(page.description).toContain('trusted data foundation')
   })
 
-  it('carries the plan section 7 terms in its visible strings, case-insensitively, and the description carries four of them', () => {
+  it('holds none of the withdrawn strings: A1 to A3, the recommended metadata and the replaced handling items (owner, 2026-10-27)', () => {
+    expect(WITHDRAWN).toHaveLength(7)
+    const text = JSON.stringify(page)
+    for (const line of WITHDRAWN) expect(text, line).not.toContain(line)
+  })
+
+  it('shows the owner\'s A2 and A3 replacements once each, as the plan copy they already are (owner, 2026-10-27)', () => {
+    expect(page.hero.lead).toBe(OWNER_DECISIONS.sectorStatement)
+    expect(page.services.subheading).toBe(OWNER_DECISIONS.assessmentLine)
+    const strings = visible()
+    for (const line of [OWNER_DECISIONS.sectorStatement, OWNER_DECISIONS.assessmentLine]) {
+      expect(strings.filter((text) => text.includes(line))).toHaveLength(1)
+    }
+    expect(copySection).toMatch(/Owner update \(2026-10-27, #1\d\d\): the proposed opening sentences \(A2/)
+  })
+
+  it('keeps the owner\'s phrases: the h1, the journey heading, the WHAT HAPPENS NEXT eyebrow and the closing heading', () => {
+    expect(page.hero.heading).toBe('Sales, stock and margin you can trace.')
+    expect(journey.heading).toBe('Follow every unit, from supplier to shelf')
+    expect(upper(page.services.eyebrow!)).toBe('WHAT HAPPENS NEXT')
+    expect(page.closing.heading).toBe('Build a retail data foundation you can trust')
+  })
+
+  it('carries the plan section 7 terms in its visible strings, case-insensitively, and the owner\'s description carries distribution analytics', () => {
     const text = visible().join(' ').toLowerCase()
     for (const term of SECTION_7_TERMS) expect(text, term).toContain(term)
-    for (const term of ['retail business intelligence', 'sales analytics', 'inventory analytics', 'distribution analytics']) {
-      expect(page.description.toLowerCase()).toContain(term)
-    }
+    expect(page.description.toLowerCase()).toContain('distribution analytics')
   })
 
   it('stores the capitalised labels in sentence case', () => {
@@ -351,10 +386,12 @@ describe('Retail & Distribution copy (plan section 4)', () => {
   it('names no business (plan section 3): only the acronyms FMCG and CRM, each counted, and no company words', () => {
     const strings = JSON.stringify(page)
     expect(strings).not.toMatch(NAMING_TERMS)
-    // No run of three or more capitals but "FMCG" (the hero lead, the
-    // subheading and the third segment) and "CRM" (the first source).
-    expect(strings.match(/[A-Z]{3,}/g)).toEqual(['FMCG', 'CRM', 'FMCG', 'FMCG'])
-    expect(strings.match(/FMCG/g)).toHaveLength(3)
+    // No run of three or more capitals but "FMCG" (the description, the
+    // hero lead, the subheading and the third segment) and "CRM" (the
+    // first source).
+    expect(strings.match(/[A-Z]{3,}/g)).toEqual(['FMCG', 'FMCG', 'CRM', 'FMCG', 'FMCG'])
+    expect(strings.match(/FMCG/g)).toHaveLength(4)
+    expect(visible().join(' ').match(/FMCG/g)).toHaveLength(3)
     expect(strings.match(/CRM/g)).toHaveLength(1)
   })
 })

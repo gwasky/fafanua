@@ -62,7 +62,7 @@ const CLOSING: Record<string, { heading: string; text: string }> = {
   },
   '/solutions/retail-distribution': {
     heading: 'Build a retail data foundation you can trust',
-    text: `${retailPlan.cell('Closing panel', 'Text')} ${retailPlan.PROPOSED.closingFollowUp}`,
+    text: `${retailPlan.cell('Closing panel', 'Text')} ${retailPlan.PROPOSED_FOLLOW_UP}`,
   },
 }
 const paths = new Set(pages.map((page) => page.path))
@@ -1733,10 +1733,10 @@ describe('Education page', () => {
 // The Retail & Distribution page on the shared landing-page foundation
 // (issue 101), against section 4 of
 // _docs/fafanua-retail-distribution-landing-page-plan.md, with the
-// proposed A1 to A3, pending the owner's decision.
+// owner's decisions of 2026-10-27, recorded in the plan, and the owner's
+// proposed closing follow-up.
 describe('Retail & Distribution page', () => {
   const { cell: rcell, list: rlist, marked: rmarked, named: rnamed, buttonLabel: rbutton } = retailPlan
-  const proposed = retailPlan.PROPOSED
   const main = () => screen.getByRole('main')
   const headings = (level: number) =>
     within(main()).getAllByRole('heading', { level }).map((heading) => heading.textContent)
@@ -1786,10 +1786,11 @@ describe('Retail & Distribution page', () => {
       'Integrate & model',
       'Quality & governance',
       'Reporting & dashboards',
+      'Retail data warehouse',
     ])
   })
 
-  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description, the hidden note and the proposed A1 to A3 (issue 101)', () => {
+  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description, the hidden note, the owner\'s fourth service card and the proposed follow-up (issue 101)', () => {
     renderPage(retail)
     const plan = [
       ...rcell('Hero', 'Breadcrumb').split(' › '),
@@ -1825,7 +1826,7 @@ describe('Retail & Distribution page', () => {
       ...[1, 2, 3, 4].flatMap((i) => Object.values(rnamed(rcell('The Data Trust Assessment', `Deliverable ${i}`)))),
       rcell(t, 'Eyebrow'),
       rcell(t, 'Heading'),
-      `${proposed.journeyIntro} ${rcell(t, 'Text')}`,
+      rcell(t, 'Text'),
       ...steps().flatMap((step) =>
         step.name === 'On hand'
           ? [step.name, retailPlan.HIGHLIGHT_NOTE, step.text, rcell(t, 'Callout label'), rcell(t, 'Callout text'), rcell(t, 'Caption')]
@@ -1839,12 +1840,10 @@ describe('Retail & Distribution page', () => {
       rcell(n, 'Eyebrow'),
       rcell(n, 'Heading'),
       rcell(n, 'Supporting line'),
-      ...Object.values(rnamed(rcell(n, 'Card 1'))),
-      proposed.serviceDetail,
-      ...[2, 3].flatMap((i) => Object.values(rnamed(rcell(n, `Card ${i}`)))),
+      ...[1, 2, 3, 4].flatMap((i) => Object.values(rnamed(rcell(n, `Card ${i}`)))),
       rcell('Closing panel', 'Eyebrow'),
       rcell('Closing panel', 'Heading'),
-      `${rcell('Closing panel', 'Text')} ${proposed.closingFollowUp}`,
+      `${rcell('Closing panel', 'Text')} ${retailPlan.PROPOSED_FOLLOW_UP}`,
       rbutton(rcell('Closing panel', 'Primary button')),
       '→',
       rbutton(rcell('Closing panel', 'Secondary link')),
@@ -1866,7 +1865,7 @@ describe('Retail & Distribution page', () => {
     expect(main().textContent!.match(/\d[\d,]*/g)).toEqual(['1,240', '1,182', '58'])
   })
 
-  it('shows the protected "trusted data foundation" in the closing panel, through the proposed A1 (issue 101)', () => {
+  it('shows the protected "trusted data foundation" in the closing panel, through the owner\'s proposed follow-up (issue 101)', () => {
     renderPage(retail)
     const closing = screen.getByRole('region', { name: closingName })
     expect(closing).toHaveTextContent('trusted data foundation')
@@ -2019,7 +2018,7 @@ describe('Retail & Distribution page', () => {
     for (const card of [readiness, handling]) expect(card.parentElement).toHaveClass('badge-card badge-card--stacked')
   })
 
-  it('shows What happens next with its eyebrow directly above its h2, the supporting line and three service cards, the first with A2', () => {
+  it('shows What happens next with its eyebrow directly above its h2, the supporting line and four service cards, the fourth the owner\'s, with no detail', () => {
     renderPage(retail)
     const section = screen.getByRole('region', { name: rcell(n, 'Heading') })
     expect([...section.querySelector('.container')!.children].map((element) => [element.tagName, element.textContent])).toEqual([
@@ -2031,15 +2030,14 @@ describe('Retail & Distribution page', () => {
     expect(section.querySelector('.sector-eyebrow')!.nextElementSibling!.tagName).toBe('H2')
     const cardItems = within(section).getAllByRole('listitem')
     expect(cardItems.map((card) => [...card.querySelectorAll('h3, p')].map((element) => [element.tagName, element.className, element.textContent]))).toEqual(
-      [1, 2, 3].map((i) => rnamed(rcell(n, `Card ${i}`))).map(({ name, text }, index) => [
+      [1, 2, 3, 4].map((i) => rnamed(rcell(n, `Card ${i}`))).map(({ name, text }) => [
         ['H3', 'sector-card-heading sector-card-heading--small', name],
         ['P', 'service-card-lp__text', text],
-        ...(index === 0 ? [['P', 'service-card-lp__text', proposed.serviceDetail]] : []),
       ]),
     )
   })
 
-  it('links the hero buttons to the email and #assessment, the three service cards to their pages and the closing panel\'s two links to the email', () => {
+  it('links the hero buttons to the email and #assessment, the four service cards to their pages and the closing panel\'s two links to the email', () => {
     renderPage(retail)
     const hero = screen.getByRole('region', { name: 'Sales, stock and margin you can trace.' })
     expect(within(hero).getByRole('link', { name: 'Book a data trust assessment' })).toHaveAttribute('href', `mailto:${email}`)
@@ -2058,6 +2056,7 @@ describe('Retail & Distribution page', () => {
       ['Integrate & model', '/services/data-engineering-integration'],
       ['Quality & governance', '/services/data-quality-reliability'],
       ['Reporting & dashboards', '/services/business-intelligence-analytics'],
+      ['Retail data warehouse', '/services/data-warehousing-analytics-modelling'],
       ['Book a data trust assessment→', `mailto:${email}`],
       [email, `mailto:${email}`],
     ])
@@ -2134,7 +2133,6 @@ describe('Retail & Distribution page', () => {
     for (const name of ['Retail payment reconciliation', 'Point-of-sale, ERP and payment integration', 'Sales and inventory data models', 'Sales and branch-performance dashboards']) {
       expect(screen.queryByRole('link', { name })).toBeNull()
     }
-    expect(main().querySelector('a[href="/services/data-warehousing-analytics-modelling"]')).toBeNull()
     const text = main().textContent!
     for (const removed of [
       'Retail & Distribution Analytics',

@@ -33,9 +33,11 @@ import type { ServiceKey } from './servicePages.ts'
 // under "What happens next", approved its opening sentence and the two
 // added service cards' copy and replaced the first handling item, all
 // marked below and recorded in the plan's section 4. On Retail &
-// Distribution (issue 101) the title, the description and three added
-// strings, A1 to A3, are proposals pending the owner's decision, each
-// marked below.
+// Distribution (issue 101) the owner on 2026-10-27 set the title and the
+// description, dropped the three proposed additions, reworded two handling
+// items and restored the data warehousing link as a fourth service card,
+// all marked below and recorded in the plan's section 4; the owner's
+// closing follow-up is a proposal pending approval, marked below.
 
 export type SolutionService = {
   readonly service: ServiceKey
@@ -476,12 +478,12 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
   },
   'retail-and-distribution': {
     layout: 'sector',
-    // Pending the owner's decision (owner note 1, issue 101): the plan's
-    // title and description break the length rules, so these are the
-    // recommended resolutions, which keep its keywords and wording.
-    title: 'Retail Analytics Uganda: Sales, Stock & Margin | Fafanua',
+    // Owner decision (2026-10-27, issue 101): the title, replacing the
+    // plan's, which broke the length rules (owner note 1).
+    title: 'Retail & Distribution Data Analytics Uganda | Fafanua',
+    // Owner decision (2026-10-27, issue 101): the description.
     description:
-      'Retail business intelligence in Uganda and East Africa: sales analytics, inventory analytics and distribution analytics built on figures you can trace.',
+      'Retailers, wholesalers, distributors and FMCG businesses in Uganda and East Africa: build a trusted data foundation for sales, stock, margin and distribution analytics.',
     breadcrumb: 'Retail & distribution',
     hero: {
       eyebrow: 'Retail and distribution solutions',
@@ -573,10 +575,6 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
     journey: {
       eyebrow: 'One stock figure',
       heading: 'Follow every unit, from supplier to shelf',
-      // Proposed owner addition (pending the owner's decision, issue 101):
-      // A3, so the journey reads as work that follows the assessment.
-      intro:
-        'Where the assessment finds stock figures that do not agree, we can then help you follow each unit across the systems that record it.',
       text: 'We connect purchasing, warehouse, distribution and sales records, so stock on hand can be explained, not just counted.',
       steps: [
         { name: 'Ordered', system: 'Purchasing' },
@@ -606,8 +604,12 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
       icon: 'shield',
       items: [
         'Where appropriate, analysis can use pseudonymised customer and loyalty data to reduce exposure of directly identifying information.',
-        'Access follows your existing roles, by branch and by function.',
-        'Ownership and access rules are agreed before any pipeline is built.',
+        // Owner decision (2026-10-27, issue 101): the two items reworded to
+        // say access follows agreed roles and the rules are defined as part
+        // of the solution design; the wording is the engineer's, for the
+        // owner's review.
+        'Access follows agreed roles and responsibilities, by branch and by function.',
+        'Ownership and access rules are defined as part of the solution design.',
       ],
     },
     services: {
@@ -619,11 +621,6 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
         {
           name: 'Integrate & model',
           text: 'Connect point-of-sale, warehouse, purchasing, distribution and finance systems into one consistent view of products, outlets and stock.',
-          // Proposed owner addition (pending the owner's decision, issue
-          // 101): A2, the SEO plan §10 keywords on customer retention and
-          // payment reconciliation, as follow-on work.
-          detail:
-            'Payment and loyalty data can be connected too, so customer retention can be tracked and card and mobile-money takings reconcile with sales.',
           icon: 'link',
           service: 'data-engineering-and-integration',
         },
@@ -639,16 +636,25 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
           icon: 'chart',
           service: 'business-intelligence-and-analytics',
         },
+        // Owner decision (2026-10-27, issue 101): the link to the data
+        // warehousing service page restored as a fourth card, as on
+        // Education; its copy is the engineer's, for the owner's review.
+        {
+          name: 'Retail data warehouse',
+          text: 'Model products, outlets, stock movements and sales in one data warehouse, so margin and stock can be tracked over time.',
+          icon: 'ledger',
+          service: 'data-warehousing-and-analytics-modelling',
+        },
       ],
     },
     closing: {
       eyebrow: 'Get started',
       heading: 'Build a retail data foundation you can trust',
       text: 'Sales, stock or margin: which do you trust least? Tell us about the reports your branches and head office rely on.',
-      // Proposed owner addition (pending the owner's decision, issue 101):
-      // A1, the protected phrase, visible.
-      followUp:
-        'We help retailers, wholesalers and distributors build a trusted data foundation, so every branch, depot and head office works from the same figures.',
+      // Proposed owner addition (pending the owner's approval, issue 101):
+      // the owner's follow-up, which keeps the protected phrase visible
+      // without repeating the heading; it replaces the dropped A1.
+      followUp: 'We help retail and distribution businesses build a trusted data foundation across every branch, depot and head office.',
     },
   },
   'development-and-impact': {

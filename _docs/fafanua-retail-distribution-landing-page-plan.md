@@ -88,6 +88,8 @@ Copy all wording exactly. Store it in the Retail & Distribution page's entry in 
 
 ### One stock figure
 
+Owner update (2026-10-27, #101): the proposed opening sentences (A2 on the Integrate & model card, A3 before this section's text) are not added. The owner's replacements are already plan copy and appear once: the sector statement is the hero's lead, paragraph 1, and the assessment sentence is What happens next's supporting line.
+
 | Element | Text |
 |---|---|
 | Eyebrow | ONE STOCK FIGURE |
@@ -106,7 +108,9 @@ Copy all wording exactly. Store it in the Retail & Distribution page's entry in 
 | Card 1 heading | Trusted data makes advanced analytics possible. |
 | Card 1 text | Once sales, stock, product and branch data is consistently defined and traceable, the same foundation can support demand forecasting, replenishment, anomaly detection and other advanced analytics. |
 | Card 2 heading | Handled responsibly |
-| Card 2 checklist | Where appropriate, analysis can use pseudonymised customer and loyalty data to reduce exposure of directly identifying information.; Access follows your existing roles, by branch and by function.; Ownership and access rules are agreed before any pipeline is built. |
+| Card 2 checklist | Where appropriate, analysis can use pseudonymised customer and loyalty data to reduce exposure of directly identifying information.; Access follows agreed roles and responsibilities, by branch and by function.; Ownership and access rules are defined as part of the solution design. |
+
+Owner update (2026-10-27, #101): the first checklist item is confirmed. The other two items stay only as access following agreed roles and responsibilities, and ownership and access rules defined as part of the solution design, so they replace "Access follows your existing roles, by branch and by function." and "Ownership and access rules are agreed before any pipeline is built." Their wording is the engineer's minimal rewording, for the owner's review.
 
 ### What happens next
 
@@ -120,6 +124,9 @@ This follows the site convention used on every sector page.
 | Card 1 | Integrate & model: Connect point-of-sale, warehouse, purchasing, distribution and finance systems into one consistent view of products, outlets and stock. |
 | Card 2 | Quality & governance: Completeness and timeliness checks, plus clear ownership and access rules. |
 | Card 3 | Reporting & dashboards: Retail business intelligence for sales, margin, stock and branch performance, built on the traced numbers. |
+| Card 4 | Retail data warehouse: Model products, outlets, stock movements and sales in one data warehouse, so margin and stock can be tracked over time. |
+
+Owner update (2026-10-27, #101): the page links the Data Warehousing & Analytics Modelling service page again, as a fourth service card after Card 3, as on the Education page. Card 4's copy is the engineer's, for the owner's review.
 
 ### Closing panel
 
@@ -131,6 +138,8 @@ This follows the site convention used on every sector page.
 | Primary button | Book a data trust assessment → (`mailto:info@fafanua.tech`) |
 | Secondary link | info@fafanua.tech (`mailto:info@fafanua.tech`) |
 
+Owner update (2026-10-27, #101): the heading, "Build a retail data foundation you can trust", is the closing proposition, and the proposed follow-up sentence (A1) is not added. So that "trusted data foundation" stays visible, the owner proposes this sentence after the text, in the same paragraph, pending the owner's approval: "We help retail and distribution businesses build a trusted data foundation across every branch, depot and head office."
+
 ### Metadata
 
 | Element | Text |
@@ -139,6 +148,8 @@ This follows the site convention used on every sector page.
 | Meta description | Retail business intelligence for retailers, wholesalers, distributors and FMCG businesses in Uganda and East Africa: sales analytics, inventory analytics and distribution analytics built on figures you can trace. |
 
 Check both against the SEO plan's rules for title and description length, and report any conflict before changing them.
+
+Owner update (2026-10-27, #101): the title above (75 characters, ending " · Fafanua") and the description above (212 characters) break the length rules. The page's title is "Retail & Distribution Data Analytics Uganda | Fafanua" (53 characters), and its description is "Retailers, wholesalers, distributors and FMCG businesses in Uganda and East Africa: build a trusted data foundation for sales, stock, margin and distribution analytics." (168 characters).
 
 ### Removed from the current Retail & Distribution page
 

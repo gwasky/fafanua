@@ -203,16 +203,19 @@ describe('solution landing pages', () => {
     expect(new Set(linked).size).toBe(linked.length)
   })
 
-  it('gives Retail & Distribution "Retail Analytics Uganda" in its title, retail business intelligence, sales, inventory and distribution analytics and Uganda and East Africa in its description, and Uganda and East Africa in its lead (SEO plan §10, issue 101)', () => {
+  it('gives Retail & Distribution the owner\'s "Retail & Distribution Data Analytics Uganda" title, "trusted data foundation", distribution analytics and Uganda and East Africa in its description, and Uganda and East Africa in its lead (SEO plan §10, issue 101)', () => {
     if (retail.layout !== 'sector') throw new Error('Retail & Distribution is not on the foundation')
-    expect(retail.title).toContain('Retail Analytics Uganda')
-    for (const keyword of ['Retail business intelligence', 'sales analytics', 'inventory analytics', 'distribution analytics', 'Uganda and East Africa']) {
+    expect(retail.title).toContain('Retail & Distribution Data Analytics Uganda')
+    for (const keyword of ['trusted data foundation', 'distribution analytics', 'Uganda and East Africa']) {
       expect(retail.description).toContain(keyword)
     }
     expect(retail.hero.lead).toMatch(/Uganda and East Africa/)
   })
 
-  it('links Retail & Distribution\'s service cards to exactly its three real, distinct services (issue 101)', () => {
+  // The plan's three service cards, and the one the owner restored on
+  // 2026-10-27 (issue 101), which links the data warehousing page again
+  // (SEO plan §22 internal links).
+  it('links Retail & Distribution\'s service cards to exactly its four real, distinct services, the data warehousing page among them (issue 101, SEO plan §22)', () => {
     if (retail.layout !== 'sector') throw new Error('Retail & Distribution is not on the foundation')
     const keys = servicePages.map((page) => page.key)
     const linked = retail.services.items.map((item) => item.service)
@@ -220,6 +223,7 @@ describe('solution landing pages', () => {
       'data-engineering-and-integration',
       'data-quality-and-reliability',
       'business-intelligence-and-analytics',
+      'data-warehousing-and-analytics-modelling',
     ])
     for (const key of linked) expect(keys).toContain(key)
     expect(new Set(linked).size).toBe(linked.length)

@@ -20,7 +20,7 @@ const PATHS = [...servicePaths, ...solutionPaths]
 // The pages on the shared landing-page foundation (#93, #94, #98, #100,
 // #101), each with its closing panel's text: the plan's text and the
 // owner's (or, on Financial Services and Education, A1; on Retail &
-// Distribution, the proposed A1) follow-up.
+// Distribution, the owner's proposed sentence) follow-up.
 const PUBLIC_SECTOR = '/solutions/public-sector'
 const HEALTH = '/solutions/health'
 const FINANCIAL_SERVICES = '/solutions/financial-services'
@@ -36,7 +36,7 @@ const FOUNDATION: Record<string, string> = {
   [EDUCATION]:
     'Which learner figure do you trust least? Tell us about the reports your leadership, ministry and funders rely on. We help education organisations build a trusted data foundation for reliable reporting, clearer learner journeys and better decisions.',
   [RETAIL]:
-    'Sales, stock or margin: which do you trust least? Tell us about the reports your branches and head office rely on. We help retailers, wholesalers and distributors build a trusted data foundation, so every branch, depot and head office works from the same figures.',
+    'Sales, stock or margin: which do you trust least? Tell us about the reports your branches and head office rely on. We help retail and distribution businesses build a trusted data foundation across every branch, depot and head office.',
 }
 
 // The HTML as a crawler gets it: no JavaScript runs.

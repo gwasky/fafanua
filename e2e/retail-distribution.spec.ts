@@ -128,9 +128,9 @@ test.describe('links', () => {
     await expect(main.getByRole('link', { name: 'Book a data trust assessment', exact: true })).toHaveCount(2)
   })
 
-  test('shows "trusted data foundation" in the closing panel (proposed A1, #101)', async ({ page }) => {
+  test('shows "trusted data foundation" in the closing panel (the owner\'s proposed follow-up, #101)', async ({ page }) => {
     await openPath(page, PATH, 1440)
-    const line = page.locator('#contact').getByText(/build a trusted data foundation, so every branch, depot and head office works from the same figures\./)
+    const line = page.locator('#contact').getByText(/We help retail and distribution businesses build a trusted data foundation across every branch, depot and head office\./)
     await expect(line).toBeVisible()
   })
 
@@ -233,10 +233,11 @@ test.describe('layout', () => {
       expect(m.segmentItems).toEqual([3, 3, 3])
       expect(columns(m.deliverables)).toBe(4)
       expect(equalWidths(m.deliverables)).toBe(true)
-      // Three service cards in one row.
-      expect(m.services).toHaveLength(3)
+      // Four service cards, three across: three and one (the fourth the
+      // owner's restored data warehousing link).
+      expect(m.services).toHaveLength(4)
       expect(columns(m.services)).toBe(3)
-      expect(rows(m.services)).toBe(1)
+      expect(rows(m.services)).toBe(2)
       expect(equalWidths(m.services)).toBe(true)
       expect(m.actions[1].top).toBeGreaterThan(m.actions[0].bottom - 1)
       expect(Math.abs(m.actions[0].width - m.actions[1].width)).toBeLessThanOrEqual(1)
