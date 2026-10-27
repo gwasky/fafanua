@@ -552,8 +552,8 @@ describe('assessment source', () => {
 })
 
 // The homepage strings solutionPages.ts repeats by design (#93, #94, #98,
-// issue 100: the Public Sector, Health, Financial Services and Education
-// pages' plan copy), as quoted literals, each with the number of times it
+// issue 100, issue 101: the Public Sector, Health, Financial Services,
+// Education and Retail & Distribution pages' plan copy), as quoted literals, each with the number of times it
 // may occur there (once per foundation page that uses it; Financial
 // Services stores "After the assessment" twice, as its services heading
 // and its promise strip's second group label, and its reconciliation
@@ -562,19 +562,22 @@ describe('assessment source', () => {
 // it, so it left the list; the foundation pages' 'Prioritised roadmap' is
 // now also a homepage tile label (#99). 'What happens next', the
 // homepage's closing eyebrow, is also the Education learner journey's
-// eyebrow, by the owner's decision (2026-10-27, issue 100). Only these
+// eyebrow, by the owner's decision (2026-10-27, issue 100), and the
+// Retail & Distribution services section's eyebrow, plan copy (issue
+// 101), which also uses the sample caption twice, under its diagram and
+// its journey, and has no "After the assessment". Only these
 // are taken out of that file before the scans below; everything else in
 // it is scanned.
 const LANDING_ALLOWED: Allowed = [
-  ["'Start with trust'", 4],
-  ["'Lineage map'", 4],
-  ["'Trust scorecard'", 4],
-  ["'Shared definitions'", 4],
-  ["'Illustrative example. Sample data only.'", 4],
+  ["'Start with trust'", 5],
+  ["'Lineage map'", 5],
+  ["'Trust scorecard'", 5],
+  ["'Shared definitions'", 5],
+  ["'Illustrative example. Sample data only.'", 6],
   ["'After the assessment'", 5],
   ["'After the assessment · What we can implement'", 1],
-  ["'Prioritised roadmap'", 4],
-  ["'What happens next'", 1],
+  ["'Prioritised roadmap'", 5],
+  ["'What happens next'", 2],
 ]
 const scanned = (file: string, source: string) => scannedWith(file, source, LANDING_ALLOWED)
 

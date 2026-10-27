@@ -301,9 +301,26 @@ describe('old Health strings', () => {
     import.meta.glob<string>('/src/**/*.{ts,tsx,css,html}', { query: '?raw', import: 'default', eager: true }),
   ).filter(([file]) => !/\.test\.tsx?$/.test(file))
 
+  // Old Health strings that another page's plan uses as its own copy,
+  // each allowed exactly that many times in solutionPages.ts and never in
+  // the Health entry: Retail & Distribution's first segment item (issue
+  // 101).
+  const REUSED: Readonly<Record<string, number>> = { 'Branch performance and comparability': 1 }
+
   it.each(OLD)('no source file holds "%s"', (text) => {
     expect(sources.map(([file]) => file)).toContain('/src/data/solutionPages.ts')
-    for (const [file, source] of sources) expect(source.includes(text), file).toBe(false)
+    for (const [file, source] of sources) {
+      const allowed = file === '/src/data/solutionPages.ts' ? (REUSED[text] ?? 0) : 0
+      expect(source.split(text).length - 1, file).toBe(allowed)
+    }
+    expect(JSON.stringify(page).includes(text)).toBe(false)
+  })
+
+  it('allows only Retail & Distribution\'s segment item among the old strings, once (issue 101)', () => {
+    expect(Object.entries(REUSED)).toEqual([['Branch performance and comparability', 1]])
+    const retail = solutionPages['retail-and-distribution']
+    if (retail.layout !== 'sector') throw new Error('Retail & Distribution is not on the shared foundation')
+    expect(retail.audience.segments![0].items[1]).toBe('Branch performance and comparability')
   })
 
   it('has none of the old §18 fields on the entry', () => {

@@ -8,6 +8,7 @@ import { expectNoAxeViolations } from '../test/axe.ts'
 import * as eduPlan from '../test/educationPlan.ts'
 import * as fsPlan from '../test/financialServicesPlan.ts'
 import * as healthPlan from '../test/healthPlan.ts'
+import * as retailPlan from '../test/retailDistributionPlan.ts'
 import { buttonLabel, cell, figureDescription, list, marked, named, OWNER_ADDITIONS, stage } from '../test/publicSectorPlan.ts'
 import LandingPage from './LandingPage.tsx'
 
@@ -34,8 +35,11 @@ const publicSector = solutionPages.find((page) => page.path === '/solutions/publ
 const health = solutionPages.find((page) => page.path === '/solutions/health')!
 const financialServices = solutionPages.find((page) => page.path === '/solutions/financial-services')!
 const education = solutionPages.find((page) => page.path === '/solutions/education')!
-// The pages on the shared landing-page foundation (#93, #94, #98, issue 100).
-const foundationPages: readonly Page[] = [publicSector, health, financialServices, education]
+const retail = solutionPages.find((page) => page.path === '/solutions/retail-distribution')!
+const developmentImpact = solutionPages.find((page) => page.path === '/solutions/development-impact')!
+// The pages on the shared landing-page foundation (#93, #94, #98, issue
+// 100, issue 101).
+const foundationPages: readonly Page[] = [publicSector, health, financialServices, education, retail]
 
 // Each foundation page's closing panel: its heading, and its text after
 // the eyebrow (the plan's text and the owner's follow-up).
@@ -55,6 +59,10 @@ const CLOSING: Record<string, { heading: string; text: string }> = {
   '/solutions/education': {
     heading: 'Build an education data foundation you can trust',
     text: `${eduPlan.cell('Closing panel', 'Text')} ${eduPlan.OWNER_ADDITIONS.closingFollowUp}`,
+  },
+  '/solutions/retail-distribution': {
+    heading: 'Build a retail data foundation you can trust',
+    text: `${retailPlan.cell('Closing panel', 'Text')} ${retailPlan.PROPOSED.closingFollowUp}`,
   },
 }
 const paths = new Set(pages.map((page) => page.path))
@@ -110,7 +118,7 @@ describe.each(pages.map((page) => [page.path, page] as const))('%s', (_path, pag
     expect(within(footer).getByRole('link', { name: 'Solutions' })).toHaveAttribute('href', '/#solutions')
     expect(within(footer).getByRole('link', { name: 'Contact' })).toHaveAttribute('href', '#contact')
     if (page.kind === 'solution' && page.copy.layout === 'sector') {
-      // The page's own closing panel (#93, #94, #98, issue 100) replaces the Contact
+      // The page's own closing panel (#93, #94, #98, issue 100, issue 101) replaces the Contact
       // section: the button and the address, both opening an email.
       const expected = CLOSING[page.path]
       expect(expected, page.path).toBeDefined()
@@ -243,9 +251,10 @@ describe('service pages', () => {
 })
 
 describe('solution pages', () => {
-  // The two sectors still on the §18 sections; Public Sector, Health,
-  // Financial Services and Education are on the shared landing-page
-  // foundation (#93, #94, #98, issue 100), checked below.
+  // The one sector still on the §18 sections, Development & Impact;
+  // Public Sector, Health, Financial Services, Education and Retail &
+  // Distribution are on the shared landing-page foundation (#93, #94, #98,
+  // issue 100, issue 101), checked below.
   it.each(sectionPages.map((page) => [page.path, page] as const))(
     '%s has the SEO plan §18 sections in order',
     (_path, page) => {
@@ -274,9 +283,10 @@ describe('solution pages', () => {
     expect(main).not.toHaveTextContent('Health Data & Analytics Solutions')
   })
 
-  // Each §18 page (Financial Services was the first until #98, and
-  // Education the last until issue 100, which moved them onto the foundation,
-  // with no Other sectors section).
+  // Each §18 page (Financial Services was the first until #98, Education
+  // the last until issue 100, and Retail & Distribution the first until
+  // issue 101, which moved them onto the foundation, with no Other sectors
+  // section).
   it.each(sectionPages.map((page) => [page.path, page] as const))('%s links every other sector, and not itself', (_path, page) => {
     renderPage(page)
     const others = within(screen.getByRole('region', { name: 'Other sectors' })).getAllByRole('link')
@@ -550,14 +560,16 @@ describe('Public Sector page', () => {
     expect(main().querySelector('a[href^="tel:"]')).toBeNull()
   })
 
-  it('puts main.sector-landing on the foundation pages (Public Sector, Health, Financial Services and Education) only, and leaves out the Contact section there', () => {
+  it('puts main.sector-landing on the foundation pages (Public Sector, Health, Financial Services, Education and Retail & Distribution) only, and leaves out the Contact section there', () => {
     expect(foundationPages.map((page) => page.path)).toEqual([
       '/solutions/public-sector',
       '/solutions/health',
       '/solutions/financial-services',
       '/solutions/education',
+      '/solutions/retail-distribution',
     ])
-    expect(sectionPages.map((page) => page.path)).toEqual(['/solutions/retail-distribution', '/solutions/development-impact'])
+    expect(sectionPages.map((page) => page.path)).toEqual(['/solutions/development-impact'])
+    expect(sectionPages).toEqual([developmentImpact])
     for (const page of [...pages, notFound]) {
       const { unmount } = renderPage(page)
       const onFoundation = foundationPages.includes(page)
@@ -567,7 +579,7 @@ describe('Public Sector page', () => {
     }
   })
 
-  it('marks the header\'s Solutions link as current on the foundation pages (Public Sector, Health, Financial Services and Education) only', () => {
+  it('marks the header\'s Solutions link as current on the foundation pages (Public Sector, Health, Financial Services, Education and Retail & Distribution) only', () => {
     for (const page of [...pages, notFound]) {
       const { unmount } = renderPage(page)
       const onFoundation = foundationPages.includes(page)
@@ -1713,6 +1725,451 @@ describe('Education page', () => {
 
   it('has no img, lang, tabindex or contenteditable in main, and no axe violations', async () => {
     const { container } = renderPage(education)
+    expect(main().querySelectorAll('img, canvas, [lang], [tabindex], [contenteditable]')).toHaveLength(0)
+    await expectNoAxeViolations(container)
+  })
+})
+
+// The Retail & Distribution page on the shared landing-page foundation
+// (issue 101), against section 4 of
+// _docs/fafanua-retail-distribution-landing-page-plan.md, with the
+// proposed A1 to A3, pending the owner's decision.
+describe('Retail & Distribution page', () => {
+  const { cell: rcell, list: rlist, marked: rmarked, named: rnamed, buttonLabel: rbutton } = retailPlan
+  const proposed = retailPlan.PROPOSED
+  const main = () => screen.getByRole('main')
+  const headings = (level: number) =>
+    within(main()).getAllByRole('heading', { level }).map((heading) => heading.textContent)
+
+  // Every text node in main, trimmed, in DOM order.
+  function texts(root: Element) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+    const out: string[] = []
+    while (walker.nextNode()) {
+      const text = walker.currentNode.textContent!.trim()
+      if (text) out.push(text)
+    }
+    return out
+  }
+
+  const upperIfPlan = (text: string, plan: string) => (text.toUpperCase() === plan ? plan : text)
+  const t = 'One stock figure'
+  const r = 'Readiness and responsible handling'
+  const n = 'What happens next'
+  const steps = () => rlist(rcell(t, 'Journey steps, in order')).map(rnamed)
+  const journeyList = () => screen.getByRole('region', { name: rcell(t, 'Heading') }).querySelector('ol')!
+  const closingName = 'Build a retail data foundation you can trust'
+
+  it('has the plan\'s h2s and h3s, in order', () => {
+    renderPage(retail)
+    expect(headings(1)).toEqual([rcell('Hero', 'Heading (`h1`)')])
+    expect(headings(1)).toEqual(['Sales, stock and margin you can trace.'])
+    expect(headings(2)).toEqual([
+      'The challenge',
+      'Our approach',
+      'Who we work with',
+      'The Data Trust Assessment: three weeks, fixed fee',
+      'Follow every unit, from supplier to shelf',
+      'Trusted data makes advanced analytics possible.',
+      'Handled responsibly',
+      'From findings to a stronger retail data foundation.',
+      closingName,
+    ])
+    expect(headings(3)).toEqual([
+      'Retailers and supermarket chains',
+      'Wholesalers and distributors',
+      'FMCG and consumer brands',
+      'Lineage map',
+      'Trust scorecard',
+      'Shared definitions',
+      'Prioritised roadmap',
+      'Integrate & model',
+      'Quality & governance',
+      'Reporting & dashboards',
+    ])
+  })
+
+  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description, the hidden note and the proposed A1 to A3 (issue 101)', () => {
+    renderPage(retail)
+    const plan = [
+      ...rcell('Hero', 'Breadcrumb').split(' › '),
+      rcell('Hero', 'Eyebrow'),
+      rcell('Hero', 'Heading (`h1`)'),
+      rcell('Hero', 'Lead, paragraph 1'),
+      rcell('Hero', 'Lead, paragraph 2'),
+      rbutton(rcell('Hero', 'Primary button')),
+      '→',
+      rbutton(rcell('Hero', 'Secondary button')),
+      retailPlan.figureDescription,
+      rcell('Trace diagram', 'Left column heading'),
+      ...rlist(rcell('Trace diagram', 'Sources, in order')),
+      rcell('Trace diagram', 'Middle box heading'),
+      ...rlist(rcell('Trace diagram', 'Middle steps')),
+      rcell('Trace diagram', 'Middle footnote'),
+      rcell('Trace diagram', 'Right column heading'),
+      ...rlist(rcell('Trace diagram', 'Figures and ratings')).flatMap((entry) => {
+        const { name, rating } = rmarked(entry)
+        return [name, rating!]
+      }),
+      rcell('Trace diagram', 'Caption'),
+      ...[1, 2].flatMap((i) => [rcell('Challenge and approach', `Card ${i} heading`), rcell('Challenge and approach', `Card ${i} text`)]),
+      rcell('Who we work with', 'Heading'),
+      rcell('Who we work with', 'Subheading'),
+      ...[1, 2, 3].flatMap((i) => {
+        const { heading, text, items } = retailPlan.segment(rcell('Who we work with', `Segment ${i}`))
+        return [heading, text, ...items]
+      }),
+      rcell('The Data Trust Assessment', 'Eyebrow'),
+      rcell('The Data Trust Assessment', 'Heading'),
+      rcell('The Data Trust Assessment', 'Text'),
+      ...[1, 2, 3, 4].flatMap((i) => Object.values(rnamed(rcell('The Data Trust Assessment', `Deliverable ${i}`)))),
+      rcell(t, 'Eyebrow'),
+      rcell(t, 'Heading'),
+      `${proposed.journeyIntro} ${rcell(t, 'Text')}`,
+      ...steps().flatMap((step) =>
+        step.name === 'On hand'
+          ? [step.name, retailPlan.HIGHLIGHT_NOTE, step.text, rcell(t, 'Callout label'), rcell(t, 'Callout text'), rcell(t, 'Caption')]
+          : [step.name, step.text],
+      ),
+      rcell(r, 'Card 1 eyebrow'),
+      rcell(r, 'Card 1 heading'),
+      rcell(r, 'Card 1 text'),
+      rcell(r, 'Card 2 heading'),
+      ...retailPlan.handlingItems(rcell(r, 'Card 2 checklist')),
+      rcell(n, 'Eyebrow'),
+      rcell(n, 'Heading'),
+      rcell(n, 'Supporting line'),
+      ...Object.values(rnamed(rcell(n, 'Card 1'))),
+      proposed.serviceDetail,
+      ...[2, 3].flatMap((i) => Object.values(rnamed(rcell(n, `Card ${i}`)))),
+      rcell('Closing panel', 'Eyebrow'),
+      rcell('Closing panel', 'Heading'),
+      `${rcell('Closing panel', 'Text')} ${proposed.closingFollowUp}`,
+      rbutton(rcell('Closing panel', 'Primary button')),
+      '→',
+      rbutton(rcell('Closing panel', 'Secondary link')),
+    ]
+    const shown = texts(main())
+    // Labels the plan writes in capitals are stored in sentence case and
+    // capitalised by CSS.
+    expect(shown.map((text, index) => upperIfPlan(text, plan[index]))).toEqual(plan)
+    expect(shown.filter((text, index) => text !== plan[index])).toEqual([
+      'Retail and distribution solutions',
+      'Start with trust',
+      'One stock figure',
+      'Variance explained',
+      'Ready for what comes next',
+      'What happens next',
+      'Get started',
+    ])
+    // Digits only in the callout's sample figures.
+    expect(main().textContent!.match(/\d[\d,]*/g)).toEqual(['1,240', '1,182', '58'])
+  })
+
+  it('shows the protected "trusted data foundation" in the closing panel, through the proposed A1 (issue 101)', () => {
+    renderPage(retail)
+    const closing = screen.getByRole('region', { name: closingName })
+    expect(closing).toHaveTextContent('trusted data foundation')
+    expect(closing.querySelector('.sector-closing__body')).not.toHaveClass('visually-hidden')
+    expect(main().textContent!.match(/trusted data foundation/g)).toHaveLength(1)
+  })
+
+  it('has the breadcrumbs Home › Solutions › Retail & distribution', () => {
+    renderPage(retail)
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' })
+    expect(within(trail).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['Home', 'Solutions', 'Retail & distribution'])
+    expect(within(trail).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/')
+    expect(within(trail).getByRole('link', { name: 'Solutions' })).toHaveAttribute('href', '/#solutions')
+    expect(within(trail).getAllByRole('listitem')[2]).toHaveAttribute('aria-current', 'page')
+    expect(trail.textContent).not.toContain('›')
+  })
+
+  it('shows two hero leads and plain paired cards', () => {
+    renderPage(retail)
+    const hero = screen.getByRole('region', { name: 'Sales, stock and margin you can trace.' })
+    expect([...hero.querySelectorAll('.sector-hero__lead')].map((p) => p.textContent)).toEqual([
+      rcell('Hero', 'Lead, paragraph 1'),
+      rcell('Hero', 'Lead, paragraph 2'),
+    ])
+    for (const i of [1, 2]) {
+      const body = screen.getByRole('heading', { level: 2, name: rcell('Challenge and approach', `Card ${i} heading`) }).parentElement!
+      expect([...body.children].map((element) => element.tagName)).toEqual(['H2', 'P'])
+    }
+  })
+
+  it('shows Who we work with as a ul of exactly three segment cards, each a badge, its h3, its description and a three-item checklist, with the card, truck and box badges', () => {
+    renderPage(retail)
+    const section = screen.getByRole('region', { name: 'Who we work with' })
+    expect(section.tagName).toBe('SECTION')
+    expect(section.querySelector('.audience-card')).toBeNull()
+    expect(section.querySelector('.sector-subheading')!.textContent).toBe(rcell('Who we work with', 'Subheading'))
+    const list = section.querySelector('ul.segment-cards') as HTMLElement
+    expect(list).toHaveAttribute('role', 'list')
+    expect(list.children).toHaveLength(3)
+    const cards = [...list.children] as HTMLElement[]
+    const plan = [1, 2, 3].map((i) => retailPlan.segment(rcell('Who we work with', `Segment ${i}`)))
+    expect(cards.map((card) => card.tagName)).toEqual(['LI', 'LI', 'LI'])
+    for (const [index, card] of cards.entries()) {
+      expect([...card.children].map((element) => element.tagName)).toEqual(['SPAN', 'H3', 'P', 'UL'])
+      expect(card.querySelector('h3')!.textContent).toBe(plan[index].heading)
+      expect(card.querySelector('.segment-card__text')!.textContent).toBe(plan[index].text)
+      const items = within(card.querySelector('ul') as HTMLElement).getAllByRole('listitem')
+      expect(items).toHaveLength(3)
+      expect(items.map((item) => item.textContent)).toEqual(plan[index].items)
+      for (const tick of card.querySelectorAll('.checklist__tick')) expect(tick).toHaveAttribute('aria-hidden', 'true')
+      expect(card.querySelector(':scope > .icon-badge')).toHaveAttribute('aria-hidden', 'true')
+      expect(card.querySelector(':scope > .icon-badge')).toHaveClass('icon-badge--round')
+    }
+    // The badges' icons by their first paths: card, truck and box.
+    const firstShape = (card: HTMLElement) => {
+      const first = card.querySelector(':scope > .icon-badge svg')!.firstElementChild!
+      return first.tagName.toLowerCase() === 'rect' ? 'rect' : first.getAttribute('d')
+    }
+    expect(cards.map(firstShape)).toEqual([
+      'rect',
+      'M5.25 17H3V6.25h10.5V17M13.5 9.5h3.75l3.25 3.5V17h-1.75M8.75 17h6.5',
+      'M12 3.5 4.25 7.5v9L12 20.5l7.75-4v-9Z',
+    ])
+  })
+
+  it('labels section#assessment by its h2, and keeps implementation work and the journey out of it', () => {
+    renderPage(retail)
+    const section = screen.getByRole('region', { name: 'The Data Trust Assessment: three weeks, fixed fee' })
+    expect(section.tagName).toBe('SECTION')
+    expect(section).toHaveAttribute('id', 'assessment')
+    expect(document.getElementById(section.getAttribute('aria-labelledby')!)!.tagName).toBe('H2')
+    expect(within(within(section).getByRole('list')).getAllByRole('listitem')).toHaveLength(4)
+    expect(section.textContent).not.toMatch(/connect|integrat|reconcil|pipeline|dashboard|build/i)
+    expect(section.querySelector('.journey, .definition-callout')).toBeNull()
+  })
+
+  it('shows the journey as its own section after the assessment band: an ol of exactly five steps in plan order, no headings in it, the callout aligned to the end', () => {
+    renderPage(retail)
+    const section = screen.getByRole('region', { name: rcell(t, 'Heading') })
+    expect(section.tagName).toBe('SECTION')
+    const assessment = document.getElementById('assessment')!
+    expect(assessment.nextElementSibling).toBe(section)
+    expect(section.querySelector('.sector-eyebrow')!.textContent).toBe('One stock figure')
+    expect(section.querySelector('.sector-eyebrow')!.nextElementSibling!.tagName).toBe('H2')
+    const ol = journeyList()
+    expect(ol).toHaveAttribute('role', 'list')
+    expect(ol).toHaveClass('journey journey--callout-end')
+    const items = within(ol).getAllByRole('listitem')
+    expect(items).toHaveLength(5)
+    expect(ol.children).toHaveLength(5)
+    expect(items.map((item) => [item.querySelector('.journey__name')!.textContent, item.querySelector('.journey__system')!.textContent])).toEqual(
+      steps().map((step) => [step.name, step.text]),
+    )
+    expect(items.map((item) => item.querySelector('.journey__name')!.textContent)).toEqual(['Ordered', 'Received', 'Transferred', 'Sold', 'On hand'])
+    expect(ol.querySelectorAll('h1, h2, h3, h4, h5, h6')).toHaveLength(0)
+    for (const item of items) {
+      const dot = item.querySelector('.journey__dot')!
+      expect(dot).toHaveAttribute('aria-hidden', 'true')
+      expect(dot.textContent).toBe('')
+    }
+    expect(section.querySelectorAll('svg, img')).toHaveLength(0)
+  })
+
+  it('highlights only On hand: its class, the hidden "(variance shown below)" after its name, then its system, the callout and the caption inside it, described by the callout', () => {
+    renderPage(retail)
+    const items = within(journeyList()).getAllByRole('listitem')
+    expect(items.map((item) => item.classList.contains('journey__step--highlight'))).toEqual([false, false, false, false, true])
+    const onHand = items[4]
+    const order = [...onHand.querySelectorAll('.journey__name, .visually-hidden, .journey__system, .definition-callout, .journey__caption')]
+    expect(order.map((element) => element.className)).toEqual([
+      'journey__name',
+      'visually-hidden',
+      'journey__system',
+      'definition-callout',
+      'journey__caption',
+    ])
+    expect(order[1].textContent).toBe('(variance shown below)')
+    const callout = onHand.querySelector('.definition-callout')!
+    expect(callout.id).toBeTruthy()
+    expect(onHand).toHaveAttribute('aria-describedby', callout.id)
+    expect([...callout.children].map((element) => [element.tagName, element.textContent])).toEqual([
+      ['P', 'Variance explained'],
+      ['P', rcell(t, 'Callout text')],
+    ])
+    expect(onHand).toHaveAccessibleDescription(`Variance explained ${rcell(t, 'Callout text')}`)
+    expect(onHand.querySelector('.journey__caption')!.tagName).toBe('P')
+    expect(onHand.querySelector('.journey__caption')!.textContent).toBe('Illustrative example. Sample data only.')
+    for (const item of items.slice(0, 4)) {
+      expect(item).not.toHaveAttribute('aria-describedby')
+      expect(item.querySelectorAll('.visually-hidden, .definition-callout, .journey__caption')).toHaveLength(0)
+    }
+    expect(main().querySelectorAll('.definition-callout')).toHaveLength(1)
+    expect(main().textContent!.split(rcell(t, 'Callout text'))).toHaveLength(2)
+  })
+
+  it('shows the readiness eyebrow directly above its h2 and no chips, and the handling checklist', () => {
+    renderPage(retail)
+    const readiness = screen.getByRole('heading', { level: 2, name: rcell(r, 'Card 1 heading') }).parentElement!
+    expect([...readiness.children].map((element) => [element.tagName, element.className, element.textContent])).toEqual([
+      ['P', 'sector-eyebrow badge-card__label', 'Ready for what comes next'],
+      ['H2', 'badge-card__heading', rcell(r, 'Card 1 heading')],
+      ['P', 'badge-card__text', rcell(r, 'Card 1 text')],
+    ])
+    expect(main().querySelectorAll('.chips, .chip')).toHaveLength(0)
+    const handling = screen.getByRole('heading', { level: 2, name: 'Handled responsibly' }).parentElement!
+    expect(within(handling.querySelector('ul') as HTMLElement).getAllByRole('listitem').map((item) => item.textContent)).toEqual(
+      retailPlan.handlingItems(rcell(r, 'Card 2 checklist')),
+    )
+    // Badges above the content: the gauge and the shield.
+    for (const card of [readiness, handling]) expect(card.parentElement).toHaveClass('badge-card badge-card--stacked')
+  })
+
+  it('shows What happens next with its eyebrow directly above its h2, the supporting line and three service cards, the first with A2', () => {
+    renderPage(retail)
+    const section = screen.getByRole('region', { name: rcell(n, 'Heading') })
+    expect([...section.querySelector('.container')!.children].map((element) => [element.tagName, element.textContent])).toEqual([
+      ['P', 'What happens next'],
+      ['H2', rcell(n, 'Heading')],
+      ['P', rcell(n, 'Supporting line')],
+      ['UL', expect.any(String)],
+    ])
+    expect(section.querySelector('.sector-eyebrow')!.nextElementSibling!.tagName).toBe('H2')
+    const cardItems = within(section).getAllByRole('listitem')
+    expect(cardItems.map((card) => [...card.querySelectorAll('h3, p')].map((element) => [element.tagName, element.className, element.textContent]))).toEqual(
+      [1, 2, 3].map((i) => rnamed(rcell(n, `Card ${i}`))).map(({ name, text }, index) => [
+        ['H3', 'sector-card-heading sector-card-heading--small', name],
+        ['P', 'service-card-lp__text', text],
+        ...(index === 0 ? [['P', 'service-card-lp__text', proposed.serviceDetail]] : []),
+      ]),
+    )
+  })
+
+  it('links the hero buttons to the email and #assessment, the three service cards to their pages and the closing panel\'s two links to the email', () => {
+    renderPage(retail)
+    const hero = screen.getByRole('region', { name: 'Sales, stock and margin you can trace.' })
+    expect(within(hero).getByRole('link', { name: 'Book a data trust assessment' })).toHaveAttribute('href', `mailto:${email}`)
+    const jump = within(hero).getByRole('link', { name: 'See how the assessment works' })
+    expect(jump).toHaveAttribute('href', '#assessment')
+    expect(jump).toHaveAttribute('data-focus-section', 'assessment')
+    const closing = screen.getByRole('region', { name: closingName })
+    expect(closing).toHaveAttribute('id', 'contact')
+    expect(within(closing).getByRole('link', { name: 'Book a data trust assessment' })).toHaveAttribute('href', `mailto:${email}`)
+    expect(within(closing).getByRole('link', { name: email })).toHaveAttribute('href', `mailto:${email}`)
+    expect(mainLinks()).toEqual([
+      ['Home', '/'],
+      ['Solutions', '/#solutions'],
+      ['Book a data trust assessment→', `mailto:${email}`],
+      ['See how the assessment works', '#assessment'],
+      ['Integrate & model', '/services/data-engineering-integration'],
+      ['Quality & governance', '/services/data-quality-reliability'],
+      ['Reporting & dashboards', '/services/business-intelligence-analytics'],
+      ['Book a data trust assessment→', `mailto:${email}`],
+      [email, `mailto:${email}`],
+    ])
+    const mailtos = main().querySelectorAll('a[href^="mailto:"]')
+    expect(mailtos).toHaveLength(3)
+    for (const link of mailtos) expect(link).toHaveAttribute('href', 'mailto:info@fafanua.tech')
+    expect(main().querySelector('a[href^="tel:"]')).toBeNull()
+  })
+
+  it('has no Delivered in stages, promise strip or reconciliation section', () => {
+    renderPage(retail)
+    const ols = [...main().querySelectorAll('ol')]
+    expect(ols).toHaveLength(3)
+    expect(ols[0].closest('nav')).toHaveAccessibleName('Breadcrumb')
+    expect(ols[1].closest('figure')).not.toBeNull()
+    expect(ols[2]).toHaveClass('journey')
+    expect(main().querySelectorAll('ol.stages, .promise, .reconciliation')).toHaveLength(0)
+    expect(main().textContent).not.toMatch(/Delivered in stages|No big-bang projects|Moves on when|Stage\b/)
+  })
+
+  it('draws the figure with its caption, description, five sources (two faded), five steps and three rated figures', () => {
+    renderPage(retail)
+    const figure = screen.getByRole('figure')
+    expect(figure.querySelector(':scope > figcaption')!.textContent).toBe('Illustrative example. Sample data only.')
+    expect(figure).toHaveAccessibleDescription(retailPlan.figureDescription)
+    expect(document.getElementById(figure.getAttribute('aria-describedby')!)).toHaveClass('visually-hidden')
+    const [sources, traceSteps, figures] = within(figure).getAllByRole('list')
+    expect(within(sources).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      'Loyalty & CRM',
+      'Distribution & delivery',
+      'Point of sale',
+      'Inventory & warehouse',
+      'Finance ledger',
+    ])
+    expect(traceSteps.tagName).toBe('OL')
+    expect(within(traceSteps).getAllByRole('listitem').map((item) => item.textContent)).toEqual(rlist(rcell('Trace diagram', 'Middle steps')))
+    expect(within(figures).getAllByRole('listitem').map((item) => texts(item))).toEqual([
+      ['Sales by outlet', 'Trusted'],
+      ['Gross margin by product', 'Trusted with caveats'],
+      ['Stock accuracy', 'Not yet trusted'],
+    ])
+    expect([...sources.querySelectorAll('li')].map((item) => [
+      item.classList.contains('trace__source--faded'),
+      item.querySelector('.trace__connector--dashed') !== null,
+    ])).toEqual([
+      [true, true],
+      [true, true],
+      [false, false],
+      [false, false],
+      [false, false],
+    ])
+    for (const hidden of figure.querySelectorAll('.trace__connector, .rating-marker, svg')) {
+      expect(hidden).toHaveAttribute('aria-hidden', 'true')
+      expect(hidden.textContent).toBe('')
+    }
+    expect(within(figure).queryByRole('heading')).toBeNull()
+  })
+
+  it('has none of the removed sections or strings, no compliance claim, no AI product and no name', () => {
+    renderPage(retail)
+    for (const name of [
+      'Retail & Distribution Analytics',
+      'Sector context',
+      'Common data problems',
+      'How Fafanua helps',
+      'Reporting and analytics use cases',
+      'Data quality and governance',
+      'Operational activation',
+      'Other sectors',
+    ]) {
+      expect(screen.queryByRole('heading', { name })).toBeNull()
+    }
+    expect(main().querySelector('#use-cases')).toBeNull()
+    for (const name of ['Retail payment reconciliation', 'Point-of-sale, ERP and payment integration', 'Sales and inventory data models', 'Sales and branch-performance dashboards']) {
+      expect(screen.queryByRole('link', { name })).toBeNull()
+    }
+    expect(main().querySelector('a[href="/services/data-warehousing-analytics-modelling"]')).toBeNull()
+    const text = main().textContent!
+    for (const removed of [
+      'Retail & Distribution Analytics',
+      'For supermarkets, pharmacy chains',
+      'pharmacy chains',
+      'supermarkets',
+      'Let’s build a data foundation',
+      'Other sectors',
+      'Retail payment reconciliation',
+      '+256',
+      'Reverse ETL',
+      'Fafanua Intelligence',
+      'AI-powered',
+    ]) {
+      expect(text).not.toContain(removed)
+    }
+    // The seven themes are gone: "Inventory analytics" survives only as
+    // the start of the plan's segment item "Inventory analytics across
+    // warehouses and depots", never as an item of its own.
+    const themes = solutions.find((solution) => solution.id === 'retail-and-distribution')!.themes
+    expect(themes).toHaveLength(7)
+    for (const theme of themes) {
+      expect(text.replace('Inventory analytics across warehouses and depots', ''), theme).not.toContain(theme)
+      expect(within(main()).queryByText(theme), theme).toBeNull()
+    }
+    expect(text).not.toMatch(/\bAI\b/)
+    for (const word of ['forecasting', 'replenishment', 'anomaly detection']) {
+      expect(text.match(new RegExp(word, 'g')), word).toHaveLength(1)
+    }
+    expect(text).not.toMatch(retailPlan.COMPLIANCE_TERMS)
+    expect(text).not.toMatch(retailPlan.NAMING_TERMS)
+  })
+
+  it('has no img, lang, tabindex or contenteditable in main, and no axe violations', async () => {
+    const { container } = renderPage(retail)
     expect(main().querySelectorAll('img, canvas, [lang], [tabindex], [contenteditable]')).toHaveLength(0)
     await expectNoAxeViolations(container)
   })

@@ -9,10 +9,16 @@ describe('render', () => {
     expect(fileFor(notFound)).toBe('404.html')
   })
 
-  it('pre-renders the four foundation pages with their closing panels (#93, #94, #98, issue 100)', () => {
+  it('pre-renders the five foundation pages with their closing panels (#93, #94, #98, issue 100, issue 101)', () => {
     expect(
       pages.filter((page) => page.kind === 'solution' && page.copy.layout === 'sector').map((page) => page.path).sort(),
-    ).toEqual(['/solutions/education', '/solutions/financial-services', '/solutions/health', '/solutions/public-sector'])
+    ).toEqual([
+      '/solutions/education',
+      '/solutions/financial-services',
+      '/solutions/health',
+      '/solutions/public-sector',
+      '/solutions/retail-distribution',
+    ])
   })
 
   it.each(pages.map((page) => [page.path, page] as const))(
@@ -30,7 +36,8 @@ describe('render', () => {
         expect(html).toContain(`<p class="sector-closing__body">${page.copy.closing.text} ${page.copy.closing.followUp}</p>`)
         // The protected phrase, visible in that paragraph (#93, #94; on
         // Financial Services and Education the owner's A1, #98, issue 100,
-        // which does not end on it).
+        // and on Retail & Distribution the proposed A1, issue 101, which do
+        // not end on it).
         expect(page.copy.closing.followUp).toContain('trusted data foundation')
         expect(html).toMatch(/<p class="sector-closing__body">[^<]*trusted data foundation[^<]*<\/p>/)
         expect(html).not.toContain('Let’s build a data foundation your organisation can trust.')

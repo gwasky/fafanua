@@ -8,19 +8,22 @@ import { activationIntro, solutionPages, type SolutionSectionsPage } from './sol
 
 const pages = solutions.map((solution) => ({ ...solution, page: solutionPages[solution.id] }))
 
-// The two sectors still on the SEO plan §18 sections. Public Sector,
-// Health, Financial Services and Education are on the shared landing-page
-// foundation (#93, #94, #98, issue 100), whose copy is section 4 of
+// The one sector still on the SEO plan §18 sections, Development &
+// Impact. Public Sector, Health, Financial Services, Education and Retail
+// & Distribution are on the shared landing-page foundation (#93, #94,
+// #98, issue 100, issue 101), whose copy is section 4 of
 // _docs/fafanua-public-sector-landing-page-plan.md, of
 // _docs/fafanua-health-landing-page-plan.md, of
-// _docs/fafanua-financial-services-landing-page-plan.md and of
-// _docs/fafanua-education-landing-page-plan.md, a change of approved
-// specification (section 2.1 of the first two, section 2 of the others):
-// they have their own rules below, and
+// _docs/fafanua-financial-services-landing-page-plan.md, of
+// _docs/fafanua-education-landing-page-plan.md and of
+// _docs/fafanua-retail-distribution-landing-page-plan.md, a change of
+// approved specification (section 2.1 of the first two, section 2 of the
+// others): they have their own rules below, and
 // solutionPages.publicSector.plan.test.ts,
 // solutionPages.health.plan.test.ts,
-// solutionPages.financialServices.plan.test.ts and
-// solutionPages.education.plan.test.ts check their copy.
+// solutionPages.financialServices.plan.test.ts,
+// solutionPages.education.plan.test.ts and
+// solutionPages.retailDistribution.plan.test.ts check their copy.
 const sectionPages = pages.flatMap((solution) =>
   solution.page.layout === 'sector' ? [] : [{ ...solution, page: solution.page as SolutionSectionsPage }],
 )
@@ -28,6 +31,7 @@ const publicSector = solutionPages['public-sector']
 const health = solutionPages.health
 const financialServices = solutionPages['financial-services']
 const education = solutionPages.education
+const retail = solutionPages['retail-and-distribution']
 
 describe('solution landing pages', () => {
   it('gives every page a unique title, description and h1', () => {
@@ -41,17 +45,16 @@ describe('solution landing pages', () => {
     expect(new Set(h1s).size).toBe(6)
   })
 
-  it('keeps the two §18 pages, and Public Sector, Health, Financial Services and Education on the shared foundation', () => {
-    expect(sectionPages.map((solution) => solution.id)).toEqual([
-      'retail-and-distribution',
-      'development-and-impact',
-    ])
+  it('keeps the one §18 page, and Public Sector, Health, Financial Services, Education and Retail & Distribution on the shared foundation', () => {
+    expect(sectionPages.map((solution) => solution.id)).toEqual(['development-and-impact'])
     expect(publicSector.layout).toBe('sector')
     expect(health.layout).toBe('sector')
     expect(financialServices.layout).toBe('sector')
     expect(education.layout).toBe('sector')
+    expect(retail.layout).toBe('sector')
     expect(pages.filter(({ page }) => page.layout === 'sector').map((solution) => solution.id)).toEqual([
       'financial-services',
+      'retail-and-distribution',
       'health',
       'education',
       'public-sector',
@@ -195,6 +198,28 @@ describe('solution landing pages', () => {
       'business-intelligence-and-analytics',
       'data-warehousing-and-analytics-modelling',
       'data-governance-and-metadata',
+    ])
+    for (const key of linked) expect(keys).toContain(key)
+    expect(new Set(linked).size).toBe(linked.length)
+  })
+
+  it('gives Retail & Distribution "Retail Analytics Uganda" in its title, retail business intelligence, sales, inventory and distribution analytics and Uganda and East Africa in its description, and Uganda and East Africa in its lead (SEO plan §10, issue 101)', () => {
+    if (retail.layout !== 'sector') throw new Error('Retail & Distribution is not on the foundation')
+    expect(retail.title).toContain('Retail Analytics Uganda')
+    for (const keyword of ['Retail business intelligence', 'sales analytics', 'inventory analytics', 'distribution analytics', 'Uganda and East Africa']) {
+      expect(retail.description).toContain(keyword)
+    }
+    expect(retail.hero.lead).toMatch(/Uganda and East Africa/)
+  })
+
+  it('links Retail & Distribution\'s service cards to exactly its three real, distinct services (issue 101)', () => {
+    if (retail.layout !== 'sector') throw new Error('Retail & Distribution is not on the foundation')
+    const keys = servicePages.map((page) => page.key)
+    const linked = retail.services.items.map((item) => item.service)
+    expect(linked).toEqual([
+      'data-engineering-and-integration',
+      'data-quality-and-reliability',
+      'business-intelligence-and-analytics',
     ])
     for (const key of linked) expect(keys).toContain(key)
     expect(new Set(linked).size).toBe(linked.length)
