@@ -17,13 +17,15 @@ const servicePaths = [
 ]
 const solutionPaths = solutions.map((solution) => `/solutions/${solution.slug}`)
 const PATHS = [...servicePaths, ...solutionPaths]
-// The pages on the shared landing-page foundation (#93, #94, #98, #100),
-// each with its closing panel's text: the plan's text and the owner's (or,
-// on Financial Services and Education, A1) follow-up.
+// The pages on the shared landing-page foundation (#93, #94, #98, #100,
+// #101), each with its closing panel's text: the plan's text and the
+// owner's (or, on Financial Services and Education, A1; on Retail &
+// Distribution, the proposed A1) follow-up.
 const PUBLIC_SECTOR = '/solutions/public-sector'
 const HEALTH = '/solutions/health'
 const FINANCIAL_SERVICES = '/solutions/financial-services'
 const EDUCATION = '/solutions/education'
+const RETAIL = '/solutions/retail-distribution'
 const FOUNDATION: Record<string, string> = {
   [PUBLIC_SECTOR]:
     'Which figure in your next statutory report do you trust least? Tell us about the reports leadership answers for. Then we make sure they are built on a trusted data foundation.',
@@ -33,6 +35,8 @@ const FOUNDATION: Record<string, string> = {
     'Your next financial report should be easier to produce, explain and defend. Start by identifying which figures can be trusted, where discrepancies originate and what needs to improve. We help you build a trusted data foundation for reliable reporting and better decisions.',
   [EDUCATION]:
     'Which learner figure do you trust least? Tell us about the reports your leadership, ministry and funders rely on. We help education organisations build a trusted data foundation for reliable reporting, clearer learner journeys and better decisions.',
+  [RETAIL]:
+    'Sales, stock or margin: which do you trust least? Tell us about the reports your branches and head office rely on. We help retailers, wholesalers and distributors build a trusted data foundation, so every branch, depot and head office works from the same figures.',
 }
 
 // The HTML as a crawler gets it: no JavaScript runs.
@@ -121,7 +125,7 @@ test.describe('one call to action', () => {
       const html = await (await page.request.get(path, { maxRedirects: 0 })).text()
 
       if (path in FOUNDATION) {
-        // The shared landing-page foundation (#93, #94, #98, #100): the header's
+        // The shared landing-page foundation (#93, #94, #98, #100, #101): the header's
         // button, the hero's and the closing panel's, which replaces
         // Contact.
         expect(all(html, CTA)).toEqual(['#contact', 'mailto:info@fafanua.tech', 'mailto:info@fafanua.tech'])
@@ -306,6 +310,32 @@ test.describe('crawl from the homepage', () => {
     })
   }
 
+  // The footer's "More sectors" pages (#73), which are not homepage rows:
+  // Retail & Distribution's plan removes the seven themes (#101), and
+  // Development & Impact, still on the §18 sections, lists them.
+  for (const solution of footerSolutions) {
+    if (solutionPages[solution.id].layout === 'sector') {
+      test(`/solutions/${solution.slug} no longer lists the seven themes, as its plan removes them`, async ({ page }) => {
+        await openPath(page, `/solutions/${solution.slug}`, 1440)
+        await expect(page.locator('#use-cases')).toHaveCount(0)
+        await expect(page.getByRole('heading', { name: 'Reporting and analytics use cases' })).toHaveCount(0)
+        expect(solution.themes).toHaveLength(7)
+        // As items of their own: "Inventory analytics" starts one of the
+        // Retail plan's segment items.
+        const items = await page.getByRole('main').getByRole('listitem').allInnerTexts()
+        for (const theme of solution.themes) expect(items.map((item) => item.trim()), theme).not.toContain(theme)
+      })
+      continue
+    }
+    test(`/solutions/${solution.slug} lists the seven themes`, async ({ page }) => {
+      await openPath(page, `/solutions/${solution.slug}`, 1440)
+      const section = page.locator('#use-cases')
+      await expect(section.getByRole('heading', { level: 2 })).toHaveText('Reporting and analytics use cases')
+      await expect(section.getByRole('listitem')).toHaveText([...solution.themes])
+      expect(solution.themes).toHaveLength(7)
+    })
+  }
+
   test('a service card title opens its page, and the header leads back to the section', async ({ page }) => {
     await openPath(page, '/', 1440)
     await page.getByRole('link', { name: services[1].name, exact: true }).click()
@@ -320,7 +350,7 @@ test.describe('crawl from the homepage', () => {
 test.describe('in the browser', () => {
   // The not-found page is checked at /404, its own address, as a document
   // that answers 404 always logs a console error in the browser.
-  for (const path of [servicePaths[1], HEALTH, PUBLIC_SECTOR, FINANCIAL_SERVICES, EDUCATION, '/404']) {
+  for (const path of [servicePaths[1], HEALTH, PUBLIC_SECTOR, FINANCIAL_SERVICES, EDUCATION, RETAIL, '/404']) {
     for (const width of WIDTHS) {
       test(`${path} has no horizontal scroll and no axe violations at ${width}px`, async ({ page }, testInfo) => {
         await openPath(page, path, width)
@@ -350,9 +380,9 @@ test.describe('in the browser', () => {
     })
   }
 
-  // The shared landing-page foundation (#93, #94, #98, #100) with 200%
-  // text at the other widths too.
-  for (const path of [PUBLIC_SECTOR, HEALTH, FINANCIAL_SERVICES, EDUCATION]) for (const width of [390, 1024, 1440]) {
+  // The shared landing-page foundation (#93, #94, #98, #100, #101) with
+  // 200% text at the other widths too.
+  for (const path of [PUBLIC_SECTOR, HEALTH, FINANCIAL_SERVICES, EDUCATION, RETAIL]) for (const width of [390, 1024, 1440]) {
     test(`${path} has no horizontal scroll with 200% text at ${width}px`, async ({ page }) => {
       await openPath(page, path, width)
       await page.addStyleTag({ content: 'html { font-size: 200%; }' })
@@ -458,11 +488,12 @@ test.describe('in the browser', () => {
     )
   })
 
-  // On a §18 page (Education until #100).
+  // On a §18 page (Education until #100, Retail & Distribution until
+  // #101).
   test('Book a data trust assessment lands on the closing call to action of the same page', async ({ page }) => {
-    await openPath(page, '/solutions/retail-distribution', 1440)
+    await openPath(page, '/solutions/development-impact', 1440)
     await page.getByRole('banner').getByRole('link', { name: 'Book a data trust assessment' }).click()
-    await expect(page).toHaveURL(/\/solutions\/retail-distribution#contact$/)
+    await expect(page).toHaveURL(/\/solutions\/development-impact#contact$/)
     await expect(
       page.locator('#contact').getByRole('link', { name: '+256 752 008 822' }),
     ).toHaveAttribute('href', 'tel:+256752008822')
