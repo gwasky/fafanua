@@ -5,9 +5,9 @@
 // them so), the "; " and "Name: text" splits, the diagram's solid and
 // dashed sources (plan section 5), the learner journey, the title and
 // description, the figure's accessible description (plan section 6), the
-// owner's A1 and A2 and other decisions (2026-10-26), each recorded in
-// the plan as an owner update, and the strings proposed to carry them
-// out. It also checks that the old Education strings are gone from src/,
+// owner's A1 and A2 and other decisions (2026-10-26 and 2026-10-27),
+// each recorded in the plan as an owner update, and the withdrawn
+// wording gone. It also checks that the old Education strings are gone from src/,
 // the naming and claims rules (plan section 3), that the assessment
 // claims no implementation work, and that the call to action and address
 // come from contact.ts.
@@ -28,7 +28,6 @@ import {
   NAMING_TERMS,
   OWNER_ADDITIONS,
   OWNER_DECISIONS,
-  PROPOSALS,
   SOLID_SOURCES,
   tables,
   TITLE,
@@ -43,13 +42,18 @@ const page: SectorLandingPage = entry
 const journey = page.journey!
 const upper = (text: string) => text.toUpperCase()
 
-// The PM's first proposals for A1 and A2 (issue 100), replaced by the owner's
-// own copy on 2026-10-26, and the plan's handling item the owner
-// replaced.
+// The PM's first proposals for A1 and A2 (issue 100), replaced by the
+// owner's own copy on 2026-10-26; the plan's two handling items the owner
+// replaced (2026-10-26 and 2026-10-27); the journey's first heading and
+// combined eyebrow, and card 4's first wording (2026-10-27).
 const WITHDRAWN = [
   'We help you build a trusted data foundation for reliable reporting and better decisions.',
   'We help education institutions bring together data from admissions, learning, exams and finance systems for learner analytics, education dashboards and a clearer view of retention and graduate outcomes.',
   'Records of learners under 18 get extra care, with access limited to named roles.',
+  'Learner data is pseudonymised wherever the analysis allows.',
+  'Follow every learner, end to end',
+  'What happens next · One learner, one record',
+  'so progression and completion can be followed over time.',
 ] as const
 
 describe('Education plan section 4 parser', () => {
@@ -176,10 +180,11 @@ describe('Education copy (plan section 4)', () => {
     expect(JSON.stringify(page.assessment)).not.toMatch(/connect|integrat|reconcil|pipeline|dashboard|build/i)
   })
 
-  it('uses the learner journey: eyebrow, heading, text, five "Name: System" steps in order, Learn highlighted, the callout and the caption', () => {
+  it('uses the learner journey: eyebrow, heading, opening sentence, text, five "Name: System" steps in order, Learn highlighted, the callout and the caption', () => {
     const t = 'One learner, one record'
     expect(upper(journey.eyebrow)).toBe(cell(t, 'Eyebrow'))
     expect(journey.heading).toBe(cell(t, 'Heading'))
+    expect(journey.intro).toBe(cell(t, 'Opening sentence'))
     expect(journey.text).toBe(cell(t, 'Text'))
     expect(journey.steps).toEqual(
       list(cell(t, 'Journey steps, in order')).map(named).map(({ name, text }) => ({ name, system: text })),
@@ -198,13 +203,15 @@ describe('Education copy (plan section 4)', () => {
     expect(journey.caption).toBe('Illustrative example. Sample definition only.')
   })
 
-  it('places the journey after the assessment, under the owner\'s "What happens next", with the proposed opening sentence (issue 100)', () => {
-    expect(journey.eyebrowLead).toBe(OWNER_DECISIONS.journeyEyebrowLead)
-    expect(journey.eyebrowLead).toBe('What happens next')
-    expect(journey.intro).toBe(PROPOSALS.journeyIntro)
-    // Both recorded in the plan's owner update for the section.
-    expect(copySection).toContain(`"${OWNER_DECISIONS.journeyEyebrowLead}" before "${journey.eyebrow}"`)
-    expect(copySection).toContain(`"${PROPOSALS.journeyIntro}"`)
+  it('places the journey after the assessment: the owner\'s eyebrow "What happens next", the heading "One learner, one record" and the approved opening sentence, not combined (issue 100)', () => {
+    expect(journey.eyebrow).toBe(OWNER_DECISIONS.journeyEyebrow)
+    expect(journey.eyebrow).toBe('What happens next')
+    expect(journey.heading).toBe(OWNER_DECISIONS.journeyHeading)
+    expect(journey.heading).toBe('One learner, one record')
+    expect(journey.intro).toBe(OWNER_DECISIONS.journeyIntro)
+    expect(journey).not.toHaveProperty('eyebrowLead')
+    // Recorded in the plan's owner update for the section.
+    expect(copySection).toMatch(/Owner update \(2026-10-27, #1\d\d\): the labels are not combined\./)
     expect(`${journey.intro} ${journey.text}`).not.toMatch(COMPLIANCE_TERMS)
   })
 
@@ -218,22 +225,24 @@ describe('Education copy (plan section 4)', () => {
     expect(page.handling.heading).toBe(cell(t, 'Card 2 heading'))
     expect(page.handling.items).toEqual(handlingItems(cell(t, 'Card 2 checklist')))
     expect(page.handling.items).toEqual([
-      'Learner data is pseudonymised wherever the analysis allows.',
+      'Where appropriate, analysis can use pseudonymised learner data to reduce exposure of directly identifying information.',
       'Education data can be sensitive, particularly where it relates to children and young people. We design access, governance and reporting controls around the organisation’s policies, legal obligations and the sensitivity of the data.',
       'Ownership and access rules are agreed before any pipeline is built.',
     ])
+    expect(page.handling.items[0]).toBe(OWNER_DECISIONS.handlingFirst)
     for (const item of page.handling.items) expect(item).toMatch(/\.$/)
     expect([page.ai.icon, page.handling.icon]).toEqual(['gauge', 'shield'])
   })
 
-  it('uses After the assessment: its subheading, the plan\'s three service cards with no lead or detail, then the two restored links (issue 100)', () => {
+  it('uses After the assessment: its subheading and the plan\'s five service cards, the last two the owner\'s restored links, with no lead or detail (issue 100)', () => {
     const t = 'After the assessment'
     expect(page.services.heading).toBe(cell(t, 'Heading'))
     expect(page.services.subheading).toBe(cell(t, 'Subheading'))
     expect(page.services.leadTone).toBeUndefined()
-    const plan = [1, 2, 3].map((n) => named(cell(t, `Card ${n}`)))
-    expect(page.services.items.slice(0, 3).map(({ name, text }) => ({ name, text }))).toEqual(plan)
-    expect(page.services.items.slice(3)).toEqual(PROPOSALS.services)
+    const plan = [1, 2, 3, 4, 5].map((n) => named(cell(t, `Card ${n}`)))
+    expect(page.services.items.map(({ name, text }) => ({ name, text }))).toEqual(plan)
+    expect(page.services.items.slice(3)).toEqual(OWNER_DECISIONS.services)
+    expect(page.services.items[3].text).toContain('tracked over time')
     for (const item of page.services.items) {
       expect(item.lead).toBeUndefined()
       expect(item.detail).toBeUndefined()
@@ -245,7 +254,6 @@ describe('Education copy (plan section 4)', () => {
       ['ledger', 'data-warehousing-and-analytics-modelling'],
       ['book', 'data-governance-and-metadata'],
     ])
-    for (const { name, text } of PROPOSALS.services) expect(copySection).toContain(`"${name}: ${text}"`)
   })
 
   it('uses the closing panel, with the owner\'s A1, and the call to action and address from contact.ts', () => {
@@ -266,7 +274,7 @@ describe('Education copy (plan section 4)', () => {
     ])
     expect([page.closing.followUp, page.audience.card.detail]).toEqual(Object.values(OWNER_ADDITIONS))
     for (const text of Object.values(OWNER_ADDITIONS)) expect(copySection).toContain(`"${text}"`)
-    expect(WITHDRAWN).toHaveLength(3)
+    expect(WITHDRAWN).toHaveLength(7)
     const text = JSON.stringify(page)
     for (const line of WITHDRAWN) expect(text, line).not.toContain(line)
     expect(text).not.toMatch(/under 18/)
@@ -276,11 +284,10 @@ describe('Education copy (plan section 4)', () => {
     expect([
       page.hero.eyebrow,
       page.assessment.eyebrow,
-      journey.eyebrowLead,
       journey.eyebrow,
       journey.callout.label,
       page.closing.eyebrow,
-    ]).toEqual(['Education solutions', 'Start with trust', 'What happens next', 'One learner, one record', 'Definition agreed', 'Get started'])
+    ]).toEqual(['Education solutions', 'Start with trust', 'What happens next', 'Definition agreed', 'Get started'])
   })
 
   it('keeps every curly quote and both ampersands as the plan writes them', () => {

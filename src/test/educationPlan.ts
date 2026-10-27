@@ -40,25 +40,26 @@ export const OWNER_ADDITIONS = {
 } as const
 
 /**
- * The owner's other decisions (2026-10-26, issue 100): the learner journey's
- * eyebrow lead, which places it after the assessment, and the strings
- * proposed to carry them out, pending the owner's review: the journey's
- * opening sentence, and the two service cards that link the data
+ * The owner's other decisions (2026-10-26 and 2026-10-27, issue 100), each
+ * recorded in the plan's section 4 as an owner update and now plan copy:
+ * the learner journey under the eyebrow "What happens next" with the
+ * heading "One learner, one record" and an opening sentence, the first
+ * handling item, and the two service cards that link the data
  * warehousing and data governance pages again.
  */
 export const OWNER_DECISIONS = {
   // The same words as the homepage's closing eyebrow, which the scans
   // keep to assessment.ts and the one allow-listed use in solutionPages.ts.
-  journeyEyebrowLead: assessmentNextEyebrow,
-} as const
-
-export const PROPOSALS = {
+  journeyEyebrow: assessmentNextEyebrow,
+  journeyHeading: 'One learner, one record',
   journeyIntro:
     'Where the assessment identifies fragmented learner records, we can then help you unify admissions, learning, assessment, finance and outcomes data.',
+  handlingFirst:
+    'Where appropriate, analysis can use pseudonymised learner data to reduce exposure of directly identifying information.',
   services: [
     {
       name: 'Learner data warehouse',
-      text: 'Model learners, programmes, cohorts and terms in one data warehouse, so progression and completion can be followed over time.',
+      text: 'Model learners, programmes, cohorts and terms in one data warehouse, so progression and completion can be tracked over time.',
       icon: 'ledger',
       service: 'data-warehousing-and-analytics-modelling',
     },

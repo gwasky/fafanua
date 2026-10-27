@@ -417,9 +417,13 @@ test.describe('the learner journey', () => {
 
   test('lists five steps in order, Learn\'s dot filled and the other four hollow, described by the callout', async ({ page }) => {
     await openPath(page, PATH, 1440)
-    const section = page.getByRole('region', { name: 'Follow every learner, end to end' })
-    await expect(section.locator('.sector-eyebrow')).toHaveText('What happens next · One learner, one record', { ignoreCase: true })
+    // The owner's transition label over the heading (2026-10-27): work
+    // that follows the three-week assessment.
+    const section = page.getByRole('region', { name: 'One learner, one record' })
+    await expect(section.locator('.sector-eyebrow')).toHaveText('What happens next', { ignoreCase: true })
     await expect(section.locator('.sector-eyebrow')).toHaveCSS('text-transform', 'uppercase')
+    await expect(section.getByRole('heading', { level: 2 })).toHaveText('One learner, one record')
+    await expect(section.getByRole('heading', { level: 2 })).toHaveCSS('text-transform', 'none')
     const steps = section.locator('ol.journey[role="list"] > li')
     await expect(steps).toHaveCount(5)
     await expect(steps.locator('.journey__name')).toHaveText(['Apply', 'Enrol', 'Learn', 'Assess', 'Complete'])
@@ -576,7 +580,7 @@ test.describe('no Delivered in stages, promise strip or reconciliation section',
       'Our approach',
       'Who we work with',
       'The Data Trust Assessment: three weeks, fixed fee',
-      'Follow every learner, end to end',
+      'One learner, one record',
       'What this means for AI',
       'Handled responsibly',
       'After the assessment',

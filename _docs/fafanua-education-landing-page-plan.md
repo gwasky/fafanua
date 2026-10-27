@@ -88,12 +88,15 @@ Owner update (2026-10-26, #100): a second paragraph follows the card text, befor
 
 ### One learner, one record
 
-Owner update (2026-10-26, #100): this section must read as work that may follow the assessment, not as part of the three-week assessment. The eyebrow reads "What happens next" before "One learner, one record", in the same line after a middle dot (WHAT HAPPENS NEXT · ONE LEARNER, ONE RECORD). An opening sentence, proposed for the owner's review, comes before the text in the same paragraph: "Where the assessment identifies fragmented learner records, we can then help you unify admissions, learning, assessment, finance and outcomes data."
+Owner update (2026-10-26, #100): this section must read as work that may follow the three-week Data Trust Assessment, not as part of it.
+
+Owner update (2026-10-27, #100): the labels are not combined. The eyebrow, a transition label, is WHAT HAPPENS NEXT, and the section heading (`h2`) is "One learner, one record"; the earlier eyebrow ONE LEARNER, ONE RECORD becomes the heading, and the earlier heading, "Follow every learner, end to end", is removed. The opening sentence, which comes before the text in the same paragraph, is approved as written.
 
 | Element | Text |
 |---|---|
-| Eyebrow | ONE LEARNER, ONE RECORD |
-| Heading | Follow every learner, end to end |
+| Eyebrow | WHAT HAPPENS NEXT |
+| Heading | One learner, one record |
+| Opening sentence | Where the assessment identifies fragmented learner records, we can then help you unify admissions, learning, assessment, finance and outcomes data. |
 | Text | We connect records across the learner journey, so admissions, learning, exams and finance describe the same person in the same way. |
 | Journey steps, in order | Apply: Admissions; Enrol: Student information system; Learn: Learning platform; Assess: Exams and grading; Complete: Certification records |
 | Callout label | DEFINITION AGREED |
@@ -108,9 +111,11 @@ Owner update (2026-10-26, #100): this section must read as work that may follow 
 | Card 1 text | AI and advanced analytics work only when metrics are clearly defined, inputs can be traced to their source, data quality is known and access is controlled. The assessment gives each use case a plain verdict. |
 | Card 1 chips | Ready now (teal dot); Ready after specific fixes (amber dot); Not ready yet (hollow dot) |
 | Card 2 heading | Handled responsibly |
-| Card 2 checklist | Learner data is pseudonymised wherever the analysis allows.; Education data can be sensitive, particularly where it relates to children and young people. We design access, governance and reporting controls around the organisation’s policies, legal obligations and the sensitivity of the data.; Ownership and access rules are agreed before any pipeline is built. |
+| Card 2 checklist | Where appropriate, analysis can use pseudonymised learner data to reduce exposure of directly identifying information.; Education data can be sensitive, particularly where it relates to children and young people. We design access, governance and reporting controls around the organisation’s policies, legal obligations and the sensitivity of the data.; Ownership and access rules are agreed before any pipeline is built. |
 
 Owner update (2026-10-26, #100): the second checklist item replaces the earlier commitment about learners under 18.
+
+Owner update (2026-10-27, #100): the first checklist item replaces "Learner data is pseudonymised wherever the analysis allows."
 
 ### After the assessment
 
@@ -121,8 +126,12 @@ Owner update (2026-10-26, #100): the second checklist item replaces the earlier 
 | Card 1 | Integrate and model: Connect admissions, student information, learning, exams and finance systems into one consistent view of each learner. |
 | Card 2 | Quality and governance: Completeness and timeliness checks, plus clear ownership and access rules. |
 | Card 3 | Reporting and dashboards: Enrolment, progression, completion and finance reporting for leadership, ministries and funders. |
+| Card 4 | Learner data warehouse: Model learners, programmes, cohorts and terms in one data warehouse, so progression and completion can be tracked over time. |
+| Card 5 | Data governance and definitions: Agree ownership, shared definitions and access rules for learner and staff data, and keep them documented. |
 
-Owner update (2026-10-26, #100): the page links the Data Warehousing & Analytics Modelling and Data Governance & Metadata service pages again, as two more service cards after Card 3. Their copy is proposed for the owner's review: "Learner data warehouse: Model learners, programmes, cohorts and terms in one data warehouse, so progression and completion can be followed over time." and "Data governance and definitions: Agree ownership, shared definitions and access rules for learner and staff data, and keep them documented."
+Owner update (2026-10-26, #100): the page links the Data Warehousing & Analytics Modelling (Card 4) and Data Governance & Metadata (Card 5) service pages again, as two more service cards after Card 3.
+
+Owner update (2026-10-27, #100): Cards 4 and 5 are approved, Card 4 with "tracked" for "followed".
 
 ### Closing panel
 

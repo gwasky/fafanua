@@ -139,7 +139,7 @@ describe('SectorLandingPage with another sector\'s data', () => {
       education.diagram.sources[2].label,
       education.audience.card.heading,
       education.audience.card.detail!,
-      journey.eyebrowLead!,
+      journey.eyebrow,
       journey.intro!,
       journey.heading,
       journey.steps[0].name,
@@ -197,7 +197,7 @@ describe('SectorLandingPage with another sector\'s data', () => {
       'Fixture closing',
     ])
     const section = screen.getByRole('region', { name: 'Fixture journey' })
-    // No eyebrow lead or intro unless the data has them.
+    // No intro unless the data has one.
     expect(section.querySelector('.sector-eyebrow')!.textContent).toBe('Fixture journey eyebrow')
     expect(section.querySelector('.sector-subheading')!.textContent).toBe('Journey text.')
     const ol = within(section).getByRole('list')
@@ -216,7 +216,6 @@ describe('SectorLandingPage with another sector\'s data', () => {
     renderFixture({
       ...FIXTURE,
       journey: {
-        eyebrowLead: 'Lead label',
         eyebrow: 'Fixture journey eyebrow',
         heading: 'Fixture journey',
         intro: 'Journey intro.',
@@ -228,9 +227,9 @@ describe('SectorLandingPage with another sector\'s data', () => {
         caption: 'C.',
       },
     })
-    const withLead = screen.getByRole('region', { name: 'Fixture journey' })
-    expect(withLead.querySelector('.sector-eyebrow')!.textContent).toBe('Lead label · Fixture journey eyebrow')
-    expect(withLead.querySelector('.sector-subheading')!.textContent).toBe('Journey intro. Journey text.')
+    const withIntro = screen.getByRole('region', { name: 'Fixture journey' })
+    expect(withIntro.querySelector('.sector-eyebrow')!.textContent).toBe('Fixture journey eyebrow')
+    expect(withIntro.querySelector('.sector-subheading')!.textContent).toBe('Journey intro. Journey text.')
   })
 
   it('leaves Delivered in stages out when the page has none', () => {

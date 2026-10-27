@@ -562,7 +562,7 @@ describe('assessment source', () => {
 // it, so it left the list; the foundation pages' 'Prioritised roadmap' is
 // now also a homepage tile label (#99). 'What happens next', the
 // homepage's closing eyebrow, is also the Education learner journey's
-// eyebrow lead, by the owner's decision (2026-10-26, issue 100). Only these
+// eyebrow, by the owner's decision (2026-10-27, issue 100). Only these
 // are taken out of that file before the scans below; everything else in
 // it is scanned.
 const LANDING_ALLOWED: Allowed = [

@@ -1340,8 +1340,8 @@ describe('Financial Services page', () => {
 
 // The Education page on the shared landing-page foundation (issue 100),
 // against section 4 of _docs/fafanua-education-landing-page-plan.md, with
-// the owner's A1, A2 and decisions (2026-10-26) and the strings proposed
-// to carry them out.
+// the owner's A1, A2 and decisions (2026-10-26 and 2026-10-27), now
+// recorded in the plan.
 describe('Education page', () => {
   const { cell: ecell, list: elist, marked: emarked, named: enamed, buttonLabel: ebutton } = eduPlan
   const added = eduPlan.OWNER_ADDITIONS
@@ -1374,7 +1374,7 @@ describe('Education page', () => {
       'Our approach',
       'Who we work with',
       'The Data Trust Assessment: three weeks, fixed fee',
-      'Follow every learner, end to end',
+      'One learner, one record',
       'What this means for AI',
       'Handled responsibly',
       'After the assessment',
@@ -1394,7 +1394,7 @@ describe('Education page', () => {
     ])
   })
 
-  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description, the hidden note, the owner\'s A1, A2 and decisions, and the proposals (issue 100)', () => {
+  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description, the hidden note, and the owner\'s A1, A2 and decisions (issue 100)', () => {
     renderPage(education)
     const plan = [
       ...ecell('Hero', 'Breadcrumb').split(' › '),
@@ -1427,9 +1427,9 @@ describe('Education page', () => {
       ecell('The Data Trust Assessment', 'Heading'),
       ecell('The Data Trust Assessment', 'Text'),
       ...[1, 2, 3, 4].flatMap((n) => Object.values(enamed(ecell('The Data Trust Assessment', `Deliverable ${n}`)))),
-      `${eduPlan.OWNER_DECISIONS.journeyEyebrowLead.toUpperCase()} · ${ecell(t, 'Eyebrow')}`,
+      ecell(t, 'Eyebrow'),
       ecell(t, 'Heading'),
-      `${eduPlan.PROPOSALS.journeyIntro} ${ecell(t, 'Text')}`,
+      `${ecell(t, 'Opening sentence')} ${ecell(t, 'Text')}`,
       ...steps().flatMap((step) =>
         step.name === 'Learn'
           ? [step.name, eduPlan.HIGHLIGHT_NOTE, step.text, ecell(t, 'Callout label'), ecell(t, 'Callout text'), ecell(t, 'Caption')]
@@ -1442,8 +1442,7 @@ describe('Education page', () => {
       ...eduPlan.handlingItems(ecell('AI and responsible handling', 'Card 2 checklist')),
       ecell('After the assessment', 'Heading'),
       ecell('After the assessment', 'Subheading'),
-      ...[1, 2, 3].flatMap((n) => Object.values(enamed(ecell('After the assessment', `Card ${n}`)))),
-      ...eduPlan.PROPOSALS.services.flatMap((card) => [card.name, card.text]),
+      ...[1, 2, 3, 4, 5].flatMap((n) => Object.values(enamed(ecell('After the assessment', `Card ${n}`)))),
       ecell('Closing panel', 'Eyebrow'),
       ecell('Closing panel', 'Heading'),
       `${ecell('Closing panel', 'Text')} ${added.closingFollowUp}`,
@@ -1458,7 +1457,7 @@ describe('Education page', () => {
     expect(shown.filter((text, index) => text !== plan[index])).toEqual([
       'Education solutions',
       'Start with trust',
-      'What happens next · One learner, one record',
+      'What happens next',
       'Definition agreed',
       'Get started',
     ])
@@ -1522,7 +1521,11 @@ describe('Education page', () => {
     const assessment = document.getElementById('assessment')!
     expect(assessment.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(assessment.nextElementSibling).toBe(section)
-    expect(section.querySelector('.sector-eyebrow')!.textContent).toBe('What happens next · One learner, one record')
+    // The owner's eyebrow over the heading (2026-10-27): what follows the
+    // three-week assessment.
+    expect(section.querySelector('.sector-eyebrow')!.textContent).toBe('What happens next')
+    expect(within(section).getByRole('heading', { level: 2 }).textContent).toBe('One learner, one record')
+    expect(section.querySelector('.sector-eyebrow')!.nextElementSibling!.tagName).toBe('H2')
     const ol = journeyList()
     expect(ol).toHaveAttribute('role', 'list')
     const items = within(ol).getAllByRole('listitem')
@@ -1579,7 +1582,7 @@ describe('Education page', () => {
     renderPage(education)
     const cardItems = within(screen.getByRole('region', { name: 'After the assessment' })).getAllByRole('listitem')
     expect(cardItems.map((card) => [...card.querySelectorAll('h3, p')].map((element) => [element.tagName, element.className, element.textContent]))).toEqual(
-      [...[1, 2, 3].map((n) => enamed(ecell('After the assessment', `Card ${n}`))), ...eduPlan.PROPOSALS.services].map(({ name, text }) => [
+      [1, 2, 3, 4, 5].map((n) => enamed(ecell('After the assessment', `Card ${n}`))).map(({ name, text }) => [
         ['H3', 'sector-card-heading sector-card-heading--small', name],
         ['P', 'service-card-lp__text', text],
       ]),

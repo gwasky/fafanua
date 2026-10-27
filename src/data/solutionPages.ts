@@ -26,10 +26,11 @@ import type { ServiceKey } from './servicePages.ts'
 // two strings on 2026-10-24, marked below: one after the Financial
 // institutions card's text, and one that makes the protected phrase
 // visible in the closing panel. On Education (issue 100) the owner added the
-// same two on 2026-10-26, replaced the item on learners under 18, put the
-// learner journey under "What happens next" and restored two service
-// links, all marked below; the journey's opening sentence and the two
-// added service cards' copy are proposals pending the owner's review.
+// same two on 2026-10-26, replaced the item on learners under 18 and
+// restored two service links, and on 2026-10-27 put the learner journey
+// under "What happens next", approved its opening sentence and the two
+// added service cards' copy and replaced the first handling item, all
+// marked below and recorded in the plan's section 4.
 
 export type SolutionService = {
   readonly service: ServiceKey
@@ -189,9 +190,6 @@ export type SectorLandingPage = {
    * callout and the caption sit inside the highlighted step.
    */
   readonly journey?: {
-    /** An optional label before the eyebrow, in the same line, after a
-     * middle dot (issue 100). */
-    readonly eyebrowLead?: string
     readonly eyebrow: string
     readonly heading: string
     /** An optional sentence before the text, in the same paragraph. */
@@ -751,13 +749,13 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
       ],
     },
     journey: {
-      // Owner decision (2026-10-26, issue 100): the section reads as work that
-      // may follow the assessment, under "What happens next".
-      eyebrowLead: 'What happens next',
-      eyebrow: 'One learner, one record',
-      heading: 'Follow every learner, end to end',
-      // Owner decision (2026-10-26, issue 100): proposed sentence before the
-      // plan's text, pending the owner's review.
+      // Owner decision (2026-10-27, issue 100): the section reads as work
+      // that follows the assessment: "What happens next" over the heading
+      // "One learner, one record".
+      eyebrow: 'What happens next',
+      heading: 'One learner, one record',
+      // Owner-approved (2026-10-27, issue 100): the sentence before the
+      // plan's text.
       intro:
         'Where the assessment identifies fragmented learner records, we can then help you unify admissions, learning, assessment, finance and outcomes data.',
       text: 'We connect records across the learner journey, so admissions, learning, exams and finance describe the same person in the same way.',
@@ -791,7 +789,8 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
       heading: 'Handled responsibly',
       icon: 'shield',
       items: [
-        'Learner data is pseudonymised wherever the analysis allows.',
+        // Owner decision (2026-10-27, issue 100).
+        'Where appropriate, analysis can use pseudonymised learner data to reduce exposure of directly identifying information.',
         // Owner decision (2026-10-26, issue 100): replaces the plan's item on
         // learners under 18.
         'Education data can be sensitive, particularly where it relates to children and young people. We design access, governance and reporting controls around the organisation’s policies, legal obligations and the sensitivity of the data.',
@@ -822,10 +821,10 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
         },
         // Owner decision (2026-10-26, issue 100): the links to the data
         // warehousing and data governance service pages restored as two
-        // more cards; their copy is proposed, pending the owner's review.
+        // more cards, their copy owner-approved on 2026-10-27.
         {
           name: 'Learner data warehouse',
-          text: 'Model learners, programmes, cohorts and terms in one data warehouse, so progression and completion can be followed over time.',
+          text: 'Model learners, programmes, cohorts and terms in one data warehouse, so progression and completion can be tracked over time.',
           icon: 'ledger',
           service: 'data-warehousing-and-analytics-modelling',
         },

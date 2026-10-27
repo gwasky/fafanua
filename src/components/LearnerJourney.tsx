@@ -4,23 +4,20 @@ import DefinitionCallout from './DefinitionCallout.tsx'
 type Journey = NonNullable<SectorLandingPage['journey']>
 
 // The learner journey after the assessment band (Education, issue 100), on
-// paper and named by its h2: the eyebrow (after an optional lead label
-// and a middle dot), the h2 and the text (after an optional opening
-// sentence), then an ol of the steps, each a decorative dot, its name and
-// its system (not headings). The highlighted step's dot is filled, the
-// others hollow; it carries a visually hidden note after its name, and
-// holds the definition callout and the caption, so the DOM order is the
-// visual order at every width and the sample label is read with the
-// definition; aria-describedby points it at the callout. One row from
-// 64em, three and two from 48em, one step per row below it, with a
+// paper and named by its h2: the eyebrow, the h2 and the text (after an
+// optional opening sentence), then an ol of the steps, each a decorative
+// dot, its name and its system (not headings). The highlighted step's dot
+// is filled, the others hollow; it carries a visually hidden note after
+// its name, and holds the definition callout and the caption, so the DOM
+// order is the visual order at every width and the sample label is read
+// with the definition; aria-describedby points it at the callout. One row
+// from 64em, three and two from 48em, one step per row below it, with a
 // decorative hairline through the dots.
 function LearnerJourney({ journey }: { journey: Journey }) {
   return (
     <section className="sector-section" aria-labelledby="journey-heading">
       <div className="container">
-        <p className="sector-eyebrow">
-          {journey.eyebrowLead === undefined ? journey.eyebrow : `${journey.eyebrowLead} · ${journey.eyebrow}`}
-        </p>
+        <p className="sector-eyebrow">{journey.eyebrow}</p>
         <h2 id="journey-heading" className="sector-heading">
           {journey.heading}
         </h2>
