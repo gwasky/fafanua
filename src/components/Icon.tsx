@@ -10,8 +10,9 @@ export type { IconName }
 // assistive technology, with no title and no text, as every one sits next
 // to the words it illustrates. No icon library. The Health page (#94)
 // added hospital, flask and pill, the Financial Services page (#98) swap,
-// two opposing horizontal arrows, and the Education page (issue 100) cap, a
-// mortarboard, in the same style.
+// two opposing horizontal arrows, the Education page (issue 100) cap, a
+// mortarboard, and the Retail & Distribution page (issue 101) box, a
+// parcel, and truck, a delivery lorry, all in the same style.
 const paths = {
   book: (
     <>
@@ -122,6 +123,18 @@ const paths = {
       <path d="M12 5 2.75 9.5 12 14l9.25-4.5Z" />
       <path d="M6.5 11.35v4.4c0 1.4 2.45 2.75 5.5 2.75s5.5-1.35 5.5-2.75v-4.4" />
       <path d="M21.25 9.5v5" />
+    </>
+  ),
+  box: (
+    <>
+      <path d="M12 3.5 4.25 7.5v9L12 20.5l7.75-4v-9Z" />
+      <path d="M4.25 7.5 12 11.5l7.75-4M12 11.5v9" />
+    </>
+  ),
+  truck: (
+    <>
+      <path d="M5.25 17H3V6.25h10.5V17M13.5 9.5h3.75l3.25 3.5V17h-1.75M8.75 17h6.5" />
+      <path d="M8.75 17a1.75 1.75 0 1 1-3.5 0 1.75 1.75 0 0 1 3.5 0ZM18.75 17a1.75 1.75 0 1 1-3.5 0 1.75 1.75 0 0 1 3.5 0Z" />
     </>
   ),
 } satisfies Record<IconName, ReactNode>
