@@ -742,7 +742,7 @@ const processRegion = (page: Page) => page.getByRole('region', { name: processIn
 const measureProcess = (page: Page) =>
   processRegion(page).evaluate((root) => {
     const px = (value: string) => parseFloat(value) || 0
-    const rect = (element: Element) => {
+    const rect = (element: Element | Range) => {
       const r = element.getBoundingClientRect()
       return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }
     }
@@ -770,6 +770,10 @@ const measureProcess = (page: Page) =>
       const card = item.querySelector('.process__card')!
       const cardBox = card.getBoundingClientRect()
       const text = (selector: string) => rect(item.querySelector(selector)!)
+      // The name's own text, after the inline numeral in the h3 (#102).
+      const nameRange = document.createRange()
+      nameRange.selectNodeContents(item.querySelector('h3')!.lastChild!)
+      const tag = item.querySelector('.process__tag')
       return {
         box: { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width },
         dot: { ...rect(track), x: dot.left + dot.width / 2, y: dot.top + dot.height / 2 },
@@ -782,9 +786,16 @@ const measureProcess = (page: Page) =>
               lineHeight: px(getComputedStyle(label).lineHeight),
             }
           : null,
-        card: { ...rect(card), contentLeft: cardBox.left + px(getComputedStyle(card).paddingLeft) },
+        card: {
+          ...rect(card),
+          contentLeft: cardBox.left + px(getComputedStyle(card).paddingLeft),
+          contentRight: cardBox.right - px(getComputedStyle(card).paddingRight),
+          padding: px(getComputedStyle(card).paddingLeft),
+        },
+        tag: tag ? rect(tag) : null,
         number: text('.process__number'),
         name: text('h3'),
+        nameText: rect(nameRange),
         description: text('.process__description'),
         outputLabel: text('.process__output-label'),
         output: text('.process__output-text'),
@@ -805,9 +816,13 @@ const measureProcess = (page: Page) =>
         descriptionSize: px(getComputedStyle(item.querySelector('.process__description')!).fontSize),
       }
     })
+    const container = root.querySelector('.container')!
+    const containerBox = container.getBoundingClientRect()
     return {
       section,
       steps,
+      heading: rect(root.querySelector('h2')!),
+      contentRight: containerBox.right - px(getComputedStyle(container).paddingRight),
       overflowX: getComputedStyle(root).overflowX,
       clientWidth: document.documentElement.clientWidth,
       labelLine: px(getComputedStyle(root.querySelector('.process__phase')!).lineHeight),
@@ -2844,7 +2859,12 @@ for (const width of WIDTHS) {
     test(`the How We Work steps are ${width >= 1024 ? 'four columns under the stage band' : 'stacked beside the track'}, with one continuous track through the dots, at ${width}px`, async ({ page }, testInfo) => {
       await open(page, testInfo, width)
       const region = processRegion(page)
-      await expect(region.getByRole('heading', { level: 3 })).toHaveText(['Assess', 'Design', 'Build', 'Govern'])
+      // Named by the step name alone: the inline numeral is hidden (#102).
+      const names = region.getByRole('heading', { level: 3 })
+      await expect(names).toHaveCount(4)
+      for (const [index, name] of ['Assess', 'Design', 'Build', 'Govern'].entries()) {
+        await expect(names.nth(index)).toHaveAccessibleName(name)
+      }
 
       const m = await measureProcess(page)
       const detail = JSON.stringify(m)
@@ -2882,9 +2902,28 @@ for (const width of WIDTHS) {
         for (const step of m.steps) {
           if (step.label) expect(step.label.bottom, `label above the track: ${detail}`).toBeLessThanOrEqual(step.dot.top)
         }
-        // The subgrid lines up the numerals and the YOU GET labels.
-        expect(spread(m.steps.map((step) => step.number.top)), `numerals level: ${detail}`).toBeLessThanOrEqual(1)
+        // The subgrid lines up the name lines and the YOU GET labels.
+        expect(spread(m.steps.map((step) => step.name.top)), `name lines level: ${detail}`).toBeLessThanOrEqual(1)
         expect(spread(m.steps.map((step) => step.outputLabel.top)), `YOU GET level: ${detail}`).toBeLessThanOrEqual(1)
+        // The columns span the full content width (#102): step 01's text
+        // starts level with the h2, step 04's card content ends at the
+        // content's inline-end edge, the cards' padding reaches outward
+        // into a column gap at least twice as wide, and the descriptions
+        // get longer lines than before (209px at 1440, 177px at 1024).
+        for (const part of [s1.tag!, s1.name, s1.description, s1.outputLabel, s1.output]) {
+          expect(Math.abs(part.left - m.heading.left), `step 01's text level with the h2: ${detail}`).toBeLessThanOrEqual(1)
+        }
+        expect(Math.abs(s1.card.contentLeft - m.heading.left), detail).toBeLessThanOrEqual(1)
+        expect(Math.abs(s4.card.contentRight - m.contentRight), `step 04's content at the content edge: ${detail}`).toBeLessThanOrEqual(1)
+        for (const [i, step] of m.steps.slice(0, 3).entries()) {
+          const gap = m.steps[i + 1].box.left - step.box.right
+          expect(gap, `column gap at least twice the card padding: ${detail}`).toBeGreaterThanOrEqual(2 * step.card.padding - 0.5)
+          expect(step.card.right, `card ${i + 1} clear of the next column's text: ${detail}`).toBeLessThanOrEqual(m.steps[i + 1].card.contentLeft + 0.5)
+        }
+        const minimum = width >= 1440 ? 236 : 205
+        for (const step of m.steps) {
+          expect(step.description.right - step.description.left, `description width: ${detail}`).toBeGreaterThanOrEqual(minimum)
+        }
       } else {
         expect(spread(m.steps.map((step) => step.box.left)), 'one column').toBeLessThanOrEqual(1)
         expect(spread(m.steps.map((step) => step.dot.x)), 'dots at one inline position').toBeLessThanOrEqual(0.5)
@@ -2906,17 +2945,24 @@ for (const width of WIDTHS) {
         }
         expect(s3.label).toBeNull()
       }
-      // Numeral, then name, then description, then the output under its
-      // label (#63, #90), each below the last; the output no larger than
-      // the description, and no word broken across lines.
+      // The name line under the tag row (step 01), with the small numeral
+      // on it before the name, a --space-2 gap apart (#102), then the
+      // description, then the output under its label (#63, #90), each
+      // below the last; the output no larger than the description, and no
+      // word broken across lines.
+      expect(s1.name.top, detail).toBeGreaterThanOrEqual(s1.tag!.bottom - 1)
       for (const step of m.steps) {
-        expect(step.name.top).toBeGreaterThanOrEqual(step.number.bottom - 1)
+        expect(step.number.top, `numeral on the name line: ${detail}`).toBeGreaterThanOrEqual(step.name.top - 0.5)
+        expect(step.number.bottom, `numeral on the name line: ${detail}`).toBeLessThanOrEqual(step.name.bottom + 0.5)
+        expect(step.number.bottom, `numeral and name on one line: ${detail}`).toBeGreaterThan(step.nameText.top)
+        expect(step.number.top, `numeral and name on one line: ${detail}`).toBeLessThan(step.nameText.bottom)
+        expect(step.nameText.left - step.number.right, `numeral before the name: ${detail}`).toBeCloseTo(8, 0)
         expect(step.description.top).toBeGreaterThanOrEqual(step.name.bottom - 1)
         expect(step.outputLabel.top).toBeGreaterThanOrEqual(step.description.bottom - 1)
         expect(step.output.top).toBeGreaterThanOrEqual(step.outputLabel.bottom - 1)
         expect(step.outputSize).toBeLessThanOrEqual(step.descriptionSize)
         expect(step.broken, detail).toEqual([])
-        for (const part of [step.number, step.name, step.description, step.outputLabel, step.output]) {
+        for (const part of [step.number, step.name, step.nameText, step.description, step.outputLabel, step.output]) {
           expect(part.left, `inside the card: ${detail}`).toBeGreaterThanOrEqual(step.card.left)
           expect(part.right, `inside the card: ${detail}`).toBeLessThanOrEqual(step.card.right + 0.5)
         }

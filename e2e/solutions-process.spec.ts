@@ -440,12 +440,12 @@ test.describe('How We Work', () => {
     expect(m.steps[0]).toMatchObject({
       card: g900, number: teal400, name: paper, description: g400, label: g400, output: paper, hairline: g700,
     })
-    // Steps 02 to 04 on graphite 100: graphite 600 numerals, descriptions
-    // and labels (5.7:1), graphite 900 names and outputs (14.1:1), graphite
-    // 200 hairlines.
+    // Steps 02 to 04 on graphite 100: teal 800 numerals (6.9:1, #102),
+    // graphite 600 descriptions and labels (5.7:1), graphite 900 names and
+    // outputs (14.1:1), graphite 200 hairlines.
     for (const step of m.steps.slice(1)) {
       expect(step).toMatchObject({
-        card: transparent, number: g600, name: g900, description: g600, label: g600, output: g900, hairline: g200,
+        card: transparent, number: teal800, name: g900, description: g600, label: g600, output: g900, hairline: g200,
       })
     }
     // Dot 01 filled teal 600 (by its border), 02 and 03 graphite 600
@@ -472,12 +472,16 @@ test.describe('How We Work', () => {
   test('sets the h2, names, numerals, descriptions, outputs and labels type, and nothing above weight 500', async ({ page }) => {
     await openPage(page, 1440)
     const sizes = {
-      section: await tokenPx(page, '--text-section'),
-      service: await tokenPx(page, '--text-service'),
-      fourXl: await tokenPx(page, '--text-4xl'),
+      threeXl: await tokenPx(page, '--text-3xl'),
+      twoXl: await tokenPx(page, '--text-2xl'),
+      eyebrow: await tokenPx(page, '--text-eyebrow'),
       base: await tokenPx(page, '--text-base'),
       sm: await tokenPx(page, '--text-sm'),
     }
+    const services = await page.locator('.services__heading').evaluate((element) => {
+      const s = getComputedStyle(element)
+      return { size: parseFloat(s.fontSize), lineHeight: parseFloat(s.lineHeight) }
+    })
     const m = await processRegion(page).evaluate((root) => {
       const pick = (element: Element) => {
         const s = getComputedStyle(element)
@@ -488,7 +492,10 @@ test.describe('How We Work', () => {
         h2: pick(h2),
         h2Lines: Math.round(h2.getBoundingClientRect().height / parseFloat(getComputedStyle(h2).lineHeight)),
         names: [...root.querySelectorAll('h3')].map(pick),
-        numbers: [...root.querySelectorAll('.process__number')].map(pick),
+        numbers: [...root.querySelectorAll('.process__number')].map((element) => ({
+          ...pick(element),
+          numeric: getComputedStyle(element).fontVariantNumeric,
+        })),
         descriptions: [...root.querySelectorAll('.process__description')].map(pick),
         outputs: [...root.querySelectorAll('.process__output-text')].map(pick),
         labels: [...root.querySelectorAll('.process__phase, .process__output-label, .process__tag')].map(pick),
@@ -498,15 +505,24 @@ test.describe('How We Work', () => {
       }
     })
 
-    expect(m.h2.size).toBeCloseTo(sizes.section, 1)
+    // From 1024px the Capabilities heading's size: --text-3xl with
+    // --leading-tight, as .services__heading (#102).
+    expect(m.h2.size).toBeCloseTo(sizes.threeXl, 1)
+    expect(m.h2.size).toBeCloseTo(services.size, 1)
+    expect(m.h2.lineHeight).toBeCloseTo(services.lineHeight, 1)
     expect(m.h2.weight).toBe('300')
-    expect(m.h2.lineHeight).toBeCloseTo(sizes.section * 1.05, 0)
     expect(m.h2Lines, 'the h2 on one line').toBe(1)
+    // The names one step down the type scale, --text-2xl (#102).
     for (const name of m.names) expect(name).toMatchObject({ weight: '300' })
-    for (const name of m.names) expect(name.size).toBeCloseTo(sizes.service, 1)
+    for (const name of m.names) expect(name.size).toBeCloseTo(sizes.twoXl, 1)
+    // The numerals: small labels at --text-eyebrow, weight 500, tabular,
+    // not the old --text-4xl at 300 (#102).
+    expect(m.numbers).toHaveLength(4)
     for (const number of m.numbers) {
-      expect(number.size).toBeCloseTo(sizes.fourXl, 1)
-      expect(number.weight).toBe('300')
+      expect(number.size).toBeCloseTo(sizes.eyebrow, 1)
+      expect(number.weight).toBe('500')
+      expect(number.numeric).toContain('tabular-nums')
+      expect(number.transform).toBe('none')
     }
     for (const description of m.descriptions) {
       expect(description.size).toBeCloseTo(sizes.base, 1)
@@ -662,7 +678,7 @@ test.describe('How We Work', () => {
   // stages are now each cell's stage line. Both are saved at 1440px for
   // review; here the measurable differences are checked: a stage line is
   // --text-sm text with a teal number and no marker or description; the
-  // timeline's names are --text-service with dots on a track and a stage
+  // timeline's names are --text-2xl (#102) with dots on a track and a stage
   // band (#90), and a description under each, still with no service-line
   // colours.
   test('does not look like the capability stage lines, and there is no lifecycle rail, at 1440px', async ({ page }, testInfo) => {
