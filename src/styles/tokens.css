@@ -264,8 +264,9 @@
   --example-inset: clamp(12px, 4vw, 24px);
   /* How We Work's step card inset (#90), in px and vw for the same
      reason: in rem it doubles with 200% page text and squeezes the
-     stacked steps at 320px. 12.8px at 320px and 24px from 600px. */
-  --process-card-inset: clamp(12px, 4vw, 24px);
+     stacked steps at 320px. 12.8px at 320px and 20px from 500px
+     (issue 102). */
+  --process-card-inset: clamp(12px, 4vw, 20px);
   /* The future-ready tiles' inline padding (#91), in px and vw for the
      same reason: in rem it doubles with 200% page text and squeezes the
      stacked tiles at 320px. 12.8px at 320px and 24px from 600px. */

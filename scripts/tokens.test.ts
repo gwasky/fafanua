@@ -57,7 +57,7 @@ describe('V2 tokens', () => {
       '--space-section-dark': 'clamp(5rem, 3rem + 8vw, 10rem)',
       '--space-section-compact': 'calc(var(--space-section) * 0.75)',
       '--flow-loop-width': '24px',
-      '--process-card-inset': 'clamp(12px, 4vw, 24px)',
+      '--process-card-inset': 'clamp(12px, 4vw, 20px)',
       '--future-ready-tile-inset': 'clamp(12px, 4vw, 24px)',
       '--about-definition-inset': 'clamp(12px, 4vw, 24px)',
       '--landing-card-inset': 'clamp(12px, 4vw, 24px)',

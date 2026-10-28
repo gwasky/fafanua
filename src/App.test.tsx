@@ -451,11 +451,13 @@ describe('App', () => {
     render(<App />)
     const process = screen.getByRole('region', { name: processIntro.heading })
 
-    expect(
-      within(process)
-        .getAllByRole('heading', { level: 3 })
-        .map((heading) => heading.textContent),
-    ).toEqual(processStages.map((stage) => stage.name))
+    // Each h3 holds its hidden numeral before the name (issue 102), so its
+    // accessible name is the step name alone.
+    const names = within(process).getAllByRole('heading', { level: 3 })
+    expect(names).toHaveLength(processStages.length)
+    names.forEach((heading, index) => {
+      expect(heading).toHaveAccessibleName(processStages[index].name)
+    })
   })
 
   it('renders the future-ready section directly after How We Work', () => {
@@ -885,9 +887,10 @@ describe('App', () => {
       )
     })
     expect(headings[22].textContent).toBe(processIntro.heading)
-    expect(headings.slice(23, 27).map((heading) => heading.textContent)).toEqual(
-      processStages.map((stage) => stage.name),
-    )
+    // Named by the step name alone: the numeral inside is hidden (issue 102).
+    headings.slice(23, 27).forEach((heading, index) => {
+      expect(heading).toHaveAccessibleName(processStages[index].name)
+    })
     expect(headings[27].textContent).toBe(FUTURE_READY)
     expect(headings[28].textContent).toBe(ABOUT)
     // About's three principles (section D, #92).

@@ -18,20 +18,24 @@
  * (z-index -1 in the list's stacking context), so the hollow dots stay
  * filled with the section's graphite 100.
  *
- * Each step's card holds the numeral, the name, the description and the
- * output under a hairline. The highlighted card (Process.tsx) is
- * .surface-dark: every colour token takes its on-dark value and the card
- * paints graphite 900, so only colours change, never its box. Step 01's
- * pill is .surface-light, so it stays teal 800 on teal 100 on the dark
- * card too.
+ * Each step's card holds the name line (the small numeral inline before
+ * the name, issue 102), the description and the output under a hairline.
+ * The highlighted card (Process.tsx) is .surface-dark: every colour token
+ * takes its on-dark value and the card paints graphite 900, so only
+ * colours change, never its box. Step 01's pill is .surface-light, so it
+ * stays teal 800 on teal 100 on the dark card too.
  *
  * From 64em (1024px; literal breakpoint, see the note in tokens.css) the
- * steps are four equal columns. Each step and each card is a subgrid of
- * the list's seven rows (label, track, tag, numeral, name, description,
- * output), so the numerals and the hairlines line up across the columns
- * however the descriptions wrap. Below 64em the steps stack, with the
- * track down the inline-start edge and each label beside its dot. No
- * reordering, so the visual order always matches the DOM order.
+ * steps are four equal columns across the full content width, each one's
+ * text, label and dot starting at its column's edge (issue 102). The
+ * cards' padding reaches outward into the column gap, which is twice as
+ * wide, so a highlighted box never covers the next column's text. Each
+ * step and each card is a subgrid of the list's six rows (label, track,
+ * tag, name line, description, output), so the name lines and the
+ * hairlines line up across the columns however the descriptions wrap.
+ * Below 64em the steps stack, with the track down the inline-start edge
+ * and each label beside its dot. No reordering, so the visual order
+ * always matches the DOM order.
  */
 
 /* A quarter less padding than the other sections (refinement plan §8).
@@ -42,7 +46,8 @@
   overflow-x: clip;
 }
 
-/* Weight 300 from the global heading styles. One line at 1440px. */
+/* Weight 300 from the global heading styles. One line at 1440px. From
+   64em it is the Capabilities heading's size (issue 102, below). */
 .process__heading {
   max-width: var(--measure);
   margin-block-end: var(--space-16);
@@ -55,7 +60,7 @@
   /* The dot's size, the space between columns, the line widths, and the
      height of one stage-label line. */
   --node: var(--space-4);
-  --stage-gap: var(--space-5);
+  --stage-gap: var(--space-10);
   --line: calc(var(--border-width) * 2);
   --line-current: calc(var(--border-width) * 3);
   --label-line: calc(var(--text-eyebrow) * var(--leading-snug));
@@ -185,33 +190,27 @@
   text-transform: uppercase;
 }
 
-/* Graphite 600 on graphite 100 (5.7:1); teal 400 on the dark card
-   (7.5:1). */
-.process__number {
-  display: block;
-  margin-block-start: 0;
-  color: var(--color-text-muted);
-  font-size: var(--text-4xl);
-  font-weight: var(--weight-light);
-  font-variant-numeric: tabular-nums;
-  line-height: var(--leading-tight);
+.process__name {
+  margin-block: 0 var(--space-3);
+  color: var(--color-heading);
+  font-size: var(--text-2xl);
+  line-height: var(--leading-snug);
 }
 
-.process__card.surface-dark .process__number {
-  color: var(--color-accent-text);
-}
-
-/* Below the pill. In the columns, every numeral keeps this space under
+/* Below the pill. In the columns, every name line keeps this space under
    the tag row (subgrid, below), so steps 02 to 04 sit level with 01. */
-.process__tag + .process__number {
+.process__tag + .process__name {
   margin-block-start: var(--space-4);
 }
 
-.process__name {
-  margin-block: var(--space-2) var(--space-3);
-  color: var(--color-heading);
-  font-size: var(--text-service);
-  line-height: var(--leading-snug);
+/* The small numeral, inline before the name on its baseline (issue 102): teal
+   800 on graphite 100 (6.9:1), teal 400 on the dark card (7.5:1). */
+.process__number {
+  margin-inline-end: var(--space-2);
+  color: var(--color-accent-text);
+  font-size: var(--text-eyebrow);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
 }
 
 .process__description {
@@ -287,6 +286,13 @@
     row-gap: 0;
   }
 
+  /* The Capabilities heading's size (.services__heading, issue 102). */
+  .process__heading {
+    max-width: none;
+    font-size: var(--text-3xl);
+    line-height: var(--leading-tight);
+  }
+
   .process__stage {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(var(--label-line), auto) auto auto;
@@ -294,11 +300,10 @@
     row-gap: 0;
   }
 
-  /* Each label starts at its card's content edge. */
+  /* Each label starts at its column's edge, its card's content edge. */
   .process__phase {
     grid-column: 1;
     margin-block-end: var(--space-4);
-    padding-inline-start: var(--process-card-inset);
   }
 
   /* Implementation is centred over steps 02 and 03 together. */
@@ -310,13 +315,12 @@
     white-space: normal;
   }
 
-  /* The dot, at its card's content edge. */
+  /* The dot, at its column's edge, its card's content edge. */
   .process__track {
     grid-column: 1;
     grid-row: 2;
     align-self: center;
     margin-block: 0 var(--space-8);
-    margin-inline-start: var(--process-card-inset);
   }
 
   /* The segment: across from this step's start edge to the next one's,
@@ -333,7 +337,7 @@
   }
 
   .process__stage[data-phase='assessment'] .process__track::after {
-    inset-inline-start: calc(var(--process-card-inset) + var(--node) / 2);
+    inset-inline-start: calc(var(--node) / 2);
     margin-block-start: calc(var(--node) / 2 - var(--ring) - var(--line-current) / 2);
     border-block-start: var(--line-current) solid var(--color-accent);
   }
@@ -344,19 +348,22 @@
     border-block-start: var(--line) dashed var(--color-line-soft);
   }
 
+  /* The padding reaches outward, so the text keeps the column's width
+     and edges. */
   .process__card {
     grid-column: 1;
     grid-row: 3;
+    margin-inline: calc(-1 * var(--process-card-inset));
   }
 
   @supports (grid-template-rows: subgrid) {
     .process__stage {
-      grid-row: span 7;
+      grid-row: span 6;
       grid-template-rows: subgrid;
     }
 
     .process__card {
-      grid-row: 3 / span 5;
+      grid-row: 3 / span 4;
       display: grid;
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows: subgrid;
@@ -366,21 +373,17 @@
       grid-row: 1;
     }
 
-    .process__number {
+    .process__name {
       grid-row: 2;
       margin-block-start: var(--space-4);
     }
 
-    .process__name {
+    .process__description {
       grid-row: 3;
     }
 
-    .process__description {
-      grid-row: 4;
-    }
-
     .process__output {
-      grid-row: 5;
+      grid-row: 4;
       align-self: start;
     }
   }

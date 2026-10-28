@@ -186,7 +186,7 @@ describe('Process', () => {
     ])
   })
 
-  it('shows each card as the tag (step 01), the numeral, the h3, the description, then the output', () => {
+  it('shows each card as the tag (step 01), the h3 (its hidden numeral, then the name), the description, then the output', () => {
     const { stages } = renderProcess()
 
     stages.forEach((stage, index) => {
@@ -200,14 +200,23 @@ describe('Process', () => {
         expect(tag).toHaveClass('surface-light')
         expect(tag.textContent).toBe(processIntro.startTag)
       }
-      const [number, heading, paragraph, outputBlock, ...rest] = children
+      const [heading, paragraph, outputBlock, ...rest] = children
 
       expect(rest).toHaveLength(0)
-      expect(number.textContent).toBe(String(index + 1).padStart(2, '0'))
-      expect(number).toHaveAttribute('aria-hidden', 'true')
       expect(heading.tagName).toBe('H3')
       expect(heading).toBe(within(stage).getByRole('heading', { level: 3 }))
-      expect(heading.textContent).toBe(name)
+      // The small numeral is the h3's first child, inline before the name
+      // and hidden, so the accessible name is the step name alone (issue 102).
+      // The space between them is CSS, not a typed character.
+      const [number, ...others] = [...heading.children]
+      expect(others).toHaveLength(0)
+      expect(number.tagName).toBe('SPAN')
+      expect(number).toHaveClass('process__number')
+      expect(number.textContent).toBe(String(index + 1).padStart(2, '0'))
+      expect(number).toHaveAttribute('aria-hidden', 'true')
+      expect(heading.firstChild).toBe(number)
+      expect(heading.textContent).toBe(`${number.textContent}${name}`)
+      expect(heading).toHaveAccessibleName(name)
       expect(paragraph.tagName).toBe('P')
       expect(paragraph.textContent).toBe(description)
       expect(outputBlock).toHaveClass('process__output')
@@ -228,9 +237,11 @@ describe('Process', () => {
       'Pipelines, models & analytical products',
       'Ownership, monitoring & continuous improvement',
     ])
-    expect(
-      stages.map((stage) => within(stage).getByRole('heading').textContent),
-    ).toEqual(['Assess', 'Design', 'Build', 'Govern'])
+    stages.forEach((stage, index) => {
+      expect(within(stage).getByRole('heading')).toHaveAccessibleName(
+        ['Assess', 'Design', 'Build', 'Govern'][index],
+      )
+    })
     // Only step 01 carries the tag.
     expect(stages.map((stage) => stage.querySelectorAll('.process__tag').length)).toEqual([1, 0, 0, 0])
   })

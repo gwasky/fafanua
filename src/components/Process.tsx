@@ -17,15 +17,16 @@ const PHASE_HOOKS = ['assessment', 'implementation', 'managed'] as const
 // the "04 — How We Work" eyebrow, the h2, then the engagement model as an
 // ordered list of four steps, in data order. Each step holds its stage
 // label (the first step of each phase only), its piece of the track and
-// its card: the numeral, the h3 name, the description, then the output
-// under its label. The stage labels are the Managed Services journey's
-// (#88), reused, not copied. The track is CSS on an empty aria-hidden
-// span per step: its dot, and its segment as ::after. The visible numeral
-// is hidden from screen readers, which already announce each item's
-// position in the ordered list. The id and the eyebrow match the "How We
-// Work" entry in src/data/navigation.ts. Still no service-line colours,
-// so it does not read as the Services lifecycle (#59), and no links,
-// buttons or tab stops.
+// its card: the h3 name line (the small numeral inline before the name,
+// issue 102), the description, then the output under its label. The stage
+// labels are the Managed Services journey's (#88), reused, not copied.
+// The track is CSS on an empty aria-hidden span per step: its dot, and
+// its segment as ::after. The visible numeral is hidden from screen
+// readers, so each h3's accessible name is just the step name, and the
+// ordered list already announces each item's position. The id and the
+// eyebrow match the "How We Work" entry in src/data/navigation.ts. Still
+// no service-line colours, so it does not read as the Services lifecycle
+// (#59), and no links, buttons or tab stops.
 //
 // The highlight: step 01's card is a .surface-dark card at rest. With a
 // mouse on a hover-capable device from 64em, the step under the pointer
@@ -91,10 +92,12 @@ function Process() {
                   {index === 0 && (
                     <p className="process__tag surface-light">{processIntro.startTag}</p>
                   )}
-                  <span className="process__number" aria-hidden="true">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <h3 className="process__name">{stage.name}</h3>
+                  <h3 className="process__name">
+                    <span className="process__number" aria-hidden="true">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    {stage.name}
+                  </h3>
                   <p className="process__description">{stage.description}</p>
                   <div className="process__output">
                     <p className="process__output-label">{processIntro.outputLabel}</p>
