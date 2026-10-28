@@ -128,9 +128,9 @@ test.describe('links', () => {
     await expect(main.getByRole('link', { name: 'Book a data trust assessment', exact: true })).toHaveCount(2)
   })
 
-  test('shows "trusted data foundation" in the closing panel (the owner\'s proposed follow-up, #101)', async ({ page }) => {
+  test('shows "trusted data foundation" in the closing panel (the owner\'s approved follow-up, #101)', async ({ page }) => {
     await openPath(page, PATH, 1440)
-    const line = page.locator('#contact').getByText(/We help retail and distribution businesses build a trusted data foundation across every branch, depot and head office\./)
+    const line = page.locator('#contact').getByText(/We help retail and distribution businesses build a trusted data foundation across branches, depots and head office\./)
     await expect(line).toBeVisible()
   })
 

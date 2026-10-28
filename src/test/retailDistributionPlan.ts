@@ -30,11 +30,11 @@ export const TITLE = 'Retail & Distribution Data Analytics Uganda | Fafanua'
 export const DESCRIPTION =
   'Retailers, wholesalers, distributors and FMCG businesses in Uganda and East Africa: build a trusted data foundation for sales, stock, margin and distribution analytics.'
 
-/** The owner's closing follow-up (2026-10-27, issue 101), a proposal
- * pending the owner's approval, recorded in the plan's section 4: it keeps
+/** The owner's closing follow-up (proposed 2026-10-27, approved with an
+ * edit 2026-10-28, issue 101), recorded in the plan's section 4: it keeps
  * "trusted data foundation" visible without repeating the heading. */
-export const PROPOSED_FOLLOW_UP =
-  'We help retail and distribution businesses build a trusted data foundation across every branch, depot and head office.'
+export const FOLLOW_UP =
+  'We help retail and distribution businesses build a trusted data foundation across branches, depots and head office.'
 
 /**
  * The strings the issue proposed adding (A1 to A3), its recommended

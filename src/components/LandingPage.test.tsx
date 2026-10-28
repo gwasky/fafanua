@@ -62,7 +62,7 @@ const CLOSING: Record<string, { heading: string; text: string }> = {
   },
   '/solutions/retail-distribution': {
     heading: 'Build a retail data foundation you can trust',
-    text: `${retailPlan.cell('Closing panel', 'Text')} ${retailPlan.PROPOSED_FOLLOW_UP}`,
+    text: `${retailPlan.cell('Closing panel', 'Text')} ${retailPlan.FOLLOW_UP}`,
   },
 }
 const paths = new Set(pages.map((page) => page.path))
@@ -1733,8 +1733,8 @@ describe('Education page', () => {
 // The Retail & Distribution page on the shared landing-page foundation
 // (issue 101), against section 4 of
 // _docs/fafanua-retail-distribution-landing-page-plan.md, with the
-// owner's decisions of 2026-10-27, recorded in the plan, and the owner's
-// proposed closing follow-up.
+// owner's decisions of 2026-10-27 and approval of 2026-10-28, recorded in
+// the plan, including the closing follow-up.
 describe('Retail & Distribution page', () => {
   const { cell: rcell, list: rlist, marked: rmarked, named: rnamed, buttonLabel: rbutton } = retailPlan
   const main = () => screen.getByRole('main')
@@ -1790,7 +1790,7 @@ describe('Retail & Distribution page', () => {
     ])
   })
 
-  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description, the hidden note, the owner\'s fourth service card and the proposed follow-up (issue 101)', () => {
+  it('shows exactly plan section 4\'s text in main, in DOM order, with the figure description, the hidden note, the owner\'s fourth service card and the approved follow-up (issue 101)', () => {
     renderPage(retail)
     const plan = [
       ...rcell('Hero', 'Breadcrumb').split(' › '),
@@ -1843,7 +1843,7 @@ describe('Retail & Distribution page', () => {
       ...[1, 2, 3, 4].flatMap((i) => Object.values(rnamed(rcell(n, `Card ${i}`)))),
       rcell('Closing panel', 'Eyebrow'),
       rcell('Closing panel', 'Heading'),
-      `${rcell('Closing panel', 'Text')} ${retailPlan.PROPOSED_FOLLOW_UP}`,
+      `${rcell('Closing panel', 'Text')} ${retailPlan.FOLLOW_UP}`,
       rbutton(rcell('Closing panel', 'Primary button')),
       '→',
       rbutton(rcell('Closing panel', 'Secondary link')),
@@ -1865,7 +1865,7 @@ describe('Retail & Distribution page', () => {
     expect(main().textContent!.match(/\d[\d,]*/g)).toEqual(['1,240', '1,182', '58'])
   })
 
-  it('shows the protected "trusted data foundation" in the closing panel, through the owner\'s proposed follow-up (issue 101)', () => {
+  it('shows the protected "trusted data foundation" in the closing panel, through the owner\'s approved follow-up (issue 101)', () => {
     renderPage(retail)
     const closing = screen.getByRole('region', { name: closingName })
     expect(closing).toHaveTextContent('trusted data foundation')

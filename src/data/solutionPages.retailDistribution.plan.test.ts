@@ -8,8 +8,9 @@
 // the stock journey, the figure's accessible description (plan section
 // 6), the owner's decisions of 2026-10-27 (title, description, the
 // handling items, the fourth service card, A1 to A3 dropped), each
-// recorded in the plan as an owner update, and the owner's proposed
-// closing follow-up. It also checks the plan's metadata conflicts, the
+// recorded in the plan as an owner update, and the owner's approval of
+// 2026-10-28 (the handling items, the fourth card and the closing
+// follow-up). It also checks the plan's metadata conflicts, the
 // section 7 terms, that the old Retail & Distribution
 // strings are gone from src/, the naming and claims rules (plan section
 // 3) without naming anyone, that the assessment claims no implementation
@@ -30,7 +31,7 @@ import {
   named,
   NAMING_TERMS,
   OWNER_DECISIONS,
-  PROPOSED_FOLLOW_UP,
+  FOLLOW_UP,
   SECTION_7_TERMS,
   segment,
   SOLID_SOURCES,
@@ -281,26 +282,27 @@ describe('Retail & Distribution copy (plan section 4)', () => {
     ])
   })
 
-  it('uses the closing panel, with the owner\'s proposed follow-up, and the call to action and address from contact.ts', () => {
+  it('uses the closing panel, with the owner\'s approved follow-up, and the call to action and address from contact.ts', () => {
     const t = 'Closing panel'
     expect(upper(page.closing.eyebrow)).toBe(cell(t, 'Eyebrow'))
     expect(page.closing.heading).toBe(cell(t, 'Heading'))
     expect(page.closing.text).toBe(cell(t, 'Text'))
-    expect(page.closing.followUp).toBe(PROPOSED_FOLLOW_UP)
+    expect(page.closing.followUp).toBe(FOLLOW_UP)
     expect(buttonLabel(cell(t, 'Primary button'))).toBe(ctaLabel)
     expect(cell(t, 'Secondary link')).toBe(`${email} (\`mailto:${email}\`)`)
   })
 
-  it('holds the owner\'s proposed closing follow-up verbatim, recorded in the plan, which keeps the protected phrase visible without repeating the heading', () => {
-    expect(PROPOSED_FOLLOW_UP).toBe(
-      'We help retail and distribution businesses build a trusted data foundation across every branch, depot and head office.',
+  it('holds the owner\'s approved closing follow-up (2026-10-28) verbatim, recorded in the plan, which keeps the protected phrase visible without repeating the heading', () => {
+    expect(FOLLOW_UP).toBe(
+      'We help retail and distribution businesses build a trusted data foundation across branches, depots and head office.',
     )
-    expect(PROPOSED_FOLLOW_UP).toHaveLength(118)
-    expect(copySection).toContain(`"${PROPOSED_FOLLOW_UP}"`)
+    expect(FOLLOW_UP).toHaveLength(115)
+    expect(copySection).toMatch(/Owner update \(2026-10-28, #1\d\d\): the follow-up sentence is approved/)
+    expect(copySection).toContain(`"${FOLLOW_UP}"`)
     expect(page.closing.followUp).toContain('trusted data foundation')
     expect(page.closing.followUp).not.toContain(page.closing.heading)
     expect(page.closing.followUp!.toLowerCase()).not.toContain('build a retail data foundation you can trust')
-    expect(PROPOSED_FOLLOW_UP).not.toMatch(COMPLIANCE_TERMS)
+    expect(FOLLOW_UP).not.toMatch(COMPLIANCE_TERMS)
     // Visible once, in the closing panel; the description carries it too.
     expect(visible().join(' ').match(/trusted data foundation/g)).toHaveLength(1)
     expect(page.description).toContain('trusted data foundation')

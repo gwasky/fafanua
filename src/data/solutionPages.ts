@@ -36,8 +36,9 @@ import type { ServiceKey } from './servicePages.ts'
 // Distribution (issue 101) the owner on 2026-10-27 set the title and the
 // description, dropped the three proposed additions, reworded two handling
 // items and restored the data warehousing link as a fourth service card,
-// all marked below and recorded in the plan's section 4; the owner's
-// closing follow-up is a proposal pending approval, marked below.
+// all marked below and recorded in the plan's section 4. On 2026-10-28
+// the owner approved the two handling items, the fourth card and the
+// closing follow-up, edited, also marked below and recorded there.
 
 export type SolutionService = {
   readonly service: ServiceKey
@@ -606,8 +607,7 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
         'Where appropriate, analysis can use pseudonymised customer and loyalty data to reduce exposure of directly identifying information.',
         // Owner decision (2026-10-27, issue 101): the two items reworded to
         // say access follows agreed roles and the rules are defined as part
-        // of the solution design; the wording is the engineer's, for the
-        // owner's review.
+        // of the solution design; approved as written on 2026-10-28.
         'Access follows agreed roles and responsibilities, by branch and by function.',
         'Ownership and access rules are defined as part of the solution design.',
       ],
@@ -638,7 +638,7 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
         },
         // Owner decision (2026-10-27, issue 101): the link to the data
         // warehousing service page restored as a fourth card, as on
-        // Education; its copy is the engineer's, for the owner's review.
+        // Education; its copy approved as written on 2026-10-28.
         {
           name: 'Retail data warehouse',
           text: 'Model products, outlets, stock movements and sales in one data warehouse, so margin and stock can be tracked over time.',
@@ -651,10 +651,10 @@ export const solutionPages: Readonly<Record<string, SolutionPage>> = {
       eyebrow: 'Get started',
       heading: 'Build a retail data foundation you can trust',
       text: 'Sales, stock or margin: which do you trust least? Tell us about the reports your branches and head office rely on.',
-      // Proposed owner addition (pending the owner's approval, issue 101):
-      // the owner's follow-up, which keeps the protected phrase visible
-      // without repeating the heading; it replaces the dropped A1.
-      followUp: 'We help retail and distribution businesses build a trusted data foundation across every branch, depot and head office.',
+      // Owner decision (2026-10-28, issue 101): the owner's approved
+      // follow-up, which keeps the protected phrase visible without
+      // repeating the heading; it replaces the dropped A1.
+      followUp: 'We help retail and distribution businesses build a trusted data foundation across branches, depots and head office.',
     },
   },
   'development-and-impact': {

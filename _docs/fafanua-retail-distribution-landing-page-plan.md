@@ -112,6 +112,8 @@ Owner update (2026-10-27, #101): the proposed opening sentences (A2 on the Integ
 
 Owner update (2026-10-27, #101): the first checklist item is confirmed. The other two items stay only as access following agreed roles and responsibilities, and ownership and access rules defined as part of the solution design, so they replace "Access follows your existing roles, by branch and by function." and "Ownership and access rules are agreed before any pipeline is built." Their wording is the engineer's minimal rewording, for the owner's review.
 
+Owner update (2026-10-28, #101): the two items are approved as written: "Access follows agreed roles and responsibilities, by branch and by function." and "Ownership and access rules are defined as part of the solution design."
+
 ### What happens next
 
 This follows the site convention used on every sector page.
@@ -128,6 +130,8 @@ This follows the site convention used on every sector page.
 
 Owner update (2026-10-27, #101): the page links the Data Warehousing & Analytics Modelling service page again, as a fourth service card after Card 3, as on the Education page. Card 4's copy is the engineer's, for the owner's review.
 
+Owner update (2026-10-28, #101): Card 4 is approved as written, and it keeps the link to the Data Warehousing & Analytics Modelling service page.
+
 ### Closing panel
 
 | Element | Text |
@@ -138,7 +142,9 @@ Owner update (2026-10-27, #101): the page links the Data Warehousing & Analytics
 | Primary button | Book a data trust assessment → (`mailto:info@fafanua.tech`) |
 | Secondary link | info@fafanua.tech (`mailto:info@fafanua.tech`) |
 
-Owner update (2026-10-27, #101): the heading, "Build a retail data foundation you can trust", is the closing proposition, and the proposed follow-up sentence (A1) is not added. So that "trusted data foundation" stays visible, the owner proposes this sentence after the text, in the same paragraph, pending the owner's approval: "We help retail and distribution businesses build a trusted data foundation across every branch, depot and head office."
+Owner update (2026-10-27, #101): the heading, "Build a retail data foundation you can trust", is the closing proposition, and the proposed follow-up sentence (A1) is not added. So that "trusted data foundation" stays visible, the owner proposed a follow-up sentence after the text, in the same paragraph.
+
+Owner update (2026-10-28, #101): the follow-up sentence is approved, edited to read: "We help retail and distribution businesses build a trusted data foundation across branches, depots and head office." It follows the text in the same paragraph.
 
 ### Metadata
 
