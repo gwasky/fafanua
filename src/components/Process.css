@@ -349,11 +349,20 @@
   }
 
   /* The padding reaches outward, so the text keeps the column's width
-     and edges. */
+     and edges. The padding takes no pointer, so the highlight still
+     follows the columns and holds while the pointer crosses the gaps,
+     where the cards' padding now meets: a pointer on a card's padding
+     falls through to its step inside the column, or to the list in the
+     gap. Its text still does, for selecting. */
   .process__card {
     grid-column: 1;
     grid-row: 3;
     margin-inline: calc(-1 * var(--process-card-inset));
+    pointer-events: none;
+  }
+
+  .process__card > * {
+    pointer-events: auto;
   }
 
   @supports (grid-template-rows: subgrid) {
