@@ -121,6 +121,16 @@ The heading is the section's `h2`, and the rows are a `ul`. Each row's link text
   - Descriptions share a minimum height so the YOU GET lines align across all four columns.
   - Step 01 also carries the START HERE tag (small pill in the teal tint) above its numeral.
 
+Owner update (2026-10-28, #102): the section is too tall. These five layout changes replace the matching parts of the bullets above, with no copy changes:
+
+1. **Numerals.** The large numerals are replaced by small labels inline before each step name ("01 Assess"), in the teal accent, weight 500, at the small-label size.
+2. **Heading.** The heading uses the same section-heading size as the Solutions and Capabilities headings.
+3. **Columns.** The four step columns span the full content width, each column aligned under its dot on the track, so the descriptions get longer lines.
+4. **YOU GET rows.** The YOU GET rows align through a shared grid row (for example CSS subgrid, or an equivalent) instead of a fixed minimum description height.
+5. **Step names and padding.** The step-name size and the highlighted card's padding each go down one step on the type and spacing scales.
+
+The track, the stage labels, the START HERE tag and the highlight behaviour stay exactly as they are. Where `homepage-how-we-work.png` differs from these five changes, this update wins.
+
 ### Highlight behaviour
 
 - **At rest,** step 01 is highlighted: a graphite card with light text, a lighter teal numeral, and dark-surface tokens for the description, hairline and output.
